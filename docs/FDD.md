@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Document | Functional Design Document |
-| Version | 0.1 (draft for Product Owner review) |
+| Version | 1.0 (final, approved by the Product Owner) |
 | Date | 2026-10-20 |
 | Product owner | Ambarish Sengupta |
 | Taxonomy and outfit rules | Arpan Shah (style specialist) |
 | Technical review | C. Prashanth (SA) |
 | Traces to | BRD v0.4 (requirement IDs BR-xx) |
-| Status | Draft, not yet approved |
+| Status | Final |
 
 ## 1. Purpose and how to read this document
 
@@ -62,10 +62,10 @@ Admin console (internal, minimal): invitations, catalogue sources, aggregation r
 | ID | Requirement | Traces to | Priority |
 | --- | --- | --- | --- |
 | FR-10 | The Wardrobe tab shows all active items as a grid with a list toggle, newest first by default. Each tile shows the image (or illustration, see FR-24), name, colour and a favourite marker. | BR-02 | Must |
-| FR-11 | Users can filter by category, sub-type, colour, fit, material, pattern, size, brand, season, occasion, price range, tag, collection, favourite and archived, and combine filters. | BR-02 | Must |
+| FR-11 | Users can filter by category, sub-type, colour family, fit, material, pattern, size, brand, season, occasion, price range, tag, collection, favourite and archived, and combine filters. Users can also pick a colour on the spectrum and see items with a similar colour. | BR-02 | Must |
 | FR-12 | Users can sort by date added, price, brand, category, colour and condition. | BR-02 | Must |
 | FR-13 | Users can create custom tags and collections (for example "Gym" or "Wedding season") and assign items to any number of them. | BR-02 | Must |
-| FR-14 | Users can mark an item as a favourite and, separately, flag it "never worn". The flag is set by the user only; it is not derived from any log. | BR-02 | Should |
+| FR-14 | Users can mark an item as a favourite and, separately, flag it "never worn". The flag is set by the user. An item whose condition rating is 0 is treated the same as a flagged item, so the "never worn" filter returns both. Nothing is derived from any outfit log, and no wear counts exist. | BR-02, BR-14 | Should |
 | FR-15 | Users can archive an item with a reason (sold, donated, discarded, lost). Archived items leave the active wardrobe, remain in purchase history and stay out of outfit suggestions. Archive can be undone. | BR-02 | Must |
 | FR-16 | Users can edit any attribute of an item, and delete an item permanently after a confirmation. | BR-02 | Must |
 | FR-17 | A wardrobe summary strip shows item count and a breakdown by category. | BR-02 | Could |
@@ -83,13 +83,15 @@ Admin console (internal, minimal): invitations, catalogue sources, aggregation r
 | ID | Requirement | Traces to | Priority |
 | --- | --- | --- | --- |
 | FR-21 | **Catalogue picker.** The user searches or browses the seed catalogue by category, brand, colour and style, selects an item, then adjusts details (size, colour variant, price paid, date, store, condition) and saves. | BR-03 | Must |
-| FR-22 | **Manual entry.** A form lets the user create an item that is not in the catalogue. Required: category, sub-type, primary colour. Optional: all other attributes in section 10. Dropdowns use the fixed taxonomy; brand and store accept free text with suggestions. | BR-04, BR-40 | Must |
+| FR-22 | **Manual entry.** A form lets the user create an item that is not in the catalogue. Required: category, sub-type, primary colour. Optional: all other attributes in section 10. Dropdowns use the fixed taxonomy; brand and store accept free text with suggestions. Colour uses the spectrum picker (FR-29). | BR-04, BR-40 | Must |
 | FR-23 | **Photo.** The user takes or uploads a photo. The system removes the background and shows a preview; the user can accept the cut-out or keep the original. The user then completes the attributes, which the system may pre-fill (for example a suggested colour) and the user confirms. | BR-05 | Should |
-| FR-24 | Catalogue items from public storefronts show a category illustration tinted in the item's colour, plus a link to the source page. Source images are not copied or stored by default. | BR-41 | Must |
+| FR-24 | Catalogue items from public storefronts show a category illustration tinted in the item's exact stored colour, plus a link to the source page. Source images are not copied or stored by default. | BR-41 | Must |
 | FR-25 | **Receipt.** See section 7. | BR-06 | Should |
 | FR-26 | **Barcode or catalogue lookup.** The user scans a barcode with the device camera or types it. If it matches a catalogue entry, the item form is pre-filled. If not, the user is offered manual entry with the barcode saved on the item. | BR-07 | Could |
 | FR-27 | Before saving, the system checks for a likely duplicate (same category, sub-type, colour and brand) and asks "You already have something similar. Add anyway?" | BR-02 | Should |
 | FR-28 | Every item records its origin: catalogue, manual, photo, receipt or vendor feed. | BR-40 | Must |
+| FR-29 | **Colour picker.** Primary colour (required) and secondary colour (optional) are chosen on a full colour spectrum: a hue slider with a saturation and lightness area, a hex input, and quick swatches for common colours. For photo items an eyedropper can sample the colour from the cut-out, which starts at the most dominant colour. The chosen value is stored as RGB. | BR-04, BR-40 | Must |
+| FR-29a | The system derives a **colour family** from every stored colour (section 13) and shows its name next to the swatch (for example "Navy"). The user can see it but not edit it. | BR-40 | Must |
 
 ## 6. Purchases and wishlist
 
@@ -154,7 +156,7 @@ All figures use only users covered by the pilot notice, only items that are acti
 
 | ID | View | What it shows | Traces to |
 | --- | --- | --- | --- |
-| FR-72 | Ownership mix | Share of users owning at least one item in each category, colour, fit and brand. Bar charts with a segment selector. | BR-30 |
+| FR-72 | Ownership mix | Share of users owning at least one item in each category, colour family, fit and brand. Bar charts with a segment selector. | BR-30 |
 | FR-73 | Purchase trend | Number of purchases over time (monthly, and weekly once there is enough data), by category and brand. | BR-30 |
 | FR-74 | Wishlist trend | Number of users adding wishlist items over time, by category and brand. | BR-30 |
 | FR-75 | Gaps | Segments where wishlist demand is high and ownership is low, ranked by gap score (FR-81), with the contributing user counts. | BR-31 |
@@ -179,7 +181,7 @@ All figures use only users covered by the pilot notice, only items that are acti
 
 ### 10.5 Product feed template (draft)
 
-`sku, name, brand, category, sub_type, primary_colour, secondary_colour, fit, material, pattern, sizes_available, price, currency, season, occasion_tags, product_url, image_url`
+`sku, name, brand, category, sub_type, primary_colour (hex or colour name), secondary_colour (hex or colour name), fit, material, pattern, sizes_available, price, currency, season, occasion_tags, product_url, image_url`
 
 Required: `sku, name, brand, category, sub_type, primary_colour, price, currency, product_url`.
 
@@ -189,11 +191,12 @@ Required: `sku, name, brand, category, sub_type, primary_colour, price, currency
 | --- | --- | --- |
 | FR-80 | A segment (a combination of category, colour, fit, brand, size and so on) is shown only if at least 10 contributing users are in it. Otherwise it is suppressed. | BR-26 |
 | FR-81 | **Gap score** for a segment = wishlist users divided by owning users, where each is the number of distinct contributing users with at least one active item in that segment. If there are no owning users the score is shown as "no ownership" and the segment still needs 10 wishlist users. | BR-31 |
-| FR-82 | Counts are rounded to the nearest 5 before display, and totals are computed from the unrounded values. Differences between filtered views that could reveal a small group are suppressed. | BR-26 |
-| FR-83 | Aggregates are computed by a scheduled job on an anonymised copy of the data that contains no names, emails, images, receipts or free-text notes. The job runs daily during the pilot. | BR-25, BR-27 |
+| FR-82 | Counts are rounded to the nearest 5 before display (confirmed by the product owner), and totals are computed from the unrounded values. Differences between filtered views that could reveal a small group are suppressed. | BR-26 |
+| FR-83 | Aggregates are computed by a scheduled job on an anonymised copy of the data that contains no names, emails, images, receipts or free-text notes. The job runs nightly during the pilot (confirmed by the product owner). | BR-25, BR-27 |
 | FR-84 | Condition is aggregated as band shares only, and wear logs are excluded. | BR-14, BR-15 |
 | FR-85 | Region is derived from the user's country or hemisphere setting and shown only at a level where FR-80 holds. | BR-34 |
 | FR-86 | Every aggregate run records the date, the number of users and items included, and the number of suppressed segments, for audit. | BR-44 |
+| FR-87 | Vendor views and segments use the colour family, never the raw RGB value, so that near-identical shades fall into one segment. | BR-26, BR-40 |
 
 ## 12. Seed catalogue management (admin)
 
@@ -209,10 +212,11 @@ Required: `sku, name, brand, category, sub_type, primary_colour, price, currency
 
 | Attribute | Type | Required | Values (draft) |
 | --- | --- | --- | --- |
-| Category | Single choice | Yes | Tops, Bottoms, Outerwear, Footwear, Accessories, Underwear and socks, Activewear, Ethnic and occasion wear |
-| Sub-type | Single choice (depends on category) | Yes | e.g. Tops: T-shirt, Shirt, Polo, Sweater, Hoodie; Bottoms: Jeans, Chinos, Trousers, Shorts, Joggers; Outerwear: Jacket, Blazer, Coat; Footwear: Sneakers, Formal shoes, Boots, Sandals; Accessories: Watch, Belt, Cap, Scarf, Bag |
-| Primary colour | Single choice | Yes | Black, White, Grey, Navy, Blue, Green, Red, Brown, Beige, Olive, Yellow, Orange, Pink, Purple, Multi |
-| Secondary colour | Single choice | No | Same list |
+| Category | Single choice | Yes | Tops, Bottoms, Outerwear, Footwear, Accessories, Underwear and socks, Activewear, Ethnic wear, Occasion wear |
+| Sub-type | Single choice (depends on category) | Yes | e.g. Tops: T-shirt, Shirt, Polo, Sweater, Cardigan, Hoodie; Bottoms: Jeans, Chinos, Trousers, Shorts, Joggers; Outerwear: Jacket, Blazer, Coat; Footwear: Sneakers, Formal shoes, Boots, Sandals; Accessories: Watch, Belt, Tie, Cap, Scarf, Bag; Ethnic wear: Kurta, Sherwani, Nehru jacket, Pyjama, Dhoti; Occasion wear: Suit, Tuxedo, Waistcoat |
+| Primary colour | RGB value from the spectrum picker (stored as red, green, blue 0-255, plus a hex string) | Yes | Any colour. A colour family is derived from it (below). "Multi" is a separate flag for multicoloured items with no single main colour. |
+| Secondary colour | RGB value | No | Same as primary colour |
+| Colour family | System-derived, single choice | Yes (derived) | Black, White, Grey, Navy, Blue, Teal, Green, Olive, Khaki, Beige, Brown, Maroon, Red, Orange, Yellow, Pink, Purple, Multi. Derived by nearest match of the stored colour to a reference swatch for each family, measured in a perceptual colour space (CIELAB). Used for filters, outfit rules and all vendor aggregates. |
 | Fit | Single choice | No | Slim, Regular, Relaxed, Oversized, Tailored |
 | Material | Single choice | No | Cotton, Linen, Wool, Denim, Polyester, Leather, Synthetic blend, Other |
 | Pattern | Single choice | No | Solid, Striped, Checked, Printed, Graphic, Other |
@@ -235,7 +239,7 @@ Rules work on item attributes and never on photos. A suggestion needs at least o
 | --- | --- |
 | R1 Occasion filter | Casual: any tops and bottoms except formal shoes with shorts. Work: shirt or polo, chinos or trousers, closed shoes. Formal: shirt, tailored trousers, formal shoes, blazer if available. Party: dark or statement tops, jeans or trousers, clean sneakers or boots. Sport: activewear only. |
 | R2 Season filter | Items tagged for the current season or all year. Summer: no coats or heavy knits. Winter: add a layer. Season comes from the date and the user's hemisphere. |
-| R3 Colour harmony | At most three main colours. Neutrals (black, white, grey, navy, beige, olive, brown) go with anything. At most one bold colour per outfit. |
+| R3 Colour harmony | At most three main colours. Neutrals (families Black, White, Grey, Navy, Beige, Khaki, Olive, Brown, and any colour with very low saturation) go with anything. A bold colour is one with high saturation. At most one bold colour per outfit. Rules use the stored RGB value (converted to hue, saturation and lightness) as well as the family. |
 | R4 Pattern | At most one bold pattern; solids may be paired with any single pattern. |
 | R5 Layering | Cool seasons: base top plus a mid or outer layer. A layer's colour should not match the top exactly. |
 | R6 Footwear | Match footwear to occasion (R1). Belt and shoe colour should be in the same family when both are present. |
@@ -279,9 +283,9 @@ Technology choices, data model, API design and deployment are in the HLD and LLD
 
 | ID | Item | Owner |
 | --- | --- | --- |
-| FOI-1 | Confirm condition bands (FR-19) and the full taxonomy values (section 13). | Arpan Shah |
-| FOI-2 | Review outfit rules R1 to R8 against real menswear practice. | Arpan Shah |
-| FOI-3 | Confirm that "never worn" (FR-14) as a user-set flag matches what was intended, given that wear counts are not kept. | Product owner |
-| FOI-4 | Confirm that source images are not copied, with catalogue items shown as tinted category illustrations (FR-24). | Product owner |
-| FOI-5 | Decide the aggregate run frequency (daily assumed) and rounding to 5 (FR-82). | Product owner and SA |
+| FOI-1 | Closed. Colours changed to a full spectrum picker with a derived colour family (FR-29, FR-29a, FR-87), which also adds Teal, Khaki and Maroon as families. Cardigan and Tie added; "Ethnic and occasion wear" split into Ethnic wear and Occasion wear. Condition bands confirmed as drafted (60 is the point where an item counts as worn). Sub-types for the two new categories are drafts. | Arpan Shah |
+| FOI-2 | Closed. Outfit rules R1 to R8 accepted as v1. | Arpan Shah |
+| FOI-3 | Closed. "Never worn" is a user-set flag, and a condition rating of 0 is treated the same (FR-14). | Product owner |
+| FOI-4 | Closed. Source images are not copied; catalogue items show tinted category illustrations with a source link (FR-24). | Product owner |
+| FOI-5 | Closed. Nightly refresh, counts rounded to the nearest 5 (FR-82, FR-83). | Product owner |
 | FOI-6 | Choose the first set of storefront sources for the seed catalogue and confirm their terms. | Delivery team |

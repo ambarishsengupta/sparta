@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Document | High-Level Design |
-| Version | 0.4 (draft for SA review; worker self-hosted in Docker) |
+| Version | 1.0 (final, reviewed by the SA) |
 | Date | 2026-10-20 |
 | Author | Business analyst (drafted for the product owner) |
 | Reviewer | C. Prashanth (Solution Architect) |
 | Approver | Ambarish Sengupta (Product Owner) |
 | Traces to | BRD v0.4 (BR-xx), FDD v0.1 (FR-xx, NFR-xx) |
-| Status | Draft. Technology choices were delegated to this document and need SA confirmation. |
+| Status | Final |
 
 ## 1. Purpose and scope
 

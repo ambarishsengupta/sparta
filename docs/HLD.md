@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Document | High-Level Design |
-| Version | 0.1 (draft for SA review) |
+| Version | 0.2 (draft for SA review) |
 | Date | 2026-10-20 |
 | Author | Business analyst (drafted for the product owner) |
 | Reviewer | C. Prashanth (Solution Architect) |
@@ -128,7 +128,7 @@ flowchart TD
 
 *Figure 3. Aggregation flow.*
 
-- A nightly `pg_cron` job builds an anonymised fact table: one row per owned, wishlisted or purchased item, with attributes (category, colour, fit, brand, size, season, price band, condition band, region) and a salted hash in place of the user ID. No names, emails, images, receipts, notes or outfit logs enter it.
+- A nightly `pg_cron` job builds an anonymised fact table: one row per owned, wishlisted or purchased item, with attributes (category, colour family, fit, brand, size, season, price band, condition band, region) and a salted hash in place of the user ID. No names, emails, images, receipts, notes or outfit logs enter it.
 - The job computes segment counts by distinct hashed user, drops segments below 10, rounds counts to the nearest 5, and writes the results to aggregate tables.
 - Vendors have no access to any table. They can only call database functions that read the aggregate tables. Vendor sessions are blocked from the `app` and `analytics_private` schemas by privileges, not only by policy.
 - The salt rotates every run, so the hashes cannot be joined across runs.
@@ -181,7 +181,9 @@ erDiagram
 
 ### 6.3 Shared taxonomy
 
-The taxonomy (categories, sub-types, colours, fits, materials, patterns, seasons, occasions, condition bands) lives in one versioned JSON file in the repository. It is loaded into database lookup tables, and used by the web app forms, the worker, the collector and the feed validator, so that every source speaks the same vocabulary (BR-40).
+The taxonomy (categories, sub-types, colour families, fits, materials, patterns, seasons, occasions, condition bands) lives in one versioned JSON file in the repository. It is loaded into database lookup tables, and used by the web app forms, the worker, the collector and the feed validator, so that every source speaks the same vocabulary (BR-40).
+
+**Colour.** Users pick any colour on a spectrum, and the item stores it as RGB (`colour_r`, `colour_g`, `colour_b`, plus a hex string). A database function derives `colour_family` by finding the nearest reference swatch in CIELAB space, and a trigger refreshes it whenever the colour changes. The same function runs in the collector and the feed validator for source colour names or hex codes. Filters, outfit rules and every vendor aggregate use the family; the exact RGB value is used only for display, tinting illustrations, similar-colour search and the hue, saturation and lightness checks in the outfit rules. Alpha is not stored, because fabric colours are opaque.
 
 ### 6.4 Storage budget
 

@@ -3,12 +3,12 @@
 | Field | Value |
 | --- | --- |
 | Document | Low-Level Design |
-| Version | 1.0 (final, reviewed by the SA) |
+| Version | 1.1 (final; amended after the legal and privacy review) |
 | Date | 2026-10-20 |
 | Author | Business analyst (drafted for the product owner) |
 | Reviewer | C. Prashanth (Solution Architect) |
 | Approver | Ambarish Sengupta (Product Owner) |
-| Traces to | BRD v0.5, FDD v1.1, HLD v1.0 |
+| Traces to | BRD v1.1, FDD v1.2, HLD v1.1; legal pack in `legal` |
 | Status | Final |
 
 ## 1. Purpose and how to read this document
@@ -329,6 +329,44 @@ create table catalog.catalog_items (
 
 Removing a source (`delete from catalog.sources`) removes all its items in one action (FR-103).
 
+### 4.9 Invitations, supported countries and acceptances
+
+These tables implement the legal controls from the legal and privacy review (`legal/LEGAL-REVIEW.md`).
+
+```sql
+create table ops.invitations (
+  email text primary key check (email = lower(email)),
+  invited_at timestamptz not null default now(),
+  accepted_at timestamptz,
+  note text
+);
+
+-- ops.settings keys added: current_terms_version, current_privacy_version,
+-- supported_countries (comma-separated ISO codes, initially 'IN')
+
+create table app.document_acceptances (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references app.profiles(id) on delete cascade,
+  document text not null check (document in ('terms','privacy_policy')),
+  version text not null,
+  accepted_at timestamptz not null default now(),
+  unique (user_id, document, version)
+);
+
+create table catalog.vendor_agreement_acceptances (
+  vendor_id uuid not null references catalog.vendors(id) on delete cascade,
+  user_id uuid not null references app.profiles(id) on delete cascade,
+  version text not null,
+  accepted_at timestamptz not null default now(),
+  primary key (vendor_id, user_id, version)
+);
+```
+
+- **Invitation-only sign-up (FR-8).** `app.handle_new_user()` (section 4.5) raises the exception `not_invited` unless `lower(new.email)` is in `ops.invitations`, and then sets `accepted_at`. Because it is a trigger on `auth.users`, it blocks both email sign-up and Google sign-in for uninvited addresses. Vendor and admin invitations created through the server route are added to the list automatically. The admin manages the list through `/api/admin/invitations` (section 6).
+- **Onboarding (FR-9).** The RPC `app.complete_onboarding(country, hemisphere, currency, age_confirmed)` stores the profile fields and raises `unsupported_country` if the country is not in `supported_countries`.
+- **Eligibility.** `app.has_consent()` (section 4.5) is extended to require, for the current user: the pilot notice accepted at the current version; the Terms and Privacy Policy accepted at their current versions (`app.document_acceptances`); `age_confirmed`; and a `profiles.country` in `supported_countries`. The function name is kept so existing policies still apply; its meaning is "eligible participant". A user who fails it can read only their own profile, consent records and acceptances, and can still use the export and delete routes, which run on the server. The aggregation job's eligibility test (section 5.1, step 3) uses the same function.
+- **Vendor agreement (FR-94).** A vendor member inserts a row into `catalog.vendor_agreement_acceptances` through an RLS policy limited to their own vendor and user. The vendor functions in section 5.4 refuse the call unless the caller has accepted the current agreement version (`ops.settings.current_vendor_agreement_version`).
+
 ## 5. Aggregation and vendor functions
 
 ### 5.1 Run: `analytics.run_aggregation()`
@@ -371,7 +409,7 @@ group by kind, period, grouping sets (<generated list>);
 
 ### 5.4 Vendor functions
 
-All are `security definer`, in schema `analytics`, with `search_path` fixed, executable only by `authenticated`, and begin with `if app.current_role() <> 'vendor' then raise exception 'forbidden'; end if;`. Each has a hard-coded whitelist of dimension and filter names; the values are passed as parameters and never interpolated into SQL.
+All are `security definer`, in schema `analytics`, with `search_path` fixed, executable only by `authenticated`, and begin with `if app.current_role() <> 'vendor' then raise exception 'forbidden'; end if;`. Each has a hard-coded whitelist of dimension and filter names; the values are passed as parameters and never interpolated into SQL. After the role check each function also verifies that the vendor user has accepted the current Vendor Pilot Agreement version, then calls `analytics.log_and_limit` (section 5.7).
 
 | Function | Returns | Used by |
 | --- | --- | --- |
@@ -397,6 +435,30 @@ A report is a stored snapshot: `ops.reports (id, period, generated_at, reviewed_
 
 Deleted users disappear from `app` by cascade, so the next nightly rebuild excludes them. Facts are rebuilt from scratch each run, so no earlier run's data is retained in `analytics_private`. The published cube is replaced each run; only the audit row is kept (FR-64, FR-86).
 
+### 5.7 Vendor query log and rate limit
+
+```sql
+create table ops.vendor_query_log (
+  id bigint generated always as identity primary key,
+  user_id uuid not null,
+  fn text not null,
+  params jsonb,
+  called_at timestamptz not null default now()
+);
+
+create function analytics.log_and_limit(p_fn text, p_params jsonb) returns void
+language plpgsql security definer set search_path = analytics, ops as $$
+begin
+  if (select count(*) from ops.vendor_query_log
+      where user_id = (select auth.uid()) and called_at > now() - interval '1 hour') >= 200 then
+    raise exception 'rate_limited';
+  end if;
+  insert into ops.vendor_query_log (user_id, fn, params) values ((select auth.uid()), p_fn, p_params);
+end $$;
+```
+
+Every function in section 5.4 calls `analytics.log_and_limit` straight after its role and agreement checks (FR-88). Refused calls are rolled back with the transaction, so the log shows the 200 calls that preceded them. The admin console lists the log by vendor and function. Parameters never contain participant data, only dimension names and filter values. The log is deleted when the pilot ends.
+
 ## 6. Server routes (Next.js route handlers)
 
 Routes that need a secret use the service role key, which exists only in Vercel's server environment. Every route first verifies the caller's session and role.
@@ -407,6 +469,7 @@ Routes that need a secret use the service role key, which exists only in Vercel'
 | `/api/account/export` | POST | Consumer | Inserts a `jobs` row of type `export`. |
 | `/api/exports/[id]` | GET | Consumer | Returns a short-lived signed URL for the user's own export. |
 | `/api/admin/vendors/invite` | POST | Admin | Creates the vendor row and the invited auth user with role `vendor`, adds the membership, sends the invitation. |
+| `/api/admin/invitations` | POST, DELETE | Admin | Adds or removes emails on the invitation list (`ops.invitations`), one at a time or from a pasted list. |
 | `/api/vendor/feed/validate` | POST | Vendor | Parses a CSV or JSON upload and validates each row (section 8.2); returns row errors and a preview; stores the validated rows in a temporary table keyed by an upload ID. |
 | `/api/vendor/feed/publish` | POST | Vendor | Upserts the validated rows as `catalog.catalog_items` owned by the vendor; supports withdraw. |
 | `/api/admin/reports/generate` | POST | Admin | Builds a report snapshot. |
@@ -490,7 +553,9 @@ The worker polls every 3 seconds when idle, and immediately again after finishin
 | Catalogue match | `pg_trgm` similarity of the description to `catalog_items.name` and brand; return the top three with scores above 0.4. |
 
 5. Write `result` as JSON: `{ store, date, currency, lines: [{ text, qty, amount, guess: {category, sub_type}, matches: [...], confidence, skip }], overall_confidence }`. If no lines were found, set status `failed` with `last_error = 'no_lines'` so the app shows the manual entry fallback (FR-45).
-6. Delete temporary files. The OCR text itself is stored only in the job result, which is deleted with the user's account and cleared after 30 days by a `pg_cron` job.
+6. Delete temporary files. The raw text from the scan is kept only in memory and is never stored. The job result (the draft lines) is cleared after **7 days** by a `pg_cron` job.
+
+**Redaction (FR-47).** Before the result is written the worker masks the following in every line and in the store name: card-like numbers (13 to 19 digits, with spaces or dashes, replaced by `[card]`); email addresses (`[email]`); phone numbers (`[phone]`); and numbers that follow words such as member, loyalty, rewards, account or customer (`[id]`). Lines that look like street addresses or postcodes are dropped. Only the store name, date, currency and item lines are kept. Redaction runs before catalogue matching, so masked text is never compared against the database.
 
 ### 7.5 Export handler
 
@@ -541,6 +606,8 @@ Errors are returned per row and column. Nothing is written until the vendor conf
 The pilot notice page writes the consent record through the browser client (the insert is allowed by its policy) and records the notice version from a constant shipped with the app and equal to `ops.settings.current_notice_version`. If they differ, the insert is rejected by a check in the policy, and the app shows an error asking the user to reload.
 
 These checks only guide the interface. The database policies in 4.5 are the actual enforcement.
+
+**Further gating (FR-8, FR-9, FR-66, FR-67).** After the consent check, `middleware.ts` checks that `profiles.country` is on the supported list and `age_confirmed` is true; users who fail are sent to `/not-available`, which offers only export and Leave the pilot. The About page (`/about`), the Privacy Policy, the Terms of Use and the pilot notice are public pages. Settings has a **Leave the pilot** button that calls `/api/account/delete`; `/about` shows the value of `CONTACT_EMAIL`.
 
 ### 9.2 Data layer
 
@@ -616,6 +683,9 @@ A small `track(event, props)` function inserts into `app.analytics_events` (RLS:
 | Uploads | Size and content-type limits at the bucket; content sniffing in the worker; images are re-encoded (so any payload in the original is discarded). |
 | Input handling | zod validation on every form and route body; parameterised queries only; vendor functions whitelist dimension names. |
 | Rate limiting | Per-user limits on job creation (20 per hour), exports (3 per day) and feed uploads (10 per day), enforced in the insert policies and routes. |
+| Invitation and region control | `app.handle_new_user()` refuses sign-ups for emails not in `ops.invitations`; `app.complete_onboarding` refuses countries not in `supported_countries`; `app.has_consent()` includes both, so an ineligible account reads no data (4.9). |
+| Vendor probing | Every vendor function logs the call and refuses beyond 200 calls an hour (5.7); the admin console shows the log. |
+| Receipt privacy | Masking and no stored raw text (7.4); draft results deleted after 7 days. |
 | Passwords and sessions | Supabase Auth defaults; minimum length 10; email verification required; sessions in HTTP-only cookies. |
 | Logs | Server logs contain IDs and error codes only; no emails, receipts, notes or OCR text. |
 | Backups | Encrypted with `age`; contain personal data and are treated as such (section 13). |
@@ -669,6 +739,8 @@ There is no staging environment; migrations are exercised on a fresh local datab
 | `COLLECTOR_DATABASE_URL`, `FX_DATABASE_URL` | GitHub secrets | Limited roles |
 | `EMAIL_API_KEY` | Vercel server | Transactional email |
 | `NOTICE_VERSION` | Web build | Must equal `ops.settings.current_notice_version` |
+| `TERMS_VERSION`, `PRIVACY_VERSION` | Web build | Must equal `ops.settings.current_terms_version` and `current_privacy_version` |
+| `CONTACT_EMAIL` | Web (public) | The privacy contact address shown on the About page and in emails. Required before the pilot opens (FR-67). |
 | `.env.example` | Repository | Names only, no values |
 
 ## 13. Operations
@@ -700,11 +772,12 @@ A weekly job on the worker host runs `pg_dump` through the Supabase CLI, encrypt
 | Data | Retention |
 | --- | --- |
 | User data | Until the user deletes it or the pilot ends and the team deletes it per the notice |
-| Job results and OCR text | 30 days |
+| Receipt-reading results (job results) | 7 days; raw scan text is never stored |
 | Exports | 7 days |
 | Aggregate cube | Latest run only; audit rows kept for the pilot |
 | Backups | 30 days |
 | Analytics events | Pilot period, pseudonymous |
+| Vendor query log | The pilot period |
 
 ## 14. Build order
 
@@ -717,7 +790,7 @@ Aligned with the BRD timeline.
 | M3 Images and receipts | 4-5 | Job table and claim, worker container, photo handler, receipt handler and draft UI, heartbeat. |
 | M4 Outfits | 5-6 | Rule engine and tests, builder, suggestions, calendar, optional log. |
 | M5 Vendor side | 5-6 | Aggregation run, cube, suppression, vendor functions and tests, dashboard, gaps, condition spectrum, report, vendor invite, feed validation and publish. |
-| M6 Hardening and pilot open | 6 | End-to-end and accessibility passes, restore rehearsal, load check at 500 users, privacy review of the notice wording (BRD OI-2). |
+| M6 Hardening and pilot open | 6 | End-to-end and accessibility passes, restore rehearsal, load check at 500 users, a walkthrough of the legal pack with the final contact address, supported countries and invitation list in place, and an incident-plan practice run (`legal`). |
 | Pilot | 7-12 | Operate, fix, measure, vendor review. |
 
 Aggregation (M5) depends on enough test data from the earlier milestones; synthetic data generated by the seed scripts is used for tests only and is never loaded into production.
@@ -752,6 +825,7 @@ For the SA to confirm.
 | LD-4 | HLD 5.4: aggregates in tables with k and rounding. | A cube restricted to a fixed set of grouping sets with one filter at most, plus complementary suppression. | Limits differencing attacks while keeping the dashboard flexible. |
 | LD-5 | HLD 8: weekly backup to a private storage location. | Encrypted backups on the worker host and one other private location; never as workflow artifacts. | Artifacts in a public repository are downloadable. |
 | LD-6 | HLD 4: outfit logic in the web app. | Kept, as a separate package with data-driven rules. | Lets the style specialist edit rules without code changes. |
+| LD-7 | New: legal controls (invitation-only sign-up through an auth trigger, country allow-list, acceptance records, receipt redaction, vendor query log and agreement acceptance). | Added in sections 4.9, 5.7, 7.4, 9.1 and 10 after the legal and privacy review (`legal/LEGAL-REVIEW.md`). | Needed for the pilot's risk position. |
 
 ## 17. Open items
 
@@ -764,3 +838,4 @@ For the SA to confirm.
 | LOI-5 | Choose the transactional email provider and verify its free quota. | Delivery team |
 | LOI-6 | Confirm the service worker library and offline write scope (9.3) after a first prototype. | C. Prashanth |
 | LOI-7 | Decide who holds the backup private key and where the second backup copy lives. | Product owner |
+| LOI-8 | Test that blocking sign-up in the `auth.users` trigger works for both email and Google sign-in on the dev project, and that the app shows a clear message. | C. Prashanth |

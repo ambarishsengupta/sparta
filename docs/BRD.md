@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Document | Business Requirements Document |
-| Version | 0.3 (draft for Product Owner review) |
+| Version | 0.4 (draft for Product Owner review) |
 | Date | 2026-10-20 |
 | Product owner | Ambarish Sengupta |
 | Status | Draft, not yet approved |
@@ -86,7 +86,7 @@ Priority uses MoSCoW: Must, Should, Could. Every requirement is testable in the 
 | ID | Requirement | Priority |
 | --- | --- | --- |
 | BR-01 | Users can sign up and sign in with email or Google/Apple, and declare they are 18 or over. | Must |
-| BR-02 | Users can see and organise their whole wardrobe (browse, filter, group, edit, remove). | Must |
+| BR-02 | Users can see and organise their whole wardrobe: browse, filter and sort by any attribute, custom tags and collections, favourites, a user-set "never worn" flag, and archive status (sold or donated). | Must |
 | BR-03 | Users can add items from a seed catalogue of popular items, so a new user is not facing an empty wardrobe. | Must |
 | BR-04 | Users can add items that are not in the catalogue by manual entry. | Must |
 | BR-05 | Users can add an item by photo upload, with automatic background removal. | Should |
@@ -98,6 +98,8 @@ Priority uses MoSCoW: Must, Should, Could. Every requirement is testable in the 
 | BR-11 | Users receive outfit suggestions from a small rule set based on season, occasion, colour and layering. | Should |
 | BR-12 | Prices display in the original currency, with display conversion where available. | Should |
 | BR-13 | The app is usable on a phone browser and installable as a PWA. | Must |
+| BR-14 | Users can rate each item's condition themselves on a 0 to 100 scale (0 = brand new, 100 = falling apart). Vendors see condition as a spectrum of bands, not raw scores. | Should |
+| BR-15 | Logging "what I wore today" is available but completely optional. The app never prompts, reminds or rewards it, and no wear counts are kept or aggregated, because a log is not a reliable measure of wear. | Could |
 
 ### 7.2 Privacy and consent
 
@@ -118,8 +120,9 @@ The pilot and the shipped product use different consent settings. The pilot need
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| BR-30 | A vendor can sign in to a read-only aggregate dashboard showing owned, purchased and wishlisted trends by category, colour, fit, size and brand. | Must |
-| BR-31 | A vendor can receive a gap and demand insights report (under-served segments). A monthly report is acceptable for the pilot. | Must |
+| BR-30 | A vendor can sign in to a read-only aggregate dashboard showing the ownership mix by category, colour, fit and brand, plus purchase and wishlist trends over time. | Must |
+| BR-31 | A vendor can see gaps (segments with high wishlist demand and low ownership) and receive a gap and demand insights report. A monthly report is acceptable for the pilot. | Must |
+| BR-34 | Vendor views can be filtered by size, season, price band and region, where group sizes allow. | Should |
 | BR-32 | A vendor can upload a product feed so their items appear in the catalogue. | Should |
 | BR-33 | Vendor data views respect the minimum group size and use only data from users covered by BR-20 or BR-23. | Must |
 

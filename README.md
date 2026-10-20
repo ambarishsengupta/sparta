@@ -40,7 +40,7 @@ Vendor insights depend on trust, so privacy rules are built into the design and 
 5. **Minimal data.** Only the fields the app needs are collected. Images and receipts are never part of any shared dataset.
 6. **Seed catalogue data.** Product attributes only, from sources that allow collection (checked against `robots.txt` and terms), collected politely and with links back to the source. Product images are not copied.
 
-The pilot is invitation-only, adults only, and limited to supported countries. The privacy and legal documents in [`docs/legal`](docs/legal) were drafted without a lawyer for this academic proof of concept; they are not legal advice, and a professional review is required before any public or commercial launch.
+The pilot is invitation-only, adults only, and limited to supported countries. The privacy and legal documents in [`legal`](legal) were drafted without a lawyer for this academic proof of concept; they are not legal advice, and a professional review is required before any public or commercial launch.
 
 ## How it is built
 
@@ -69,7 +69,7 @@ Full detail is in the design documents below.
 | [Functional Design (FDD)](docs/FDD.md) | What the system does, screen by screen and rule by rule |
 | [High-Level Design (HLD)](docs/HLD.md) | Architecture, components, security, deployment |
 | [Low-Level Design (LLD)](docs/LLD.md) | Tables, policies, functions, worker, API routes, tests, operations |
-| [Legal and privacy pack](docs/legal/README.md) | Privacy policy, terms of use, vendor pilot agreement, incident plan, privacy risk assessment, data sourcing policy and review log (pilot drafts, not legal advice) |
+| [Legal and privacy pack](legal/README.md) | Privacy policy, terms of use, vendor pilot agreement, incident plan, privacy risk assessment, data sourcing policy and review log (pilot drafts, not legal advice) |
 | [ANCP D1 project charter](docs/ANCP_TM_D1_v1.pdf) | The course charter that frames this project (Group M) |
 
 ## Out of scope for the pilot

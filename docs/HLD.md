@@ -8,7 +8,7 @@
 | Author | Business analyst (drafted for the product owner) |
 | Reviewer | C. Prashanth (Solution Architect) |
 | Approver | Ambarish Sengupta (Product Owner) |
-| Traces to | BRD v1.1 (BR-xx), FDD v1.2 (FR-xx, NFR-xx); legal pack in `docs/legal` |
+| Traces to | BRD v1.1 (BR-xx), FDD v1.2 (FR-xx, NFR-xx); legal pack in `legal` |
 | Status | Final |
 
 ## 1. Purpose and scope

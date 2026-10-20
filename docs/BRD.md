@@ -7,7 +7,7 @@
 | Date | 2026-10-20 |
 | Product owner | Ambarish Sengupta |
 | Status | Final |
-| Related documents | FDD, HLD, LLD; legal pack in `docs/legal`; ANCP D1 project charter (`docs/ANCP_TM_D1_v1.pdf`) |
+| Related documents | FDD, HLD, LLD; legal pack in `legal`; ANCP D1 project charter (`docs/ANCP_TM_D1_v1.pdf`) |
 
 ## 1. Purpose
 
@@ -42,7 +42,7 @@ This creates a chicken-and-egg problem. Users need a catalogue to get started. V
 - Outfit builder and a small rule-based menswear recommendation set (season, occasion, colour and layering).
 - Purchase history with receipts, wishlist and outfit/purchase planning.
 - Invitation-only sign-up (email or Google sign-in; Apple sign-in after the pilot) for adults in the supported countries (initially India), acceptance of the Terms of Use and Privacy Policy, a first-login pilot notice that users must accept to join the study, a **Leave the pilot** button, data export and deletion.
-- The pilot legal pack in `docs/legal`: privacy policy, terms of use, vendor pilot agreement, incident response plan, privacy risk assessment and data sourcing policy.
+- The pilot legal pack in `legal`: privacy policy, terms of use, vendor pilot agreement, incident response plan, privacy risk assessment and data sourcing policy.
 - Vendor portal: read-only aggregate dashboard, gap and demand insights report, product feed upload.
 - Open-source release of the codebase under GPL-3.0.
 
@@ -110,7 +110,7 @@ The pilot and the shipped product use different consent settings. The pilot need
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| BR-20 | **Pilot:** on first login each user sees a pop-up explaining that the pilot is a free 3-month study and that anonymised, aggregated data from all participants is shared with vendors. The user must accept it to use the app. The wording follows the Privacy Policy (`docs/legal/PRIVACY-POLICY.md`). | Must |
+| BR-20 | **Pilot:** on first login each user sees a pop-up explaining that the pilot is a free 3-month study and that anonymised, aggregated data from all participants is shared with vendors. The user must accept it to use the app. The wording follows the Privacy Policy (`legal/PRIVACY-POLICY.md`). | Must |
 | BR-21 | **Pilot:** the pop-up and the Privacy Policy state plainly who runs the pilot, what is collected, what vendors can and cannot see, how long data is kept, that no data is used to train AI models, the pilot length (3 months) and how to leave. The acceptance is recorded with a timestamp and the notice version. | Must |
 | BR-22 | **Pilot:** the sharing setting is visible in settings but greyed out and locked on, with an info tooltip explaining that the pilot is a study that needs anonymised data from its participants and that the shipped product will let users disable sharing. A prominent **Leave the pilot** button deletes the user's account and data at any time, with no reason needed and no penalty. | Must |
 | BR-23 | **Shipped product:** users can disable sharing of anonymised data in settings. The default state (on or off) is decided before launch; see open item OI-1. | Must |
@@ -129,7 +129,7 @@ The pilot and the shipped product use different consent settings. The pilot need
 | BR-31 | A vendor can see gaps (segments with high wishlist demand and low ownership) and receive a gap and demand insights report. A monthly report is acceptable for the pilot. | Must |
 | BR-34 | Vendor views can be filtered by size, season, price band and region, where group sizes allow. | Should |
 | BR-35 | Vendor queries are logged and rate limited, to detect and prevent attempts to single out a participant. | Must |
-| BR-36 | A vendor must accept the Vendor Pilot Agreement (`docs/legal/VENDOR-PILOT-AGREEMENT.md`) before first use. Acceptance is recorded. | Must |
+| BR-36 | A vendor must accept the Vendor Pilot Agreement (`legal/VENDOR-PILOT-AGREEMENT.md`) before first use. Acceptance is recorded. | Must |
 | BR-32 | A vendor can upload a product feed so their items appear in the catalogue. | Should |
 | BR-33 | Vendor data views respect the minimum group size and use only data from users covered by BR-20 or BR-23. | Must |
 
@@ -151,7 +151,7 @@ The pilot and the shipped product use different consent settings. The pilot need
 - **Scale:** about 100 pilot users, which is a good outcome and not a hard limit. Hosting must handle growth beyond that without redesign.
 - **Platform:** web first (PWA). Native apps come after the pilot.
 - **Audience:** men only, adults only, English only.
-- **Legal expertise:** the team has no legal expert. The pilot is therefore invitation-only, adults only and limited to supported countries, and uses the legal pack in `docs/legal`. A professional review is out of scope for the pilot and required before any public, commercial or wider launch.
+- **Legal expertise:** the team has no legal expert. The pilot is therefore invitation-only, adults only and limited to supported countries, and uses the legal pack in `legal`. A professional review is out of scope for the pilot and required before any public, commercial or wider launch.
 - **Technology decisions** (backend, hosting split, OCR and image tooling) are delegated by the product owner to the architecture documents, which C. Prashanth (SA) will review.
 
 ## 9. Data sourcing and legal position
@@ -165,8 +165,8 @@ The pilot and the shipped product use different consent settings. The pilot need
   - Store product attributes and a link back to the source. Do not copy or redistribute product images by default.
   - Remove a source's data quickly if the source asks.
 - A pilot that is open to the public and offers vendor insights could be read as commercial use. The SA or a legal adviser should confirm the position before any paid vendor tier. This is noted as risk RK-3.
-- The team has drafted a legal pack (privacy policy, terms, vendor agreement, incident plan, privacy risk assessment, data sourcing policy) in `docs/legal`. It was written with AI assistance and has not been reviewed by a lawyer; `docs/legal/LEGAL-REVIEW.md` records each finding and how it was handled.
-- Collection follows `docs/legal/DATA-SOURCING-POLICY.md`: ask first where possible, attributes only, `robots.txt`, rate limits, a source register and a 2-working-day takedown.
+- The team has drafted a legal pack (privacy policy, terms, vendor agreement, incident plan, privacy risk assessment, data sourcing policy) in `legal`. It was written with AI assistance and has not been reviewed by a lawyer; `legal/LEGAL-REVIEW.md` records each finding and how it was handled.
+- Collection follows `legal/DATA-SOURCING-POLICY.md`: ask first where possible, attributes only, `robots.txt`, rate limits, a source register and a 2-working-day takedown.
 
 ## 10. Assumptions and dependencies
 
@@ -209,7 +209,7 @@ Dates will be fixed in the delivery plan, aligned with the ANCP deadlines.
 | RK-1 | Not enough users or vendors in 3 months. | Recruit early; keep onboarding to a few minutes; the seed catalogue means users can start at once. |
 | RK-2 | Users find manual entry too much effort. | Seed catalogue, photo and receipt entry, and quick add from the catalogue. |
 | RK-3 | Scraping or commercial-use concerns. | Follow the rules in section 9; confirm with an adviser before any paid tier. |
-| RK-4 | Privacy or consent failure with real users. Making acceptance a condition of the pilot weakens the claim that consent is freely given. | The pilot is framed as a study; clear notice with recorded acceptance; **Leave the pilot** deletes everything; adults and invited users only; minimal data; aggregation only; no personal data in the repository; privacy risk assessment (`docs/legal/PRIVACY-RISK-ASSESSMENT.md`). |
+| RK-4 | Privacy or consent failure with real users. Making acceptance a condition of the pilot weakens the claim that consent is freely given. | The pilot is framed as a study; clear notice with recorded acceptance; **Leave the pilot** deletes everything; adults and invited users only; minimal data; aggregation only; no personal data in the repository; privacy risk assessment (`legal/PRIVACY-RISK-ASSESSMENT.md`). |
 | RK-5 | Free tiers or the team's capacity limit the build. | Keep scope fixed to section 4; defer native apps and AI; review the plan weekly. |
 | RK-6 | Small pilot makes aggregates thin. | Minimum group size of 10; report coverage clearly; do not over-claim. |
 | RK-7 | No professional legal review during the pilot. | Invitation-only, adults only, supported countries only; the legal pack and review log; incident plan; a professional review is required before any public or commercial launch (OI-3). |

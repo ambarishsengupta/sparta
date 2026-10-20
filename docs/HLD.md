@@ -3,12 +3,12 @@
 | Field | Value |
 | --- | --- |
 | Document | High-Level Design |
-| Version | 1.0 (final, reviewed by the SA) |
+| Version | 1.1 (final; amended after the legal and privacy review) |
 | Date | 2026-10-20 |
 | Author | Business analyst (drafted for the product owner) |
 | Reviewer | C. Prashanth (Solution Architect) |
 | Approver | Ambarish Sengupta (Product Owner) |
-| Traces to | BRD v0.4 (BR-xx), FDD v0.1 (FR-xx, NFR-xx) |
+| Traces to | BRD v1.1 (BR-xx), FDD v1.2 (FR-xx, NFR-xx); legal pack in `docs/legal` |
 | Status | Final |
 
 ## 1. Purpose and scope
@@ -112,7 +112,7 @@ Nothing is created in the wardrobe until the user confirms (FR-42). If the worke
 
 ### 5.3 Pilot notice and consent (FR-3 to FR-5)
 
-On login the app reads the user's latest consent record. If none exists for the current notice version, a blocking pop-up is shown. Accepting writes a row (user, notice version, time) to the consent table. Until it exists, RLS policies on all consumer tables deny access, so the rule holds even if the client is changed.
+On login the app reads the user's latest consent record. If none exists for the current notice version, a blocking pop-up is shown. Accepting writes a row (user, notice version, time) to the consent table. Until it exists, RLS policies on all consumer tables deny access, so the rule holds even if the client is changed. The same check also requires acceptance of the current Terms and Privacy Policy, a confirmed age and a country on the supported list (LLD 4.9).
 
 ### 5.4 Aggregation and vendor views (FR-72 to FR-86)
 
@@ -203,6 +203,9 @@ The free Supabase tier includes about 1 GB of file storage and 500 MB of databas
 | Authentication | Supabase Auth with verified email; Google sign-in; strong password rules. |
 | Authorisation | Roles `consumer`, `vendor`, `admin` in the user's token claims. RLS on every table in `app` so users reach only their own rows. |
 | Consent gate | RLS denies consumer access until a consent record exists for the current notice version (section 5.3). |
+| Invitation and region control | Sign-up is refused unless the email is on the invitation list (a database trigger on the auth users table). Onboarding refuses countries not on the supported list. Both are part of the consent check, so an ineligible account can read no data (LLD 4.9). |
+| Vendor probing | Every vendor function logs the call and refuses beyond 200 calls an hour; the admin console shows the log (LLD 5.7). |
+| Receipt privacy | Card numbers, emails, phone and loyalty numbers are masked and address lines dropped; raw scan text is never stored; results are deleted after 7 days (LLD 7.4). |
 | Vendor isolation | Vendor sessions have no privileges on `app` or `analytics_private`. They may execute only the aggregate functions in `analytics`. |
 | Minimum group size | Enforced inside the aggregation job and again inside each vendor function (defence in depth). |
 | Rounding and differencing | Counts rounded to 5; filter combinations that would expose a small group are suppressed (FR-82). |

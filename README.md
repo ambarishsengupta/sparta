@@ -10,7 +10,7 @@ This is an open-source, academic proof of concept. The current phase is a **3-mo
 
 | Audience | What they get |
 | --- | --- |
-| **Consumers** (men, 18 and over, English only for now) | A free digital wardrobe with outfit building, rule-based outfit suggestions, purchase history with receipts, a wishlist and planning. |
+| **Consumers** (men, 18 and over, English only for now) | A free digital wardrobe with outfit building, rule-based outfit suggestions, purchase history with receipts, a wishlist and planning. The pilot is by invitation, in the countries where it is open (initially India). |
 | **Vendors** (brands, manufacturers and retailers) | Aggregate dashboards, gap and demand insights, and product feed upload. Invited by the team, read-only. |
 
 ## Consumer features (pilot)
@@ -33,14 +33,14 @@ This is an open-source, academic proof of concept. The current phase is a **3-mo
 
 Vendor insights depend on trust, so privacy rules are built into the design and enforced in the database.
 
-1. **The pilot needs shared data.** On first login each user sees a notice explaining that anonymised, aggregated information is used to make the pilot work, and must accept it to use the app. The sharing setting is visible but locked on during the pilot, with an explanation. A user can leave at any time by deleting their account, which removes their data from future aggregates.
+1. **The pilot is a study, and sharing is part of taking part.** On first login each user sees a plain-language notice explaining that the pilot is a free 3-month study run by a student team and that anonymised group figures are shared with vendors, and must accept it to use the app. The sharing setting is visible but locked on during the pilot, with an explanation. A **Leave the pilot** button deletes the account and data at any time, with no reason needed. No data is used to train AI models.
 2. **The shipped product will differ.** Users will be able to disable sharing. The default state is still to be decided before any wider launch.
 3. **Aggregated only.** Vendors never see individual users, wardrobes, photos, receipts, notes or purchase records.
 4. **Minimum group size.** A segment is shown only when at least 10 users contribute during the pilot (50 in production). Counts are rounded to the nearest 5, and neighbouring segments are hidden where needed to stop figures being worked out by subtraction.
 5. **Minimal data.** Only the fields the app needs are collected. Images and receipts are never part of any shared dataset.
 6. **Seed catalogue data.** Product attributes only, from sources that allow collection (checked against `robots.txt` and terms), collected politely and with links back to the source. Product images are not copied.
 
-The pilot consent wording is to be reviewed by an adviser before launch.
+The pilot is invitation-only, adults only, and limited to supported countries. The privacy and legal documents in [`docs/legal`](docs/legal) were drafted without a lawyer for this academic proof of concept; they are not legal advice, and a professional review is required before any public or commercial launch.
 
 ## How it is built
 
@@ -69,6 +69,7 @@ Full detail is in the design documents below.
 | [Functional Design (FDD)](docs/FDD.md) | What the system does, screen by screen and rule by rule |
 | [High-Level Design (HLD)](docs/HLD.md) | Architecture, components, security, deployment |
 | [Low-Level Design (LLD)](docs/LLD.md) | Tables, policies, functions, worker, API routes, tests, operations |
+| [Legal and privacy pack](docs/legal/README.md) | Privacy policy, terms of use, vendor pilot agreement, incident plan, privacy risk assessment, data sourcing policy and review log (pilot drafts, not legal advice) |
 | [ANCP D1 project charter](docs/ANCP_TM_D1_v1.pdf) | The course charter that frames this project (Group M) |
 
 ## Out of scope for the pilot

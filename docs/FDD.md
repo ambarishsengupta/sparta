@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Document | Functional Design Document |
-| Version | 1.1 (final; FR-1 amended to drop Apple sign-in for the pilot) |
+| Version | 1.2 (final; amended after the legal and privacy review) |
 | Date | 2026-10-20 |
 | Product owner | Ambarish Sengupta |
 | Taxonomy and outfit rules | Arpan Shah (style specialist) |
@@ -49,11 +49,13 @@ Admin console (internal, minimal): invitations, catalogue sources, aggregation r
 | --- | --- | --- | --- |
 | FR-1 | A user can sign up and sign in with email and password or Google. Apple sign-in is deferred until after the pilot. Email is verified before the first login completes. | BR-01 | Must |
 | FR-2 | At sign-up the user declares they are 18 or over by an explicit tick. Without it, sign-up cannot be completed. | BR-01 | Must |
-| FR-3 | On the first login a blocking pop-up appears: "Sparta is a 3-month pilot. To make it work, anonymised and aggregated information about what you own, buy and wish for is used to build insights for brands and retailers." It states what is collected, that no individual user, photo or receipt is ever shown to vendors, the pilot length, and how to leave. | BR-20, BR-21 | Must |
+| FR-3 | On the first login a blocking pop-up appears with the short notice in the Privacy Policy (`docs/legal/PRIVACY-POLICY.md`, section 13): the pilot is a free 3-month study run by a student team; anonymised, grouped information from all participants is shared with brands and retailers, who never see the participant, photos, receipts or wardrobe and never see a group of fewer than 10 people; sharing is part of taking part and cannot be switched off during the pilot; **Leave the pilot** deletes the account and data at any time; no data is used to train AI models; participants must be 18 or over. The pop-up links to the full Privacy Policy and Terms of Use. | BR-20, BR-21 | Must |
 | FR-4 | The user must tap "I understand and join the pilot" to continue. Closing the pop-up without accepting returns to the sign-in screen. The app cannot be used without accepting. | BR-20 | Must |
-| FR-5 | Acceptance is stored with the user, a timestamp and the notice version. A new notice version triggers the pop-up again at next login. | BR-21 | Must |
+| FR-5 | Acceptance is stored with the user, a timestamp and the notice version. A new notice version, or a new Terms or Privacy Policy version, triggers acceptance again at the next login; a user who declines can only export their data or leave the pilot. | BR-21, BR-28 | Must |
 | FR-6 | After acceptance, a short onboarding asks for hemisphere or country (for season), preferred currency and, optionally, the occasions the user dresses for most. All are editable later. | BR-11, BR-12 | Should |
 | FR-7 | Onboarding offers "start from popular items" (opens the catalogue picker) or "add my own". It can be skipped. | BR-03 | Must |
+| FR-8 | **Invitation only.** Sign-up (email or Google) succeeds only for an email address on the invitation list kept by the admin. Any other address is refused with the message "Sparta is invitation-only during the pilot." | BR-16 | Must |
+| FR-9 | **Supported countries.** Onboarding asks for the user's country. If it is not on the supported list (initially India), the account is blocked from the app with the message "The pilot is not open in your country yet" and the user can delete the account. The list is a setting that admins can change. | BR-16 | Must |
 
 ## 5. Wardrobe
 
@@ -116,6 +118,7 @@ Admin console (internal, minimal): invitations, catalogue sources, aggregation r
 | FR-44 | On confirmation, the system creates the items and their purchase records and attaches the receipt image to them. | BR-06, BR-08 | Should |
 | FR-45 | If extraction fails or is unreadable, the user is told and offered manual entry. | BR-06 | Should |
 | FR-46 | Receipt images and the extracted text are visible only to the user and are never part of any aggregate. | BR-27 | Must |
+| FR-47 | Before draft lines are saved, the system masks anything that looks like a card number, email address, phone number or loyalty or membership number, and drops address lines, keeping only the store name, date, currency and item lines. The raw text from the scan is never stored. Reading results are deleted after 7 days; the receipt image stays until the user deletes it. | BR-29 | Must |
 
 ## 8. Outfits
 
@@ -135,11 +138,14 @@ Admin console (internal, minimal): invitations, catalogue sources, aggregation r
 | ID | Requirement | Traces to | Priority |
 | --- | --- | --- | --- |
 | FR-60 | Settings include profile, hemisphere or country, preferred currency, notifications (email only, transactional), and the pilot sharing setting. | BR-20 | Must |
-| FR-61 | **Pilot sharing setting.** The setting is visible but greyed out and locked on. Tapping the information icon shows a tooltip: "The pilot needs anonymised data from its users to work. The full version of Sparta will let you turn this off." | BR-22 | Must |
+| FR-61 | **Pilot sharing setting.** The setting is visible but greyed out and locked on. Tapping the information icon shows a tooltip: "The pilot is a study that needs anonymised data from its participants to work, so sharing is on for everyone taking part. You can leave any time with Leave the pilot. The full version of Sparta is planned to let you turn this off." | BR-22 | Must |
 | FR-62 | **Export.** The user can request an export of all their data as a downloadable archive (JSON for data, original files for images and receipts). It is ready within 24 hours and delivered in the app and by email. | BR-24 | Must |
 | FR-63 | **Delete account.** The user can delete the account after re-entering their password or re-authenticating. Deletion removes profile, items, images, receipts, outfits and wishlist, and excludes the user from every future aggregate run. Confirmation is shown in the app and by email. | BR-22, BR-24 | Must |
 | FR-64 | Deletion completes within 7 days. Aggregates already published are not recomputed retroactively, but cannot be linked back to the user. | BR-24 | Must |
-| FR-65 | A "How the pilot uses your data" page restates the notice from FR-3 and lists what vendors see. | BR-21 | Must |
+| FR-65 | A "How the pilot uses your data" page restates the notice from FR-3, links the Privacy Policy, and lists what vendors see and how long data is kept. | BR-21 | Must |
+| FR-66 | **Leave the pilot.** Settings has a prominent "Leave the pilot" button. After one confirmation it runs the same deletion as FR-63, with no reason asked, and the confirmation says that data is deleted within 7 days and from backups within 30 days. | BR-22, BR-24 | Must |
+| FR-67 | **About the pilot.** A page shows who runs the pilot, the privacy contact address (a required configuration value), the hosting region, the supported countries, the plan for the end of the pilot, and links to the Privacy Policy, Terms of Use and notice. | BR-21 | Must |
+| FR-68 | At sign-up the user ticks agreement to the Terms of Use and Privacy Policy, separately from the pilot notice. Acceptance is recorded with the version and time. | BR-17 | Must |
 
 ## 10. Vendor portal
 
@@ -178,6 +184,7 @@ All figures use only users covered by the pilot notice, only items that are acti
 | FR-91 | The system validates each row against the taxonomy, shows errors row by row, and lets the vendor fix and re-upload. Nothing is published until the vendor confirms. | BR-32 | Should |
 | FR-92 | Published vendor items appear in the consumer catalogue marked with the vendor name. A vendor can update or withdraw its items. | BR-32 | Should |
 | FR-93 | A vendor sees only its own feed, never another vendor's. | BR-32 | Must |
+| FR-94 | A vendor user must accept the Vendor Pilot Agreement before the portal opens, and again whenever its version changes. Acceptance is recorded with the vendor, user, version and time. | BR-36 | Must |
 
 ### 10.5 Product feed template (draft)
 
@@ -197,6 +204,7 @@ Required: `sku, name, brand, category, sub_type, primary_colour, price, currency
 | FR-85 | Region is derived from the user's country or hemisphere setting and shown only at a level where FR-80 holds. | BR-34 |
 | FR-86 | Every aggregate run records the date, the number of users and items included, and the number of suppressed segments, for audit. | BR-44 |
 | FR-87 | Vendor views and segments use the colour family, never the raw RGB value, so that near-identical shades fall into one segment. | BR-26, BR-40 |
+| FR-88 | Every vendor query is logged (vendor user, function, parameters, time) and a vendor is refused after 200 calls in an hour. Admins can view the log. | BR-35 |
 
 ## 12. Seed catalogue management (admin)
 
@@ -274,6 +282,10 @@ Events carry a pseudonymous user ID and no free text. Examples: `signup_complete
 | FR-42 | Given a receipt is scanned, when the draft appears, then no item or purchase exists until the user confirms. |
 | FR-56, FR-57 | Given a user never logs outfits, then no prompt, reminder or counter appears at any time. Given a user logs outfits, then no vendor view or wear count changes. |
 | FR-93 | Given two vendors have uploaded feeds, when vendor A opens the feed screen, then only A's rows and items are visible. |
+| FR-8, FR-9 | Given an email that is not on the invitation list, when it tries to sign up, then it is refused. Given an invited user declares a country that is not on the supported list, then the app is blocked and only account deletion is offered. |
+| FR-66 | Given a user taps Leave the pilot and confirms, then the account is deleted, no reason is asked, and the user can no longer sign in to it. |
+| FR-47 | Given a receipt shows a card number, an email and a phone number, when the draft appears, then none of them is shown or stored. |
+| FR-88 | Given a vendor makes more than 200 calls in an hour, then further calls are refused until the hour passes, and each call appears in the query log. |
 
 ## 18. Out of scope for this document
 
@@ -289,3 +301,4 @@ Technology choices, data model, API design and deployment are in the HLD and LLD
 | FOI-4 | Closed. Source images are not copied; catalogue items show tinted category illustrations with a source link (FR-24). | Product owner |
 | FOI-5 | Closed. Nightly refresh, counts rounded to the nearest 5 (FR-82, FR-83). | Product owner |
 | FOI-6 | Choose the first set of storefront sources for the seed catalogue and confirm their terms. | Delivery team |
+| FOI-7 | Choose and publish the privacy contact address (FR-67) and decide the Supabase region shown in the app. | Delivery team |

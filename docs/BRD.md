@@ -3,11 +3,11 @@
 | Field | Value |
 | --- | --- |
 | Document | Business Requirements Document |
-| Version | 1.0 (final, approved by the Product Owner) |
+| Version | 1.1 (final; amended after the legal and privacy review) |
 | Date | 2026-10-20 |
 | Product owner | Ambarish Sengupta |
 | Status | Final |
-| Related documents | FDD, HLD, LLD (to follow); ANCP D1 project charter (`docs/ANCP_TM_D1_v1.pdf`) |
+| Related documents | FDD, HLD, LLD; legal pack in `docs/legal`; ANCP D1 project charter (`docs/ANCP_TM_D1_v1.pdf`) |
 
 ## 1. Purpose
 
@@ -41,7 +41,8 @@ This creates a chicken-and-egg problem. Users need a catalogue to get started. V
 - Item entry by manual form, photo upload with background removal, receipt scan with OCR, and catalogue or barcode lookup.
 - Outfit builder and a small rule-based menswear recommendation set (season, occasion, colour and layering).
 - Purchase history with receipts, wishlist and outfit/purchase planning.
-- Accounts (email or Google sign-in; Apple sign-in after the pilot), 18+ self-declaration, a first-login pilot notice that users must accept to join the pilot, data export and deletion.
+- Invitation-only sign-up (email or Google sign-in; Apple sign-in after the pilot) for adults in the supported countries (initially India), acceptance of the Terms of Use and Privacy Policy, a first-login pilot notice that users must accept to join the study, a **Leave the pilot** button, data export and deletion.
+- The pilot legal pack in `docs/legal`: privacy policy, terms of use, vendor pilot agreement, incident response plan, privacy risk assessment and data sourcing policy.
 - Vendor portal: read-only aggregate dashboard, gap and demand insights report, product feed upload.
 - Open-source release of the codebase under GPL-3.0.
 
@@ -100,6 +101,8 @@ Priority uses MoSCoW: Must, Should, Could. Every requirement is testable in the 
 | BR-13 | The app is usable on a phone browser and installable as a PWA. | Must |
 | BR-14 | Users can rate each item's condition themselves on a 0 to 100 scale (0 = brand new, 100 = falling apart). Vendors see condition as a spectrum of bands, not raw scores. | Should |
 | BR-15 | Logging "what I wore today" is available but completely optional. The app never prompts, reminds or rewards it, and no wear counts are kept or aggregated, because a log is not a reliable measure of wear. | Could |
+| BR-16 | The pilot is open by invitation only. Sign-up works only for invited email addresses, and only for users who declare a country on the supported list (initially India). | Must |
+| BR-17 | At sign-up users accept the Terms of Use and the Privacy Policy. Acceptance is recorded with the version and time. | Must |
 
 ### 7.2 Privacy and consent
 
@@ -107,14 +110,16 @@ The pilot and the shipped product use different consent settings. The pilot need
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| BR-20 | **Pilot:** on first login each user sees a pop-up explaining that anonymised, aggregated data is used to make the pilot work. The user must accept it to use the app. | Must |
-| BR-21 | **Pilot:** the pop-up states plainly what is collected, what vendors can and cannot see, how long the pilot lasts (3 months), and how to leave. The acceptance is recorded with a timestamp and the notice version. | Must |
-| BR-22 | **Pilot:** the sharing setting is visible in settings but greyed out and locked on, with an info tooltip explaining that the pilot needs anonymised user data and that the shipped product will let users disable sharing. A user can leave at any time by deleting their account, which removes their data from future aggregates. | Must |
+| BR-20 | **Pilot:** on first login each user sees a pop-up explaining that the pilot is a free 3-month study and that anonymised, aggregated data from all participants is shared with vendors. The user must accept it to use the app. The wording follows the Privacy Policy (`docs/legal/PRIVACY-POLICY.md`). | Must |
+| BR-21 | **Pilot:** the pop-up and the Privacy Policy state plainly who runs the pilot, what is collected, what vendors can and cannot see, how long data is kept, that no data is used to train AI models, the pilot length (3 months) and how to leave. The acceptance is recorded with a timestamp and the notice version. | Must |
+| BR-22 | **Pilot:** the sharing setting is visible in settings but greyed out and locked on, with an info tooltip explaining that the pilot is a study that needs anonymised data from its participants and that the shipped product will let users disable sharing. A prominent **Leave the pilot** button deletes the user's account and data at any time, with no reason needed and no penalty. | Must |
 | BR-23 | **Shipped product:** users can disable sharing of anonymised data in settings. The default state (on or off) is decided before launch; see open item OI-1. | Must |
 | BR-24 | Users can export their data and delete their account and data at any time, in both the pilot and the shipped product. | Must |
 | BR-25 | Vendors never see individual users, wardrobes, receipts or purchase records. | Must |
 | BR-26 | Vendor outputs show a segment only when at least 10 contributing users are in it during the pilot. | Must |
 | BR-27 | The system collects only the personal data it needs, and keeps images and receipts out of any shared dataset. | Must |
+| BR-28 | The pilot does not use participant data to train AI or machine-learning models. Any new purpose needs a new notice and a new acceptance. | Must |
+| BR-29 | Receipt scanning keeps only store, date, currency and item lines. Card numbers, emails, phone numbers and loyalty numbers are masked, address lines are dropped, raw scan text is never stored, and reading results are deleted after 7 days. | Must |
 
 ### 7.3 Vendor
 
@@ -123,6 +128,8 @@ The pilot and the shipped product use different consent settings. The pilot need
 | BR-30 | A vendor can sign in to a read-only aggregate dashboard showing the ownership mix by category, colour, fit and brand, plus purchase and wishlist trends over time. | Must |
 | BR-31 | A vendor can see gaps (segments with high wishlist demand and low ownership) and receive a gap and demand insights report. A monthly report is acceptable for the pilot. | Must |
 | BR-34 | Vendor views can be filtered by size, season, price band and region, where group sizes allow. | Should |
+| BR-35 | Vendor queries are logged and rate limited, to detect and prevent attempts to single out a participant. | Must |
+| BR-36 | A vendor must accept the Vendor Pilot Agreement (`docs/legal/VENDOR-PILOT-AGREEMENT.md`) before first use. Acceptance is recorded. | Must |
 | BR-32 | A vendor can upload a product feed so their items appear in the catalogue. | Should |
 | BR-33 | Vendor data views respect the minimum group size and use only data from users covered by BR-20 or BR-23. | Must |
 
@@ -144,6 +151,7 @@ The pilot and the shipped product use different consent settings. The pilot need
 - **Scale:** about 100 pilot users, which is a good outcome and not a hard limit. Hosting must handle growth beyond that without redesign.
 - **Platform:** web first (PWA). Native apps come after the pilot.
 - **Audience:** men only, adults only, English only.
+- **Legal expertise:** the team has no legal expert. The pilot is therefore invitation-only, adults only and limited to supported countries, and uses the legal pack in `docs/legal`. A professional review is out of scope for the pilot and required before any public, commercial or wider launch.
 - **Technology decisions** (backend, hosting split, OCR and image tooling) are delegated by the product owner to the architecture documents, which C. Prashanth (SA) will review.
 
 ## 9. Data sourcing and legal position
@@ -157,6 +165,8 @@ The pilot and the shipped product use different consent settings. The pilot need
   - Store product attributes and a link back to the source. Do not copy or redistribute product images by default.
   - Remove a source's data quickly if the source asks.
 - A pilot that is open to the public and offers vendor insights could be read as commercial use. The SA or a legal adviser should confirm the position before any paid vendor tier. This is noted as risk RK-3.
+- The team has drafted a legal pack (privacy policy, terms, vendor agreement, incident plan, privacy risk assessment, data sourcing policy) in `docs/legal`. It was written with AI assistance and has not been reviewed by a lawyer; `docs/legal/LEGAL-REVIEW.md` records each finding and how it was handled.
+- Collection follows `docs/legal/DATA-SOURCING-POLICY.md`: ask first where possible, attributes only, `robots.txt`, rate limits, a source register and a 2-working-day takedown.
 
 ## 10. Assumptions and dependencies
 
@@ -199,15 +209,16 @@ Dates will be fixed in the delivery plan, aligned with the ANCP deadlines.
 | RK-1 | Not enough users or vendors in 3 months. | Recruit early; keep onboarding to a few minutes; the seed catalogue means users can start at once. |
 | RK-2 | Users find manual entry too much effort. | Seed catalogue, photo and receipt entry, and quick add from the catalogue. |
 | RK-3 | Scraping or commercial-use concerns. | Follow the rules in section 9; confirm with an adviser before any paid tier. |
-| RK-4 | Privacy or consent failure with real users. Making acceptance a condition of the pilot weakens the claim that consent is freely given. | Clear first-login notice with recorded acceptance, leave-any-time by deleting the account, minimal data, anonymised aggregation only, no personal data in the repository. Confirm the pilot consent wording with an adviser before launch. |
+| RK-4 | Privacy or consent failure with real users. Making acceptance a condition of the pilot weakens the claim that consent is freely given. | The pilot is framed as a study; clear notice with recorded acceptance; **Leave the pilot** deletes everything; adults and invited users only; minimal data; aggregation only; no personal data in the repository; privacy risk assessment (`docs/legal/PRIVACY-RISK-ASSESSMENT.md`). |
 | RK-5 | Free tiers or the team's capacity limit the build. | Keep scope fixed to section 4; defer native apps and AI; review the plan weekly. |
 | RK-6 | Small pilot makes aggregates thin. | Minimum group size of 10; report coverage clearly; do not over-claim. |
+| RK-7 | No professional legal review during the pilot. | Invitation-only, adults only, supported countries only; the legal pack and review log; incident plan; a professional review is required before any public or commercial launch (OI-3). |
 
 ## 14. Decisions log
 
 | Decision | Source |
 | --- | --- |
-| Men only, adults only, English only, global | Product owner |
+| Men only, adults only, English only; the pilot is by invitation in supported countries (initially India); a wider or global launch comes after a professional review | Product owner |
 | Web app (PWA) first | Product owner |
 | Pilot: acceptance of the first-login anonymised-data notice is required to use the app; sharing can be turned off after the 3-month pilot | Product owner |
 | Pilot: sharing setting shown greyed out and locked on, with explanatory tooltip; leaving is by deleting the account | Product owner |
@@ -220,6 +231,9 @@ Dates will be fixed in the delivery plan, aligned with the ANCP deadlines.
 | Technology choices delegated to the architecture documents; C. Prashanth is the SA | Product owner |
 | Arpan Shah is the style specialist (taxonomy and outfit rules) | Product owner |
 | No hard numeric targets; about 100 users and 1 vendor is the aim | Product owner |
+| The pilot is framed as an academic study; a **Leave the pilot** button deletes the account and data | Product owner (delegated to the business analyst) |
+| No participant data is used to train AI or machine-learning models in the pilot | Product owner (delegated to the business analyst) |
+| A professional legal review is out of scope for the pilot and required before any public or commercial launch | Product owner |
 
 ### Difference from the ANCP D1 charter
 
@@ -230,7 +244,8 @@ The charter says 150 or more users and describes a Python backend. This BRD trea
 | ID | Item | Owner |
 | --- | --- | --- |
 | OI-1 | Default sharing state in the shipped product. Off by default is the safest under GDPR and similar laws. On by default with an opt-out is simpler for data volume but weaker on consent. | Product owner |
-| OI-2 | Confirm the pilot consent wording and the "acceptance required" model with an adviser before launch. | Product owner |
+| OI-2 | Closed for the pilot. The consent wording and the "acceptance required" model are covered by the legal pack and the privacy risk assessment. | Product owner |
+| OI-3 | Before any public, commercial or wider launch, have a professional review the legal pack, the consent model, the scraping position and the name. | Product owner |
 
 ## 16. Glossary
 

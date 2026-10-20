@@ -81,4 +81,4 @@ This agreement is governed by the laws of India, with the courts of India that h
 
 ## 14. Contact
 
-The contact address shown in the vendor portal under **Account**.
+**dunk-volts8c@icloud.com** (also shown in the vendor portal under **Account**).

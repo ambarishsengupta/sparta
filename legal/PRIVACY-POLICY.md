@@ -17,7 +17,7 @@
 
 ## 2. Who we are
 
-The pilot is run by the **Sparta project team**, three students taking part in the Analytics Capstone Project (ANCP), Term 5, 2026 (C. Prashanth, Arpan Shah and Ambarish Sengupta). We decide why and how your data is used. We are not a company. The contact address for privacy questions, requests and complaints is shown in the app under **Settings, About the pilot**, and we will answer within 7 days.
+The pilot is run by the **Sparta project team**, three students taking part in the Analytics Capstone Project (ANCP), Term 5, 2026 (C. Prashanth, Arpan Shah and Ambarish Sengupta). We decide why and how your data is used. We are not a company. The contact address for privacy questions, requests and complaints is **dunk-volts8c@icloud.com** (also shown in the app under **Settings, About the pilot**). It is read by all three team members, and we will answer within 7 days.
 
 ## 3. What we collect
 
@@ -62,8 +62,8 @@ We use these providers to run the pilot. They process data for us under their st
 
 | Provider | Role |
 | --- | --- |
-| Supabase | Database, sign-in and file storage. The hosting region is shown in **Settings, About the pilot**. |
-| Vercel | Hosts the web app |
+| Supabase | Database, sign-in and file storage. Hosted in South Asia (Mumbai, India). |
+| Vercel | Hosts the web app; its functions run in Mumbai, India |
 | GitHub | Stores our code and runs scheduled jobs (no user data) |
 | An email service | Sends account emails (verification, password reset, export ready) |
 | A team member's computer | Runs the program that removes photo backgrounds and reads receipts. It is encrypted, has no open inbound connections, and deletes temporary files after each job. |

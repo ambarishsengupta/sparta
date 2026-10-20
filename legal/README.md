@@ -10,6 +10,7 @@ These documents support the Sparta pilot, an **academic proof of concept**. They
 | [Incident Response Plan](INCIDENT-RESPONSE-PLAN.md) | What the team does when something goes wrong | Internal |
 | [Privacy Risk Assessment](PRIVACY-RISK-ASSESSMENT.md) | A lightweight impact assessment, including re-identification risks | Internal; for the professional review |
 | [Data Sourcing Policy](DATA-SOURCING-POLICY.md) | Rules for the seed catalogue, the collector and vendor feeds | Internal; drives the collector |
+| [Privacy Contact Address](CONTACT-ADDRESS.md) | What the contact address is for, how to set it up and where it appears | Internal; needed before the pilot opens |
 | [Legal and Privacy Review Log](LEGAL-REVIEW.md) | The review findings and what was done about each | Internal; for the professional review |
 
 Design changes that follow from this review are in BRD v1.1, FDD v1.2, HLD v1.1 and LLD v1.1.

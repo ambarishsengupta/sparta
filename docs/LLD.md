@@ -740,7 +740,8 @@ There is no staging environment; migrations are exercised on a fresh local datab
 | `EMAIL_API_KEY` | Vercel server | Transactional email |
 | `NOTICE_VERSION` | Web build | Must equal `ops.settings.current_notice_version` |
 | `TERMS_VERSION`, `PRIVACY_VERSION` | Web build | Must equal `ops.settings.current_terms_version` and `current_privacy_version` |
-| `CONTACT_EMAIL` | Web (public) | The privacy contact address shown on the About page and in emails. Required before the pilot opens (FR-67). |
+| `CONTACT_EMAIL` | Web (public) | The privacy contact address shown on the About page and in emails. Required before the pilot opens (FR-67). The pilot value is `dunk-volts8c@icloud.com` (shared by the team). See `legal/CONTACT-ADDRESS.md`. |
+| `HOSTING_REGION_LABEL` | Web (public) | The text shown on the About page, `South Asia (Mumbai)`. Must match the Supabase project region (`ap-south-1`) and the Vercel function region (`bom1`, set in `vercel.json` or the project settings). |
 | `.env.example` | Repository | Names only, no values |
 
 ## 13. Operations

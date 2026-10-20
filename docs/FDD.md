@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Document | Functional Design Document |
-| Version | 1.0 (final, approved by the Product Owner) |
+| Version | 1.1 (final; FR-1 amended to drop Apple sign-in for the pilot) |
 | Date | 2026-10-20 |
 | Product owner | Ambarish Sengupta |
 | Taxonomy and outfit rules | Arpan Shah (style specialist) |
@@ -47,7 +47,7 @@ Admin console (internal, minimal): invitations, catalogue sources, aggregation r
 
 | ID | Requirement | Traces to | Priority |
 | --- | --- | --- | --- |
-| FR-1 | A user can sign up and sign in with email and password or Google or Apple. Email is verified before the first login completes. | BR-01 | Must |
+| FR-1 | A user can sign up and sign in with email and password or Google. Apple sign-in is deferred until after the pilot. Email is verified before the first login completes. | BR-01 | Must |
 | FR-2 | At sign-up the user declares they are 18 or over by an explicit tick. Without it, sign-up cannot be completed. | BR-01 | Must |
 | FR-3 | On the first login a blocking pop-up appears: "Sparta is a 3-month pilot. To make it work, anonymised and aggregated information about what you own, buy and wish for is used to build insights for brands and retailers." It states what is collected, that no individual user, photo or receipt is ever shown to vendors, the pilot length, and how to leave. | BR-20, BR-21 | Must |
 | FR-4 | The user must tap "I understand and join the pilot" to continue. Closing the pop-up without accepting returns to the sign-in screen. The app cannot be used without accepting. | BR-20 | Must |

@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Document | Business Requirements Document |
-| Version | 0.4 (draft for Product Owner review) |
+| Version | 0.5 (amended: sign-in methods) |
 | Date | 2026-10-20 |
 | Product owner | Ambarish Sengupta |
 | Status | Draft, not yet approved |
@@ -41,7 +41,7 @@ This creates a chicken-and-egg problem. Users need a catalogue to get started. V
 - Item entry by manual form, photo upload with background removal, receipt scan with OCR, and catalogue or barcode lookup.
 - Outfit builder and a small rule-based menswear recommendation set (season, occasion, colour and layering).
 - Purchase history with receipts, wishlist and outfit/purchase planning.
-- Accounts (email or Google/Apple sign-in), 18+ self-declaration, a first-login pilot notice that users must accept to join the pilot, data export and deletion.
+- Accounts (email or Google sign-in; Apple sign-in after the pilot), 18+ self-declaration, a first-login pilot notice that users must accept to join the pilot, data export and deletion.
 - Vendor portal: read-only aggregate dashboard, gap and demand insights report, product feed upload.
 - Open-source release of the codebase under GPL-3.0.
 
@@ -85,7 +85,7 @@ Priority uses MoSCoW: Must, Should, Could. Every requirement is testable in the 
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| BR-01 | Users can sign up and sign in with email or Google/Apple, and declare they are 18 or over. | Must |
+| BR-01 | Users can sign up and sign in with email or Google, and declare they are 18 or over. Apple sign-in is planned after the pilot. | Must |
 | BR-02 | Users can see and organise their whole wardrobe: browse, filter and sort by any attribute, custom tags and collections, favourites, a user-set "never worn" flag, and archive status (sold or donated). | Must |
 | BR-03 | Users can add items from a seed catalogue of popular items, so a new user is not facing an empty wardrobe. | Must |
 | BR-04 | Users can add items that are not in the catalogue by manual entry. | Must |

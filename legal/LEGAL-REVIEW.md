@@ -41,9 +41,9 @@
 
 ## 3. Things that remain with the team
 
-- Choose and publish the **contact address** for privacy requests (a configuration value, `CONTACT_EMAIL`; the pilot cannot open without it).
+- Choose and publish the **contact address** for privacy requests (a configuration value, `CONTACT_EMAIL`; the pilot cannot open without it). Guidance: `CONTACT-ADDRESS.md`.
 - Keep the **supported countries** list in `ops.settings` and the **invitations** list up to date.
-- Record the **Supabase region** and show it in the app.
+- The **Supabase region** is South Asia (Mumbai, `ap-south-1`), with Vercel functions in Mumbai (`bom1`); it is shown in the app (FR-67) and named in the Privacy Policy.
 - Obtain written **permission or confirmation** from catalogue sources where the policy asks for it.
 - Tell faculty about the study and ask whether the course needs ethics approval. This is a recommendation, not a requirement the team has confirmed.
 

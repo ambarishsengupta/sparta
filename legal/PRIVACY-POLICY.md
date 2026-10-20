@@ -62,8 +62,8 @@ We use these providers to run the pilot. They process data for us under their st
 
 | Provider | Role |
 | --- | --- |
-| Supabase | Database, sign-in and file storage. The hosting region is shown in **Settings, About the pilot**. |
-| Vercel | Hosts the web app |
+| Supabase | Database, sign-in and file storage. Hosted in South Asia (Mumbai, India). |
+| Vercel | Hosts the web app; its functions run in Mumbai, India |
 | GitHub | Stores our code and runs scheduled jobs (no user data) |
 | An email service | Sends account emails (verification, password reset, export ready) |
 | A team member's computer | Runs the program that removes photo backgrounds and reads receipts. It is encrypted, has no open inbound connections, and deletes temporary files after each job. |

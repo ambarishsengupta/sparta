@@ -301,4 +301,4 @@ Technology choices, data model, API design and deployment are in the HLD and LLD
 | FOI-4 | Closed. Source images are not copied; catalogue items show tinted category illustrations with a source link (FR-24). | Product owner |
 | FOI-5 | Closed. Nightly refresh, counts rounded to the nearest 5 (FR-82, FR-83). | Product owner |
 | FOI-6 | Choose the first set of storefront sources for the seed catalogue and confirm their terms. | Delivery team |
-| FOI-7 | Choose and publish the privacy contact address (FR-67) and decide the Supabase region shown in the app. | Delivery team |
+| FOI-7 | Region: closed. The production and dev Supabase projects use South Asia (Mumbai, `ap-south-1`) and the web functions run in Mumbai (`bom1`). Contact address: open; choose and publish the privacy contact address (FR-67) before the pilot opens (see `legal/CONTACT-ADDRESS.md`). | Delivery team |

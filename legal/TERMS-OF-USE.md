@@ -75,4 +75,4 @@ These terms are governed by the laws of India. Disputes will be dealt with by th
 
 ## 13. Contact
 
-Questions, requests and complaints: the contact address shown in **Settings, About the pilot**.
+Questions, requests and complaints: **dunk-volts8c@icloud.com** (also shown in **Settings, About the pilot**).

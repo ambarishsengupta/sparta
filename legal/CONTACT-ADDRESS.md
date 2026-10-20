@@ -5,10 +5,12 @@
 | Version | 0.1 (draft for the academic pilot) |
 | Date | 2026-10-20 |
 | Owner | Product owner (sets it up); all three team members read it |
-| Status | **Open: the address must be chosen and set up before the pilot opens** |
+| Status | **Chosen: `dunk-volts8c@icloud.com`, a mailbox shared by the three team members.** Setup checks in section 5 are still to be ticked before the pilot opens. |
 | Review status | Written by the project team with AI assistance; not reviewed by a lawyer |
 
 ## 1. What it is
+
+The pilot's contact address is **dunk-volts8c@icloud.com**, a mailbox shared by C. Prashanth, Arpan Shah and Ambarish Sengupta.
 
 The privacy contact address is the one email address that participants, vendors and anyone else can use to reach the team about privacy and the pilot. It is the only route the Privacy Policy, Terms of Use, Vendor Pilot Agreement and the in-app About page promise.
 
@@ -83,10 +85,18 @@ The policy documents refer to "the contact address shown in the app", so they do
 | Data Sourcing Policy section 7 | Takedown requests |
 | Invitation and transactional emails | Footer or reply-to |
 
-## 8. Open decisions
+## 8. Decisions and remaining actions
 
-| Item | Owner |
-| --- | --- |
-| Pick option A, B or C and create the address | Product owner |
-| Ask faculty whether a university alias is possible | Product owner |
-| Decide who answers on which days, so the 7-day target holds | All three |
+| Item | Status | Owner |
+| --- | --- | --- |
+| Address chosen | Done: `dunk-volts8c@icloud.com` (shared mailbox, closest to option A) | Product owner |
+| Set `CONTACT_EMAIL` to this address in the Vercel production and preview projects | To do before the pilot opens | Technical lead |
+| Tick the setup checklist in section 5 (all three can read and reply, a test from outside works, the out-of-office text is set, recovery details held by two members) | To do before the pilot opens | All three |
+| Check what kind of address this is (see section 9) | To do | Product owner |
+| Decide who answers on which days, so the 7-day target holds | To do | All three |
+
+## 9. Notes on this address
+
+- **It is public.** The address appears in the Privacy Policy, Terms of Use and Vendor Pilot Agreement, which are in a public repository, and on the About page. Expect some spam. A rule or filter that keeps real requests visible, and a check of the junk folder every few days, will help; the 7-day target still applies.
+- **Check it is truly shared.** An iCloud address can be a normal mailbox or an alias that forwards to one person's inbox. If it only forwards to a single person, the other two cannot read or reply from it, which breaks the rule that all three can answer. Confirm that all three can read it and send replies from it. If not, move to a mailbox all three can open, or set up forwarding to each person and agree who replies from where.
+- **Keep it for the long run.** The address must stay under the team's control for at least 6 months after the pilot (section 3). If it changes, publish the new one and keep the old one forwarding.

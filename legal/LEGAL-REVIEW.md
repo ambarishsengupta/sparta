@@ -41,7 +41,7 @@
 
 ## 3. Things that remain with the team
 
-- Choose and publish the **contact address** for privacy requests (a configuration value, `CONTACT_EMAIL`; the pilot cannot open without it). Guidance: `CONTACT-ADDRESS.md`.
+- The **contact address** for privacy requests is `dunk-volts8c@icloud.com`, shared by the three team members. Set `CONTACT_EMAIL` to it and complete the setup checklist in `CONTACT-ADDRESS.md` before the pilot opens.
 - Keep the **supported countries** list in `ops.settings` and the **invitations** list up to date.
 - The **Supabase region** is South Asia (Mumbai, `ap-south-1`), with Vercel functions in Mumbai (`bom1`); it is shown in the app (FR-67) and named in the Privacy Policy.
 - Obtain written **permission or confirmation** from catalogue sources where the policy asks for it.

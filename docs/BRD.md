@@ -3,10 +3,10 @@
 | Field | Value |
 | --- | --- |
 | Document | Business Requirements Document |
-| Version | 0.5 (amended: sign-in methods) |
+| Version | 1.0 (final, approved by the Product Owner) |
 | Date | 2026-10-20 |
 | Product owner | Ambarish Sengupta |
-| Status | Draft, not yet approved |
+| Status | Final |
 | Related documents | FDD, HLD, LLD (to follow); ANCP D1 project charter (`docs/ANCP_TM_D1_v1.pdf`) |
 
 ## 1. Purpose

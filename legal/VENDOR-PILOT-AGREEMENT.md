@@ -2,8 +2,8 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.1 (draft for the academic pilot) |
-| Date | 2026-10-20 |
+| Version | 0.2 (draft for the academic pilot) |
+| Date | 2026-10-22 |
 | Applies to | Brands, manufacturers and retailers invited to the Sparta vendor portal |
 | Review status | Written by the project team with AI assistance. **Not reviewed by a lawyer.** Needs professional review before any paid or public use. |
 | How it is accepted | The vendor's user accepts it by ticking a box on first login to the vendor portal. Acceptance is recorded with the vendor, user, version and time (FR-94). |
@@ -14,7 +14,7 @@ This agreement is between the **Sparta project team** (three students in the Ana
 
 ## 2. What we provide
 
-During the pilot (about 3 months from your invitation) we give you:
+During the pilot (which runs for about 3 months in total and ends on the planned end date we give you with your invitation) we give you:
 - read-only access to the vendor dashboard: ownership mix, purchase and wishlist trends, gaps, and the condition spectrum;
 - a gap and demand report, normally monthly;
 - the ability to upload a product feed so your items appear in the consumer catalogue.
@@ -25,7 +25,7 @@ There is **no fee** during the pilot. We make no promise to continue, to offer p
 
 - You see **aggregate group figures only**. No figure relates to fewer than 10 participants, and numbers are rounded to the nearest 5.
 - Participants have been told that group figures are shared with vendors and have agreed to take part.
-- The figures come from a **small pilot group** (about 100 participants, mostly in the countries where the pilot is open, not representative of any market). They are **indicative, not statistically reliable** and not a substitute for your own analysis.
+- The figures come from a **small pilot group** (about 100 participants who declared that they live in a country where the pilot is open, initially India; not representative of any market). They are **indicative, not statistically reliable** and not a substitute for your own analysis.
 
 ## 4. What you may do with it
 
@@ -69,11 +69,11 @@ The pilot, figures and reports are provided **as is**, without warranties of any
 
 ## 11. Data protection
 
-We handle participants' data as described in the Sparta Privacy Policy. You will not receive any personal data. If you receive information that appears to identify a person, tell us, and delete it.
+We handle participants' data as described in the Sparta Privacy Policy. You will not receive any personal data. The personal data of your own portal users (email address, name, agreement acceptance and the query log mentioned in section 5) is handled as described in the Privacy Policy, section 3 ("Vendor portal users"), and kept for the pilot period (Privacy Policy, section 7). If you receive information that appears to identify a person, tell us, and delete it.
 
 ## 12. Term and ending
 
-This agreement runs for the duration of the pilot, and either party may end it at any time by notice through the contact address in the portal. On ending, your access stops, and we withdraw your feed from the catalogue unless you ask us to keep it for the rest of the pilot. Sections 5, 7, 8, 10 and 13 continue after the agreement ends.
+This agreement runs for the duration of the pilot, and either party may end it at any time by notice through the contact address in the portal. On ending, your access stops, and we withdraw your feed from the catalogue unless you ask us to keep it for the rest of the pilot. Sections 4 (for figures and reports you have already received), 5, 7, 8, 10, 11 and 13 continue after the agreement ends.
 
 ## 13. Governing law
 

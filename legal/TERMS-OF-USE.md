@@ -2,8 +2,8 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.1 (draft for the academic pilot) |
-| Date | 2026-10-20 |
+| Version | 0.2 (draft for the academic pilot) |
+| Date | 2026-10-22 |
 | Applies to | Consumers using the Sparta pilot app |
 | Review status | Written by the project team with AI assistance. **Not reviewed by a lawyer.** Needs professional review before any public or commercial launch. |
 
@@ -13,7 +13,7 @@ These terms are between you and the **Sparta project team** (three students in t
 
 ## 2. The pilot
 
-Sparta is a free, time-limited **pilot study** and academic proof of concept, not a finished or commercial product. It may change, stop working, or end without notice. We plan to run it for about 3 months. What happens to your data at the end is described in the Privacy Policy, section 7.
+Sparta is a free, time-limited **pilot study** and academic proof of concept, not a finished or commercial product. It may change or stop working without notice. We plan to run it for about 3 months. When it ends, we will tell you and you can export your data; what happens to your data then is described in the Privacy Policy, section 7.
 
 ## 3. Who can use it
 
@@ -33,7 +33,7 @@ The pilot works by combining anonymised data from all participants into group fi
 "Your content" means everything you add: items, photos, receipts, notes, outfits, and so on.
 
 - **You own it.** We do not claim ownership.
-- **You give us a limited permission** to store, process and display your content so that we can run the app for you, and to include it in anonymised group figures as described in the Privacy Policy. This permission ends when you delete your content or your account, except for group figures already produced from many participants, which cannot be traced back to you.
+- **You give us a limited permission** to store, process and display your content so that we can run the app for you, and to include it in anonymised group figures as described in the Privacy Policy. This permission ends when you delete your content or your account, except for group figures already produced, such as a report already given to vendors or our academic report. These are not recalculated, but they never contain a row about you and were made under the safeguards in the Privacy Policy, section 4.
 - **Only add content you have the right to add.** Add your own clothes, photos and receipts. Do not upload other people's personal details, faces without their consent, card numbers, or anything illegal or offensive.
 - **Photos** may be processed automatically to remove the background.
 
@@ -67,7 +67,7 @@ The code of Sparta is released under the GNU General Public License version 3 (G
 
 ## 11. Changes and ending
 
-We may update these terms. If a change matters, the app will ask you to accept the new terms; if you do not agree, you can leave and delete your account. You may stop using Sparta at any time. We may end the pilot or your access at any time, and will give notice where we can.
+We may update these terms. If a change matters, the app will ask you to accept the new terms; if you do not agree, you can leave and delete your account. You may stop using Sparta at any time. We may end the pilot or your access at any time, and will give notice where we can. If the pilot ends, we will tell you and you can export your data (section 2).
 
 ## 12. Governing law and disputes
 

@@ -13,4 +13,4 @@ These documents support the Sparta pilot, an **academic proof of concept**. They
 | [Privacy Contact Address](CONTACT-ADDRESS.md) | What the contact address is for, how to set it up and where it appears | Internal; needed before the pilot opens |
 | [Legal and Privacy Review Log](LEGAL-REVIEW.md) | The review findings and what was done about each | Internal; for the professional review |
 
-Design changes that follow from this review are in BRD v1.1, FDD v1.2, HLD v1.1 and LLD v1.1.
+The design documents that reflect these documents are BRD v1.2, FDD v1.3, HLD v1.2 and LLD v1.2.

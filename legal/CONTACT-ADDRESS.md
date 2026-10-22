@@ -2,10 +2,10 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.1 (draft for the academic pilot) |
-| Date | 2026-10-20 |
+| Version | 0.2 (draft for the academic pilot) |
+| Date | 2026-10-22 |
 | Owner | Product owner (sets it up); all three team members read it |
-| Status | **Chosen: `dunk-volts8c@icloud.com`, a mailbox shared by the three team members.** Setup checks in section 5 are still to be ticked before the pilot opens. |
+| Status | **Chosen: `dunk-volts8c@icloud.com`, a mailbox shared by the three team members.** The remaining setup checks in section 5 are still to be ticked before the pilot opens. |
 | Review status | Written by the project team with AI assistance; not reviewed by a lawyer |
 
 ## 1. What it is
@@ -43,25 +43,27 @@ The privacy contact address is the one email address that participants, vendors 
 
 **Recommendation:** use **option B if faculty will provide it within a few days, otherwise option A**. Move to option C only when the project goes beyond the pilot. If the address changes, publish the new one and keep the old one forwarding for at least 6 months.
 
+**Decision:** the team chose `dunk-volts8c@icloud.com`, a shared mailbox closest to option A (section 8). The options above are kept as the record of that choice.
+
 ## 5. Setup checklist
 
-- [ ] Choose the address and option. Record who set it up and where it lives.
+- [x] Choose the address and option. Done: `dunk-volts8c@icloud.com`, a shared mailbox closest to option A (section 8).
 - [ ] Give all three members access; turn on two-step sign-in; store the recovery details somewhere two members can reach.
 - [ ] Send a test message from outside the team and confirm that all three can see and reply to it.
 - [ ] Set an out-of-office text for periods when no one is available, naming the 7-day reply target.
 - [ ] Set the value in the environment variable `CONTACT_EMAIL` (production and preview projects); the About page and transactional emails read it (LLD section 12.3).
-- [ ] Make sure the address appears in: the About page (FR-67), the footer or settings of the app, the Privacy Policy, the Terms of Use, the Vendor Pilot Agreement, the first-login notice and the invitation email.
+- [ ] Make sure the address appears in: the About page (FR-67), the vendor portal Account page (FR-95), the footer or settings of the app, the Privacy Policy, the Terms of Use, the Vendor Pilot Agreement, the first-login notice (Privacy Policy section 13, "Questions: dunk-volts8c@icloud.com") and the invitation email.
 - [ ] Add a short written rule for handling messages (section 6).
 - [ ] Confirm the address works before sending any invitation.
 
-The policy documents refer to "the contact address shown in the app", so they do not need editing when the address is set; only `CONTACT_EMAIL` does.
+The Privacy Policy (sections 2 and 13), Terms of Use (section 13), Vendor Pilot Agreement (section 14) and Incident Response Plan (section 4) state the address itself. If it ever changes, update those four documents, `CONTACT_EMAIL` and the invitation email together, then publish the new address and keep the old one forwarding for at least 6 months (section 4).
 
 ## 6. How to handle messages
 
 | Message | Do this | Within |
 | --- | --- | --- |
 | Question about the pilot | Answer plainly | 7 days |
-| Request to see, correct or export data | Point to Settings and the export button; if the person cannot use the app, do it for them after checking they are the account owner (reply to the account's own email) | 7 days |
+| Request to see, correct or export data | Point to Settings and the export button; if the person cannot find or use the export button, run the export for them after checking they are the account owner; they download it from the export page after signing in (reply to the account's own email) | 7 days |
 | Request to delete data or leave | Point to **Leave the pilot**, or delete the account for them after the same check | 7 days (deletion completes within 7 days; backups within 30) |
 | Complaint | Acknowledge within 2 days, investigate, reply with the outcome; tell faculty if it is serious | 7 days |
 | Report of a possible breach or a vendor probing | Follow the Incident Response Plan straight away | Same day |
@@ -77,10 +79,11 @@ The policy documents refer to "the contact address shown in the app", so they do
 | Where | Item |
 | --- | --- |
 | FDD FR-67 | About the pilot page |
+| FDD FR-95 | Vendor portal Account page |
 | LLD section 12.3 | `CONTACT_EMAIL` configuration |
-| Privacy Policy sections 2, 8 | Who we are; your rights |
-| Terms of Use section 13 | Contact |
-| Vendor Pilot Agreement sections 1, 12, 14 | Notice and contact |
+| Privacy Policy sections 2, 8, 13 | Who we are; your rights; first-login notice |
+| Terms of Use sections 12, 13 | Disputes; contact |
+| Vendor Pilot Agreement sections 12, 14 | Notice of ending; contact |
 | Incident Response Plan | Reporting route |
 | Data Sourcing Policy section 7 | Takedown requests |
 | Invitation and transactional emails | Footer or reply-to |

@@ -15,7 +15,7 @@ This is an open-source, academic proof of concept. The current phase is a **3-mo
 
 ## Consumer features (pilot)
 
-- **See and organise everything you own:** browse, filter and sort by any attribute, custom tags and collections, favourites, a "never worn" flag, archive (sold, donated, discarded, lost).
+- **See and organise everything you own:** browse, filter by any attribute and sort by the main ones, custom tags and collections, favourites, a "never worn" flag, archive (sold, donated, discarded, lost).
 - **Four ways to add items:** a seed catalogue of popular items; a manual form; photo upload with automatic background removal; receipt scan with OCR (always shown as an editable draft).
 - **Full colour spectrum:** pick any colour; Sparta derives a colour family so that near-identical shades group together.
 - **Condition rating:** rate each item from 0 (brand new) to 100 (falling apart).
@@ -69,16 +69,16 @@ Full detail is in the design documents below.
 | [Functional Design (FDD)](docs/FDD.md) | What the system does, screen by screen and rule by rule |
 | [High-Level Design (HLD)](docs/HLD.md) | Architecture, components, security, deployment |
 | [Low-Level Design (LLD)](docs/LLD.md) | Tables, policies, functions, worker, API routes, tests, operations |
-| [Legal and privacy pack](legal/README.md) | Privacy policy, terms of use, vendor pilot agreement, incident plan, privacy risk assessment, data sourcing policy and review log (pilot drafts, not legal advice) |
+| [Legal and privacy pack](legal/README.md) | Privacy policy, terms of use, vendor pilot agreement, incident plan, privacy risk assessment, data sourcing policy, privacy contact address and review log (pilot drafts, not legal advice) |
 | [ANCP D1 project charter](docs/ANCP_TM_D1_v1.pdf) | The course charter that frames this project (Group M) |
 
 ## Out of scope for the pilot
 
-Native mobile apps, ML and paid AI features (AI outfit recommendations, inspiration matching, a style assistant), outfit inspiration from photos or links, womenswear, payments and sponsored promotions, inbox-based receipt import, and languages other than English. These are planned for later.
+Native iOS and Android apps; ML and paid AI features (AI outfit recommendations, inspiration matching, a style chat assistant); outfit inspiration from photos, links or feeds, and wishlist suggestions to complete a look; womenswear and other audiences; payments, affiliate links, sponsored promotions and vendor billing; email or inbox-based receipt import; and languages other than English. Some of these may follow after the pilot (see BRD section 4.2).
 
 ## Status
 
-The documents above are final. Implementation has not started, so there is no application code in this repository yet. Build order and milestones are in section 14 of the LLD.
+The design documents (BRD, FDD, HLD, LLD) are final; each lists its remaining open items. The legal and privacy pack is a set of pilot drafts and is not legal advice. The charter is the course document already submitted. Implementation has not started, so there is no application code in this repository yet. Build order and milestones are in section 14 of the LLD.
 
 ## Contributing
 

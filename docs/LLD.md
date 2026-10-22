@@ -37,7 +37,7 @@ Section 16 lists where this LLD refines or departs from the HLD. Those points ne
 | Naming | Tables and columns in `snake_case`; IDs are `uuid` (default `gen_random_uuid()`) except job and run IDs, which are `bigint` identities. Function parameters are prefixed `p_` so they never clash with column names. |
 | Time | `timestamptz` everywhere, UTC. Dates the user picks (purchase date, plan date) are `date`. |
 | Money | `numeric(12,2)` plus an ISO 4217 `char(3)` currency on every amount. |
-| Migrations | One SQL file per change in `supabase/migrations`, applied by the Supabase CLI. No manual schema changes in the dashboard. Project settings (exposed schemas, Auth hooks) live in `supabase/config.toml` and are applied with `supabase config push`; only secrets, such as the Auth SMTP password, are entered in the dashboard (12.3). |
+| Migrations | One SQL file per change in `supabase/migrations`, applied by the Supabase CLI. No manual schema changes in the dashboard. Project settings (exposed schemas, Auth hooks) live in `supabase/config.toml` and are applied with `supabase config push`; only secrets, such as the Auth SMTP password, are entered in the dashboard (12.3). Migration order: schemas and their grants (4.1); lookups (4.2); colour tables and functions (4.3); `app.profiles` and `app.consent_records`; catalogue tables (4.8); the other 4.4 tables; the 4.9 tables, including `ops.settings`; helper functions and policies (4.5); `app.jobs` and its policies (7.2); storage functions and policies (4.6); analytics (section 5); the query log (5.7). |
 | Types | `supabase gen types typescript --schema app,catalog,analytics` run in CI; the build fails if the generated file is stale. |
 | Lint and format | ESLint, Prettier, `tsc --noEmit`; Ruff and Black for Python; `sqlfluff` for SQL. |
 | Commits | Short imperative messages. Pull requests need green CI. |
@@ -97,13 +97,30 @@ Rule: anything that must agree across the web app, worker, collector and feed va
 | `analytics_private` | Anonymised fact table; cube staging table (raw counts, emptied every run) | **No** (not in the exposed schemas list) |
 | `ops` | Settings, runs, audit, FX rates, worker heartbeat | No |
 
-The exposed list is set in `supabase/config.toml` as `[api] schemas = ["app", "catalog", "analytics"]` and applied to the dev and production projects with `supabase config push`, so the dashboard is not edited by hand. A migration grants `usage` on these three schemas to `authenticated` and `service_role`, and on `app` only to `anon`, which can call nothing there except `app.supported_countries()` (4.5). Table and function grants are as in 4.5 and section 10. The secret-key client used by the server routes acts as the `service_role` Postgres role, which bypasses RLS but still needs grants, so it is granted all privileges on the tables in `app` and `catalog`. `analytics_private` and `ops` get no usage grant for `anon`, `authenticated` or `service_role`. Because the API reaches only the exposed schemas, server routes read and write `ops` tables (invitations, settings, deletion log, daily counts, admin audit log, monitoring data) only through `security definer` functions in `app` whose execute is granted to `service_role` alone.
+The exposed list is set in `supabase/config.toml` as `[api] schemas = ["app", "catalog", "analytics"]` and applied to the dev and production projects with `supabase config push`, so the dashboard is not edited by hand. The first migration creates the schemas (`create schema app; create schema catalog; create schema ops; create schema analytics; create schema analytics_private;`). A migration grants `usage` on these three schemas to `authenticated` and `service_role`, and on `app` only to `anon`, which can call nothing there except `app.supported_countries()` (4.5). Table and function grants are as in 4.5 and section 10. The secret-key client used by the server routes acts as the `service_role` Postgres role, which bypasses RLS but still needs grants, so it is granted all privileges on the tables in `app` and `catalog`. `analytics_private` and `ops` get no usage grant for `anon`, `authenticated` or `service_role`. Because the API reaches only the exposed schemas, server routes read and write `ops` tables (invitations, settings, deletion log, daily counts, admin audit log, monitoring data) only through `security definer` functions in `app` whose execute is granted to `service_role` alone.
 
 ### 4.2 Lookup tables (`catalog`)
 
 One small table per taxonomy list, all with `code text primary key`, `label text`, `sort int` and `active boolean`: `lk_category`, `lk_sub_type` (adds `category` referencing `lk_category`; its primary key is `(category, code)` instead of `code`, so a sub-type belongs to one category and can be the target of a composite foreign key), `lk_colour_family`, `lk_fit`, `lk_material`, `lk_pattern`, `lk_season`, `lk_occasion`, `lk_size_system`, `lk_size` (adds `size_system` FK; key `(size_system, code)`; the allowed values for each size system), `lk_brand` (the brand list used for suggestions and to normalise typed brands, FDD section 13), `lk_condition_band` (adds `min_score`, `max_score`), `lk_price_band`, `lk_region`, `country_region(country char(2) primary key, region text)`.
 
 Single-value taxonomy columns in `app` tables reference these with foreign keys. `category` and `sub_type` use a composite foreign key to `lk_sub_type (category, code)`; `fit`, `material`, `pattern` and `size_system` reference their own tables; `wishlist_entries` does the same for the attributes it copies. Array columns (`seasons`, `occasions` on `items`, `wishlist_entries` and `outfits`, and `occasions` on `profiles`) cannot carry foreign keys, so a `before insert or update` trigger `app.check_taxonomy_arrays()` rejects any value not in `lk_season` or `lk_occasion`. The colour family columns are not foreign keys: only the colour trigger (4.3) sets them, from the swatch table. `catalog.catalog_items` has no foreign keys to the lookups, because unmapped collector rows are kept with `status = 'review'` (8.1). Its rows are checked against the taxonomy on import (8.1, 8.2), and only active rows are visible to consumers.
+
+```sql
+create table catalog.lk_category (code text primary key, label text not null,
+  sort int not null default 0, active boolean not null default true);
+-- lk_colour_family, lk_fit, lk_material, lk_pattern, lk_season, lk_occasion, lk_size_system,
+-- lk_brand, lk_price_band and lk_region have the same shape as lk_category
+create table catalog.lk_sub_type (category text not null references catalog.lk_category(code),
+  code text not null, label text not null, sort int not null default 0,
+  active boolean not null default true, primary key (category, code));
+create table catalog.lk_size (size_system text not null references catalog.lk_size_system(code),
+  code text not null, label text not null, sort int not null default 0,
+  active boolean not null default true, primary key (size_system, code));
+create table catalog.lk_condition_band (code text primary key, label text not null,
+  sort int not null default 0, active boolean not null default true,
+  min_score smallint not null, max_score smallint not null);
+create table catalog.country_region (country char(2) primary key, region text not null);
+```
 
 `lk_condition_band` seed: Brand new 0-9, Like new 10-29, Good 30-59, Worn 60-84, Falling apart 85-100.
 
@@ -154,7 +171,7 @@ Every table with colours (`app.items`, `app.wishlist_entries`, `catalog.catalog_
 
 - recomputes `colour_hex` from RGB;
 - sets `colour_family = 'Multi'` when `is_multicolour`, otherwise `catalog.colour_family(r, g, b)` (null when the RGB values are null, for example a catalogue row held for review);
-- does the same for the secondary colour when `colour2_r`, `colour2_g` and `colour2_b` are given, and otherwise sets `colour2_hex` and `colour2_family` to null.
+- on `app.items` only (the trigger checks `tg_table_name = 'items'`), does the same for the secondary colour when `colour2_r`, `colour2_g` and `colour2_b` are given, and otherwise sets `colour2_hex` and `colour2_family` to null. `app.wishlist_entries` and `catalog.catalog_items` have no secondary RGB columns; `catalog.catalog_items.secondary_colour_hex` is stored as supplied by the collector or a vendor feed, checked as a hex code (8.1, 8.2), and is used for display only.
 
 Clients cannot set `colour_hex` or `colour_family` (or the secondary colour's) directly: the trigger fires on every insert and update and overwrites any supplied value. A column-level `revoke` is not used, because Postgres ignores it while the table-level `update` that owners need is granted. The trigger runs as the caller, so every role that writes these tables can read `catalog.colour_family_ref` (4.5).
 
@@ -289,6 +306,7 @@ Other policies:
 | `app.document_acceptances` | Select own rows with no consent gate. No insert, update or delete policy: rows are written only by `app.accept_documents` (4.9). Deletion is by cascade. |
 | `app.analytics_events` | Insert only, with `user_id = (select auth.uid())` and either `(select app.current_role()) = 'consumer' and (select app.has_consent())` or `(select app.current_role()) = 'vendor'`. No select, update or delete for clients. Rows are removed with the account by cascade, and when the pilot ends. |
 | `catalog.vendor_agreement_acceptances` | Select own rows. Insert own row only: `user_id = (select auth.uid())`, the caller is a member of `vendor_id` (a vendor user can select their own `catalog.vendor_members` rows), and `version = (select app.public_setting('current_vendor_agreement_version'))`. No update, no delete (deletion is by cascade). |
+| `catalog.vendor_members` | `select` for `authenticated` on own rows only (`grant select on catalog.vendor_members to authenticated`; policy `using (user_id = (select auth.uid()))`), which the acceptance policy above relies on. No writes; memberships are managed by server routes. `catalog.vendors` has no client grants. |
 | `catalog.catalog_items` | `select` for `authenticated` consumers with consent, where `status = 'active'`. Vendors and admins manage their own rows through server routes only. |
 | `catalog.lk_*`, `catalog.colour_family_ref` | `select` for `authenticated`; no writes. The colour trigger in 4.3 runs as the caller, so it needs to read the swatch table. |
 | `catalog.sources`, `catalog.feed_uploads`, `ops.*` | No policies or grants for `anon` or `authenticated`. Reached by the service role in server routes (for `ops`, through the `app` functions described in 4.1), by admin-only functions such as `catalog.take_down_source` (4.8), by the read-only functions below, and by the limited roles in the next row. The one other exception is `ops.invitations`, which `supabase_auth_admin` may select for the sign-up hook (4.9). |
@@ -329,7 +347,14 @@ language sql stable security definer set search_path = ops as $$
   select value from ops.settings
   where key = p_key
     and p_key in ('current_notice_version', 'current_terms_version', 'current_privacy_version',
-                  'current_vendor_agreement_version', 'maintenance', 'pilot_end_date') $$;
+                  'current_vendor_agreement_version', 'maintenance', 'pilot_end_date', 'pilot_outcome') $$;
+
+-- functions are executable by PUBLIC by default; restrict them
+revoke execute on function app.current_role(), app.has_consent(), app.latest_fx_rates(),
+  app.public_setting(text), app.supported_countries() from public;
+grant execute on function app.current_role(), app.has_consent(), app.latest_fx_rates(),
+  app.public_setting(text) to authenticated;
+grant execute on function app.supported_countries() to anon, authenticated;
 ```
 
 Sign-up trigger `app.handle_new_user()` (`security definer`, `after insert` on `auth.users`) inserts a `profiles` row with role `consumer`, sets `accepted_at` on the matching invitation and adds 1 to the day's `signups` count in `ops.daily_counts` (9.6). It never refuses a sign-up; that is done by the hook in 4.9, because an exception raised in this trigger reaches the client only as a generic 500 error. Vendor and admin accounts are created by the server route in section 6 with role set explicitly, and a vendor cannot become a consumer or the reverse.
@@ -339,6 +364,15 @@ Sign-up trigger `app.handle_new_user()` (`security definer`, `after insert` on `
 Private buckets `item-images`, `receipts`, `exports`. Object path `{user_id}/{uuid}.{ext}`.
 
 ```sql
+-- bytes the caller already stores in item-images and receipts (4.6 cap)
+create function app.storage_used() returns bigint
+language sql stable security definer set search_path = storage as $$
+  select coalesce(sum((o.metadata->>'size')::bigint), 0) from storage.objects o
+  where o.bucket_id in ('item-images', 'receipts')
+    and (storage.foldername(o.name))[1] = (select auth.uid())::text $$;
+revoke execute on function app.storage_used() from public;
+grant execute on function app.storage_used() to authenticated;
+
 create policy "own folder read"  on storage.objects for select to authenticated
   using (bucket_id in ('item-images','receipts','exports')
          and (storage.foldername(name))[1] = (select auth.uid())::text and (select app.has_consent()));
@@ -354,7 +388,7 @@ create policy "own folder write" on storage.objects for insert to authenticated
 
 Limits set on the buckets: images 5 MB, receipts 8 MB, exports 50 MB (the free-plan maximum per file); allowed types `image/jpeg`, `image/png`, `image/webp`, `application/pdf` for receipts only, and `application/zip` for exports only.
 
-Images are re-encoded in the browser before upload (9.4 `lib/image-prep.ts`): item photos to at most 1,200 pixels and receipt photos to at most 2,000 pixels on the long side. PDF receipts are uploaded as they are. Each user may store at most 8 MB across `item-images` and `receipts`. The `security definer` function `app.storage_used()` sums `metadata->>'size'` of the caller's objects in those two buckets, and the app explains the limit when an upload is refused.
+Images are re-encoded in the browser before upload (9.4 `lib/image-prep.ts`): item photos to at most 1,200 pixels and receipt photos to at most 2,000 pixels on the long side. PDF receipts are uploaded as they are. Each user may store about 8 MB across `item-images` and `receipts`: an upload is refused once the caller already stores 8 MB, so the total can exceed 8 MB by at most one file (the policy checks the objects already stored, because the size of the object being uploaded may not be known when the policy runs). The `security definer` function `app.storage_used()` sums `metadata->>'size'` of the caller's objects in those two buckets, and the app explains the limit when an upload is refused.
 
 ### 4.7 Indexes
 
@@ -488,11 +522,12 @@ A `security definer` function owned by a privileged role, scheduled with `pg_cro
 
 ### 5.2 The cube
 
-`analytics.cube` columns: `run_id`, `kind`, `period`, `d_category`, `d_colour_family`, `d_fit`, `d_brand`, `f_size`, `f_season`, `f_price_band`, `f_region` (all nullable; a null means "all" and comes only from the grouping, because facts never hold nulls in these columns, 5.1), `condition_band` (nullable, used only for the condition spectrum), `users_rounded`, `events_rounded`. The raw counts `users` (distinct `user_hash`) and `events` (rows) exist only in the staging table `analytics_private.cube_stage`. It has the same dimension columns, is emptied at the start of each run and is truncated after publishing (5.3).
+`analytics.cube` columns: `run_id`, `kind`, `period`, `d_category`, `d_colour_family`, `d_fit`, `d_brand`, `f_size`, `f_season`, `f_price_band`, `f_region` (all nullable; a null means "all" and comes only from the grouping, because facts never hold nulls in these columns, 5.1), `condition_band` (nullable, used only for the condition spectrum), `users_rounded`, `events_rounded`, and `users_floor` (used only for the second minimum-group check in 5.4, never returned to vendors). The raw counts `users` (distinct `user_hash`) and `events` (rows) exist only in the staging table `analytics_private.cube_stage`. It has the same dimension columns, is emptied at the start of each run and is truncated after publishing (5.3).
 
 Grouping sets, generated programmatically in the function: for each dimension group `D` in {`category`}, {`colour_family`}, {`fit`}, {`brand`}, {`category, colour_family`}, {`category, fit`}, {`category, brand`}, and each filter `F` in {none, `size`, `season`, `price_band`, `region`}, one grouping set `D plus F`. At most one filter applies at once (FR-77). A separate pass builds the condition spectrum: one row per `category` and `condition_band`, using only `owned` facts whose `condition_band` is not `Unrated`. Unrated items are left out, so no row stands for "no band". Section 5.3 applies to these rows as to every other row, and in step 2 the bands of a category count as the children of that category.
 
 ```sql
+-- illustrative shape: the column list and the grouping sets are generated by the function
 insert into analytics_private.cube_stage (...)
 select kind, period, category, colour_family, fit, brand, size, season, price_band, region,
        count(distinct user_hash), count(*)
@@ -504,15 +539,15 @@ group by kind, period, grouping sets (<generated list>);
 
 1. **Minimum group size.** Mark rows with `users < (select value::int from ops.settings where key = 'min_group_size')` (value 10 in the pilot, 50 in production).
 2. **Complementary suppression.** A row's children are the rows with the same `kind`, `period` and values that add exactly one attribute: a filter value (for example `category` = Tops split by `size`) or a finer dimension group (for example `category` = Tops split by `colour_family`). Each added attribute gives a separate set of siblings. For each unmarked parent and each of its sibling sets, if any child is marked and either only one child is marked or the marked children together have fewer than `min_group_size` users, mark the smallest unmarked child in that set (if one remains). Repeat until no new row is marked, then delete every marked row (its `users` and `events` together), so that no hidden value, alone or summed with its hidden siblings, can be recovered by subtracting from the parent.
-3. **Rounding.** Set `users_rounded = round(users / 5.0) * 5` and `events_rounded` likewise.
+3. **Rounding.** Set `users_rounded = round(users / 5.0) * 5` and `events_rounded` likewise (nearest 5, as decided). Also set `users_floor = floor(users / 5.0) * 5`. `min_group_size` must be a multiple of 5 (10 in the pilot, 50 in production), so `users_floor >= min_group_size` holds exactly when `users >= min_group_size`; `users_rounded` cannot be used for this, because 8 or 9 users round up to 10.
 4. **No zero reveal.** A row that rounds to 0 after step 3 is deleted.
-5. **Publish.** Copy the dimension columns and the rounded values (never `users` or `events`) into `analytics.cube`, replacing the previous run. Then truncate `analytics_private.cube_stage`, so raw counts are never kept between runs.
+5. **Publish.** Copy the dimension columns, the rounded values and `users_floor` (never `users` or `events`) into `analytics.cube`, replacing the previous run. Then truncate `analytics_private.cube_stage`, so raw counts are never kept between runs.
 
 ### 5.4 Vendor functions
 
 All are `security definer`, in schema `analytics`, with `search_path` fixed, executable only by `authenticated`, and begin with `if app.current_role() is distinct from 'vendor' then raise exception 'forbidden'; end if;` (a caller with no profile row has a null role, which `<>` would let through). Each has a hard-coded whitelist of dimension and filter names; the values are passed as parameters and never interpolated into SQL. The functions are declared `volatile` (not `stable`), because each one writes to the query log (section 5.7). After the role check each function also verifies that the vendor user has accepted the current Vendor Pilot Agreement version, written as `if not exists (select 1 from catalog.vendor_agreement_acceptances where user_id = (select auth.uid()) and version = (select value from ops.settings where key = 'current_vendor_agreement_version')) then raise exception 'agreement_required'; end if;` so that a missing row or setting refuses the call, and that maintenance mode (9.1) is off (otherwise it raises `maintenance`). It then calls `analytics.log_and_limit` (section 5.7).
 
-Each function's query is held in an internal function in `analytics_private` that reads only `analytics.cube`, so it sees only rows that passed section 5.3. The function in `analytics` is a thin wrapper that adds the checks above. The report builder (5.5) calls the same internal functions. Every internal function reads only rows with `users_rounded >= (select value::int from ops.settings where key = 'min_group_size')`. This is the second minimum-group check required by HLD 7 (defence in depth), on top of section 5.3 step 1.
+Each function's query is held in an internal function in `analytics_private` that reads only `analytics.cube`, so it sees only rows that passed section 5.3. The function in `analytics` is a thin wrapper that adds the checks above. The report builder (5.5) calls the same internal functions. Every internal function reads only rows with `users_floor >= (select value::int from ops.settings where key = 'min_group_size')` and returns only rounded values. This is the second minimum-group check required by HLD 7 (defence in depth), on top of section 5.3 step 1.
 
 | Function | Returns | Used by |
 | --- | --- | --- |
@@ -619,7 +654,7 @@ A Python 3.11 container with a FastAPI app. It exposes only `/health` on the con
 
 | Component | Detail |
 | --- | --- |
-| Database access | One long-lived connection through the Supabase connection pooler (Supavisor) in session mode, using a dedicated Postgres role `worker_role` (see section 12.3). Privileges: `usage` on schemas `app`, `catalog`, `ops` and `extensions`; `select`, `update` on `app.jobs` (it writes `status`, `result`, `last_error`, `run_after` and `finished_at`; job results go in `app.jobs.result`); `select` on the `catalog` lookups and `catalog_items` (for receipt matching with `extensions.similarity`); `select`, `insert`, `update` on `ops.worker_heartbeat`, its only `ops` table. Each grant has a matching RLS policy for `worker_role` (4.5). It cannot read any other user table. |
+| Database access | One long-lived connection through the Supabase connection pooler (Supavisor) in session mode, using a dedicated Postgres role `worker_role` (see section 12.3). Privileges: `usage` on schemas `app`, `catalog`, `ops` and `extensions`; `select`, `update` on `app.jobs` (it writes `status`, `started_at`, `attempts`, `result`, `last_error`, `run_after` and `finished_at`; job results go in `app.jobs.result`); `select` on the `catalog` lookups and `catalog_items` (for receipt matching with `extensions.similarity`); `select`, `insert`, `update` on `ops.worker_heartbeat`, its only `ops` table. Each grant has a matching RLS policy for `worker_role` (4.5). It cannot read any other user table. |
 | Storage access | Through the signed URLs from `/api/worker/signed-urls`. The Supabase secret key is never on the worker machine. |
 | Concurrency | One job at a time. Background removal and OCR are memory heavy. |
 | Memory | About 2 GB; model files are loaded once at start and kept. |
@@ -642,7 +677,18 @@ create table app.jobs (
 );
 ```
 
-Users can insert jobs for themselves and read their own job rows, and nothing more. `authenticated` has `select` and a column-limited `insert` grant (`grant insert (user_id, type, input) on app.jobs to authenticated`). It has no update or delete grant or policy. So `status`, `result`, `attempts`, `run_after` and the timestamps always take their defaults, and only the worker (7.1) changes a job after it is created. The insert policy checks `user_id = (select auth.uid())`, `(select app.current_role()) = 'consumer'` and `(select app.has_consent())`, and that every input path starts with the user's own ID. The worker claims one job:
+Users can insert jobs for themselves and read their own job rows, and nothing more. `authenticated` has `select` and a column-limited `insert` grant (`grant insert (user_id, type, input) on app.jobs to authenticated`). It has no update or delete grant or policy. So `status`, `result`, `attempts`, `run_after` and the timestamps always take their defaults, and only the worker (7.1) changes a job after it is created. The insert policy checks `user_id = (select auth.uid())`, `(select app.current_role()) = 'consumer'` and `(select app.has_consent())`, and that every input path starts with the user's own ID, and `(select app.recent_job_count()) < 20` (the rate limit in section 10). A subquery on `app.jobs` inside the policy itself would recurse, so the count comes from a `security definer` function:
+
+```sql
+create function app.recent_job_count() returns int
+language sql stable security definer set search_path = app as $$
+  select count(*)::int from app.jobs
+  where user_id = (select auth.uid()) and created_at > now() - interval '1 hour' $$;
+revoke execute on function app.recent_job_count() from public;
+grant execute on function app.recent_job_count() to authenticated;
+```
+
+The worker claims one job:
 
 ```sql
 update app.jobs set status = 'running', started_at = now(), attempts = attempts + 1
@@ -650,7 +696,7 @@ where id = (select id from app.jobs
             where status = 'queued' and run_after <= now()
             order by id
             for update skip locked limit 1)
-returning id, user_id, type, input;
+returning id, user_id, type, input, attempts;
 ```
 
 A job is attempted at most three times (`attempts` goes up by one on each claim). If a handler raises an error, the worker records `last_error` and sets the job back to `queued` with `run_after = now() + interval '30 seconds'` if `attempts < 3`, or to `failed` otherwise. `no_lines` (7.4) is not retried and goes straight to `failed`. A reaper query, run by `pg_cron` every minute, applies the same rule to jobs stuck in `running` for more than five minutes (for example after a worker crash). Every write the worker makes when it finishes a job (result and `done`, `failed` or requeue) adds `and status = 'running' and attempts = <the value returned by the claim>` to its `where` clause. If no row is updated, the job was reaped or claimed again, and the worker discards its result.
@@ -750,7 +796,7 @@ These checks only guide the interface. The database policies in 4.5 are the actu
 
 **Other pages (FR-66, FR-67, FR-95).** The About page (`/about`), the Privacy Policy, the Terms of Use and the pilot notice are public pages. Settings has a **Leave the pilot** button that calls `/api/account/delete`; `/about` shows the value of `CONTACT_EMAIL` and the list from `app.supported_countries()`, which the sign-up page also shows (FR-8). The vendor portal's Account page also shows `CONTACT_EMAIL` (FR-95).
 
-**Maintenance mode (Incident Response Plan sections 4 and 7).** While `ops.settings.maintenance` is `on` (set through `/api/admin/settings`, or the Supabase SQL editor if the app is down), `app.has_consent()` returns false for every caller (4.5). As a result, no consumer data row or storage object can be read or written through the API, the vendor functions refuse the call (5.4), and `proxy.ts` sends every non-admin user to a `/maintenance` page. The nightly aggregation calls `ops.is_eligible` and is not affected.
+**Maintenance mode (Incident Response Plan sections 4 and 7).** While `ops.settings.maintenance` is `on` (set through `/api/admin/settings`, or the Supabase SQL editor if the app is down), `app.has_consent()` returns false for every caller (4.5). As a result, no wardrobe, purchase, wishlist, outfit, job or analytics row and no storage object can be read or written through the API (a user can still read their own profile, consent records and acceptances), the vendor functions refuse the call (5.4), and `proxy.ts` sends every non-admin user to a `/maintenance` page. The nightly aggregation calls `ops.is_eligible` and is not affected.
 
 ### 9.2 Data layer
 
@@ -830,7 +876,7 @@ A small `track(event, props)` function inserts into `app.analytics_events` under
 | Worker | Database role with the minimum grants (7.1); storage only through short-lived signed URLs, so the Supabase secret key never leaves Vercel. Requests to the signing route are authenticated with an HMAC token, rate limited, and tied to a job in `running` status. |
 | Uploads | Size and content-type limits at the bucket; content sniffing in the worker; the worker re-encodes its outputs; the browser re-encodes every image before upload (9.4 `lib/image-prep.ts`), so EXIF metadata, including GPS location, is never stored. PDF receipts are stored as uploaded. |
 | Input handling | zod validation on every form and route body; parameterised queries only; vendor functions whitelist dimension names. |
-| Rate limiting | Per-user limits on job creation (20 per hour), exports (3 per day) and feed uploads (10 per day), enforced in the insert policies and routes. |
+| Rate limiting | Per-user limits on job creation (20 per hour, in the `app.jobs` insert policy through `app.recent_job_count()`, 7.2), exports (3 per day, in `/api/account/export`) and feed uploads (10 per day, in `/api/vendor/feed/validate`). |
 | Invitation and region control | The Before User Created hook `ops.check_invitation()` refuses sign-ups for emails not in `ops.invitations` with the FR-8 message; `app.complete_onboarding` records and flags countries not in `supported_countries`, and the app holds those users at `/not-available`; `app.has_consent()` includes the country check, so an account outside the allow-list can read only its own profile, consent records and acceptances (4.9). The invitation is checked only at sign-up; removing an email from `ops.invitations` does not lock an existing account (the admin suspends it instead, section 6). |
 | Vendor probing | Every vendor function logs the call and refuses beyond 200 calls an hour (5.7); the admin console shows the log. |
 | Receipt privacy | Masking and no stored raw text (7.4); draft results deleted after 7 days. |

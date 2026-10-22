@@ -101,7 +101,7 @@ Priority uses MoSCoW: Must, Should, Could. Every requirement traces to the FDD, 
 | BR-13 | The app is usable on a phone browser and installable as a PWA. | Must |
 | BR-14 | Users can rate each item's condition themselves on a 0 to 100 scale (0 = brand new, 100 = falling apart). Vendors see condition as a spectrum of bands, not raw scores. | Should |
 | BR-15 | Logging "what I wore today" is available but completely optional. The app never prompts, reminds or rewards it, and no wear counts are kept or aggregated, because a log is not a reliable measure of wear. | Could |
-| BR-16 | The pilot is open by invitation only. Sign-up works only for invited email addresses, and only for users who declare a country on the supported list (initially India). | Must |
+| BR-16 | The pilot is open by invitation only. Sign-up works only for invited email addresses, and the app can be used only by users who declare a country on the supported list (initially India) at onboarding. | Must |
 | BR-17 | At sign-up users accept the Terms of Use and the Privacy Policy. Acceptance is recorded with the version and time. | Must |
 
 ### 7.2 Privacy and consent
@@ -265,6 +265,6 @@ The ANCP D1 charter (`docs/ANCP_TM_D1_v1.pdf`) is a submitted course document an
 | --- | --- |
 | Segment | A combination such as category + colour family + fit (+ size or season) used for aggregates. |
 | Seed catalogue | The starting catalogue of popular items from public storefront data. |
-| Gap | A segment with high wishlist demand and low ownership (BR-31). Its gap score is distinct wishlist users divided by distinct owning users, shown as "no ownership" when no users own it, as defined in the FDD (FR-81). |
+| Gap | A segment with high wishlist demand and low ownership (BR-31). Its gap score is distinct wishlist users divided by distinct owning users, shown as "no visible ownership" when the owning count is zero or suppressed, as defined in the FDD (FR-81). |
 | Vendor | A brand, manufacturer or retailer receiving aggregate insights. |
 | PWA | Progressive web app, a website that installs and behaves like an app. |

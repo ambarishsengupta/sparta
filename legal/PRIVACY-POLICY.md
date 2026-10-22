@@ -24,15 +24,15 @@ The pilot is run by the **Sparta project team**, three students taking part in t
 | Group | What | Why |
 | --- | --- | --- |
 | Invitation | The email address we invited, when you were invited and joined, and an optional short note by the team | To limit the pilot to invited people |
-| Account | Email address, password (stored only as a secure hash by our sign-in provider) or Google account identifier, display name, country, hemisphere, preferred currency, your declaration that you are 18 or over | To run your account and show seasons and prices correctly |
+| Account | Email address, password (stored only as a secure hash by our sign-in provider) or, if you sign in with Google, the Google account identifier, name and profile picture link that Google shares, display name, country, hemisphere, preferred currency, preferred occasions (optional), your declaration that you are 18 or over | To run your account and show seasons and prices correctly |
 | Wardrobe | Items you add: category, colour, fit, material, pattern, size, brand, store, price, dates, condition rating, tags, notes, photos | To show and organise your wardrobe |
 | Purchases | Date, store, price, currency, quantity, notes; receipt images or files you upload | To keep your purchase history |
-| Receipts | The image or file you upload, and the lines read from it (item description, quantity, price, store, date). In the lines we keep, card numbers, email addresses, phone numbers and loyalty or membership numbers are masked and address lines are dropped; the raw text read from the scan is never stored. The image or file itself is kept as you uploaded it, in private storage, until you delete it or your account, so cover or crop card numbers and addresses before you upload. | To fill in purchases for you |
+| Receipts | The image or file you upload, and the lines read from it (item description, quantity, price, store, date). In the lines we keep, card numbers, email addresses, phone numbers and loyalty or membership numbers are masked and address lines are dropped; the raw text read from the scan is never stored. The image or file itself is not masked: it is kept in private storage (photos are resized and their location and other metadata removed; PDFs are kept as uploaded), until you delete it or your account, so cover or crop card numbers and addresses before you upload. | To fill in purchases for you |
 | Wishlist and plans | Wishlist entries, target prices, planned months, budgets | To plan purchases |
-| Outfits | Outfits, plans, and optional "I wore this" entries | To plan outfits |
+| Outfits | Outfits, plans, optional "I wore this" entries, and whether you accepted or rejected outfit suggestions | To plan outfits and improve the suggestion rules |
 | Consent and terms | Which notice and terms you accepted, and when | To prove that you agreed |
 | Usage | Pseudonymous events such as "item added" (no free text) | To measure whether the pilot works |
-| Technical | IP address, device and browser details, in the logs of our hosting providers | To keep the service secure and working |
+| Technical | IP address, device and browser details, in the logs of our hosting providers and in our sign-in provider's session records | To keep the service secure and working |
 
 We **do not** collect your contacts, your precise location, payment card details, or your messages. Please do not upload anything that shows card numbers, addresses or other people's personal details.
 
@@ -68,7 +68,7 @@ We use these providers to run the pilot. They process data for us under their st
 | Supabase | Database, sign-in and file storage. Hosted in South Asia (Mumbai, India). |
 | Vercel | Hosts the web app and prepares your data exports; its functions run in Mumbai, India |
 | GitHub | Stores our code and runs scheduled jobs (no user data) |
-| An email service (its name and hosting region will be added here before the first invitation is sent) | Sends account emails: vendor portal invitations, email verification, password reset, export ready and deletion confirmation |
+| An email service (its name and hosting region will be added here before the first invitation is sent) | Sends account emails: vendor portal invitations, email verification, password reset, export ready, deletion confirmation and the end-of-pilot notice |
 | A team member's computer | Runs the program that removes photo backgrounds and reads receipts. It is encrypted, has no open inbound connections, and deletes temporary files after each job. It also keeps the weekly backups of the database, encrypted, for up to 30 days; the key to open them is not stored on this computer. |
 | Another team member's private storage | Keeps a second encrypted copy of the weekly database backups, for up to 30 days. Its provider and country will be added here before the pilot opens. |
 
@@ -84,6 +84,8 @@ Your data may be processed outside your country, depending on the provider's reg
 | Data exports we prepare for you | 7 days |
 | Group figures for vendors | The dashboard shows only the latest run. Reviewed monthly reports (group figures only) and the logs of runs (both with no personal data) are kept for the pilot |
 | Backups | Up to 30 days. A deleted account can remain in backups for up to 30 days and is not restored. |
+| Record that an account was deleted (internal account ID and time only) | 30 days, so that a restored backup never brings the account back |
+| Record of team actions in the admin console (internal account IDs only, no email or content) | The pilot period |
 | Usage events | Until you delete your account or the pilot ends |
 | Vendor portal users: account details, agreement acceptances and the query log | The pilot period |
 

@@ -11,7 +11,19 @@ Working folder for the data audit of the public H&M dataset.
 
 Source: H&M Personalized Fashion Recommendations (Kaggle). The competition rules limit use to non-commercial research and education. Record the date each file was accessed and its SHA-256 checksum in the audit report.
 
-## Running the extraction script
+## Running the extraction script in a notebook
+
+If the three DataFrames are already loaded as `articles`, `customers` and `transactions`, save `extract_audit_stats.py` next to the notebook and run:
+
+```python
+import extract_audit_stats as eas
+eas.run(articles, customers, transactions, out_dir="audit_stats", max_rows=500000)   # quick test first
+eas.run(articles, customers, transactions, out_dir="audit_stats")                    # full run
+```
+
+Leading zeros lost on loading (`article_id`, `product_code`, `colour_group_code`) are restored, so the files do not need to be re-read as text. Because the raw files are not read in this mode, add the SHA-256 checksum of each original file to the audit report by hand.
+
+## Running the extraction script from the command line
 
 ```
 pip install pandas numpy

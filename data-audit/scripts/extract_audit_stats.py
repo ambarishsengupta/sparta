@@ -16,7 +16,12 @@ Outputs (default folder data-audit/audit_stats/)
 
 Needs: Python 3.8 or later, pandas and numpy. Nothing else.
 
-Usage
+Usage in a notebook (DataFrames named articles, customers, transactions)
+    import extract_audit_stats as eas          # script saved next to the notebook
+    eas.run(articles, customers, transactions, out_dir="audit_stats")
+    eas.run(articles, customers, transactions, out_dir="audit_stats", max_rows=500000)   # quick test first
+
+Usage on the command line
     python extract_audit_stats.py                      # full run
     python extract_audit_stats.py --max-rows 500000    # quick test on the first 500,000 transactions
     python extract_audit_stats.py --raw-dir D:/hm --out-dir D:/hm_stats
@@ -102,7 +107,7 @@ def age_band(age_series):
     return pd.Series(np.where(pd.isna(b), "missing", b), index=age_series.index)
 
 
-def main():
+def build_parser():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--raw-dir", default=os.path.join("data-audit", "raw"))
     ap.add_argument("--out-dir", default=os.path.join("data-audit", "audit_stats"))
@@ -115,7 +120,38 @@ def main():
     ap.add_argument("--price-sample-step", type=int, default=16, help="use every Nth price for quantiles")
     ap.add_argument("--write-menswear-extract", action="store_true",
                     help="also write menswear_transactions.csv.gz (row level, hashed customer IDs)")
-    args = ap.parse_args()
+    return ap
+
+
+def id_str(s, width=None):
+    """Return an ID column as text. Numeric IDs (leading zeros lost on loading) are zero-padded to `width`."""
+    if pd.api.types.is_numeric_dtype(s):
+        out = s.astype("Int64").astype(str).str.zfill(width or 1)
+        return out.where(s.notna(), None)
+    out = s.astype(str)
+    return out.where(s.notna(), None)
+
+
+def main():
+    args = build_parser().parse_args()
+    run_audit(args)
+
+
+def run(articles=None, customers=None, transactions=None, **kwargs):
+    """Run the audit on DataFrames already in memory (notebook use).
+
+    Any argument left as None is read from --raw-dir instead. Keyword arguments are the command line options
+    with underscores, for example run(articles, customers, transactions, out_dir='audit_stats', max_rows=500000).
+    """
+    args = build_parser().parse_args([])
+    for k, v in kwargs.items():
+        if not hasattr(args, k):
+            raise TypeError('unknown option: %s' % k)
+        setattr(args, k, v)
+    return run_audit(args, articles, customers, transactions)
+
+
+def run_audit(args, articles=None, customers=None, transactions=None):
 
     menswear_groups = [g.strip() for g in args.menswear_groups.split(",") if g.strip()]
     os.makedirs(args.out_dir, exist_ok=True)
@@ -132,25 +168,40 @@ def main():
         "menswear_groups": menswear_groups,
     }
 
-    paths = {n: os.path.join(args.raw_dir, n + ".csv") for n in ["articles", "customers", "transactions_train"]}
+    frames = {"articles": articles, "customers": customers, "transactions_train": transactions}
+    paths = {n: os.path.join(args.raw_dir, n + ".csv") for n in frames}
     for n, p in paths.items():
-        if not os.path.exists(p):
-            sys.exit("Missing file: %s (use --raw-dir to point at the folder)" % p)
+        if frames[n] is None and not os.path.exists(p):
+            sys.exit("Missing file: %s (use --raw-dir to point at the folder, or pass the DataFrame)" % p)
 
     # ------------------------------------------------------------------ file inventory
     log("File inventory")
     inv = []
     for n, p in paths.items():
-        row = {"file": os.path.basename(p), "size_bytes": os.path.getsize(p),
-               "sha256": "skipped" if args.skip_checksums else sha256_of(p)}
-        with open(p, "r", encoding="utf-8", errors="replace") as f:
-            row["header"] = f.readline().strip()
+        row = {"file": os.path.basename(p), "source": "in-memory DataFrame" if frames[n] is not None else "file"}
+        if frames[n] is not None:
+            row["rows"] = int(len(frames[n]))
+            row["header"] = ",".join(str(c) for c in frames[n].columns)
+            row["dtypes"] = ";".join("%s=%s" % (c, d) for c, d in frames[n].dtypes.items())
+        if os.path.exists(p):
+            row["size_bytes"] = os.path.getsize(p)
+            row["sha256"] = "skipped" if args.skip_checksums else sha256_of(p)
+            if frames[n] is None:
+                with open(p, "r", encoding="utf-8", errors="replace") as f:
+                    row["header"] = f.readline().strip()
+        else:
+            row["sha256"] = "file not found next to the script: add the checksum of the original file by hand"
         inv.append(row)
     written.append(write_csv(pd.DataFrame(inv), args.out_dir, "00_file_inventory.csv"))
 
     # ------------------------------------------------------------------ articles
-    log("Reading articles.csv")
-    art = pd.read_csv(paths["articles"], dtype=str)
+    log("Preparing articles")
+    art = pd.read_csv(paths["articles"], dtype=str) if articles is None else articles.copy()
+    art["article_id"] = id_str(art["article_id"], 10)
+    # codes that carry leading zeros when read as text: product_code has 7 digits, colour_group_code 2
+    for c, width in [("product_code", 7), ("colour_group_code", 2)]:
+        if c in art.columns and pd.api.types.is_numeric_dtype(art[c]):
+            art[c] = id_str(art[c], width)
     info["articles_rows"] = int(len(art))
     info["articles_columns"] = list(art.columns)
     written.append(write_csv(missing_table(art), args.out_dir, "10_articles_missing.csv"))
@@ -177,8 +228,9 @@ def main():
     written.append(write_csv(art.loc[is_men_art, keep], args.out_dir, "14_articles_menswear.csv"))
 
     # ------------------------------------------------------------------ customers
-    log("Reading customers.csv")
-    cus = pd.read_csv(paths["customers"], dtype=str)
+    log("Preparing customers")
+    cus = pd.read_csv(paths["customers"], dtype=str) if customers is None else customers.copy()
+    cus["customer_id"] = id_str(cus["customer_id"])
     info["customers_rows"] = int(len(cus))
     info["customers_columns"] = list(cus.columns)
     written.append(write_csv(missing_table(cus), args.out_dir, "20_customers_missing.csv"))
@@ -210,18 +262,26 @@ def main():
             "share_pct": (top.values / len(cus) * 100).round(3)}), args.out_dir, "23_customers_top_postal_hashes.csv"))
 
     # lookup tables for the transaction pass
-    art_cols_for_join = {c: art.set_index("article_id")[c] for c in
+    art_unique_ids = art.drop_duplicates("article_id")
+    art_cols_for_join = {c: art_unique_ids.set_index("article_id")[c] for c in
                          ["index_group_name", "product_group_name", "product_type_name",
                           "perceived_colour_master_name", "graphical_appearance_name"] if c in art.columns}
-    age_lookup = cus.set_index("customer_id")["age_num"]
+    age_lookup = cus.drop_duplicates("customer_id").set_index("customer_id")["age_num"]
     art_hashes = np.unique(hash_ids(art["article_id"]))
     cus_hashes = np.unique(hash_ids(cus["customer_id"]))
     menswear_art_ids = set(art.loc[is_men_art, "article_id"])
 
     # ------------------------------------------------------------------ transactions
-    log("Reading transactions_train.csv in chunks (this is the long step)")
-    reader = pd.read_csv(paths["transactions_train"], chunksize=args.chunk_size, nrows=args.max_rows,
-                         dtype={"customer_id": str, "article_id": str, "t_dat": str})
+    log("Reading transactions in chunks (this is the long step)")
+    if transactions is None:
+        reader = pd.read_csv(paths["transactions_train"], chunksize=args.chunk_size, nrows=args.max_rows,
+                             dtype={"customer_id": str, "article_id": str, "t_dat": str})
+    else:
+        absent = [c for c in TX_COLS if c not in transactions.columns]
+        if absent:
+            sys.exit("transactions DataFrame is missing columns: %s" % absent)
+        tx_df = transactions if args.max_rows is None else transactions.head(args.max_rows)
+        reader = (tx_df.iloc[s:s + args.chunk_size] for s in range(0, len(tx_df), args.chunk_size))
     n_rows = 0
     miss = {c: 0 for c in TX_COLS}
     bad_dates = 0
@@ -251,6 +311,7 @@ def main():
         os.remove(extract_path)
 
     for i, ch in enumerate(reader, 1):
+        ch = ch.assign(article_id=id_str(ch["article_id"], 10), customer_id=id_str(ch["customer_id"]))
         n_rows += len(ch)
         for c in TX_COLS:
             if c in ch.columns:
@@ -399,5 +460,9 @@ def main():
         log("Menswear extract (not in the zip): %s (%.1f MB)" % (extract_path, os.path.getsize(extract_path) / 1e6))
 
 
-if __name__ == "__main__":
+def _in_notebook():
+    return "ipykernel" in sys.modules or "google.colab" in sys.modules
+
+
+if __name__ == "__main__" and not _in_notebook():
     main()

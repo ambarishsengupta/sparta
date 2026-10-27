@@ -2,8 +2,8 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.1 (draft for the academic pilot) |
-| Date | 2026-10-20 |
+| Version | 0.2 (draft for the academic pilot) |
+| Date | 2026-10-22 |
 | Applies to | The Sparta pilot (3 months), consumer app and vendor portal |
 | Review status | Written by the project team with AI assistance. **Not reviewed by a lawyer.** A professional review is required before any public or commercial launch. |
 
@@ -23,23 +23,26 @@ The pilot is run by the **Sparta project team**, three students taking part in t
 
 | Group | What | Why |
 | --- | --- | --- |
-| Account | Email address, password (stored only as a secure hash by our sign-in provider) or Google account identifier, display name, country, hemisphere, preferred currency, your declaration that you are 18 or over | To run your account and show seasons and prices correctly |
+| Invitation | The email address we invited, when you were invited and joined, and an optional short note by the team | To limit the pilot to invited people |
+| Account | Email address, password (stored only as a secure hash by our sign-in provider) or, if you sign in with Google, the Google account identifier, name and profile picture link that Google shares, display name, country, hemisphere, preferred currency, preferred occasions (optional), your declaration that you are 18 or over | To run your account and show seasons and prices correctly |
 | Wardrobe | Items you add: category, colour, fit, material, pattern, size, brand, store, price, dates, condition rating, tags, notes, photos | To show and organise your wardrobe |
 | Purchases | Date, store, price, currency, quantity, notes; receipt images or files you upload | To keep your purchase history |
-| Receipts | The image or file you upload, and the lines read from it (item description, quantity, price, store, date). Card numbers, email addresses and phone numbers found on a receipt are masked and are not kept. | To fill in purchases for you |
+| Receipts | The image or file you upload, and the lines read from it (item description, quantity, price, store, date). In the lines we keep, card numbers, email addresses, phone numbers and loyalty or membership numbers are masked and address lines are dropped; the raw text read from the scan is never stored. The image or file itself is not masked: it is kept in private storage (photos are resized and their location and other metadata removed; PDFs are kept as uploaded), until you delete it or your account, so cover or crop card numbers and addresses before you upload. | To fill in purchases for you |
 | Wishlist and plans | Wishlist entries, target prices, planned months, budgets | To plan purchases |
-| Outfits | Outfits, plans, and optional "I wore this" entries | To plan outfits |
+| Outfits | Outfits, plans, optional "I wore this" entries, and whether you accepted or rejected outfit suggestions | To plan outfits and improve the suggestion rules |
 | Consent and terms | Which notice and terms you accepted, and when | To prove that you agreed |
 | Usage | Pseudonymous events such as "item added" (no free text) | To measure whether the pilot works |
-| Technical | IP address, device and browser details, in the logs of our hosting providers | To keep the service secure and working |
+| Technical | IP address, device and browser details, in the logs of our hosting providers and in our sign-in provider's session records | To keep the service secure and working |
 
 We **do not** collect your contacts, your precise location, payment card details, or your messages. Please do not upload anything that shows card numbers, addresses or other people's personal details.
 
+**Vendor portal users.** If you use the vendor portal on behalf of a brand or retailer, you are not a participant, so sections 10 and 13, and the sharing described in section 4, do not apply to you. We collect your email address, password (stored only as a secure hash by our sign-in provider), display name and the vendor you represent; which version of the Vendor Pilot Agreement you accepted and when; pseudonymous usage events such as "report opened"; and a log of your dashboard queries (which view, which filters, when). We use the log to apply the limit of 200 queries an hour and to detect attempts to identify participants. Only the project team can see it. Questions and requests go to the contact address in section 2.
+
 ## 4. How we use it
 
-1. **To run the app for you** (sections 3 and 8 of the terms).
-2. **To produce anonymised group insights for vendors.** Each night we combine data from all participants into groups such as "navy shirts, regular fit". A group is shown to vendors only if at least **10 participants** are in it, numbers are rounded to the nearest 5, and neighbouring groups can be hidden so figures cannot be worked out by subtraction. Vendors see only these group figures, never any row about you. Your user identity is replaced by a one-way code that changes on every run.
-3. **To write our academic report.** The report uses only these group figures. Faculty may see the same group figures.
+1. **To run the app for you** (Terms of Use, section 5).
+2. **To produce anonymised group insights for vendors.** Each night we combine data from all participants into groups such as "navy shirts, regular fit". A group is shown to vendors only if at least **10 participants** are in it, numbers are rounded to the nearest 5, and neighbouring groups can be hidden to make it hard to work out a hidden figure by subtraction. Vendors see only these group figures, never any row about you. Your user identity is replaced by a one-way code that changes on every run. Together these safeguards make it hard, though not impossible, for anyone to pick out one participant.
+3. **To write our academic report.** The report, and any data we hand in for the course, use only aggregated figures: group figures built under the same rules as above, and overall pilot statistics such as how many people joined and how actively the app was used. They never include information about an individual participant. Faculty may see these figures.
 4. **To keep the pilot secure and fix problems.**
 
 We do not sell your data, show you advertising, or let vendors contact you. We do not use your data to train AI or machine-learning models. If a later phase wants to, we will ask you again with a new notice, and you can say no and leave.
@@ -63,10 +66,11 @@ We use these providers to run the pilot. They process data for us under their st
 | Provider | Role |
 | --- | --- |
 | Supabase | Database, sign-in and file storage. Hosted in South Asia (Mumbai, India). |
-| Vercel | Hosts the web app; its functions run in Mumbai, India |
+| Vercel | Hosts the web app and prepares your data exports; its functions run in Mumbai, India |
 | GitHub | Stores our code and runs scheduled jobs (no user data) |
-| An email service | Sends account emails (verification, password reset, export ready) |
-| A team member's computer | Runs the program that removes photo backgrounds and reads receipts. It is encrypted, has no open inbound connections, and deletes temporary files after each job. |
+| An email service (its name and hosting region will be added here before the first invitation is sent) | Sends account emails: vendor portal invitations, email verification, password reset, export ready, deletion confirmation and the end-of-pilot notice |
+| A team member's computer | Runs the program that removes photo backgrounds and reads receipts. It is encrypted, has no open inbound connections, and deletes temporary files after each job. It also keeps the weekly backups of the database, encrypted, for up to 30 days; the key to open them is not stored on this computer. |
+| Another team member's private storage | Keeps a second encrypted copy of the weekly database backups, for up to 30 days. Its provider and country will be added here before the pilot opens. |
 
 Your data may be processed outside your country, depending on the provider's region. We choose a region suited to the participants' country wherever possible.
 
@@ -75,11 +79,15 @@ Your data may be processed outside your country, depending on the provider's reg
 | Data | Kept |
 | --- | --- |
 | Your account data | Until you delete your account or the pilot ends |
+| Invitation list (your email address) | Until you leave the pilot or the pilot ends. If you never sign up, it is deleted when the pilot ends. |
 | Receipt-reading results (the lines) | 7 days |
 | Data exports we prepare for you | 7 days |
-| Group figures for vendors | Only the latest run; the logs of runs (with no personal data) are kept for the pilot |
+| Group figures for vendors | The dashboard shows only the latest run. Reviewed monthly reports (group figures only) and the logs of runs (both with no personal data) are kept for the pilot |
 | Backups | Up to 30 days. A deleted account can remain in backups for up to 30 days and is not restored. |
-| Usage events | The pilot period |
+| Record that an account was deleted (internal account ID and time only) | 30 days, so that a restored backup never brings the account back |
+| Record of team actions in the admin console (internal account IDs only, no email or content) | The pilot period |
+| Usage events | Until you delete your account or the pilot ends |
+| Vendor portal users: account details, agreement acceptances and the query log | The pilot period |
 
 **When the pilot ends** (planned after 3 months), we will tell you and you can export your data. We then either close the pilot and delete all participants' data within 30 days, or ask each participant whether to continue under a new notice, and delete the data of everyone who does not agree.
 
@@ -105,7 +113,7 @@ You must be **18 or over**, invited by the team, and living in a country where t
 
 ## 11. Cookies and similar technologies
 
-We use only the cookies and browser storage needed to keep you signed in and to make the app work offline. We do not use advertising or third-party tracking cookies. Usage events are our own and are pseudonymous.
+We use only the cookies and browser storage needed to keep you signed in and to make the app work offline. To work offline, the app keeps a copy of your recently viewed wardrobe, outfits and wishlist, and any changes not yet synced, in your browser on that device. It is removed when you sign out or leave the pilot. If you share a device, sign out when you finish. We do not use advertising or third-party tracking cookies. Usage events are our own and are pseudonymous.
 
 ## 12. Changes
 
@@ -121,6 +129,6 @@ This text is shown in a blocking pop-up before anyone can use the app (FR-3).
 >
 > Sharing is part of taking part, so it can't be switched off during the pilot. You can leave at any time with **Leave the pilot**, which deletes your account and data. We do not use your data to train AI models.
 >
-> You must be 18 or over. Read the full [Privacy Policy] and [Terms of Use].
+> You must be 18 or over. Read the full [Privacy Policy] and [Terms of Use]. Questions: dunk-volts8c@icloud.com
 >
 > [ I understand and join the pilot ]   [ No thanks ]

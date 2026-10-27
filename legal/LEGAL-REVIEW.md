@@ -2,8 +2,8 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.1 |
-| Date | 2026-10-20 |
+| Version | 0.2 |
+| Date | 2026-10-22 |
 | Nature | A check of the BRD and FDD against the main legal frameworks, written by an AI assistant at the product owner's request because the team has no legal expert. **It is not legal advice.** |
 | Decision | The product owner has decided that a **professional review is out of scope for the pilot**, which is treated as an academic proof of concept, and required before any public, commercial or wider launch. |
 | Frameworks considered | India's Digital Personal Data Protection Act, 2023 (and Rules, 2025); the EU and UK GDPR; CCPA/CPRA; research-ethics norms; scraping and database law in general; open-source licensing |
@@ -26,7 +26,7 @@
 | 4 | DPDP rules timing | Info | Noted | Main DPDP obligations start about May 2027, so the pilot is likely to run before them. The design follows the Act's principles anyway. Confirm the date in the official notification. |
 | 5 | Need for a privacy policy and notice | High | **Resolved** | `PRIVACY-POLICY.md`, including the first-login notice text. |
 | 6 | Re-identification risk with a small cohort | Medium | **Resolved** (controls), **Accepted** (residual) | `PRIVACY-RISK-ASSESSMENT.md`; vendor query log and rate limit (FR-88; LLD 5.7). |
-| 7 | Receipts can hold sensitive details | Medium | **Resolved** | Masking of card-like numbers, emails and phone numbers; raw OCR text never stored; results deleted after 7 days (FR-47; LLD 7.4, 13.4); Terms tell users not to upload sensitive data. |
+| 7 | Receipts can hold sensitive details | Medium | **Resolved** | Masking of card-like numbers, emails, phone numbers and loyalty or membership numbers, and dropping of address lines, in the lines kept; raw OCR text never stored; the receipt image is kept unmasked in private storage and the Privacy Policy (section 3) tells users to cover or crop sensitive details; results deleted after 7 days (FR-47; LLD 7.4, 13.4); Terms tell users not to upload sensitive data. |
 | 8 | Processors, transfers and the worker machine | Medium | **Resolved** (rules), **Deferred** (formal data processing agreements) | Providers and region disclosed in the Privacy Policy section 6; worker host rules (HLD, LLD). The providers' standard terms apply; no custom contracts. |
 | 9 | No breach plan | Medium | **Resolved** | `INCIDENT-RESPONSE-PLAN.md`. |
 | 10 | Backups keep deleted data up to 30 days | Low | **Resolved** | Disclosed in Privacy Policy sections 7 and 8; deletion within 7 days, backups within 30. |

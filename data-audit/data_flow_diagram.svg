@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1060" viewBox="0 0 1700 1060" font-family="DejaVu Sans, Arial, sans-serif">
+<defs><marker id="a" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#444"/></marker></defs>
+<rect width="1700" height="1060" fill="#FFFFFF"/>
+<text x="40" y="48" font-size="26" font-weight="700" fill="#1B2A41" text-anchor="start">Sparta data audit (D2): data flow</text>
+<text x="40" y="76" font-size="14" font-weight="400" fill="#555" text-anchor="start">ANCP Group M. Planned flow for the H&amp;M public dataset; the transactions file is not loaded yet, so no counts or results are shown.</text>
+<text x="40" y="120" font-size="16" font-weight="700" fill="#2F5D9B" text-anchor="start">1  Sources</text>
+<text x="400" y="120" font-size="16" font-weight="700" fill="#2F5D9B" text-anchor="start">2  Raw zone</text>
+<text x="700" y="120" font-size="16" font-weight="700" fill="#2F5D9B" text-anchor="start">3  Audit and cleaning</text>
+<text x="1090" y="120" font-size="16" font-weight="700" fill="#2F5D9B" text-anchor="start">4  Feature engineering</text>
+<text x="1420" y="120" font-size="16" font-weight="700" fill="#2F5D9B" text-anchor="start">5  Outputs</text>
+<rect x="40" y="140" width="310" height="250" rx="10" fill="#EAF1FB" stroke="#2F5D9B" stroke-width="2"/>
+<text x="54" y="164" font-size="15" font-weight="700" fill="#1B2A41">H&amp;M Personalized Fashion</text>
+<text x="54" y="183" font-size="15" font-weight="700" fill="#1B2A41">Recommendations (Kaggle)</text>
+<text x="54" y="204" font-size="12.5" fill="#2B2B2B">articles.csv: product type, colour,</text>
+<text x="54" y="222" font-size="12.5" fill="#2B2B2B">  section, index group</text>
+<text x="54" y="240" font-size="12.5" fill="#2B2B2B">customers.csv: hashed ID, age,</text>
+<text x="54" y="258" font-size="12.5" fill="#2B2B2B">  club status</text>
+<text x="54" y="276" font-size="12.5" fill="#2B2B2B">transactions_train.csv: date,</text>
+<text x="54" y="294" font-size="12.5" fill="#2B2B2B">  customer, article, price, channel</text>
+<text x="54" y="312" font-size="12.5" fill="#2B2B2B"></text>
+<text x="54" y="330" font-size="12.5" fill="#2B2B2B">Access: Kaggle account, rules accepted</text>
+<text x="54" y="348" font-size="12.5" fill="#2B2B2B">Licence: competition rules, non-</text>
+<text x="54" y="366" font-size="12.5" fill="#2B2B2B">commercial research and education</text>
+<text x="54" y="384" font-size="12.5" fill="#2B2B2B">Status: files pending</text>
+<rect x="40" y="410" width="310" height="120" rx="10" fill="#F7F7F7" stroke="#888" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="54" y="434" font-size="15" font-weight="700" fill="#1B2A41">Google Trends (optional)</text>
+<text x="54" y="455" font-size="12.5" fill="#2B2B2B">Menswear search interest, India,</text>
+<text x="54" y="473" font-size="12.5" fill="#2B2B2B">CSV export; joined on week in step 4 if used</text>
+<text x="54" y="491" font-size="12.5" fill="#2B2B2B">Public, aggregated, no personal data</text>
+<text x="54" y="509" font-size="12.5" fill="#2B2B2B">Status: optional</text>
+<rect x="40" y="550" width="310" height="120" rx="10" fill="#F7F7F7" stroke="#888" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="54" y="574" font-size="15" font-weight="700" fill="#1B2A41">Sparta pilot app (future)</text>
+<text x="54" y="595" font-size="12.5" fill="#2B2B2B">Opt-in, pseudonymised wardrobe data</text>
+<text x="54" y="613" font-size="12.5" fill="#2B2B2B">Not available until the pilot runs</text>
+<text x="54" y="631" font-size="12.5" fill="#2B2B2B">Not part of this audit</text>
+<rect x="40" y="690" width="310" height="120" rx="10" fill="#F7F7F7" stroke="#888" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="54" y="714" font-size="15" font-weight="700" fill="#1B2A41">Synthetic test data</text>
+<text x="54" y="735" font-size="12.5" fill="#2B2B2B">Only for testing the cleaning script</text>
+<text x="54" y="753" font-size="12.5" fill="#2B2B2B">Never used for results</text>
+<text x="54" y="771" font-size="12.5" fill="#2B2B2B">Clearly labelled as synthetic</text>
+<rect x="400" y="140" width="250" height="250" rx="10" fill="#FFF6E0" stroke="#B07A00" stroke-width="2"/>
+<text x="414" y="164" font-size="15" font-weight="700" fill="#1B2A41">Raw files</text>
+<text x="414" y="185" font-size="12.5" fill="#2B2B2B">Folder: data-audit/raw/</text>
+<text x="414" y="203" font-size="12.5" fill="#2B2B2B">Not committed to git (size and</text>
+<text x="414" y="221" font-size="12.5" fill="#2B2B2B"> licence)</text>
+<text x="414" y="239" font-size="12.5" fill="#2B2B2B">Recorded for each file:</text>
+<text x="414" y="257" font-size="12.5" fill="#2B2B2B"> - source link</text>
+<text x="414" y="275" font-size="12.5" fill="#2B2B2B"> - date accessed</text>
+<text x="414" y="293" font-size="12.5" fill="#2B2B2B"> - SHA-256 checksum</text>
+<text x="414" y="311" font-size="12.5" fill="#2B2B2B"> - row and column counts</text>
+<rect x="400" y="410" width="250" height="120" rx="10" fill="#F7F7F7" stroke="#888" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="414" y="434" font-size="15" font-weight="700" fill="#1B2A41">Trends export</text>
+<text x="414" y="455" font-size="12.5" fill="#2B2B2B">data-audit/raw/trends/</text>
+<text x="414" y="473" font-size="12.5" fill="#2B2B2B">Same records as above</text>
+<line x1="350" y1="265" x2="400" y2="265" stroke="#444" stroke-width="2.2" marker-end="url(#a)"/>
+<line x1="350" y1="470" x2="400" y2="470" stroke="#444" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#a)"/>
+<rect x="700" y="140" width="340" height="62" rx="9" fill="#EAF7EE" stroke="#2E7D4F" stroke-width="2"/>
+<circle cx="728" cy="171" r="14" fill="#2E7D4F"/>
+<text x="728" y="176" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+<text x="752" y="166" font-size="14" font-weight="700" fill="#1B3B2A">Schema and type checks</text>
+<text x="752" y="186" font-size="12" fill="#2B2B2B">dates, IDs, prices, categories</text>
+<line x1="870" y1="203" x2="870" y2="213" stroke="#2E7D4F" stroke-width="2.2" marker-end="url(#a)"/>
+<rect x="700" y="214" width="340" height="62" rx="9" fill="#EAF7EE" stroke="#2E7D4F" stroke-width="2"/>
+<circle cx="728" cy="245" r="14" fill="#2E7D4F"/>
+<text x="728" y="250" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+<text x="752" y="240" font-size="14" font-weight="700" fill="#1B3B2A">Missing values</text>
+<text x="752" y="260" font-size="12" fill="#2B2B2B">count per column; drop, fill or flag, why</text>
+<line x1="870" y1="277" x2="870" y2="287" stroke="#2E7D4F" stroke-width="2.2" marker-end="url(#a)"/>
+<rect x="700" y="288" width="340" height="62" rx="9" fill="#EAF7EE" stroke="#2E7D4F" stroke-width="2"/>
+<circle cx="728" cy="319" r="14" fill="#2E7D4F"/>
+<text x="728" y="324" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+<text x="752" y="314" font-size="14" font-weight="700" fill="#1B3B2A">Duplicates</text>
+<text x="752" y="334" font-size="12" fill="#2B2B2B">repeated rows and article IDs; keep or merge</text>
+<line x1="870" y1="351" x2="870" y2="361" stroke="#2E7D4F" stroke-width="2.2" marker-end="url(#a)"/>
+<rect x="700" y="362" width="340" height="62" rx="9" fill="#EAF7EE" stroke="#2E7D4F" stroke-width="2"/>
+<circle cx="728" cy="393" r="14" fill="#2E7D4F"/>
+<text x="728" y="398" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+<text x="752" y="388" font-size="14" font-weight="700" fill="#1B3B2A">Outliers</text>
+<text x="752" y="408" font-size="12" fill="#2B2B2B">price and age ranges; cap, flag or keep</text>
+<line x1="870" y1="425" x2="870" y2="435" stroke="#2E7D4F" stroke-width="2.2" marker-end="url(#a)"/>
+<rect x="700" y="436" width="340" height="62" rx="9" fill="#EAF7EE" stroke="#2E7D4F" stroke-width="2"/>
+<circle cx="728" cy="467" r="14" fill="#2E7D4F"/>
+<text x="728" y="472" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+<text x="752" y="462" font-size="14" font-weight="700" fill="#1B3B2A">Menswear filter</text>
+<text x="752" y="482" font-size="12" fill="#2B2B2B">index group = Menswear</text>
+<line x1="870" y1="499" x2="870" y2="509" stroke="#2E7D4F" stroke-width="2.2" marker-end="url(#a)"/>
+<rect x="700" y="510" width="340" height="62" rx="9" fill="#EAF7EE" stroke="#2E7D4F" stroke-width="2"/>
+<circle cx="728" cy="541" r="14" fill="#2E7D4F"/>
+<text x="728" y="546" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">6</text>
+<text x="752" y="536" font-size="14" font-weight="700" fill="#1B3B2A">Minimise</text>
+<text x="752" y="556" font-size="12" fill="#2B2B2B">drop postal code, free text; keep hashed IDs</text>
+<line x1="870" y1="573" x2="870" y2="583" stroke="#2E7D4F" stroke-width="2.2" marker-end="url(#a)"/>
+<rect x="700" y="584" width="340" height="62" rx="9" fill="#EAF7EE" stroke="#2E7D4F" stroke-width="2"/>
+<circle cx="728" cy="615" r="14" fill="#2E7D4F"/>
+<text x="728" y="620" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">7</text>
+<text x="752" y="610" font-size="14" font-weight="700" fill="#1B3B2A">Bias and representativeness checks</text>
+<text x="752" y="630" font-size="12" fill="#2B2B2B">age, channel, product mix, season, brand</text>
+<text x="700" y="666" font-size="12" font-weight="400" fill="#555" text-anchor="start">Each treatment is logged with its reason (clean.py)</text>
+<line x1="650" y1="265" x2="700" y2="265" stroke="#444" stroke-width="2.2" marker-end="url(#a)"/>
+<rect x="1090" y="140" width="290" height="330" rx="10" fill="#F3ECFA" stroke="#6B3FA0" stroke-width="2"/>
+<text x="1104" y="164" font-size="15" font-weight="700" fill="#1B2A41">Feature engineering log</text>
+<text x="1104" y="185" font-size="12.5" fill="#2B2B2B">Each feature: logic and leakage risk</text>
+<text x="1104" y="203" font-size="12.5" fill="#2B2B2B"></text>
+<text x="1104" y="221" font-size="12.5" fill="#2B2B2B">- week, month, year from date</text>
+<text x="1104" y="239" font-size="12.5" fill="#2B2B2B">- season from date (hemisphere)</text>
+<text x="1104" y="257" font-size="12.5" fill="#2B2B2B">- colour family from colour name</text>
+<text x="1104" y="275" font-size="12.5" fill="#2B2B2B">- category mapped to Sparta</text>
+<text x="1104" y="293" font-size="12.5" fill="#2B2B2B">  taxonomy (FDD section 13)</text>
+<text x="1104" y="311" font-size="12.5" fill="#2B2B2B">- price band</text>
+<text x="1104" y="329" font-size="12.5" fill="#2B2B2B">- customer age group</text>
+<text x="1104" y="347" font-size="12.5" fill="#2B2B2B"></text>
+<text x="1104" y="365" font-size="12.5" fill="#2B2B2B">Leakage control: features use only</text>
+<text x="1104" y="383" font-size="12.5" fill="#2B2B2B">information available at the time;</text>
+<text x="1104" y="401" font-size="12.5" fill="#2B2B2B">a time-based split is used later.</text>
+<line x1="1040" y1="300" x2="1090" y2="300" stroke="#444" stroke-width="2.2" marker-end="url(#a)"/>
+<rect x="1420" y="140" width="240" height="100" rx="10" fill="#FDECEC" stroke="#B03A3A" stroke-width="2"/>
+<text x="1434" y="164" font-size="15" font-weight="700" fill="#1B2A41">Cleaned dataset</text>
+<text x="1434" y="185" font-size="12.5" fill="#2B2B2B">version tag data-v1.0</text>
+<text x="1434" y="203" font-size="12.5" fill="#2B2B2B">CSV or Parquet</text>
+<rect x="1420" y="255" width="240" height="90" rx="10" fill="#FDECEC" stroke="#B03A3A" stroke-width="2"/>
+<text x="1434" y="279" font-size="15" font-weight="700" fill="#1B2A41">Data dictionary</text>
+<text x="1434" y="298" font-size="15" font-weight="700" fill="#1B2A41">and checksum</text>
+<text x="1434" y="319" font-size="12.5" fill="#2B2B2B">every column; SHA-256</text>
+<rect x="1420" y="360" width="240" height="90" rx="10" fill="#FDECEC" stroke="#B03A3A" stroke-width="2"/>
+<text x="1434" y="384" font-size="15" font-weight="700" fill="#1B2A41">Audit report (PDF)</text>
+<text x="1434" y="405" font-size="12.5" fill="#2B2B2B">maximum 8 pages</text>
+<rect x="1420" y="465" width="240" height="90" rx="10" fill="#FDECEC" stroke="#B03A3A" stroke-width="2"/>
+<text x="1434" y="489" font-size="15" font-weight="700" fill="#1B2A41">Datasheet (appendix)</text>
+<text x="1434" y="510" font-size="12.5" fill="#2B2B2B">3 to 4 pages</text>
+<line x1="1380" y1="305" x2="1400" y2="305" stroke="#444" stroke-width="2.2"/>
+<line x1="1400" y1="190" x2="1400" y2="510" stroke="#444" stroke-width="2.2"/>
+<line x1="1400" y1="190" x2="1420" y2="190" stroke="#444" stroke-width="2.2" marker-end="url(#a)"/>
+<line x1="1400" y1="300" x2="1420" y2="300" stroke="#444" stroke-width="2.2" marker-end="url(#a)"/>
+<line x1="1400" y1="405" x2="1420" y2="405" stroke="#444" stroke-width="2.2" marker-end="url(#a)"/>
+<line x1="1400" y1="510" x2="1420" y2="510" stroke="#444" stroke-width="2.2" marker-end="url(#a)"/>
+<rect x="1420" y="580" width="240" height="120" rx="10" fill="#E8F4F8" stroke="#1F7A8C" stroke-width="2"/>
+<text x="1434" y="604" font-size="15" font-weight="700" fill="#1B2A41">Used by</text>
+<text x="1434" y="625" font-size="12.5" fill="#2B2B2B">D3: EDA notebook</text>
+<text x="1434" y="643" font-size="12.5" fill="#2B2B2B">D4: modelling checkpoint</text>
+<text x="1434" y="661" font-size="12.5" fill="#2B2B2B">Both read the cleaned dataset</text>
+<rect x="40" y="840" width="1620" height="170" rx="12" fill="#F4F4F4" stroke="#999" stroke-width="1.5"/>
+<text x="60" y="872" font-size="17" font-weight="700" fill="#1B2A41" text-anchor="start">Controls that apply along the whole flow</text>
+<text x="64" y="898" font-size="12.5" fill="#2B2B2B">- Licence: raw H&amp;M files stay out of git; rules say non-commercial research and education only. Check redistribution before publishing any derivative.</text>
+<text x="64" y="920" font-size="12.5" fill="#2B2B2B">- Privacy: customer IDs are already hashed; no attempt to re-identify; postal code and free text are dropped; no personal data in the repository (DPDP Act, 2023 statement in the report).</text>
+<text x="64" y="942" font-size="12.5" fill="#2B2B2B">- Provenance: source link, date accessed and SHA-256 checksum recorded for every raw file; the cleaning script reproduces the cleaned dataset from raw data.</text>
+<text x="64" y="964" font-size="12.5" fill="#2B2B2B">- Scope: H&amp;M is one brand's mostly European customers, so it is a stand-in for purchase demand, not for Sparta users. Representativeness checks say so.</text>
+<text x="64" y="986" font-size="12.5" fill="#2B2B2B">- Dashed boxes are not used in this audit: they are optional or not yet available.</text>
+</svg>

@@ -26,6 +26,7 @@
 - Vendors receive group figures, never rows about individuals.
 - Participants are adults, are invited, are told what the study is, and can leave at any time with their data deleted.
 - The data is not used to train models, for advertising, or for any purpose outside the notice.
+- A small image model reads item photos on the worker computer to suggest a category. It was trained on a public dataset (Fashion-MNIST) and tested on photos of the team's own clothes, not on participant data. It runs in the same job and on the same computer as background removal, so it adds no new recipient or transfer. The 32 shape numbers it makes for a photo item are the participant's own data and are deleted with the item.
 
 ## 3. Risks and controls
 

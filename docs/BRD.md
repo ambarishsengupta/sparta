@@ -3,10 +3,10 @@
 | Field | Value |
 | --- | --- |
 | Document | Business Requirements Document |
-| Version | 1.2 (final; amended after the full document review) |
-| Date | 2026-10-22 |
+| Version | 1.3 (adds the pilot recommendation engine; amends 1.2) |
+| Date | 2026-10-29 |
 | Product owner | Ambarish Sengupta |
-| Status | Final |
+| Status | Final, with the 1.3 amendment awaiting review by the solution architect |
 | Related documents | FDD, HLD, LLD; legal pack in `legal`; ANCP D1 project charter (`docs/ANCP_TM_D1_v1.pdf`) |
 
 ## 1. Purpose
@@ -30,6 +30,7 @@ This creates a chicken-and-egg problem. Users need a catalogue to get started. V
 | BO-3 | Sign up at least one vendor during the pilot as proof of commercial interest. |
 | BO-4 | Provide a free, useful consumer product that people keep using. |
 | BO-5 | Create a clean base (data model, consent records, open-source code) that later AI features and a native app can build on. |
+| BO-6 | Offer outfit recommendations from an engine that is built and tested before the pilot on public data and style rules, and measure whether users accept its suggestions. |
 
 ## 4. Scope
 
@@ -39,7 +40,8 @@ This creates a chicken-and-egg problem. Users need a catalogue to get started. V
 - Seed catalogue built from publicly available storefront data (attributes such as category, colour, size, style, price), plus user-added items.
 - Wardrobe: view, organise and edit everything the user owns.
 - Item entry by manual form, photo upload with background removal, receipt scan with OCR, and catalogue or barcode lookup.
-- Outfit builder and a small rule-based menswear recommendation set (season, occasion, colour and layering).
+- Outfit builder and a recommendation engine for menswear outfits (section 7.5). Style rules (season, occasion, colour, layering, footwear) decide which outfits are allowed, a ranking step orders them, and a small image model suggests a category and sub-type when an item is added by photo.
+- Building and testing that engine before the pilot opens, using public data (the Fashion-MNIST dataset) and photos owned by the team.
 - Purchase history with receipts, wishlist and outfit/purchase planning.
 - Invitation-only sign-up (email or Google sign-in; Apple sign-in after the pilot) for adults in the supported countries (initially India), acceptance of the Terms of Use and Privacy Policy, a first-login pilot notice that users must accept to join the study, a **Leave the pilot** button, data export and deletion.
 - The pilot legal pack in `legal`: privacy policy, terms of use, vendor pilot agreement, incident response plan, privacy risk assessment and data sourcing policy.
@@ -49,7 +51,8 @@ This creates a chicken-and-egg problem. Users need a catalogue to get started. V
 ### 4.2 Out of scope (pilot)
 
 - Native iOS and Android apps.
-- ML or paid AI features: AI outfit recommendations, inspiration matching, style chat assistant.
+- Paid AI features, inspiration matching and a style chat assistant.
+- Training, tuning or personalising any machine-learning model on participant data (BR-28, BR-52).
 - Outfit inspiration (photo, link, feed) and wishlist suggestions to complete a look.
 - Womenswear and other audiences.
 - Payments, affiliate links, sponsored promotions, vendor billing.
@@ -63,7 +66,7 @@ This creates a chicken-and-egg problem. Users need a catalogue to get started. V
 | Product owner (Ambarish Sengupta) | Owns scope, priorities and acceptance. |
 | Delivery team (C. Prashanth, Arpan Shah, Ambarish Sengupta) | Builds and runs the pilot. Also the ANCP project team. |
 | Solution architect (C. Prashanth) | Owns and reviews the HLD and LLD. |
-| Style specialist (Arpan Shah) | Owns the menswear taxonomy, outfit rules and style quality. |
+| Style specialist (Arpan Shah) | Owns the menswear taxonomy, outfit rules, ranking weights and style quality, and reviews sample suggestions before the pilot opens. |
 | Pilot consumers | Men aged 18 and over, recruited for the pilot. |
 | Pilot vendor(s) | At least one brand or retailer receiving the aggregate insights. |
 | Course faculty | Review the academic project that this product supports. |
@@ -96,7 +99,7 @@ Priority uses MoSCoW: Must, Should, Could. Every requirement traces to the FDD, 
 | BR-08 | Users can record when, where and for how much they bought an item, and attach receipts. | Must |
 | BR-09 | Users can keep a wishlist and plan future purchases. | Must |
 | BR-10 | Users can build, save and plan outfits from items they own. | Must |
-| BR-11 | Users receive outfit suggestions from a small rule set based on season, occasion, colour and layering. | Should |
+| BR-11 | Users receive up to three outfit suggestions for an occasion and season, made from their own wardrobe by the recommendation engine (section 7.5). | Must |
 | BR-12 | Prices display in the original currency, with display conversion where available. | Should |
 | BR-13 | The app is usable on a phone browser and installable as a PWA. | Must |
 | BR-14 | Users can rate each item's condition themselves on a 0 to 100 scale (0 = brand new, 100 = falling apart). Vendors see condition as a spectrum of bands, not raw scores. | Should |
@@ -144,6 +147,21 @@ The pilot and the shipped product use different consent settings. The pilot need
 | BR-44 | The pilot records usage events needed to measure the success criteria in section 11. | Must |
 | BR-45 | When the pilot ends, participants are told in advance in the app and by email and can export their data. The team then either closes the pilot and, within 30 days, deletes all participants' data, including usage events, and the vendor query log, or asks each participant to accept a new notice and deletes the data of everyone who does not. This follows the Privacy Policy, section 7. | Must |
 
+### 7.5 Recommendation engine
+
+The engine recommends outfits. It has two stages: the occasion and season rules decide which outfits are allowed, and a ranking step, which also scores colour, pattern, layering and footwear, orders the allowed ones. A small image model helps with items added by photo.
+
+What can and cannot be learned before the pilot has data: Fashion-MNIST is a public set of 70,000 small greyscale pictures of single garments, labelled with ten garment types. It can teach a model to recognise what kind of garment a photo shows. It says nothing about which garments go well together. Until there is real data, how well clothes go together comes from the style rules and ranking weights owned by the style specialist, and the pilot does not learn from participants (BR-28, BR-52).
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| BR-50 | The engine recommends outfits only from the user's own active items. Every suggestion fits the chosen occasion and season and has the required pieces (top, bottom, footwear). Colour, pattern, layering and footwear matching are scored so that the best-matched outfits come first. Each suggestion states in one line why it was chosen. | Must |
+| BR-51 | When a user adds an item by photo, the app suggests a category and sub-type from the picture. It is only a suggestion: the user confirms or changes it, and the app works the same way when no suggestion is made. | Should |
+| BR-52 | The engine and its image model are built and tested before the pilot opens, using public data and photos owned by the team. No participant data is used to train, tune or personalise any machine-learning model during the pilot (BR-28). The team may still adjust the style rules and ranking weights by hand after reading overall accept and reject counts. | Must |
+| BR-53 | Users stay in control: they can accept, swap or reject any suggestion, and the same wardrobe, occasion and date always give the same suggestions. | Must |
+| BR-54 | The quality of the engine is checked before the pilot opens (section 11) and measured during it from the suggestion accept and reject events (BR-44). | Must |
+| BR-55 | The engine runs within the free hosting budget (BR-42): suggestions are ranked in the user's browser, and the image model runs in the existing worker. | Must |
+
 ## 8. Constraints
 
 - **Timeline:** a 3-month pilot, running alongside the ANCP course deadlines.
@@ -174,6 +192,8 @@ The pilot and the shipped product use different consent settings. The pilot need
 - Enough men can be recruited through the team's networks to reach about 100 users.
 - At least one vendor is willing to receive the dashboard and report and to give feedback.
 - Several storefronts allow data collection, and their product pages expose the attributes the taxonomy needs.
+- The Fashion-MNIST files (60,000 training and 10,000 test pictures, published by Zalando Research under the MIT licence) are held by the team in `data/recommendation-engine/mnist` and are not committed to the repository.
+- The style specialist has time to set the ranking weights and review sample suggestions before the pilot opens.
 - Free tiers of the chosen hosting and database services stay available and sufficient for the pilot.
 - The product owner, delivery team and SA (C. Prashanth) are available for reviews within a few days of a request.
 
@@ -190,14 +210,17 @@ None of these is a hard gate. They define what "working" looks like and guide de
 | Vendor | Vendors who sign up | At least 1 |
 | Proof | A vendor reviews the dashboard or report and says whether it would change a range or stock decision | Documented feedback |
 | Quality | Segments shown meet the minimum group size, with no individual data exposed | 100% |
+| Recommendations | Share of outfit suggestions that users accept (accepted / accepted + rejected) | Tracked from launch; target set after the first month |
+| Photo suggestion | Share of photo-added items where the user keeps the suggested category | Tracked from launch; target set after the first month |
+| Engine quality before launch | Image model accuracy on the 10,000 Fashion-MNIST test pictures; accuracy on photos of team-owned garments; share of sample suggestions the style specialist judges acceptable (FDD section 14.4) | About 90% or more on the test pictures; team-photo result reported; about 80% or more judged acceptable |
 
 ## 12. Pilot timeline (relative)
 
 | Weeks | Focus |
 | --- | --- |
-| 1-2 | Requirements, architecture, seed catalogue collection, core app (accounts, catalogue, wardrobe). |
+| 1-2 | Requirements, architecture, seed catalogue collection, core app (accounts, catalogue, wardrobe). Train and test the image model on Fashion-MNIST (in parallel with the app). |
 | 3-4 | Item entry methods, purchases, wishlist, outfit builder, consent flow. Start recruiting. |
-| 5-6 | Rule-based outfits, receipt OCR, aggregation pipeline, vendor dashboard. Pilot opens. |
+| 5-6 | Recommendation engine (rules, ranking, swap order) and its pre-launch checks, receipt OCR, aggregation pipeline, vendor dashboard. Pilot opens. |
 | 7-10 | Pilot running, vendor onboarding, fixes, feedback. |
 | 11-12 | Vendor review, evaluation against section 11, write-up, decisions for the next phase. End-of-pilot notice to participants, then close-down or re-acceptance (BR-45). |
 
@@ -214,6 +237,8 @@ Dates will be fixed in the delivery plan, aligned with the ANCP deadlines.
 | RK-5 | Free tiers or the team's capacity limit the build. | Keep scope fixed to section 4; defer native apps and AI; review the plan weekly. |
 | RK-6 | Small pilot makes aggregates thin. | Minimum group size of 10; report coverage clearly; do not over-claim. |
 | RK-7 | No professional legal review during the pilot. | Invitation-only, adults only, supported countries only; the legal pack and review log; incident plan; a professional review is required before any public or commercial launch (OI-3). |
+| RK-8 | The image model is trained on small, greyscale, studio-style product pictures and may do poorly on phone photos of real clothes (for example white, folded or patterned items). | The result is only a suggestion, shown above a confidence threshold; tested on team-owned photos before launch; switched off if results are poor (LLD 7.7); the app works without it. |
+| RK-9 | Fashion-MNIST holds no information about which clothes go together, so outfit quality rests on the style rules until there is data to learn from, and suggestions may feel generic. | The style specialist owns the rules and weights and reviews sample suggestions before launch; acceptance and rejection are measured; learning from participant data waits for a new notice (OI-4). |
 
 ## 14. Decisions log
 
@@ -227,7 +252,8 @@ Dates will be fixed in the delivery plan, aligned with the ANCP deadlines.
 | Aggregation only; minimum group of 10 in the pilot and 50 in the shipped product | Product owner |
 | Seed catalogue from public storefront data, plus user-added items | Product owner |
 | Vendor pilot receives dashboard, gap report and feed upload | Product owner |
-| Rule-based outfits from a small team-curated set | Product owner |
+| Outfit recommendations from a recommendation engine: team-curated style rules decide what is allowed, a ranking step orders it, and an image model trained on public Fashion-MNIST data helps with photo items | Product owner (29 October 2026) |
+| The engine is built before the pilot on public data; no participant data trains, tunes or personalises any machine-learning model in the pilot | Follows BR-28; confirmed with the engine decision above |
 | Free or under about $20 a month hosting | Product owner |
 | Technology choices delegated to the architecture documents; C. Prashanth is the SA | Product owner |
 | Arpan Shah is the style specialist (taxonomy and outfit rules) | Product owner |
@@ -249,7 +275,7 @@ The ANCP D1 charter (`docs/ANCP_TM_D1_v1.pdf`) is a submitted course document an
 | Vendor product feeds | Out of scope | Feed upload is in scope (BR-32) |
 | Vendor payments | Vendors pay for dashboards and promotions (stakeholder map) | Vendors take part free; no payments or billing in the pilot (section 4.2) |
 | Dates | MVP live 21 October, data freeze 30 October, term ends 20 November 2026 | A 3-month pilot on a relative timeline; dates set in the delivery plan (section 12) |
-| Models and course data | Gap-ranking and forecasting models built on pilot data; pseudonymised, aggregated extracts in the course repository | No participant data is used to train AI or machine-learning models (BR-28). Course work, including the academic report and the charter's course-repository extracts, uses only public data and aggregated pilot figures (group figures built under the same rules as vendor outputs, and overall pilot statistics), with no row about an individual participant (Privacy Policy, section 4). These extracts are kept out of the public code repository, which holds no personal data (BR-43). |
+| Models and course data | Gap-ranking and forecasting models built on pilot data; pseudonymised, aggregated extracts in the course repository | No participant data is used to train AI or machine-learning models (BR-28). Course work, including the academic report and the charter's course-repository extracts, uses only public data and aggregated pilot figures (group figures built under the same rules as vendor outputs, and overall pilot statistics), with no row about an individual participant (Privacy Policy, section 4). These extracts are kept out of the public code repository, which holds no personal data (BR-43). The recommendation engine's image model is trained on the public Fashion-MNIST dataset, not on participant data (BR-52). |
 
 ## 15. Open items
 
@@ -258,6 +284,7 @@ The ANCP D1 charter (`docs/ANCP_TM_D1_v1.pdf`) is a submitted course document an
 | OI-1 | Default sharing state in the shipped product. Off by default is the safest under GDPR and similar laws. On by default with an opt-out is simpler for data volume but weaker on consent. | Product owner |
 | OI-2 | Closed for the pilot. The consent wording and the "acceptance required" model are covered by the legal pack and the privacy risk assessment. | Product owner |
 | OI-3 | Before any public, commercial or wider launch, have a professional review the legal pack, the consent model, the scraping position and the name. | Product owner |
+| OI-4 | Whether participant data may be used to improve the recommendation engine after the pilot. That would be a new purpose and needs a new notice and acceptance (BR-28; FDD FR-5). Until decided, the engine does not learn from participants. | Product owner |
 
 ## 16. Glossary
 
@@ -268,3 +295,6 @@ The ANCP D1 charter (`docs/ANCP_TM_D1_v1.pdf`) is a submitted course document an
 | Gap | A segment with high wishlist demand and low ownership (BR-31). Its gap score is distinct wishlist users divided by distinct owning users, shown as "no visible ownership" when the owning count is zero or suppressed, as defined in the FDD (FR-81). |
 | Vendor | A brand, manufacturer or retailer receiving aggregate insights. |
 | PWA | Progressive web app, a website that installs and behaves like an app. |
+| Recommendation engine | The part of the app that proposes outfits: style rules decide what is allowed, a ranking step orders it (section 7.5; FDD section 14). |
+| Garment model | A small image model, trained on the public Fashion-MNIST dataset, that guesses what kind of garment a photo shows (FDD section 14.3). |
+| Fashion-MNIST | A public dataset from Zalando Research of 70,000 greyscale 28 by 28 pixel pictures in ten garment types, used here to train the garment model. |

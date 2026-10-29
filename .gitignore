@@ -1,2 +1,5 @@
 # Raw data is never committed (size and licence)
 data-audit/raw/
+
+# Fashion MNIST CSVs for the recommendation engine (size and licence)
+data/recommendation-engine/mnist/

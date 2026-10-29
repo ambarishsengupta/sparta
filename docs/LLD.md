@@ -3,12 +3,12 @@
 | Field | Value |
 | --- | --- |
 | Document | Low-Level Design |
-| Version | 1.2 (final; amended after the full document review) |
-| Date | 2026-10-22 |
+| Version | 1.3 (adds the recommendation engine; amends 1.2) |
+| Date | 2026-10-29 |
 | Author | Business analyst (drafted for the product owner) |
 | Reviewer | C. Prashanth (Solution Architect) |
 | Approver | Ambarish Sengupta (Product Owner) |
-| Traces to | BRD v1.2, FDD v1.3, HLD v1.2; legal pack in `legal` |
+| Traces to | BRD v1.3, FDD v1.4, HLD v1.3; legal pack in `legal` |
 | Status | Final |
 
 ## 1. Purpose and how to read this document
@@ -69,13 +69,19 @@ sparta/
     sw/                      service worker source
   packages/
     taxonomy/                taxonomy.json, types, validators (TS and Python reads same JSON)
-    rules/                   outfit rule engine (pure TypeScript) and tests
+    rules/                   recommendation engine: rules, ranking, swap choices and tests (pure TypeScript)
   services/worker/
-    app/                     main.py, queue.py, heartbeat.py, handlers/{photo,receipt}.py, parse/
+    app/                     main.py, queue.py, heartbeat.py, handlers/{photo,receipt}.py, garment/ (model runner), parse/
+    models/                  garment-cnn-v1.onnx (built into the image, 7.7)
     tests/  Dockerfile  compose.yaml
   jobs/collector/
     sources/                 one adapter per storefront
     run.py  mapping/
+  ml/recommendation-engine/
+    garment/                 preprocess.py, class_map.json (copied into the worker image)
+    train.py  evaluate.py  export_onnx.py  model_card.md  requirements.txt
+  data/recommendation-engine/
+    mnist/                   Fashion-MNIST CSVs (git-ignored, 7.7)
   supabase/
     migrations/  seed/  tests/ (pgTAP)  config.toml
   .github/workflows/         ci.yml, deploy.yml, collect.yml, fx.yml, keepalive.yml, housekeeping.yml, monitor.yml
@@ -249,6 +255,7 @@ Other tables, all with `user_id` referencing `app.profiles` `on delete cascade` 
 | `outfit_plans` | `outfit_id`, `plan_date`, `label` |
 | `outfit_logs` | `outfit_id`, `logged_on`; never read by any aggregate or counter |
 | `suggestion_feedback` | `occasion`, `rule_ids[]`, `accepted` (for rule tuning; no item IDs) |
+| `item_features` | `item_id` (primary key, references `items` `on delete cascade`), `model_version`, `garment_class` (0 to 9, nullable), `garment_p` (0 to 1, nullable), `embedding real[]` with a check that it has exactly 32 values. One row per photo item, written by the browser when the item is saved, from the photo job's result (7.3, 7.7); replaced when the photo changes. A trigger refuses a row whose `item_id` belongs to another user. Read only by the owner and the export; never by `analytics.run_aggregation()` (5.1) |
 | `jobs` | section 7.2 (users insert and select only; no update or delete) |
 | `analytics_events` | `event`, `props jsonb` (no free text), `created_at`. Uses its own insert-only policy (4.5), not the owner policy |
 
@@ -510,7 +517,7 @@ A `security definer` function owned by a privileged role, scheduled with `pg_cro
    - `wishlist_open`: wishlist entries with status `open`; period is the current month. Used by `gaps` (section 5.4).
    - `wishlist`: all wishlist entries, open or bought; period is the month created. Used by the wishlist trend (FR-74).
    - `purchase`: purchases; period is the purchase month.
-4. Each fact row holds: `user_hash` (`encode(extensions.digest(user_id::text || salt, 'sha256'), 'hex')`), `kind`, `period`, `category`, `sub_type`, `colour_family`, `fit`, `brand`, `size`, `season`, `price_band`, `condition_band` (owned only), `region`. No names, emails, images, receipts, notes or outfit logs.
+4. Each fact row holds: `user_hash` (`encode(extensions.digest(user_id::text || salt, 'sha256'), 'hex')`), `kind`, `period`, `category`, `sub_type`, `colour_family`, `fit`, `brand`, `size`, `season`, `price_band`, `condition_band` (owned only), `region`. No names, emails, images, receipts, notes, outfit logs or `item_features`.
    - `price_band` is computed from the row's own price (`items.price` for `owned`, `purchases.price` for `purchase`, `wishlist_entries.target_price` for `wishlist` and `wishlist_open`) in its `currency`, converted to USD with the latest `ops.fx_rates`, then bucketed (below 25, 25 to 50, 50 to 100, 100 to 200, 200 and above). A missing price or rate gives `Unknown`.
    - `region` is `catalog.country_region` for the user's country, or `Unknown`.
    - `season` is the single season when exactly one is set; `All year` when none is set or `All year` is among them; otherwise `Multi-season`. Purchases use the linked item's seasons. The result never depends on the order in which seasons were stored.
@@ -657,7 +664,7 @@ A Python 3.11 container with a FastAPI app. It exposes only `/health` on the con
 | Database access | One long-lived connection through the Supabase connection pooler (Supavisor) in session mode, using a dedicated Postgres role `worker_role` (see section 12.3). Privileges: `usage` on schemas `app`, `catalog`, `ops` and `extensions`; `select`, `update` on `app.jobs` (it writes `status`, `started_at`, `attempts`, `result`, `last_error`, `run_after` and `finished_at`; job results go in `app.jobs.result`); `select` on the `catalog` lookups and `catalog_items` (for receipt matching with `extensions.similarity`); `select`, `insert`, `update` on `ops.worker_heartbeat`, its only `ops` table. Each grant has a matching RLS policy for `worker_role` (4.5). It cannot read any other user table. |
 | Storage access | Through the signed URLs from `/api/worker/signed-urls`. The Supabase secret key is never on the worker machine. |
 | Concurrency | One job at a time. Background removal and OCR are memory heavy. |
-| Memory | About 2 GB; model files are loaded once at start and kept. |
+| Memory | About 2 GB; model files are loaded once at start and kept. The garment model (7.7) is a small addition: under 1 MB of weights, run with `onnxruntime` on CPU. |
 | Restart | `restart: always` in `compose.yaml`; models pre-downloaded in the image build. |
 
 ### 7.2 Job table and claim
@@ -710,8 +717,9 @@ The worker polls every 3 seconds when idle, and immediately again after finishin
 3. Remove the background with `rembg` (model `u2netp` for lower memory; `isnet-general-use` if quality needs it).
 4. Resize to at most 1,200 pixels on the long side; save as WebP quality 80 with transparency. Also make 320-pixel WebP thumbnails of the cut-out and of the original (Supabase image transformations are not on the free plan).
 5. Estimate the dominant colour: downsample, drop transparent pixels, k-means with k = 3, choose the largest cluster that is not near-white background; return RGB.
-6. Upload the cut-out and both thumbnails to the signed upload URLs and write `result = { "path": "...", "thumb_path": "...", "original_thumb_path": "...", "dominant_rgb": [r,g,b] }`.
-7. Delete temporary files. Status `done`.
+6. Run the garment model on the cut-out (7.7). This step is optional: if `GARMENT_GUESS_ENABLED` is false, or the model raises an error, the result carries `garment: null` and the job is neither failed nor retried because of it.
+7. Upload the cut-out and both thumbnails to the signed upload URLs and write `result = { "path": "...", "thumb_path": "...", "original_thumb_path": "...", "dominant_rgb": [r,g,b], "garment": { "model_version": "garment-cnn-v1", "class": 0-9, "p": 0.0-1.0, "category": "..." | null, "sub_type": "..." | null, "embedding": [32 numbers] } | null }`. `category` and `sub_type` are set only when the guess passes the confidence rule in 7.7; the `embedding` is returned either way.
+8. Delete temporary files. Status `done`.
 
 On save, `image_path` and `image_thumb_path` point to the chosen image (the cut-out or the original) and its thumbnail; the other files are removed by `/api/items/images/cleanup` (section 6).
 
@@ -744,6 +752,37 @@ The worker does not build exports. They are built by `/api/account/export` on Ve
 ### 7.6 Heartbeat
 
 Every 60 seconds the worker upserts `ops.worker_heartbeat(worker_id, seen_at, queue_depth, oldest_queued_age, version)`. The admin console shows the worker as offline if `seen_at` is older than five minutes.
+
+### 7.7 Garment model
+
+**Purpose.** Pre-fill category and sub-type for photo items (FR-23a) and give swap choices a sense of shape (FDD 14.2). It is the only machine-learning model in the pilot. It is trained before the pilot, never retrained during it, and never sees participant photos in training (BR-52).
+
+**Data.** Fashion-MNIST, published by Zalando Research under the MIT licence: `data/recommendation-engine/mnist/fashion-mnist_train.csv` (60,000 rows) and `fashion-mnist_test.csv` (10,000 rows). Each row is `label` (0 to 9) followed by `pixel1` to `pixel784`, a 28 by 28 greyscale picture with values 0 to 255. Every label has 6,000 training and 1,000 test pictures. Labels: 0 T-shirt/top, 1 Trouser, 2 Pullover, 3 Dress, 4 Coat, 5 Sandal, 6 Shirt, 7 Sneaker, 8 Bag, 9 Ankle boot. The files are not committed (`.gitignore`). `data/recommendation-engine/README.md` records their SHA-256 checksums and the date they were obtained, and the model card repeats both.
+
+**Training** (`ml/recommendation-engine`, run on a team member's computer; not in CI and not on the worker):
+
+| Step | Detail |
+| --- | --- |
+| Split | The 60,000 training rows are split 54,000 / 6,000 into training and validation, stratified by label with a fixed seed. The 10,000 test rows are used once, for the final report. |
+| Network | Three 3 by 3 convolution blocks (16, 32 and 64 channels, each with ReLU, the first two followed by 2 by 2 max pooling), global average pooling, a dense layer of 32 units with ReLU (these 32 values are the shape numbers) and a 10-way output. About 26,000 weights. |
+| Augmentation | Small random rotations, shifts and scaling, brightness and contrast changes, blur and random erasing, to narrow the gap between studio pictures and phone photos. |
+| Training | PyTorch on CPU, Adam, cross-entropy with label smoothing 0.1, up to 30 epochs with early stopping on validation accuracy, a fixed random seed, library versions pinned in `requirements.txt`. |
+| Export | `export_onnx.py` writes `services/worker/models/garment-cnn-v1.onnx` with two outputs (the 10 softmax scores and the 32 shape numbers) and checks that ONNX Runtime matches PyTorch to within 1e-4 on 100 test pictures. |
+| Model card | `model_card.md`: model version, SHA-256 of the data files and the ONNX file, split, settings, test accuracy with a per-class table and confusion matrix, team-photo results, the chosen confidence threshold and known limits. CI fails if the ONNX file's SHA-256 differs from the model card. |
+
+**Preprocessing.** It must be identical in evaluation and in the worker, so there is one implementation, `ml/recommendation-engine/garment/preprocess.py`, copied into the worker image. Fashion-MNIST was made by trimming each product picture, scaling the longer side to 28 pixels, centring it, converting to greyscale and inverting, so the garment is light on a black background. The worker repeats this on the cut-out: (1) crop to the bounding box of pixels with alpha above 10%; (2) composite on white; (3) convert to greyscale; (4) invert; (5) scale the longer side to 28 pixels with Lanczos resampling and centre on a black 28 by 28 canvas; (6) divide by 255 and shape as a 1 by 1 by 28 by 28 `float32` array. A known weak spot is white and very light garments, which come out dark and faint after inversion, as they do in the original data; the evaluation below includes some.
+
+**Inference.** One `onnxruntime` CPU session is created at start and kept, one thread. It returns 10 scores and the 32 shape numbers. `class` is the highest score and `p` its value. `category` and `sub_type` are filled from `garment/class_map.json` when `p` is at least `GARMENT_MIN_CONFIDENCE` (default 0.6) and the class has a mapping (Dress has none, FDD 14.3); otherwise they are null. The map's values must exist in `packages/taxonomy`, which a test checks.
+
+**Evaluation** (by hand with `evaluate.py`, before the pilot opens and whenever the model changes; results go in the model card):
+
+1. Accuracy on the 10,000 Fashion-MNIST test pictures, overall and per class (aim for about 90% or more).
+2. Accuracy on at least 100 photos of garments owned by team members, taken the way a user would (hanging, folded, flat on a bed or floor, some white or patterned), each labelled by the style specialist as one of the ten types or "none of these". It reports top-1 agreement and, for thresholds from 0.4 to 0.9, how often a suggestion is shown and how often it is right. `GARMENT_MIN_CONFIDENCE` is set to the lowest value at which shown suggestions are right about 80% of the time. If they are right less than about 60% of the time at every threshold, `GARMENT_GUESS_ENABLED` is set to false for the pilot (LOI-9).
+3. Golden outputs for the preprocessing on 10 fixture cut-outs, kept in the worker tests.
+
+The team photos are kept outside the repository and the database, are not participant data, and are deleted after the evaluation; only counts and the confusion matrix go in the model card.
+
+**Versioning and licences.** The model file name carries the version and `item_features.model_version` stores it. Swap ordering uses shape numbers only for two items with the same `model_version`; otherwise it falls back to sub-type (9.5.1). A new version needs a new model card and the SA's review. The model card cites Fashion-MNIST (Xiao, Rasul and Vollgraf, 2017) and keeps the MIT notice; licences of ONNX Runtime and the training libraries are recorded there too (LOI-10).
 
 ## 8. Collector and feed validation
 
@@ -818,12 +857,12 @@ These checks only guide the interface. The database policies in 4.5 are the actu
 
 | Module | Contents |
 | --- | --- |
-| `components/wardrobe/ItemForm` | One form for manual, photo, catalogue and receipt-derived items; zod schema generated from the taxonomy; colour picker; condition slider with band label. |
+| `components/wardrobe/ItemForm` | One form for manual, photo, catalogue and receipt-derived items; zod schema generated from the taxonomy; colour picker; condition slider with band label. For photo items it pre-fills category and sub-type from `job.result.garment` when they are present (FR-23a), labelled "Suggested from your photo", tracks `garment_guess_shown`, then `garment_guess_kept` or `garment_guess_changed` when the item is saved, and inserts the item's `item_features` row (4.4) in the same save. |
 | `components/shared/ColourPicker` | A hue strip with a saturation and brightness (HSV) area (the `react-colorful` library), a hex input, preset swatches, an eyedropper button using the browser `EyeDropper` API with a canvas-sampling fallback, and the derived family name shown live (computed by the same nearest-swatch function in TypeScript, kept identical to the SQL by a shared test vector file). |
 | `components/wardrobe/ConditionSlider` | 0 to 100 slider with band label from `lk_condition_band`; optional (can be cleared). |
 | `components/wardrobe/FilterBar` | All filters in FR-11; a "similar colour" control that converts the chosen colour to CIELAB and finds items within a distance threshold using the client-side list. |
 | `components/outfits/Builder` | Slots, item picker, saves to `outfits` and `outfit_items`. |
-| `components/outfits/Suggestions` | Calls the rule engine (9.5) and shows up to three outfits with reasons. |
+| `components/outfits/Suggestions` | Calls the recommendation engine (9.5) and shows up to three outfits with reasons. The swap sheet lists `swapChoices` (9.5.1). |
 | `components/outfits/Calendar` | Month view of `outfit_plans`. The optional "I wore this" action writes an `outfit_logs` row and shows no counter, streak or reminder. |
 | `components/purchases/ReceiptFlow` | Upload, wait for the job, editable draft, confirm to create items and purchases in one transaction (an RPC `app.confirm_receipt(p_job_id, p_lines jsonb)`). |
 | `lib/image-prep.ts` | `prepareImage(file, maxLongSide?)`: decodes the image with its orientation applied, draws it on a canvas and re-encodes it as JPEG (quality 0.85). This drops EXIF and all other metadata, including GPS location. Every image upload goes through it before reaching storage: item photos at most 1,200 pixels on the long side (HLD 5.1), receipt images at most 2,000 pixels (4.6). PDF receipts are stored as uploaded. |
@@ -834,9 +873,9 @@ All text comes from `messages/en.json` (NFR-5). Prices are shown with `Intl.Numb
 
 **End-of-pilot banner (FR-69).** When `app.public_setting('pilot_end_date')` is 14 days away or less, every consumer page shows a banner with the end date, what will happen, and links to Export my data and Leave the pilot. If the pilot continues, the new notice version is set by then, so the gate in 9.1 shows the new notice in the same period.
 
-### 9.5 Outfit rule engine (`packages/rules`)
+### 9.5 Recommendation engine (`packages/rules`)
 
-A pure TypeScript module with no network or database access; the web app passes it the user's active items.
+A pure TypeScript module with no network or database access; the web app passes it the user's active items, and for swap choices their shape features. It uses no clock or random numbers beyond the date it is given, so the same inputs give the same output (FR-58, FR-59).
 
 ```ts
 type Suggestion = { items: Record<Slot, ItemId | null>; score: number; reasons: string[]; ruleIds: string[] };
@@ -844,7 +883,7 @@ type Suggestion = { items: Record<Slot, ItemId | null>; score: number; reasons: 
 function suggest(items: Item[], ctx: { occasion: Occasion; date: Date; hemisphere: 'north'|'south' }): Suggestion[]
 ```
 
-Algorithm:
+Algorithm. R1, R2 and the slot structure are hard: a combination that breaks them is never produced. R3 to R6 are scored (step 4), so the best-matched outfits come first (9.5.1).
 
 1. **Eligibility (hard rules R1, R2).** Keep active items whose seasons include the current season (or none set, or `All year`) and whose occasion tags match, or whose category and sub-type are allowed for the occasion by the occasion table in `rules.json`. Summer excludes coats and heavy knits; sport allows activewear for the top and bottom and sneakers for footwear; Date and Travel use the Casual entry in the occasion table until the style specialist adds their own.
 2. **Slot candidates.** Place each item in the slots its sub-type can fill, using the slot map in `rules.json` (FDD section 14; underwear and socks are never placed). Group by slot (`top`, `bottom`, `layer`, `footwear`) and keep the best eight per slot by a cheap pre-score (occasion match, condition not in the Falling apart band). Keep eligible belts as a separate list.
@@ -858,7 +897,36 @@ Algorithm:
 6. **Reasons (R8).** Each satisfied rule contributes a fixed sentence template, for example "Layer works for cool weather" or "Navy and grey are neutral".
 7. **Thin wardrobe (FR-54).** If no combination passes the hard rules, return the missing slots as a `missing` list.
 
-Rules and occasion tables are data in `packages/rules/rules.json`, so the style specialist can adjust them without touching code. Unit tests cover each rule with fixtures.
+Rules, occasion tables and ranking weights are data in `packages/rules/rules.json`, so the style specialist can adjust them without touching code. Unit tests cover each rule with fixtures.
+
+#### 9.5.1 Ranking and swap choices
+
+Steps 4 and 5 above produce, for each combination that passes the hard rules, four numbers in the range 0 to 1 (1 is best), and a fifth from the user's flags:
+
+| Part | Definition |
+| --- | --- |
+| `rule_fit` | The mean of the R3, R4, R5 and R6 values. Each is 1 when the rule is fully met and falls as the penalties in step 4 apply. |
+| `occasion_fit` | Items whose `occasions` include the chosen occasion, divided by the items in the outfit. An item with no occasion tags counts as 0.5. |
+| `completeness` | The mean of the checks that apply: a layer is present in cool seasons (R5); a belt is present and shares the shoes' colour family (R6) when the wardrobe has an eligible belt. 1 if neither applies. |
+| `condition` | The mean over items of `1 - condition / 100`. An item with no rating counts as `unrated_condition` (0.7). An item in the Falling apart band counts as 0. |
+| `favourites` | The share of items with `favourite = true`. |
+
+`score = w_rule_fit * rule_fit + w_occasion * occasion_fit + w_complete * completeness + w_condition * condition + w_fav * favourites`. The draft weights in `rules.json` are 0.50, 0.20, 0.10, 0.10 and 0.10 (they sum to 1). The style specialist sets the final values (FOI-9; LOI-11). The best combination is chosen, then R7 is applied as in step 5. Ties are broken by the sorted item IDs of the combination, so the result is stable.
+
+```ts
+type ShapeFeatures = { modelVersion: string; embedding: number[] };   // from app.item_features; absent for non-photo items
+
+function swapChoices(outfit: Suggestion, slot: Slot, items: Item[],
+                     features: Record<ItemId, ShapeFeatures>,
+                     ctx: { occasion: Occasion; date: Date; hemisphere: 'north'|'south' }): ItemId[]
+```
+
+`swapChoices` keeps the active items that can fill `slot`, are not already in the outfit, and keep the outfit valid under the hard rules. It orders them by `0.6 * shape + 0.4 * colour`, best first:
+
+- `shape` is the cosine similarity of the two embeddings rescaled to 0 to 1 when both items have features with the same `modelVersion`. Otherwise it is 1 if the two sub-types are the same and 0.4 if not.
+- `colour` is `1 - min(deltaE / 100, 1)`, where `deltaE` is the CIELAB distance between the two primary colours (the same conversion as the similar-colour filter, 9.4).
+
+Ties are broken by item ID. With 500 items, `suggest` and `swapChoices` each finish in under 300 ms on a mid-range phone (checked in the performance test, section 11), well inside the 1 second in NFR-3. The engine never reads outfit logs, purchases, plans or `suggestion_feedback`.
 
 ### 9.6 Analytics events
 
@@ -888,14 +956,15 @@ A small `track(event, props)` function inserts into `app.analytics_events` under
 
 | Level | Tools | What is covered |
 | --- | --- | --- |
-| Database | pgTAP, run in CI against a fresh local Supabase | **RLS:** user A cannot read, update or delete user B's rows in any `app` table or bucket; a user without consent gets no rows; a vendor gets no rows from `app` tables; a consumer, an anonymous caller and a signed-in user with no profile row cannot call vendor functions; a consumer cannot change their own `role`, `age_confirmed` or `deleting`. **Colour:** golden vectors for `colour_family` using colours that are not reference swatches (for example `#00008B` gives Navy, `#1560BD` gives Blue, `#C0C0C0` gives Grey, `#36454F` gives Grey, `#800020` gives Maroon), and null RGB gives null. **Aggregation:** with seeded data, segments under the threshold never appear; rounding is to 5; complementary suppression hides the smallest visible sibling when one sibling is hidden, hides a third when two hidden siblings have fewer than 10 users together, and stops a hidden `category` x `colour_family` cell being recovered from the `category` total; a deleted or unconsented user changes no output; items with no fit, brand, size, price or condition are counted under `Unknown` or `Unrated` and never merge with an "all" row; a brand or size outside the lists reaches the facts only as `Other`. **Gaps:** no score from a suppressed owner row; a user with open wishlist entries created in different months counts once. **Triggers:** archiving an item flags its outfits. **Limited roles:** as `worker_role`, the claim query in 7.2 returns a queued job and reading `app.items` is refused; as `collector_role`, an upsert of a source row succeeds and vendor rows are not visible; as `fx_role`, a rate row can be written. **Legal controls:** `ops.check_invitation` returns the FR-8 error for an email not in `ops.invitations` (FR-8); `app.complete_onboarding` with a country not on the supported list returns `unsupported_country`, and a user without a supported country gets no rows (FR-9); a user without the current Terms and Privacy Policy acceptance gets no rows, and `app.accept_documents` refuses a stale version (FR-68); a vendor function refuses a caller without the current agreement acceptance (FR-94); the 201st vendor call in an hour raises `rate_limited` and the earlier calls appear in `ops.vendor_query_log` (FR-88). |
-| Shared logic | Vitest | Rule engine fixtures (each rule, thin wardrobe, variety), season utility, colour conversion and family function (the same golden vectors as SQL), taxonomy validators, feed validation. |
-| Worker | pytest | Receipt parser on a fixture set of 30 receipts (varied stores, currencies, crumpled and clean); receipt redaction (card, email, phone and membership numbers masked, address lines dropped, no raw scan text in the stored result) (FR-47); photo handler output size, transparency and thumbnails; job claim concurrency with two workers (no double claim); retry and reaper behaviour, including a reaped job's late result being discarded (7.2). |
+| Database | pgTAP, run in CI against a fresh local Supabase | **RLS:** user A cannot read, update or delete user B's rows in any `app` table or bucket; a user without consent gets no rows; a vendor gets no rows from `app` tables; a consumer, an anonymous caller and a signed-in user with no profile row cannot call vendor functions; a consumer cannot change their own `role`, `age_confirmed` or `deleting`. **Colour:** golden vectors for `colour_family` using colours that are not reference swatches (for example `#00008B` gives Navy, `#1560BD` gives Blue, `#C0C0C0` gives Grey, `#36454F` gives Grey, `#800020` gives Maroon), and null RGB gives null. **Aggregation:** with seeded data, segments under the threshold never appear; rounding is to 5; complementary suppression hides the smallest visible sibling when one sibling is hidden, hides a third when two hidden siblings have fewer than 10 users together, and stops a hidden `category` x `colour_family` cell being recovered from the `category` total; a deleted or unconsented user changes no output; items with no fit, brand, size, price or condition are counted under `Unknown` or `Unrated` and never merge with an "all" row; a brand or size outside the lists reaches the facts only as `Other`. **Gaps:** no score from a suppressed owner row; a user with open wishlist entries created in different months counts once. **Triggers:** archiving an item flags its outfits; an `item_features` row for another user's item is refused, and so is an embedding that does not have 32 values (4.4). **Limited roles:** as `worker_role`, the claim query in 7.2 returns a queued job and reading `app.items` is refused; as `collector_role`, an upsert of a source row succeeds and vendor rows are not visible; as `fx_role`, a rate row can be written. **Legal controls:** `ops.check_invitation` returns the FR-8 error for an email not in `ops.invitations` (FR-8); `app.complete_onboarding` with a country not on the supported list returns `unsupported_country`, and a user without a supported country gets no rows (FR-9); a user without the current Terms and Privacy Policy acceptance gets no rows, and `app.accept_documents` refuses a stale version (FR-68); a vendor function refuses a caller without the current agreement acceptance (FR-94); the 201st vendor call in an hour raises `rate_limited` and the earlier calls appear in `ops.vendor_query_log` (FR-88). |
+| Shared logic | Vitest | Rule engine fixtures (each rule, thin wardrobe, variety), ranking (each score part, weights read from `rules.json`, tie-breaking by item ID), swap choices (only valid choices, most similar first, fallback when features are missing or from another model version), determinism (the same inputs twice give the same output, FR-58), no network call made by `suggest` or `swapChoices` (FR-59), a property test on 200 generated wardrobes in which every suggestion passes R1, R2 and the slot structure, season utility, colour conversion and family function (the same golden vectors as SQL), taxonomy validators, feed validation. |
+| Worker | pytest | Receipt parser on a fixture set of 30 receipts (varied stores, currencies, crumpled and clean); receipt redaction (card, email, phone and membership numbers masked, address lines dropped, no raw scan text in the stored result) (FR-47); photo handler output size, transparency and thumbnails; garment model (golden preprocessing outputs on 10 fixture cut-outs, 10 scores that sum to 1 and 32 shape numbers, the ONNX file's SHA-256 equals the model card, every `class_map.json` value exists in the taxonomy, and an error in the model or `GARMENT_GUESS_ENABLED=false` still completes the photo job with `garment: null`); job claim concurrency with two workers (no double claim); retry and reaper behaviour, including a reaped job's late result being discarded (7.2). |
+| Model evaluation | `ml/recommendation-engine/evaluate.py`, run by hand before the pilot opens and when the model changes | Accuracy on the Fashion-MNIST test pictures, per class, and on team photos; threshold choice; results recorded in the model card (7.7, FDD 14.4). Not a CI gate, because the data files are not in the repository. |
 | Collector | pytest with recorded HTML | `robots.txt` disallow honoured, rate limit applied, mapping of colour names and categories. |
 | Web components | Vitest and Testing Library | Forms, colour picker, filters, empty and error states. |
-| End to end | Playwright against the built app (`next start`) and the worker container, both using the local Supabase in CI | Sign up; uninvited email refused at sign-up with the FR-8 message; age, Terms and Privacy Policy ticks required before the pilot notice; pilot notice blocks until accepted, and "No thanks" leaves only export, Leave the pilot and sign out; unsupported country sent to `/not-available`; greyed-out sharing setting with tooltip; add item by each method; delete an item and its image is removed from storage; a photo and a receipt image carrying GPS EXIF are stored with no EXIF; receipt draft needs confirmation; outfit suggestion and calendar; delete account then sign-in fails and the email is no longer in `ops.invitations`; Leave the pilot then sign-in fails; sign out and sign in as a second user on the same browser shows none of the first user's data or queued changes; About page shows the contact address; vendor must accept the agreement before the portal opens; vendor sees dashboard and cannot reach consumer routes. |
+| End to end | Playwright against the built app (`next start`) and the worker container, both using the local Supabase in CI | Sign up; uninvited email refused at sign-up with the FR-8 message; age, Terms and Privacy Policy ticks required before the pilot notice; pilot notice blocks until accepted, and "No thanks" leaves only export, Leave the pilot and sign out; unsupported country sent to `/not-available`; greyed-out sharing setting with tooltip; add item by each method; delete an item and its image is removed from storage; a photo and a receipt image carrying GPS EXIF are stored with no EXIF; receipt draft needs confirmation; a photo item shows the category suggested from the picture, labelled as a suggestion, and saves with the user's value if they change it; outfit suggestion, swap and calendar; delete account then sign-in fails and the email is no longer in `ops.invitations`; Leave the pilot then sign-in fails; sign out and sign in as a second user on the same browser shows none of the first user's data or queued changes; About page shows the contact address; vendor must accept the agreement before the portal opens; vendor sees dashboard and cannot reach consumer routes. |
 | Accessibility | axe in Playwright, manual keyboard pass | Main flows meet WCAG 2.1 AA (NFR-4). |
-| Performance | Lighthouse CI on a 500-item account | Main screens load under 3 seconds on a throttled mobile profile (NFR-3). |
+| Performance | Lighthouse CI on a 500-item account | Main screens load under 3 seconds on a throttled mobile profile, and suggestions appear within 1 second (NFR-3). |
 | Security | Secret scan, dependency audit, manual review of every policy by the SA | No secrets in the repository; no high-severity advisories. |
 
 Acceptance criteria in FDD section 17 each map to at least one end-to-end, pgTAP or pytest test; the mapping is kept in the test names (for example `FR-80 suppresses segment of 9`).
@@ -937,6 +1006,7 @@ There is no staging environment; migrations are exercised on a fresh local datab
 | `MONITOR_SECRET` | Vercel server and GitHub secrets | Bearer token for the deep health check (section 6) |
 | `WORKER_DATABASE_URL` | Worker | Connection string for `worker_role`, through the session pooler (note below) |
 | `BACKUP_DATABASE_URL` | Worker host, backup job only (not given to the worker container) | Connection string for the read-only `backup_role` used by the weekly `pg_dump` (13.3), through the session pooler. It can read all data, so it is handled like the secret key and rotated if the host is lost or changed |
+| `GARMENT_GUESS_ENABLED`, `GARMENT_MIN_CONFIDENCE` | Worker (not secret) | Turn the category suggestion on or off (default `true`) and set the confidence a guess needs before a category and sub-type are filled in (default `0.6`; set after the evaluation in 7.7) |
 | `COLLECTOR_DATABASE_URL`, `FX_DATABASE_URL` | GitHub secrets | Limited roles `collector_role` and `fx_role`, through the session pooler |
 | `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | GitHub secrets, used only by `deploy.yml` on `main` | Let the Supabase CLI apply migrations to the production project and then deploy the web app (12.1) |
 | `EMAIL_API_KEY` | Vercel server | Transactional email |
@@ -984,6 +1054,8 @@ A restore never brings back a deleted account. `/api/account/delete` writes the 
 | Data | Retention |
 | --- | --- |
 | User data | Until the user deletes it or the pilot ends and the team deletes it per the notice |
+| Item shape features (`app.item_features`) | With the item: deleted with the item, or with the account; included in exports |
+| Team photos used to evaluate the garment model (7.7) | Until the evaluation is finished, then deleted; kept outside the repository and the database |
 | Receipt-reading results (job results) | 7 days; raw scan text is never stored |
 | Exports | 7 days |
 | Unpublished vendor feed uploads | Until published, or 24 hours |
@@ -1004,10 +1076,11 @@ Aligned with the BRD timeline.
 
 | Step | Weeks | Deliverables |
 | --- | --- | --- |
+| M0 Garment model | 1-4 | Train, test and export the model from the Fashion-MNIST files; model card; evaluation on team photos (7.7). Runs in parallel with M1 to M3. |
 | M1 Foundations | 1-2 | Repository, CI, local Supabase, migrations for lookups, colour functions, core tables, RLS and storage policies, pgTAP for RLS; auth, `proxy.ts` gating and the acceptance, pilot notice and onboarding pages; wardrobe list and item form with manual entry and the colour picker; seed taxonomy; first collector run. |
 | M2 Wardrobe breadth | 3-4 | Catalogue search and picker, filters, collections and tags, condition, archive, purchases, wishlist, export and delete routes. Start pilot recruitment. |
-| M3 Images and receipts | 4-5 | Job table and claim, worker container, photo handler, receipt handler and draft UI, heartbeat. |
-| M4 Outfits | 5-6 | Rule engine and tests, builder, suggestions, calendar, optional log. |
+| M3 Images and receipts | 4-5 | Job table and claim, worker container, photo handler (with the garment model from M0), receipt handler and draft UI, the pre-filled item form (FR-23a), heartbeat. |
+| M4 Outfits | 5-6 | Recommendation engine (rules, ranking, swap choices) and tests, builder, suggestions, calendar, optional log; the style specialist's review of sample suggestions and the ranking weights (FDD 14.4). |
 | M5 Vendor side | 5-6 | Aggregation run, cube, suppression, vendor functions and tests, dashboard, gaps, condition spectrum, report, vendor invite, feed validation and publish. |
 | M6 Hardening and pilot open | 6 | End-to-end and accessibility passes, restore rehearsal, load check at 500 users, a check that sign-up verification, password reset and export emails reach an invited address outside the team, a walkthrough of the legal pack with the final contact address, supported countries and invitation list in place, and an incident-plan practice run (`legal`). |
 | Pilot | 7-12 | Operate, fix, measure, vendor review. |
@@ -1021,10 +1094,10 @@ Aggregation (M5) depends on enough test data from the earlier milestones; synthe
 | FR-1 to FR-9 (account, notice, onboarding, invitations, supported countries) | 4.4 `profiles`, `consent_records`; 4.5; 4.9; 6 (`/api/admin/invitations`); 9.1 |
 | FR-10 to FR-17 (wardrobe) | 4.4 `items`; 4.7; 6 (`items`); 9.2; 9.4 `FilterBar` |
 | FR-18 to FR-20 (condition) | 4.2 `lk_condition_band`; 4.4; 9.4 `ConditionSlider`; 5.4 |
-| FR-21 to FR-29a (adding items, colour) | 4.3; 7.3; 8.1; 9.4 `ItemForm`, `ColourPicker` |
+| FR-21 to FR-29a (adding items, colour) | 4.3; 7.3; 7.7 (FR-23a); 8.1; 9.4 `ItemForm`, `ColourPicker` |
 | FR-30 to FR-36 (purchases, wishlist) | 4.4 tables; 9.4 |
 | FR-40 to FR-47 (receipts, redaction) | 7.4; 9.4 `ReceiptFlow`; 4.6; 13.4 |
-| FR-50 to FR-57 (outfits) | 4.4; 9.4; 9.5 |
+| FR-50 to FR-59 (outfits, recommendation engine) | 4.4 `outfits`, `item_features`; 9.4; 9.5; 9.5.1; 7.7 |
 | FR-60 to FR-69 (settings, data rights, Leave the pilot, About page, Terms acceptance, end of the pilot) | 6 (`delete`, `export`); 7.5; 13.4; 9.1; 9.4; 4.9 `document_acceptances`; 12.3 `CONTACT_EMAIL`; FR-69: 4.9 `ops.settings` keys, 6 (`/api/admin/pilot/end`, housekeeping step 5), 9.4 end-of-pilot banner |
 | FR-70 to FR-79 (vendor portal) | 5.4; 5.5; 9.4 `vendor/*` |
 | FR-80 to FR-88 (aggregation rules, query log and rate limit) | 5.1 to 5.3; 5.6; 5.7 |
@@ -1045,6 +1118,7 @@ For the SA to confirm.
 | LD-5 | HLD 8 (earlier wording): weekly backup to a private storage location. | Encrypted backups taken on the worker host (outside the worker container, with the read-only `backup_role`, 13.3) and kept there and in one other private location; never as workflow artifacts. | Artifacts in a public repository are downloadable. |
 | LD-6 | HLD 4: outfit logic in the web app. | Kept, as a separate package with data-driven rules. | Lets the style specialist edit rules without code changes. |
 | LD-7 | New: legal controls (invitation-only sign-up through a Supabase Auth Before User Created hook, country allow-list, acceptance records, receipt redaction, vendor query log and agreement acceptance). | Added in sections 4.9, 5.7, 7.4, 9.1 and 10 after the legal and privacy review (`legal/LEGAL-REVIEW.md`). | Needed for the pilot's risk position. |
+| LD-8 | New: recommendation engine. HLD 4 said ML would come later. | The garment model runs inside the existing photo job (no new job type), and ranking stays in the web app (LD-6). The browser saves the shape features with the item (4.4), because the worker role cannot write user tables (7.1). | The smallest change to the queue and to the worker's privileges. |
 
 ## 17. Open items
 
@@ -1058,3 +1132,6 @@ For the SA to confirm.
 | LOI-6 | Confirm the service worker library and offline write scope (9.3) after a first prototype. | C. Prashanth |
 | LOI-7 | Confirm the backup private key holders named in 13.3 (product owner and SA), and name the team member and the private storage that hold the second backup copy; then name that provider and its country in Privacy Policy section 6 and the PRA 'Where' row before the pilot opens. | Product owner |
 | LOI-8 | Test on the dev project that the Before User Created hook refuses an uninvited address for both email sign-up and Google sign-in, with the FR-8 message shown in the app; that it admits an invited address; and that the access-token hook still issues tokens carrying the role. | C. Prashanth |
+| LOI-9 | Run the evaluation in 7.7 on team photos, set `GARMENT_MIN_CONFIDENCE`, and decide whether the category suggestion goes live or the model is replaced by a pretrained one (HLD AD-9). | Product owner and SA |
+| LOI-10 | Before release, record the licences of Fashion-MNIST (MIT), ONNX Runtime and the training libraries in the model card, and confirm each allows use and redistribution alongside the GPL-3.0 code, as for LOI-3. | C. Prashanth |
+| LOI-11 | Set the ranking weights and `unrated_condition` in `rules.json` with the style specialist, on sample wardrobes (FDD FOI-9), and record the accepted values. | Arpan Shah |

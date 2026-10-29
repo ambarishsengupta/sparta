@@ -3,12 +3,12 @@
 | Field | Value |
 | --- | --- |
 | Document | Functional Design Document |
-| Version | 1.3 (final; amended after the full document review) |
-| Date | 2026-10-22 |
+| Version | 1.4 (adds the recommendation engine; amends 1.3) |
+| Date | 2026-10-29 |
 | Product owner | Ambarish Sengupta |
 | Taxonomy and outfit rules | Arpan Shah (style specialist) |
 | Technical review | C. Prashanth (SA) |
-| Traces to | BRD v1.2 (requirement IDs BR-xx) |
+| Traces to | BRD v1.3 (requirement IDs BR-xx) |
 | Status | Final |
 
 ## 1. Purpose and how to read this document
@@ -88,7 +88,8 @@ Sign-up and the first login run in this order: sign-up with an invited email add
 | --- | --- | --- | --- |
 | FR-21 | **Catalogue picker.** The user searches or browses the seed catalogue by category, brand, colour and style, selects an item, then adjusts details (size, colour variant, price paid, date, store, condition) and saves. | BR-03 | Must |
 | FR-22 | **Manual entry.** A form lets the user create an item that is not in the catalogue. Required: category, sub-type, primary colour. The name is filled in automatically and can be edited (section 13). Optional: all other attributes in section 13. Dropdowns use the fixed taxonomy; brand and store accept free text with suggestions. Colour uses the spectrum picker (FR-29). | BR-04, BR-40 | Must |
-| FR-23 | **Photo.** The user takes or uploads a photo. The system removes the background and shows a preview; the user can accept the cut-out or keep the original. The user then completes the attributes, which the system may pre-fill (for example a suggested colour) and the user confirms. | BR-05 | Should |
+| FR-23 | **Photo.** The user takes or uploads a photo. The system removes the background and shows a preview; the user can accept the cut-out or keep the original. The user then completes the attributes, which the system may pre-fill (a suggested colour, and a suggested category and sub-type, FR-23a) and the user confirms. | BR-05 | Should |
+| FR-23a | **Garment suggestion.** Once the cut-out is ready, the system may suggest a category and sub-type from the picture (section 14.3). The suggestion is pre-filled in the form and labelled "Suggested from your photo", and the user can change it like any other value. It is saved only when the user saves the item. If the system is not confident enough, the picture looks like none of the garments it knows, or the feature is off or unavailable, no suggestion is shown and the form is empty as usual. | BR-51 | Should |
 | FR-24 | Catalogue items from public storefronts show a category illustration tinted in the item's exact stored colour, plus a link to the source page. Source images are not copied or stored. | BR-41 | Must |
 | FR-25 | **Receipt.** See section 7. | BR-06 | Should |
 | FR-26 | **Barcode or catalogue lookup.** The user scans a barcode with the device camera or types it. If it matches the barcode number (GTIN) of a catalogue entry, the item form is pre-filled; if several entries match, the user picks one. If not, the user is offered manual entry with the barcode saved on the item. | BR-07 | Could |
@@ -128,12 +129,14 @@ Sign-up and the first login run in this order: sign-up with an invited email add
 | --- | --- | --- | --- |
 | FR-50 | **Builder.** The user composes an outfit by picking items into slots: top, bottom, layer or outerwear, footwear, accessories. A slot can be empty. An outfit has a name, occasion tags, season tags and notes. | BR-10 | Must |
 | FR-51 | Only active items can be added to an outfit. Archiving an item marks outfits containing it as "needs attention" without deleting them. | BR-10 | Must |
-| FR-52 | **Suggestions.** The user picks an occasion and the system proposes up to three outfits from their own wardrobe using the rules in section 14, for the current season. Each suggestion shows a one-line reason ("Layer works for cool weather; navy and grey are neutral"). | BR-11 | Should |
-| FR-53 | The user can accept a suggestion (saves it as an outfit), swap any item for another valid item, or reject it. Rejections are recorded for rule tuning. | BR-11 | Should |
+| FR-52 | **Suggestions.** The user picks an occasion and the recommendation engine (section 14) proposes up to three outfits from their own wardrobe, for the current season. The occasion and season rules in section 14.1 (R1, R2) and the slot structure decide which outfits are allowed, and the ranking in section 14.2, which scores the other rules, decides the order. Each suggestion shows a one-line reason ("Layer works for cool weather; navy and grey are neutral"). | BR-11, BR-50 | Must |
+| FR-53 | The user can accept a suggestion (saves it as an outfit), swap any item for another valid item, or reject it. The choices offered when swapping all keep the outfit valid under the hard rules and are listed most similar first (section 14.2). Acceptances and rejections are recorded, with the occasion and the rules involved but no item, for rule tuning by the team (section 14.2). | BR-11, BR-53 | Must |
 | FR-54 | If the wardrobe is too thin for a suggestion, the system says what is missing ("You need a bottom for this occasion") and links to the catalogue or wishlist. | BR-11 | Should |
 | FR-55 | **Calendar.** The user can assign a saved outfit to a date or an event label. The calendar is a planning aid and is private. | BR-10 | Should |
 | FR-56 | **Optional log.** From an outfit or the calendar, the user can mark "I wore this today". The app never prompts, reminds, sends a notification about, or rewards logging. There are no streaks or counters. | BR-15 | Could |
 | FR-57 | Logged outfits are stored only for the user's own history. They are not used to compute wear counts, and they are excluded from every vendor aggregate. | BR-15 | Could |
+| FR-58 | **Same inputs, same suggestions.** For the same wardrobe, occasion and date the engine returns the same suggestions in the same order. In the pilot it uses only the user's active items, the flags and ratings the user has set on them (favourite, condition, occasion and season tags), and the hemisphere in the profile. It does not learn from accepted or rejected suggestions, outfit logs, plans or purchases. | BR-52, BR-53 | Must |
+| FR-59 | **Private by construction.** Suggestions are ranked in the user's browser from the user's own items. No wardrobe data is sent anywhere to produce a suggestion. | BR-50, BR-55 | Must |
 
 ## 9. Settings, privacy and data rights
 
@@ -141,7 +144,7 @@ Sign-up and the first login run in this order: sign-up with an invited email add
 | --- | --- | --- | --- |
 | FR-60 | Settings include profile, country and hemisphere (a change of country is checked as in FR-9), preferred currency, notifications (email only, transactional), and the pilot sharing setting. | BR-20 | Must |
 | FR-61 | **Pilot sharing setting.** The setting is visible but greyed out and locked on. Tapping the information icon shows a tooltip: "The pilot is a study that needs anonymised data from its participants to work, so sharing is on for everyone taking part. You can leave any time with Leave the pilot. The full version of Sparta is planned to let you turn this off." | BR-22 | Must |
-| FR-62 | **Export.** The user can request an export of all their data as a downloadable archive (JSON for data, original files for images and receipts). It is ready within 24 hours and delivered in the app and by email. The download link and the file expire after 7 days. | BR-24 | Must |
+| FR-62 | **Export.** The user can request an export of all their data as a downloadable archive (JSON for data, including the shape features of photo items from section 14.3; original files for images and receipts). It is ready within 24 hours and delivered in the app and by email. The download link and the file expire after 7 days. | BR-24 | Must |
 | FR-63 | **Delete account.** The user can delete the account after re-entering their password or re-authenticating. Deletion removes every record linked to the account (profile, items, images, purchases, receipts, outfits, wishlist and plans, consent and acceptance records, and the invitation entry), except the user ID and deletion time, kept for 30 days in a deletion log so that a restored backup cannot bring the account back (LLD 13.3), and excludes the user from every future aggregate run. Confirmation is shown in the app and by email. | BR-22, BR-24 | Must |
 | FR-64 | Deletion completes within 7 days. Aggregates already published (for example, an issued monthly report) are not recomputed retroactively; they contain no user-level rows and were produced under the rules in section 11. | BR-24 | Must |
 | FR-65 | A "How the pilot uses your data" page restates the notice from FR-3, links the Privacy Policy, and lists what vendors see and how long data is kept. | BR-21 | Must |
@@ -249,10 +252,17 @@ Required: `sku, name, brand, category, sub_type, primary_colour, price, currency
 | Barcode | Text (digits) | No | EAN, UPC or other GTIN, saved from a barcode scan or typed in (FR-26). Used only for catalogue lookup |
 | Status | System field | Yes | Active or Archived. An archived item also records a reason: sold, donated, discarded or lost (FR-15). |
 | Origin | System field | Yes | Catalogue, Manual, Photo, Receipt, Vendor feed |
+| Shape features | System field: 32 numbers and the model version | No | Made by the garment model for photo items (section 14.3). Not shown to the user. Used only to order swap choices (section 14.2). Never part of any aggregate. |
 
-## 14. Outfit rules (v1, accepted by the style specialist, FOI-2)
+## 14. Recommendation engine
 
-Rules work on item attributes and never on photos. A suggestion needs at least one top, one bottom and footwear. Each sub-type fills the outfit slots in the slot map below (draft, for the style specialist to confirm, FOI-8). An item that fills two slots at once (Suit, Tuxedo) fills both in the same outfit, and no item is used twice in one outfit.
+The engine works in two stages. **Hard rules** (R1 and R2 in 14.1, and the slot structure: a top, a bottom and footwear) decide which outfits are allowed; an outfit that breaks one is never shown. **Ranking** (14.2) scores the other rules (R3 to R6) and the rest, and orders the allowed outfits and the swap choices. A small image model (14.3) helps photo items get the right category, and gives swap choices a sense of shape. 14.4 says how the engine is checked.
+
+The engine is built before the pilot opens, from the style specialist's rules and from public data. It does not learn from participants (BR-52, FR-58).
+
+### 14.1 Outfit rules (v1, accepted by the style specialist, FOI-2)
+
+Rules work on item attributes and never on photos or shape features. A suggestion needs at least one top, one bottom and footwear. Each sub-type fills the outfit slots in the slot map below (draft, for the style specialist to confirm, FOI-8). An item that fills two slots at once (Suit, Tuxedo) fills both in the same outfit, and no item is used twice in one outfit.
 
 | Sub-types | Slot |
 | --- | --- |
@@ -276,6 +286,59 @@ Rules work on item attributes and never on photos. A suggestion needs at least o
 | R7 Variety | Do not suggest the same item in all three suggestions where an alternative exists. |
 | R8 Explanation | Every suggestion states the rules that led to it, in one line. |
 
+### 14.2 Ranking and swap order
+
+**Score.** Each outfit that passes 14.1 gets a score from 0 to 1, the weighted sum of five parts:
+
+| Part | What it measures |
+| --- | --- |
+| Rule fit | How well colour harmony, pattern, layering and footwear matching are met (R3 to R6), so a better-matched outfit ranks higher |
+| Occasion fit | The share of items whose occasion tags include the chosen occasion |
+| Completeness | A layer in cool seasons, and a belt that matches the shoes where the wardrobe has one |
+| Condition | Items in the Falling apart band score lowest; items with no rating count as neutral |
+| Favourites | A small bonus for items the user has marked as favourite |
+
+The three best outfits are shown, applying R7 (variety) as they are picked. Ties are broken by item ID so that the result is stable (FR-58). The weights are data that the style specialist can change (LLD 9.5) and are checked on sample wardrobes before the pilot opens (FOI-9).
+
+**Swap order.** When the user swaps an item (FR-53), the choices are their other active items that keep the outfit valid. They are ordered by likeness to the item being replaced: first shape (for photo items, how alike the two garment pictures look, using the shape features from 14.3; for other items, whether the sub-type is the same), then closeness of colour, measured in CIELAB as in the similar-colour filter (FR-11).
+
+**What the engine does not do in the pilot.** It does not learn which outfits a user likes, does not personalise from history, and does not use photos in ranking except through the shape features. After the pilot the team may adjust the rules and weights by hand after reading overall accept and reject counts; that is editing rules, not training a model (BR-52; Privacy Policy, section 3).
+
+### 14.3 Garment suggestion for photo items
+
+When an item is added by photo (FR-23), the worker runs the garment model on the cut-out. The model was trained before the pilot on Fashion-MNIST, a public set of 70,000 greyscale 28 by 28 pixel pictures in ten garment types. It returns its best guess and how sure it is, and 32 shape numbers used for swap order (14.2).
+
+| Picture type the model knows | Category and sub-type suggested |
+| --- | --- |
+| T-shirt/top | Tops: T-shirt |
+| Shirt | Tops: Shirt |
+| Pullover | Tops: Sweater |
+| Trouser | Bottoms: Trousers |
+| Coat | Outerwear: Coat |
+| Sneaker | Footwear: Sneakers |
+| Ankle boot | Footwear: Boots |
+| Sandal | Footwear: Sandals |
+| Bag | Accessories: Bag |
+| Dress | No suggestion (not menswear) |
+
+The table is a draft for the style specialist to confirm (FOI-10). Rules:
+
+- A suggestion is shown only when the model's confidence reaches a minimum set in the worker's configuration (starting at 60%, LLD 7.7). Below it, or for Dress, nothing is shown.
+- The model knows ten broad types. Many Sparta sub-types (Polo, Jeans, Blazer, Formal shoes, Watch, Belt and others) are not among them, so the suggestion may be the nearest broad type. It is always a starting point for the user to correct.
+- The model never sets colour, size, fit, material, pattern, brand or price, and it is not used for anything except pre-filling the form (FR-23a) and ordering swap choices (14.2).
+- The shape numbers belong to the item: they are included in the user's export and are deleted with the item or the account. They are never shown to vendors or included in any aggregate.
+- The feature can be switched off in the worker's configuration. The app works the same without it.
+
+### 14.4 Checking the engine
+
+Before the pilot opens:
+
+- **Image model.** Accuracy on the 10,000 Fashion-MNIST test pictures (about 90% or more) with per-type results; accuracy on at least 100 photos of garments owned by team members, taken the way a user would. If the suggestion is right less than about 60% of the time on those photos, it is switched off for the pilot.
+- **Rules and ranking.** On synthetic wardrobes, every suggestion passes R1, R2 and the slot structure, the same inputs give the same output (FR-58), and a thin wardrobe gets the "what is missing" message (FR-54).
+- **Style review.** The style specialist reviews at least 50 suggestions drawn from at least 5 synthetic wardrobes and marks each acceptable or not (about 80% or more acceptable).
+
+During the pilot, the accept and reject events and the garment-suggestion events (section 16) show how the engine is doing.
+
 ## 15. Non-functional requirements (functional view)
 
 NFR-1 and NFR-2 satisfy BR-13.
@@ -284,7 +347,7 @@ NFR-1 and NFR-2 satisfy BR-13.
 | --- | --- |
 | NFR-1 | Works on the current and previous major versions of Chrome, Safari, Firefox and Edge, on phones and desktops. |
 | NFR-2 | Installable as a PWA. Previously viewed wardrobe pages open without a connection; changes sync when the connection returns. Data kept on the device for offline use belongs to the signed-in user only and is cleared on sign-out, Leave the pilot or account deletion. |
-| NFR-3 | Main screens load in under 3 seconds on a typical mobile connection with up to 500 items. |
+| NFR-3 | Main screens load in under 3 seconds on a typical mobile connection with up to 500 items. Suggestions appear within 1 second of choosing an occasion on a typical phone, with up to 500 items. |
 | NFR-4 | Meets WCAG 2.1 AA for contrast, labels and keyboard use on the main flows. |
 | NFR-5 | All text is English, stored in a way that allows translation later. Prices show in their original currency. |
 | NFR-6 | All traffic is encrypted. Each user's data is accessible only to that user, enforced at the data layer. |
@@ -293,7 +356,7 @@ NFR-1 and NFR-2 satisfy BR-13.
 
 ## 16. Analytics events (BR-44, for the success measures in BRD section 11)
 
-Events carry a pseudonymous user ID and no free text. They are recorded only for consumers who have joined the pilot (notice accepted and onboarding complete) and for vendors. Examples: `app_opened` (sent at most once per user per day), `item_added` (with origin), `wishlist_added`, `purchase_recorded`, `receipt_scanned`, `outfit_saved`, `outfit_suggestion_accepted`, `outfit_suggestion_rejected`, `export_requested`, `vendor_dashboard_viewed`, `vendor_report_opened`, `feed_uploaded`. Sign-ups and account deletions are counted as daily totals with no user ID, and notice acceptance is read from the consent records. No event is generated for outfit logging beyond the log record itself. A user counts as active in a week if they have at least one event in that week; `app_opened` makes sure users who only view their wardrobe are counted. Weekly active share = active users in the week / registered users who have accepted the pilot notice and completed onboarding.
+Events carry a pseudonymous user ID and no free text. They are recorded only for consumers who have joined the pilot (notice accepted and onboarding complete) and for vendors. Examples: `app_opened` (sent at most once per user per day), `item_added` (with origin), `wishlist_added`, `purchase_recorded`, `receipt_scanned`, `outfit_saved`, `outfit_suggestion_accepted`, `outfit_suggestion_rejected`, `garment_guess_shown`, `garment_guess_kept`, `garment_guess_changed`, `export_requested`, `vendor_dashboard_viewed`, `vendor_report_opened`, `feed_uploaded`. Sign-ups and account deletions are counted as daily totals with no user ID, and notice acceptance is read from the consent records. No event is generated for outfit logging beyond the log record itself. A user counts as active in a week if they have at least one event in that week; `app_opened` makes sure users who only view their wardrobe are counted. Weekly active share = active users in the week / registered users who have accepted the pilot notice and completed onboarding. Suggestion acceptance = accepted / (accepted + rejected) suggestion events. Photo suggestion kept share = `garment_guess_kept` / `garment_guess_shown`.
 
 ## 17. Acceptance criteria (selected)
 
@@ -305,6 +368,10 @@ Events carry a pseudonymous user ID and no free text. They are recorded only for
 | FR-77 | Given a vendor has a size filter applied, when they choose a season filter, then the size filter is removed and the view is filtered by season only. |
 | FR-80 | Given a segment has 9 contributing users, when a vendor opens any view containing it, then the segment is not shown. Given it has 10 and is not suppressed to protect a smaller neighbouring segment (FR-82), then it is shown with a rounded count. |
 | FR-42 | Given a receipt is scanned, when the draft appears, then no item or purchase exists until the user confirms. |
+| FR-52, FR-58 | Given the same wardrobe, occasion and date, when suggestions are requested twice, then the same outfits appear in the same order. Given any wardrobe, then every suggestion passes R1, R2 and the slot structure (section 14.1), and each has a one-line reason. |
+| FR-53 | Given a user swaps an item in a suggestion, then every choice offered keeps the outfit valid, and the most similar item is listed first. |
+| FR-23a | Given a photo of sneakers is added and the model is confident, then Footwear and Sneakers are pre-filled and labelled as suggested. Given the model is not confident, then the form is empty and no error is shown. Given the user changes the suggestion, then the item saves with the user's value. |
+| FR-59 | Given a user asks for suggestions, then the only requests made are reads of the user's own items and lookups; no request carries wardrobe data to produce a suggestion. |
 | FR-56, FR-57 | Given a user never logs outfits, then no prompt, reminder or counter appears at any time. Given a user logs outfits, then no vendor view or wear count changes. |
 | FR-93 | Given two vendors have uploaded feeds, when vendor A opens the feed screen, then only A's rows and items are visible. |
 | FR-8, FR-9 | Given an email that is not on the invitation list, when it tries to sign up, then it is refused. Given an invited user declares a country that is not on the supported list, then the app is blocked and only data export and Leave the pilot (account deletion) are offered. |
@@ -327,4 +394,6 @@ Technology choices, data model, API design and deployment are in the HLD and LLD
 | FOI-5 | Closed. Nightly refresh, counts rounded to the nearest 5 (FR-82, FR-83). | Product owner |
 | FOI-6 | Choose the first set of storefront sources for the seed catalogue and confirm their terms. | Delivery team |
 | FOI-7 | Region: closed. The production and dev Supabase projects use South Asia (Mumbai, `ap-south-1`) and the web functions run in Mumbai (`bom1`). Contact address: closed. `dunk-volts8c@icloud.com`, shared by the three team members, is the privacy contact address; set `CONTACT_EMAIL` to it before the pilot opens (FR-67; see `legal/CONTACT-ADDRESS.md`). | Delivery team |
-| FOI-8 | Confirm the draft slot map in section 14, including the slots for the draft Activewear sub-types (section 13). | Arpan Shah |
+| FOI-8 | Confirm the draft slot map in section 14.1, including the slots for the draft Activewear sub-types (section 13). | Arpan Shah |
+| FOI-9 | Set the ranking weights (14.2) and review at least 50 sample suggestions (14.4) before the pilot opens. | Arpan Shah |
+| FOI-10 | Confirm the table in 14.3 that maps each picture type the model knows to a Sparta category and sub-type, and that Dress gives no suggestion. | Arpan Shah |

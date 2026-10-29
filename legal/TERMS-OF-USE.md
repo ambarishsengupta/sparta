@@ -51,11 +51,11 @@ We may suspend or delete accounts that break these terms.
 
 ## 7. The catalogue and outfit suggestions
 
-The catalogue comes from product information that is publicly available online or supplied by vendors, with links to the original pages. Product names and brands belong to their owners; we do not claim any connection to or endorsement from them. Outfit suggestions are automatic and based on simple rules. They are not professional style advice, and you decide what you wear and buy. Prices, sizes and availability come from third parties and may be wrong or out of date.
+The catalogue comes from product information that is publicly available online or supplied by vendors, with links to the original pages. Product names and brands belong to their owners; we do not claim any connection to or endorsement from them. Outfit suggestions are automatic: they use style rules and a scoring step on your own items. A category suggested for a photo comes from a small image program. Both can be wrong, neither is professional style advice, and you decide what you wear and buy. Prices, sizes and availability come from third parties and may be wrong or out of date.
 
 ## 8. No warranty
 
-The pilot is provided **as is and as available**. We do not promise that it will be accurate, uninterrupted, error-free or secure. Receipt reading is automatic and may be wrong; always check the draft before you confirm it.
+The pilot is provided **as is and as available**. We do not promise that it will be accurate, uninterrupted, error-free or secure. Receipt reading and category suggestions for photos are automatic and may be wrong; always check the draft or suggestion before you confirm or save it.
 
 ## 9. Limits on our responsibility
 

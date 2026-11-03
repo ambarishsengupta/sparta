@@ -2,9 +2,10 @@
 # gate.sh: the deterministic final authority (G2). Every other approval defers to this script.
 # Exit 0 = work may be reported complete. Non-zero = not done, no exceptions.
 #
-# Stages, in order: typecheck, test, lint, manifest check, release map, goals check.
+# Stages, in order: typecheck, test, lint, manifest check, secret scan (BR-43), release map, goals check.
 # Optional: set GATE_BASE and GATE_WO (and WO_ID if the file holds several work orders) to also
-# run the scope check. A failing stage never stops the later stages: nothing is hidden.
+# run the scope check. A failing stage never stops the later stages: nothing is hidden, and the
+# script exits 1 if ANY stage failed (including a stage that is missing or crashes).
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -30,6 +31,7 @@ run_stage "typecheck" npm run typecheck
 run_stage "test" npm test
 run_stage "lint" npm run lint
 run_stage "manifest_check" node workflow/gates/manifest_check.mjs
+run_stage "secret_scan" bash workflow/gates/secret_scan.sh
 run_stage "release_map" python3 workflow/gates/release_map.py
 run_stage "check_goals" bash workflow/gates/check_goals.sh
 

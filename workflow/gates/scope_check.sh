@@ -43,15 +43,18 @@ PY
 }
 
 changed_files() {
-  local base="$1"
-  { git diff --name-only "${base}...HEAD" 2>/dev/null || git diff --name-only "${base}" HEAD
-    git diff --name-only HEAD
+  local base="$1" out
+  # --no-renames: a rename must show BOTH the deleted old path and the new path.
+  out="$(git diff --no-renames --name-only "${base}...HEAD")" || return 2
+  { printf '%s\n' "$out"
+    git diff --no-renames --name-only HEAD
     git ls-files --others --exclude-standard
   } | sort -u | sed '/^$/d'
 }
 
 check() {
   local base="$1" wo_file="$2"
+  git rev-parse --verify --quiet "${base}^{commit}" >/dev/null || { echo "scope_check: unknown base ref $base" >&2; return 2; }
   [ -f "$wo_file" ] || { echo "scope_check: work order file not found: $wo_file" >&2; return 2; }
   local scope rc
   scope="$(parse_scope "$wo_file")"; rc=$?
@@ -75,6 +78,9 @@ package-lock.json"; fi
     regexes+=("$(glob_to_regex "$p")")
   done <<< "$patterns"
 
+  local changed
+  changed="$(changed_files "$base")" || { echo "scope_check: cannot diff against base ref $base" >&2; return 2; }
+
   local violations="" f ok r
   while IFS= read -r f; do
     ok=0
@@ -82,7 +88,7 @@ package-lock.json"; fi
       if printf '%s' "$f" | python3 -c 'import re,sys; sys.exit(0 if re.match(sys.argv[1], sys.stdin.read()) else 1)' "$r"; then ok=1; break; fi
     done
     [ "$ok" -eq 1 ] || violations="${violations}${f}"$'\n'
-  done < <(changed_files "$base")
+  done <<< "$changed"
 
   if [ -n "$violations" ]; then
     echo "scope_check: FAIL, paths outside the work order's In scope list:" >&2
@@ -125,6 +131,17 @@ WO
   ( cd "$tmp" && bash "$script" main workflow/work-orders/R.md >/dev/null 2>&1 ); out=$?
   if [ "$out" -ne 1 ]; then echo "selftest FAIL: an untracked out-of-scope file exited $out, expected 1"; rc=1
   else echo "selftest ok: untracked out-of-scope file exits 1"; fi
+  # rename out of scope: the deleted old path (outside scope) must still be reported
+  ( cd "$tmp" && rm -f untracked.txt && mkdir -p other && printf 'moved\n' > other/old.txt && git add -A && git commit -q -m seed-out-of-scope-file )
+  ( cd "$tmp" && git checkout -q main && git merge -q --ff-only feature && git branch -f base2 HEAD && git checkout -q -b renamer )
+  ( cd "$tmp" && git mv other/old.txt src/moved.txt && git commit -q -m rename-into-scope )
+  ( cd "$tmp" && bash "$script" base2 workflow/work-orders/R.md >/dev/null 2>&1 ); out=$?
+  if [ "$out" -ne 1 ]; then echo "selftest FAIL: a rename out of scope exited $out, expected 1"; rc=1
+  else echo "selftest ok: rename from an out-of-scope path exits 1"; fi
+  # unknown base ref must not pass
+  ( cd "$tmp" && bash "$script" no-such-ref workflow/work-orders/R.md >/dev/null 2>&1 ); out=$?
+  if [ "$out" -ne 2 ]; then echo "selftest FAIL: an unknown base ref exited $out, expected 2"; rc=1
+  else echo "selftest ok: unknown base ref exits 2"; fi
   cd "$start" && rm -rf "$tmp"
   [ "$rc" -eq 0 ] && echo "scope_check selftest: PASS"
   return "$rc"

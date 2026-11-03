@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "source": "FDD section 13 (confirmed by the style specialist, FOI-1); colour swatches from LLD section 4.3 seed (draft, to be tuned by the style specialist); condition bands from LLD section 4.2",
+  "categories": [
+    { "name": "Tops", "draft": false, "subTypes": ["T-shirt", "Shirt", "Polo", "Sweater", "Cardigan", "Hoodie"] },
+    { "name": "Bottoms", "draft": false, "subTypes": ["Jeans", "Chinos", "Trousers", "Shorts", "Joggers"] },
+    { "name": "Outerwear", "draft": false, "subTypes": ["Jacket", "Blazer", "Coat"] },
+    { "name": "Footwear", "draft": false, "subTypes": ["Sneakers", "Formal shoes", "Boots", "Sandals"] },
+    { "name": "Accessories", "draft": false, "subTypes": ["Watch", "Belt", "Tie", "Cap", "Scarf", "Bag"] },
+    { "name": "Underwear and socks", "draft": true, "subTypes": ["Briefs", "Boxers", "Vest", "Socks"] },
+    { "name": "Activewear", "draft": true, "subTypes": ["Sports T-shirt", "Track pants", "Sports shorts", "Track jacket"] },
+    { "name": "Ethnic wear", "draft": true, "subTypes": ["Kurta", "Sherwani", "Nehru jacket", "Pyjama", "Dhoti"] },
+    { "name": "Occasion wear", "draft": true, "subTypes": ["Suit", "Tuxedo", "Waistcoat"] }
+  ],
+  "colourFamilies": [
+    { "family": "Black", "swatches": ["#000000"] },
+    { "family": "White", "swatches": ["#FFFFFF"] },
+    { "family": "Grey", "swatches": ["#808080", "#A9A9A9", "#4D4D4D", "#D3D3D3"] },
+    { "family": "Navy", "swatches": ["#1F2A44", "#000080", "#191970"] },
+    { "family": "Blue", "swatches": ["#1E5AA8", "#6FA8DC", "#0000FF", "#4169E1", "#ADD8E6"] },
+    { "family": "Teal", "swatches": ["#008080"] },
+    { "family": "Green", "swatches": ["#2E8B57"] },
+    { "family": "Olive", "swatches": ["#6B6B2F"] },
+    { "family": "Khaki", "swatches": ["#C3B091", "#F0E68C", "#BDB76B"] },
+    { "family": "Beige", "swatches": ["#E8DCC2", "#D9C7A0"] },
+    { "family": "Brown", "swatches": ["#5C4033", "#8B5A2B"] },
+    { "family": "Maroon", "swatches": ["#800000", "#7B1E3A", "#5A1F2E"] },
+    { "family": "Red", "swatches": ["#D62828"] },
+    { "family": "Orange", "swatches": ["#F28C28"] },
+    { "family": "Yellow", "swatches": ["#F7D038"] },
+    { "family": "Pink", "swatches": ["#F4A6C0"] },
+    { "family": "Purple", "swatches": ["#6A3D9A"] },
+    { "family": "Multi", "swatches": [] }
+  ],
+  "fit": ["Slim", "Regular", "Relaxed", "Oversized", "Tailored"],
+  "material": ["Cotton", "Linen", "Wool", "Denim", "Polyester", "Leather", "Synthetic blend", "Other"],
+  "pattern": ["Solid", "Striped", "Checked", "Printed", "Graphic", "Other"],
+  "seasons": ["Spring", "Summer", "Autumn", "Winter", "All year"],
+  "occasions": ["Casual", "Work", "Formal", "Party", "Sport", "Date", "Travel"],
+  "conditionBands": [
+    { "code": "Brand new", "min": 0, "max": 9 },
+    { "code": "Like new", "min": 10, "max": 29 },
+    { "code": "Good", "min": 30, "max": 59 },
+    { "code": "Worn", "min": 60, "max": 84 },
+    { "code": "Falling apart", "min": 85, "max": 100 }
+  ],
+  "sizeSystems": [
+    { "code": "Letter", "label": "Letter" },
+    { "code": "Waist and length", "label": "Numeric waist and length" },
+    { "code": "Shoe EU", "label": "Shoe size (EU)" },
+    { "code": "Shoe UK", "label": "Shoe size (UK)" },
+    { "code": "Shoe US", "label": "Shoe size (US)" },
+    { "code": "Shoe IN", "label": "Shoe size (IN)" }
+  ]
+}

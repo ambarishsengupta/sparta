@@ -1,0 +1,104 @@
+{
+  "source": "FDD section 14.1 (outfit rules v1; slot map is a draft for the style specialist to confirm, FOI-8)",
+  "slots": ["Top", "Bottom", "Layer", "Footwear", "Accessory"],
+  "groups": [
+    {
+      "id": "top",
+      "slots": ["Top"],
+      "fill": "one",
+      "suggested": true,
+      "members": [
+        { "category": "Tops", "subTypes": ["T-shirt", "Shirt", "Polo"] },
+        { "category": "Ethnic wear", "subTypes": ["Kurta"] },
+        { "category": "Activewear", "subTypes": ["Sports T-shirt"] }
+      ]
+    },
+    {
+      "id": "top-or-layer",
+      "slots": ["Top", "Layer"],
+      "fill": "either",
+      "suggested": true,
+      "note": "Top or Layer (one of them in a given outfit)",
+      "members": [
+        { "category": "Tops", "subTypes": ["Sweater", "Cardigan", "Hoodie"] }
+      ]
+    },
+    {
+      "id": "bottom",
+      "slots": ["Bottom"],
+      "fill": "one",
+      "suggested": true,
+      "members": [
+        { "category": "Bottoms", "subTypes": "all" },
+        { "category": "Ethnic wear", "subTypes": ["Pyjama", "Dhoti"] },
+        { "category": "Activewear", "subTypes": ["Track pants", "Sports shorts"] }
+      ]
+    },
+    {
+      "id": "layer",
+      "slots": ["Layer"],
+      "fill": "one",
+      "suggested": true,
+      "members": [
+        { "category": "Outerwear", "subTypes": "all" },
+        { "category": "Ethnic wear", "subTypes": ["Sherwani", "Nehru jacket"] },
+        { "category": "Occasion wear", "subTypes": ["Waistcoat"] },
+        { "category": "Activewear", "subTypes": ["Track jacket"] }
+      ]
+    },
+    {
+      "id": "layer-and-bottom",
+      "slots": ["Layer", "Bottom"],
+      "fill": "both",
+      "suggested": true,
+      "note": "One item fills both slots in the same outfit",
+      "members": [
+        { "category": "Occasion wear", "subTypes": ["Suit", "Tuxedo"] }
+      ]
+    },
+    {
+      "id": "footwear",
+      "slots": ["Footwear"],
+      "fill": "one",
+      "suggested": true,
+      "members": [
+        { "category": "Footwear", "subTypes": "all" }
+      ]
+    },
+    {
+      "id": "accessory",
+      "slots": ["Accessory"],
+      "fill": "one",
+      "suggested": true,
+      "note": "Accessory in the builder; suggestions add only the best-matching belt, if there is one, so that R6 can apply",
+      "members": [
+        { "category": "Accessories", "subTypes": "all" }
+      ]
+    },
+    {
+      "id": "never-suggested",
+      "slots": [],
+      "fill": "none",
+      "suggested": false,
+      "note": "Never suggested",
+      "members": [
+        { "category": "Underwear and socks", "subTypes": "all" }
+      ]
+    }
+  ],
+  "occasionRules": [
+    { "occasion": "Casual", "rule": "Any tops and bottoms except formal shoes with shorts.", "usesRuleOf": null },
+    { "occasion": "Work", "rule": "Shirt or polo, chinos or trousers, closed shoes.", "usesRuleOf": null },
+    { "occasion": "Formal", "rule": "Shirt, tailored trousers, formal shoes, blazer if available.", "usesRuleOf": null },
+    { "occasion": "Party", "rule": "Dark or statement tops, jeans or trousers, clean sneakers or boots.", "usesRuleOf": null },
+    { "occasion": "Sport", "rule": "Activewear for the top and bottom, sneakers for footwear.", "usesRuleOf": null },
+    { "occasion": "Date", "rule": "No rule of its own yet; uses the Casual rule until the style specialist sets one.", "usesRuleOf": "Casual" },
+    { "occasion": "Travel", "rule": "No rule of its own yet; uses the Casual rule until the style specialist sets one.", "usesRuleOf": "Casual" }
+  ],
+  "seasonRules": {
+    "R2": "Items tagged for the current season or All year, or with no season set.",
+    "Summer": "No coats or heavy knits.",
+    "Winter": "Add a layer.",
+    "seasonFrom": "Season comes from the date and the user's hemisphere."
+  }
+}

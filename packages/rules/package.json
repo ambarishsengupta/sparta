@@ -10,5 +10,9 @@
   },
   "dependencies": {
     "@sparta/taxonomy": "*"
+  },
+  "scripts": {
+    "test": "vitest run --root ../.. packages/rules",
+    "review-pack": "tsx scripts/review-pack.ts"
   }
 }

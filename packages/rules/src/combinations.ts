@@ -35,11 +35,30 @@ export function slotCandidates(eligible: readonly Item[], ctx: Ctx): Candidates 
     }
   }
   const order = (a: Item, b: Item): number => preScore(b, ctx) - preScore(a, ctx) || cmp(a.id, b.id);
+  for (const key of Object.keys(groups) as (keyof Candidates)[]) groups[key].sort(order);
+  const full = { bottom: groups.bottom, both: groups.both, footwear: groups.footwear };
   for (const key of Object.keys(groups) as (keyof Candidates)[]) {
-    groups[key].sort(order);
-    if (key !== 'belts') groups[key].length = Math.min(groups[key].length, BEST_PER_SLOT);
+    if (key !== 'belts') groups[key] = groups[key].slice(0, BEST_PER_SLOT);
   }
-  return groups;
+  return keepOnePair(groups, full, ctx);
+}
+
+/**
+ * Trimming to the best eight can drop the only bottom that R1 lets a kept pair of shoes go with (nine shorts
+ * and one pair of jeans under Casual, with formal shoes). If no kept bottom or suit pairs with a kept pair of
+ * shoes but an untrimmed one does, the best such pair (by pre-score order) is added back.
+ */
+function keepOnePair(c: Candidates, full: Pick<Candidates, 'bottom' | 'both' | 'footwear'>, ctx: Ctx): Candidates {
+  const ok = (bottoms: Item[], shoes: Item[]): boolean => bottoms.some((b) => shoes.some((f) => pairAllowed(b, f, ctx.occasion)));
+  if (ok([...c.bottom, ...c.both], c.footwear)) return c;
+  for (const f of full.footwear) {
+    const b = full.bottom.find((x) => pairAllowed(x, f, ctx.occasion));
+    const suit = full.both.find((x) => pairAllowed(x, f, ctx.occasion));
+    const slot = b ? 'bottom' : 'both';
+    const pick = b ?? suit;
+    if (pick) return { ...c, footwear: c.footwear.includes(f) ? c.footwear : [...c.footwear, f], [slot]: [...c[slot], pick] };
+  }
+  return c;
 }
 
 /**

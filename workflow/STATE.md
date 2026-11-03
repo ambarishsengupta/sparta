@@ -1,7 +1,7 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-04 01:10 IST by the workflow maker agent (conditions applied) (heartbeat: refreshed at least every 15 minutes while running; a run that finds `running` updated within 30 minutes exits, see workflow doc section 9)
-Status: waiting-for-owner   (waiting for the owner to tick the open preconditions below; values: running, waiting-for-limit-reset, waiting-for-owner, idle)
+Updated: 2026-11-04 (R0 merged; building R1)
+Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
 Integration branch: none yet (release/R0 is cut from main after the preconditions below are ticked)
@@ -55,3 +55,8 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 
 ## Run log
 - 2026-11-04 01:13 IST: automated resume fired. Status is waiting-for-owner (not waiting-for-limit-reset) and all 4.1 and 4.2 preconditions are unticked, so no work order started and nothing was changed. Status left as waiting-for-owner.
+
+## Build log (orchestrator)
+- 2026-11-04: owner delegated all approvals. R0 built and merged into main (gate green, 86 tests). Spec QC failed it twice; fix loops used: 2. Not independently re-verified after fix loop 2 (see retros/R0.md).
+- Deviation: no Docker or Supabase CLI here, so R2 database/auth work and R5 worker/garment training cannot be verified in this environment; R3 is built before R2 on a browser-local repository (see work-orders/R3.md).
+- Order of work: R1 (engine), R3 (app), R4 (learned layer), then R5 to R8 as far as the environment allows.

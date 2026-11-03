@@ -1,0 +1,91 @@
+"""Builds the MVP agent-workflow knowledge graph (HTML, JSON) from one data definition.
+Run: python3 workflow/build_graph.py   (writes docs/mvp-agent-workflow-graph.html and .json)
+Render a PNG: Chrome headless --screenshot --window-size=1840,1860 on the HTML file (add #light for the light theme).
+Roster rule: every chip name below equals a bold name in the roster table of docs/MVP-AGENT-WORKFLOW.md (section 3), and the
+GATES line equals the gate names in its section 6."""
+import json, os
+
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+COLX = [20, 280, 540, 800, 1060, 1320, 1580]
+W = 200
+
+NODES = [
+ dict(id="humans", col=0, y=70, type="human", title="People", sub="decide scope and sign off",
+  chips=[("Product owner", "Ambarish: scope, final yes"), ("Style specialist", "Arpan Shah: rules, weights"), ("Solution architect", "C. Prashanth: design, OI-5")],
+  detail="Only people decide scope, rule changes, architecture and the H&M licence question (OI-5). They also tick the preconditions an agent cannot: local commits, the committed spec and the branch model, and the accounts and secrets (Supabase, Vercel, GitHub, SMTP, artifact location, worker host). Agents propose; they never decide these and never create an account or enter a key."),
+ dict(id="src", col=0, y=330, type="src", title="Sources and rules", sub="what every agent reads",
+  chips=[("BRD, FDD, HLD, LLD", "v1.4, v1.5, v1.4, v1.4"), ("Datasets (offline only)", "Fashion-MNIST, H&M"), ("Standing rules", "workflow doc, section 10")],
+  detail="Requirements come from the four documents; the checkers read them too. The datasets never leave their folder (BR-59); absolute paths for the datasets, team photos, the one H&M cache and the artifact folder are SPARTA_DATA_ROOT_HM, SPARTA_DATA_ROOT_MNIST, SPARTA_TEAM_PHOTOS, SPARTA_HM_CACHE and SPARTA_ARTIFACT_DIR in the git-ignored workflow/local.env. Standing rules: stay in the project, no Claude trailer, time-box investigations, outward actions need a yes."),
+ dict(id="orch", col=1, y=70, type="orch", title="Orchestration", sub="plans, hands out, enforces",
+  chips=[("Orchestrator", "Opus, extra effort"), ("Spec agent", "work orders, /agentic-os"), ("State keeper", "workflow/STATE.md"), ("Limit-reset trigger", "armed before each work order")],
+  detail="The orchestrator never writes feature code and never approves G1. The spec agent turns requirements into work orders with runnable acceptance checks. STATE.md is the only memory between sessions. The orchestrator merges work-order branches into the release's integration branch and checks usage before and after every work order. It arms a one-shot resume (the trigger) before each work order, for two minutes after the 5-hour reset; at 85% of that window it writes the checkpoint and stops; at 90% of any weekly window, or when usage cannot be read, it stops and waits for the owner. It refreshes STATE.md every 15 minutes while it runs."),
+ dict(id="consult", col=2, y=70, type="consult", title="Consultants", sub="read-only, advice only",
+  chips=[("Style consultant", "rules, weights, review pack"), ("Data-science consultant", "splits, leakage, AUC"), ("Legal consultant", "BR-28, BR-59, OI-5"), ("Architecture consultant", "fit with HLD and LLD"), ("Security consultant", "RLS, secrets, worker")],
+  detail="Consultants write short memos that cite the documents. They cannot edit files, cannot approve, and do not replace the style specialist, the SA or a lawyer."),
+ dict(id="design", col=2, y=440, type="design", title="Design", sub="plan, build, critique screens",
+  chips=[("UX design agent", "/shape: design brief"), ("Visual craft agent", "components/ui and styles"), ("Design critic", "/critique, /audit: never edits")],
+  detail="User-facing work orders only. The brief comes first; the visual craft agent builds presentational components and tokens to it (components/ui and styles only) and the frontend maker builds the pages; the critic scores them. A score below the bar goes back to the visual agent."),
+ dict(id="build", col=3, y=70, type="build", title="Build: makers", sub="Sonnet, high effort",
+  chips=[("Frontend maker", "pages, data, engine package"), ("Backend and database maker", "migrations, RLS, pgTAP"), ("ML and data maker", "models, pairing prior"), ("Worker maker", "FastAPI photo job"), ("Doc-sync maker", "BRD to LLD stay in step")],
+  detail="One maker per work order, in an isolated worktree. Makers never edit the same files, never edit gate scripts, never commit an H&M-trained file and never judge their own work. A path-to-owner table gives every path one owner, and a G2 script fails a diff outside the work order's In-scope list. Accounts and keys are never theirs."),
+ dict(id="check", col=4, y=70, type="check", title="Check: checkers", sub="facts first, then judgement",
+  chips=[("Gate scripts", "tests, RLS, golden, determinism"), ("Gate engineer", "Sonnet: writes the gate scripts"), ("Spec QC", "Opus: judges vs base branch"), ("Code reviewer", "/code-review"), ("Privacy and licence gate", "no participant or H&M leak"), ("Security reviewer", "/security-review"), ("Model QC", "re-runs the model card")],
+  detail="Scripts run first (the scope and ownership script included); red goes straight back to the maker. The gate engineer writes the scripts and the CI workflows outside every maker's scope and Spec QC reviews them. G4 keeps the H&M-trained files marked not yet built in the manifest on main and on every release and work-order branch until G7 (manifest_check enforces it). Spec QC judges against the spec on the base branch and approves G1. A checker may only fail work by citing a script result or a quoted line of the specification. Two fix loops at most, then the orchestrator decides."),
+ dict(id="demo", col=5, y=70, type="demo", title="Demo and approve", sub="show it running, then decide",
+  chips=[("Demo agent", "real app, seeded wardrobe"), ("Release approver", "Opus, extra effort"), ("Human sign-off", "owner, style, SA")],
+  detail="The demo agent drives the running app through the release's acceptance script (R0 and R1 are shown as a recorded test run). It never shows anything that has not run. The Opus approver reads all evidence. The product owner gives the final yes; merging to main and tagging are theirs."),
+ dict(id="retro", col=6, y=70, type="retro", title="Retro and improve", sub="learn, then change the workflow",
+  chips=[("Retro agent", "facts, escapes, trends"), ("Workflow editor", "Sonnet: applies changes"), ("Workflow approver", "Opus: gate G8, not the retro")],
+  detail="After every release. The retro proposes changes to the workflow; the editor applies them on a branch; the workflow approver, a different agent from the retro agent, approves or rejects each one (G8) before it counts."),
+]
+
+# edges: id, from, to, label, kind, route (named in the renderer)
+EDGES = [
+ (1, "humans", "orch", "goals and priorities", "flow", "h:right0.35>left0.2"),
+ (2, "src", "orch", "requirements and rules", "flow", "h:right0.3>left0.9"),
+ (3, "orch", "consult", "questions and memos", "both", "h:right0.4>left0.4"),
+ (4, "orch", "design", "design requests", "flow", "h:right0.95>left0.2"),
+ (5, "design", "build", "design brief and tokens", "flow", "h:right0.3>left0.9"),
+ (6, "orch", "build", "work orders", "flow", "top:0.25>0.25@46"),
+ (7, "consult", "build", "constraints and memos", "flow", "h:right0.55>left0.55"),
+ (8, "src", "build", "datasets (offline)", "flow", "bot:0.3>0.7@704"),
+ (9, "build", "check", "code, tests, model cards", "flow", "h:right0.15>left0.15"),
+ (10, "check", "build", "defects, fix loop (at most 2)", "loop", "h:left0.9>right0.85"),
+ (11, "design", "check", "UI review", "flow", "side:right0.85>bot0.5@555"),
+ (12, "check", "demo", "all gates green", "flow", "h:right0.15>left0.15"),
+ (13, "check", "orch", "escalate after 2 loops", "loop", "top:0.5>0.75@24"),
+ (14, "orch", "check", "checker assignments", "flow", "top:0.25>0.75@46x"),
+ (15, "demo", "retro", "demo notes", "flow", "h:right0.15>left0.15"),
+ (16, "check", "retro", "defect log", "flow", "bot:0.7>0.6@512"),
+ (17, "retro", "orch", "approved improvements", "improve", "bot:0.8>0.55@688"),
+ (18, "demo", "orch", "accepted release, next plan", "flow", "bot:0.4>0.7@672"),
+ (19, "orch", "humans", "escalations, scope questions", "loop", "h:left0.6>right0.74"),
+ (20, "src", "check", "spec and rules for checkers", "flow", "bot:0.15>0.25@720"),
+]
+
+RELEASES = [
+ ("R0", "Harness and foundations"), ("R1", "Engine core"), ("R2", "Accounts, wardrobe and data rights"), ("R3", "Suggestions and usage events"),
+ ("R4", "Learned layer and the standout feature"), ("R5", "Photo path"), ("R6", "Receipts, purchases and catalogue"),
+ ("R7", "Aggregation and vendor portal"), ("R8", "Hardening and pilot open"),
+]
+
+# Gate names must equal the gate names in section 6 of docs/MVP-AGENT-WORKFLOW.md.
+GATES = [
+ "Gates: G1 ready (Spec QC, owner; accounts ticked) | G2 scripts (CI runs, orchestrator blocks; scope check) | G2b review | G3 spec | G4 privacy and licence (H&M-trained files marked not built on main and release branches) | G5 design",
+ "G6 release (Opus, then the owner) | G7 licence (people; blocks pinning the H&M files on main or in a pilot build) | G8 workflow change (workflow approver) | G9 style review (style specialist, R3 and R4)",
+]
+G7_NOTE = "G7: a person closes the H&M licence check before the H&M-trained files are pinned on main or any learned part is switched on in a pilot or production build"
+
+def build():
+    data = dict(cols=COLX, w=W, nodes=NODES, edges=EDGES, releases=RELEASES, gates=GATES, g7=G7_NOTE)
+    out = os.path.join(ROOT, "docs")
+    with open(os.path.join(out, "mvp-agent-workflow-graph.json"), "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=1, ensure_ascii=False)
+    html = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "graph_template.html"), encoding="utf-8").read()
+    html = html.replace("/*DATA*/null", json.dumps(data, ensure_ascii=False))
+    with open(os.path.join(out, "mvp-agent-workflow-graph.html"), "w", encoding="utf-8") as f:
+        f.write(html)
+    print("written")
+
+if __name__ == "__main__":
+    build()

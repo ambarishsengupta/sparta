@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sparta MVP agent workflow</title>
+<style>
+  :root {
+    --bg: #ffffff; --ink: #172033; --muted: #5b6577; --panel: #f5f7fa; --line: #3a4356; --rule: #d6dbe4;
+    --human-s:#b7791f; --human-f:#fdf3d9; --src-s:#6b7280; --src-f:#f1f2f4; --orch-s:#2563eb; --orch-f:#e6eefc;
+    --consult-s:#0f766e; --consult-f:#e0f4f1; --design-s:#be185d; --design-f:#fce7f1; --build-s:#15803d; --build-f:#e4f5e9;
+    --check-s:#b91c1c; --check-f:#fde8e8; --demo-s:#6d28d9; --demo-f:#efe9fb; --retro-s:#c2410c; --retro-f:#fdeadd;
+    --chip: rgba(255,255,255,.85); --loop:#b91c1c; --improve:#7e22ce;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#10141c; --ink:#e7ebf3; --muted:#9aa5b8; --panel:#1a202c; --line:#aab4c6; --rule:#2c3445;
+      --human-s:#e0a73a; --human-f:#3a2d10; --src-s:#9aa3b2; --src-f:#232833; --orch-s:#6c9bff; --orch-f:#16264a;
+      --consult-s:#3cc4b4; --consult-f:#0f3a36; --design-s:#f472b6; --design-f:#47122f; --build-s:#4ade80; --build-f:#123a22;
+      --check-s:#f87171; --check-f:#471616; --demo-s:#a78bfa; --demo-f:#2a1d52; --retro-s:#fb923c; --retro-f:#472310;
+      --chip: rgba(0,0,0,.25); --loop:#f87171; --improve:#c084fc;
+    }
+  }
+  html, body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width: 1840px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { margin:0 0 4px; font-size: 26px; letter-spacing:-.01em; }
+  .lede { margin:0 0 14px; color:var(--muted); max-width: 1100px; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 16px; margin: 0 0 12px; font-size: 12.5px; color:var(--muted); }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:12px; height:12px; border-radius:3px; border:2px solid; display:inline-block; }
+  .legend em { width:26px; height:0; border-top:2.5px solid; display:inline-block; }
+  svg { width:100%; height:auto; display:block; }
+  .node rect.box { stroke-width:2; rx:12; }
+  .node text.t { font-weight:700; font-size:15px; fill:var(--ink); }
+  .node text.s { font-size:11.5px; fill:var(--muted); }
+  .node rect.chip { fill:var(--chip); stroke-width:1; rx:8; }
+  .node text.cn { font-size:12.5px; font-weight:600; fill:var(--ink); }
+  .node text.cs { font-size:10.8px; fill:var(--muted); }
+  .t-human rect.box { fill:var(--human-f); stroke:var(--human-s); } .t-human rect.chip { stroke:var(--human-s); }
+  .t-src rect.box { fill:var(--src-f); stroke:var(--src-s); } .t-src rect.chip { stroke:var(--src-s); }
+  .t-orch rect.box { fill:var(--orch-f); stroke:var(--orch-s); } .t-orch rect.chip { stroke:var(--orch-s); }
+  .t-consult rect.box { fill:var(--consult-f); stroke:var(--consult-s); } .t-consult rect.chip { stroke:var(--consult-s); }
+  .t-design rect.box { fill:var(--design-f); stroke:var(--design-s); } .t-design rect.chip { stroke:var(--design-s); }
+  .t-build rect.box { fill:var(--build-f); stroke:var(--build-s); } .t-build rect.chip { stroke:var(--build-s); }
+  .t-check rect.box { fill:var(--check-f); stroke:var(--check-s); } .t-check rect.chip { stroke:var(--check-s); }
+  .t-demo rect.box { fill:var(--demo-f); stroke:var(--demo-s); } .t-demo rect.chip { stroke:var(--demo-s); }
+  .t-retro rect.box { fill:var(--retro-f); stroke:var(--retro-s); } .t-retro rect.chip { stroke:var(--retro-s); }
+  .node { cursor:pointer; transition: opacity .15s; }
+  .edge path { fill:none; stroke:var(--line); stroke-width:2; }
+  .edge.loop path { stroke:var(--loop); stroke-dasharray:7 5; }
+  .edge.improve path { stroke:var(--improve); stroke-dasharray:7 5; }
+  .edge circle { fill:var(--line); }
+  .edge.loop circle { fill:var(--loop); } .edge.improve circle { fill:var(--improve); }
+  .edge text { fill:var(--bg); font-size:11px; font-weight:700; text-anchor:middle; dominant-baseline:central; }
+  .edge { transition: opacity .15s; }
+  svg.focus .node:not(.on), svg.focus .edge:not(.on) { opacity:.16; }
+  .train .chev { stroke-width:2; }
+  .train text.r { font-weight:800; font-size:16px; fill:var(--ink); }
+  .train text.l { font-size:11.5px; fill:var(--ink); }
+  .train .mvp1 { fill:var(--build-f); stroke:var(--build-s); } .train .mvp2 { fill:var(--orch-f); stroke:var(--orch-s); }
+  .train .brk { stroke:var(--muted); stroke-width:2; fill:none; } .train text.b { font-size:13px; font-weight:700; fill:var(--ink); }
+  .train text.g { font-size:11.5px; font-weight:700; fill:var(--check-s); }
+  .panel { background:var(--panel); border:1px solid var(--rule); border-radius:10px; padding:12px 16px; margin: 6px 0 14px; min-height: 44px; }
+  .panel b { color:var(--ink); }
+  .cols { display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 4px 28px; }
+  ol.key { margin:0; padding-left: 28px; } ol.key li { margin: 2px 0; }
+  .k-loop { color:var(--loop); } .k-improve { color:var(--improve); }
+  h2 { font-size: 15px; margin: 14px 0 6px; }
+  .rules { margin:0; padding-left: 20px; color:var(--muted); } .rules li { margin:2px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sparta MVP: who builds it and how work flows</h1>
+  <p class="lede">Read left to right: people and documents feed the orchestrator, who hands work orders to makers, checkers test what they built, a demo shows it running, and a retro improves the workflow. Maker and checker are never the same agent. Hover or click a box to follow its connections.</p>
+  <div class="legend" id="legend"></div>
+  <svg id="g" viewBox="0 0 1800 1000" role="img" aria-label="Agent workflow knowledge graph"></svg>
+  <div class="panel" id="panel"><b>Click a box</b> to read what it does and what it must never do.</div>
+  <div class="cols">
+    <div><h2>Connections</h2><ol class="key" id="key"></ol></div>
+    <div><h2>Rules that bind every agent</h2>
+      <ul class="rules">
+        <li>Maker and checker are never the same agent; a checker fails work only by citing a script result or a quoted requirement.</li>
+        <li>At most two fix loops per work order, then the orchestrator splits, re-plans or escalates to the owner.</li>
+        <li>No participant data in training, ever. H&amp;M data stays in its folder, and the H&amp;M-trained files stay off <code>main</code> and out of every pilot build, and the learned parts stay off in a pilot or production build, until the licence decision (G7) is made by people.</li>
+        <li>Stay in the project folder, no Claude attribution lines in commits, outward actions need a yes, investigations are time-boxed to 10 minutes.</li>
+        <li>Accounts and keys are a human job (owner and SA); agents never create an account or enter a key.</li>
+        <li>An Opus agent approves every release (G6) and the workflow approver, never the retro agent that proposed it, approves every change to this workflow (G8); the product owner has the last word. The style specialist reviews 50 suggestions in R3 and R4 (G9).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<script>
+if (location.hash === '#light') document.documentElement.setAttribute('data-theme', 'light');
+const D = {"cols": [20, 280, 540, 800, 1060, 1320, 1580], "w": 200, "nodes": [{"id": "humans", "col": 0, "y": 70, "type": "human", "title": "People", "sub": "decide scope and sign off", "chips": [["Product owner", "Ambarish: scope, final yes"], ["Style specialist", "Arpan Shah: rules, weights"], ["Solution architect", "C. Prashanth: design, OI-5"]], "detail": "Only people decide scope, rule changes, architecture and the H&M licence question (OI-5). They also tick the preconditions an agent cannot: local commits, the committed spec and the branch model, and the accounts and secrets (Supabase, Vercel, GitHub, SMTP, artifact location, worker host). Agents propose; they never decide these and never create an account or enter a key."}, {"id": "src", "col": 0, "y": 330, "type": "src", "title": "Sources and rules", "sub": "what every agent reads", "chips": [["BRD, FDD, HLD, LLD", "v1.4, v1.5, v1.4, v1.4"], ["Datasets (offline only)", "Fashion-MNIST, H&M"], ["Standing rules", "workflow doc, section 10"]], "detail": "Requirements come from the four documents; the checkers read them too. The datasets never leave their folder (BR-59); absolute paths for the datasets, team photos, the one H&M cache and the artifact folder are SPARTA_DATA_ROOT_HM, SPARTA_DATA_ROOT_MNIST, SPARTA_TEAM_PHOTOS, SPARTA_HM_CACHE and SPARTA_ARTIFACT_DIR in the git-ignored workflow/local.env. Standing rules: stay in the project, no Claude trailer, time-box investigations, outward actions need a yes."}, {"id": "orch", "col": 1, "y": 70, "type": "orch", "title": "Orchestration", "sub": "plans, hands out, enforces", "chips": [["Orchestrator", "Opus, extra effort"], ["Spec agent", "work orders, /agentic-os"], ["State keeper", "workflow/STATE.md"], ["Limit-reset trigger", "armed before each work order"]], "detail": "The orchestrator never writes feature code and never approves G1. The spec agent turns requirements into work orders with runnable acceptance checks. STATE.md is the only memory between sessions. The orchestrator merges work-order branches into the release's integration branch and checks usage before and after every work order. It arms a one-shot resume (the trigger) before each work order, for two minutes after the 5-hour reset; at 85% of that window it writes the checkpoint and stops; at 90% of any weekly window, or when usage cannot be read, it stops and waits for the owner. It refreshes STATE.md every 15 minutes while it runs."}, {"id": "consult", "col": 2, "y": 70, "type": "consult", "title": "Consultants", "sub": "read-only, advice only", "chips": [["Style consultant", "rules, weights, review pack"], ["Data-science consultant", "splits, leakage, AUC"], ["Legal consultant", "BR-28, BR-59, OI-5"], ["Architecture consultant", "fit with HLD and LLD"], ["Security consultant", "RLS, secrets, worker"]], "detail": "Consultants write short memos that cite the documents. They cannot edit files, cannot approve, and do not replace the style specialist, the SA or a lawyer."}, {"id": "design", "col": 2, "y": 440, "type": "design", "title": "Design", "sub": "plan, build, critique screens", "chips": [["UX design agent", "/shape: design brief"], ["Visual craft agent", "components/ui and styles"], ["Design critic", "/critique, /audit: never edits"]], "detail": "User-facing work orders only. The brief comes first; the visual craft agent builds presentational components and tokens to it (components/ui and styles only) and the frontend maker builds the pages; the critic scores them. A score below the bar goes back to the visual agent."}, {"id": "build", "col": 3, "y": 70, "type": "build", "title": "Build: makers", "sub": "Sonnet, high effort", "chips": [["Frontend maker", "pages, data, engine package"], ["Backend and database maker", "migrations, RLS, pgTAP"], ["ML and data maker", "models, pairing prior"], ["Worker maker", "FastAPI photo job"], ["Doc-sync maker", "BRD to LLD stay in step"]], "detail": "One maker per work order, in an isolated worktree. Makers never edit the same files, never edit gate scripts, never commit an H&M-trained file and never judge their own work. A path-to-owner table gives every path one owner, and a G2 script fails a diff outside the work order's In-scope list. Accounts and keys are never theirs."}, {"id": "check", "col": 4, "y": 70, "type": "check", "title": "Check: checkers", "sub": "facts first, then judgement", "chips": [["Gate scripts", "tests, RLS, golden, determinism"], ["Gate engineer", "Sonnet: writes the gate scripts"], ["Spec QC", "Opus: judges vs base branch"], ["Code reviewer", "/code-review"], ["Privacy and licence gate", "no participant or H&M leak"], ["Security reviewer", "/security-review"], ["Model QC", "re-runs the model card"]], "detail": "Scripts run first (the scope and ownership script included); red goes straight back to the maker. The gate engineer writes the scripts and the CI workflows outside every maker's scope and Spec QC reviews them. G4 keeps the H&M-trained files marked not yet built in the manifest on main and on every release and work-order branch until G7 (manifest_check enforces it). Spec QC judges against the spec on the base branch and approves G1. A checker may only fail work by citing a script result or a quoted line of the specification. Two fix loops at most, then the orchestrator decides."}, {"id": "demo", "col": 5, "y": 70, "type": "demo", "title": "Demo and approve", "sub": "show it running, then decide", "chips": [["Demo agent", "real app, seeded wardrobe"], ["Release approver", "Opus, extra effort"], ["Human sign-off", "owner, style, SA"]], "detail": "The demo agent drives the running app through the release's acceptance script (R0 and R1 are shown as a recorded test run). It never shows anything that has not run. The Opus approver reads all evidence. The product owner gives the final yes; merging to main and tagging are theirs."}, {"id": "retro", "col": 6, "y": 70, "type": "retro", "title": "Retro and improve", "sub": "learn, then change the workflow", "chips": [["Retro agent", "facts, escapes, trends"], ["Workflow editor", "Sonnet: applies changes"], ["Workflow approver", "Opus: gate G8, not the retro"]], "detail": "After every release. The retro proposes changes to the workflow; the editor applies them on a branch; the workflow approver, a different agent from the retro agent, approves or rejects each one (G8) before it counts."}], "edges": [[1, "humans", "orch", "goals and priorities", "flow", "h:right0.35>left0.2"], [2, "src", "orch", "requirements and rules", "flow", "h:right0.3>left0.9"], [3, "orch", "consult", "questions and memos", "both", "h:right0.4>left0.4"], [4, "orch", "design", "design requests", "flow", "h:right0.95>left0.2"], [5, "design", "build", "design brief and tokens", "flow", "h:right0.3>left0.9"], [6, "orch", "build", "work orders", "flow", "top:0.25>0.25@46"], [7, "consult", "build", "constraints and memos", "flow", "h:right0.55>left0.55"], [8, "src", "build", "datasets (offline)", "flow", "bot:0.3>0.7@704"], [9, "build", "check", "code, tests, model cards", "flow", "h:right0.15>left0.15"], [10, "check", "build", "defects, fix loop (at most 2)", "loop", "h:left0.9>right0.85"], [11, "design", "check", "UI review", "flow", "side:right0.85>bot0.5@555"], [12, "check", "demo", "all gates green", "flow", "h:right0.15>left0.15"], [13, "check", "orch", "escalate after 2 loops", "loop", "top:0.5>0.75@24"], [14, "orch", "check", "checker assignments", "flow", "top:0.25>0.75@46x"], [15, "demo", "retro", "demo notes", "flow", "h:right0.15>left0.15"], [16, "check", "retro", "defect log", "flow", "bot:0.7>0.6@512"], [17, "retro", "orch", "approved improvements", "improve", "bot:0.8>0.55@688"], [18, "demo", "orch", "accepted release, next plan", "flow", "bot:0.4>0.7@672"], [19, "orch", "humans", "escalations, scope questions", "loop", "h:left0.6>right0.74"], [20, "src", "check", "spec and rules for checkers", "flow", "bot:0.15>0.25@720"]], "releases": [["R0", "Harness and foundations"], ["R1", "Engine core"], ["R2", "Accounts, wardrobe and data rights"], ["R3", "Suggestions and usage events"], ["R4", "Learned layer and the standout feature"], ["R5", "Photo path"], ["R6", "Receipts, purchases and catalogue"], ["R7", "Aggregation and vendor portal"], ["R8", "Hardening and pilot open"]], "gates": ["Gates: G1 ready (Spec QC, owner; accounts ticked) | G2 scripts (CI runs, orchestrator blocks; scope check) | G2b review | G3 spec | G4 privacy and licence (H&M-trained files marked not built on main and release branches) | G5 design", "G6 release (Opus, then the owner) | G7 licence (people; blocks pinning the H&M files on main or in a pilot build) | G8 workflow change (workflow approver) | G9 style review (style specialist, R3 and R4)"], "g7": "G7: a person closes the H&M licence check before the H&M-trained files are pinned on main or any learned part is switched on in a pilot or production build"};
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("g");
+const TYPES = [["human","People"],["src","Sources and rules"],["orch","Orchestration"],["consult","Consultants"],["design","Design"],["build","Build: makers"],["check","Check: checkers"],["demo","Demo and approve"],["retro","Retro and improve"]];
+const el = (n, a = {}, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+
+// legend
+const lg = document.getElementById("legend");
+TYPES.forEach(([t, n]) => { const s = document.createElement("span"); s.innerHTML = `<i style="border-color:var(--${t}-s);background:var(--${t}-f)"></i>${n}`; lg.appendChild(s); });
+lg.insertAdjacentHTML("beforeend", `<span><em style="border-color:var(--line)"></em>flow</span><span><em style="border-color:var(--loop);border-top-style:dashed"></em>fix loop or escalation</span><span><em style="border-color:var(--improve);border-top-style:dashed"></em>approved improvement</span>`);
+
+// geometry
+const CH = 44, GAP = 8, HEAD = 56;
+const G = {};
+D.nodes.forEach(n => { n.x = D.cols[n.col]; n.w = D.w; n.h = HEAD + n.chips.length * (CH + GAP) + 6; G[n.id] = n; });
+const P = (id, side, t) => { const n = G[id]; return side === "left" ? [n.x, n.y + t * n.h] : side === "right" ? [n.x + n.w, n.y + t * n.h] : side === "top" ? [n.x + t * n.w, n.y] : [n.x + t * n.w, n.y + n.h]; };
+
+// arrow markers
+const defs = el("defs", {}, svg);
+[["m-flow", "var(--line)"], ["m-loop", "var(--loop)"], ["m-improve", "var(--improve)"]].forEach(([id, c]) => {
+  const m = el("marker", { id, markerWidth: 10, markerHeight: 10, refX: 8.5, refY: 5, orient: "auto-start-reverse", markerUnits: "userSpaceOnUse" }, defs);
+  el("path", { d: "M0,0 L10,5 L0,10 z", fill: c }, m);
+});
+
+function rounded(pts, r = 10) {
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [px, py] = pts[i - 1], [cx, cy] = pts[i], [nx, ny] = pts[i + 1];
+    const l1 = Math.hypot(cx - px, cy - py), l2 = Math.hypot(nx - cx, ny - cy);
+    const rr = Math.min(r, l1 / 2, l2 / 2);
+    const ax = cx - (cx - px) / l1 * rr, ay = cy - (cy - py) / l1 * rr;
+    const bx = cx + (nx - cx) / l2 * rr, by = cy + (ny - cy) / l2 * rr;
+    d += ` L${ax},${ay} Q${cx},${cy} ${bx},${by}`;
+  }
+  const L = pts[pts.length - 1];
+  return d + ` L${L[0]},${L[1]}`;
+}
+
+// straight edges produce repeated points; a zero-length segment breaks the rounded corner maths
+const dedupe = pts => pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.01);
+function route(from, to, spec) { return dedupe(route0(from, to, spec)); }
+function route0(from, to, spec) {
+  const [kind, rest] = spec.split(":");
+  const lane = rest.includes("@") ? parseInt(rest.split("@")[1]) : null;
+  const body = rest.split("@")[0];
+  const [a, b] = body.split(">");
+  const num = s => parseFloat(s.replace(/[a-z]+/, ""));
+  const side = s => s.replace(/[0-9.]+/, "");
+  if (kind === "h") {
+    const p1 = P(from, side(a), num(a)), p2 = P(to, side(b), num(b));
+    const xm = (p1[0] + p2[0]) / 2;
+    return [p1, [xm, p1[1]], [xm, p2[1]], p2];
+  }
+  if (kind === "top") {
+    const p1 = P(from, "top", parseFloat(a)), p2 = P(to, "top", parseFloat(b));
+    return [p1, [p1[0], lane], [p2[0], lane], p2];
+  }
+  if (kind === "bot") {
+    const p1 = P(from, "bottom", parseFloat(a)), p2 = P(to, "bottom", parseFloat(b));
+    return [p1, [p1[0], lane], [p2[0], lane], p2];
+  }
+  if (kind === "side") {
+    const p1 = P(from, side(a), num(a)), p2 = P(to, "bottom", num(b));
+    return [p1, [p2[0], p1[1]], p2];
+  }
+}
+
+// edges first (under the nodes)
+const eg = el("g", {}, svg);
+const bg = el("g", {}, svg);
+const routes = D.edges.map(([id, f, t, label, kind, spec]) => ({ id, f, t, kind, spec, pts: route(f, t, spec) }));
+const polyLen = pts => pts.slice(1).reduce((a, p, i) => a + Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), 0);
+// points where an arrowhead sits: the end of every edge, and the start of two-way edges
+const tips = [];
+routes.forEach(r => { tips.push(r.pts[r.pts.length - 1]); if (r.kind === "both") tips.push(r.pts[0]); });
+const inNode = (x, y, m) => D.nodes.some(n => x > n.x - m && x < n.x + n.w + m && y > n.y - m && y < n.y + n.h + m);
+const placed = [];
+// badge position: on the longest segments first, never within 26px of an arrowhead (so a badge cannot hide one in a 60px gap),
+// never on another badge, never under a box
+function badgePos(r) {
+  const pts = r.pts, total = polyLen(pts);
+  const segs = [];
+  let acc = 0;
+  for (let i = 0; i < pts.length - 1; i++) { const l = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]); segs.push({ i, l, from: acc }); acc += l; }
+  segs.sort((a, b) => b.l - a.l);
+  const fr = r.spec.endsWith("x") ? [0.8, 0.5, 0.3, 0.65, 0.2] : [0.5, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6];
+  let fallback = null;
+  for (const sg of segs) {
+    if (sg.l < 12) continue;
+    for (const f of fr) {
+      const x = pts[sg.i][0] + (pts[sg.i + 1][0] - pts[sg.i][0]) * f, y = pts[sg.i][1] + (pts[sg.i + 1][1] - pts[sg.i][1]) * f;
+      const d = sg.from + sg.l * f;
+      if (d < 26 && r.kind === "both") continue;
+      if (total - d < 26) continue;
+      if (tips.some(([tx, ty]) => Math.hypot(tx - x, ty - y) < 26)) continue;
+      if (inNode(x, y, 12)) continue;
+      if (!fallback) fallback = [x, y];
+      if (placed.some(([px, py]) => Math.hypot(px - x, py - y) < 26)) continue;
+      return [x, y];
+    }
+  }
+  return fallback || pts[0];
+}
+routes.forEach(r => {
+  const g = el("g", { class: "edge " + r.kind, "data-from": r.f, "data-to": r.t, "data-id": r.id }, eg);
+  const p = el("path", { d: rounded(r.pts), "marker-end": `url(#m-${r.kind === "both" ? "flow" : r.kind})` }, g);
+  if (r.kind === "both") p.setAttribute("marker-start", "url(#m-flow)");
+  const [bx, by] = badgePos(r);
+  placed.push([bx, by]);
+  // the badge sits in its own group above every line, so a shared bus never strikes through it
+  const gb = el("g", { class: "edge " + r.kind, "data-from": r.f, "data-to": r.t, "data-id": r.id }, bg);
+  el("circle", { cx: bx, cy: by, r: 10 }, gb);
+  const tx = el("text", { x: bx, y: by }, gb); tx.textContent = r.id;
+});
+
+// nodes
+const panel = document.getElementById("panel");
+D.nodes.forEach(n => {
+  const g = el("g", { class: "node t-" + n.type, "data-id": n.id, tabindex: 0 }, svg);
+  el("rect", { class: "box", x: n.x, y: n.y, width: n.w, height: n.h }, g);
+  el("text", { class: "t", x: n.x + 14, y: n.y + 24 }, g).textContent = n.title;
+  el("text", { class: "s", x: n.x + 14, y: n.y + 42 }, g).textContent = n.sub;
+  n.chips.forEach(([a, b], i) => {
+    const cy = n.y + HEAD + i * (CH + GAP);
+    el("rect", { class: "chip", x: n.x + 10, y: cy, width: n.w - 20, height: CH }, g);
+    const ta = el("text", { class: "cn", x: n.x + 20, y: cy + 18 }, g); ta.textContent = a;
+    const tb = el("text", { class: "cs", x: n.x + 20, y: cy + 34 }, g); tb.textContent = b;
+    // a long role name or note shrinks to fit inside its chip instead of running over the edge
+    [[ta, 12.5], [tb, 10.8]].forEach(([t, fs]) => { let k = fs; while (t.getComputedTextLength() > n.w - 36 && k > 9.5) { k -= 0.25; t.style.fontSize = k + "px"; } });
+  });
+  const show = () => { panel.innerHTML = `<b>${n.title}.</b> ${n.detail}`; };
+  const focus = on => {
+    svg.classList.toggle("focus", on);
+    svg.querySelectorAll(".on").forEach(e => e.classList.remove("on"));
+    if (!on) return;
+    g.classList.add("on");
+    svg.querySelectorAll(".edge").forEach(e => {
+      if (e.dataset.from === n.id || e.dataset.to === n.id) {
+        e.classList.add("on");
+        svg.querySelector(`.node[data-id="${e.dataset.from}"]`).classList.add("on");
+        svg.querySelector(`.node[data-id="${e.dataset.to}"]`).classList.add("on");
+      }
+    });
+  };
+  g.addEventListener("mouseenter", () => { focus(true); show(); });
+  g.addEventListener("mouseleave", () => focus(false));
+  g.addEventListener("focus", () => { focus(true); show(); });
+  g.addEventListener("blur", () => focus(false));
+  g.addEventListener("click", show);
+});
+
+// release train
+const tr = el("g", { class: "train" }, svg);
+const Y0 = 822, CWID = 188, STEP = 196, CHH = 76;
+el("text", { class: "b", x: 20, y: 750 }, tr).textContent = "Release train: each release runs the whole loop (plan, consult, design, build, check, demo, approve, retro) and ends in a demo and a retro";
+const wrap = (s, n) => { const w = s.split(" "), o = []; let c = ""; w.forEach(x => { if ((c + " " + x).trim().length > n) { o.push(c); c = x; } else c = (c + " " + x).trim(); }); if (c) o.push(c); return o; };
+D.releases.forEach(([r, name], i) => {
+  const x = 20 + i * STEP, cls = i <= 4 ? "mvp1" : "mvp2";
+  const pts = [[x, Y0], [x + CWID - 16, Y0], [x + CWID, Y0 + CHH / 2], [x + CWID - 16, Y0 + CHH], [x, Y0 + CHH]].concat(i ? [[x + 16, Y0 + CHH / 2]] : []);
+  el("polygon", { class: "chev " + cls, points: pts.map(p => p.join(",")).join(" ") }, tr);
+  el("text", { class: "r", x: x + (i ? 26 : 14), y: Y0 + 24 }, tr).textContent = r;
+  wrap(name, 21).slice(0, 3).forEach((ln, k) => el("text", { class: "l", x: x + (i ? 26 : 14), y: Y0 + 42 + k * 13 }, tr).textContent = ln);
+});
+const b1 = 20, b1e = 20 + 4 * STEP + CWID, b2 = 20 + 5 * STEP, b2e = 20 + 8 * STEP + CWID;
+[[b1, b1e, "MVP-1: the standout feature (Complete the look, Wardrobe unlock)"], [b2, b2e, "MVP-2: pilot-ready"]].forEach(([a, b, t]) => {
+  el("path", { class: "brk", d: `M${a},${Y0 - 14} V${Y0 - 20} H${b} V${Y0 - 14}` }, tr);
+  el("text", { class: "b", x: a, y: Y0 - 28 }, tr).textContent = t;
+});
+const Y1 = Y0 + CHH + 22;
+el("text", { class: "g", x: 20, y: Y1 }, tr).textContent = D.g7;
+D.gates.forEach((ln, k) => el("text", { class: "l", x: 20, y: Y1 + 22 + k * 15 }, tr).textContent = ln);
+svg.setAttribute("viewBox", `0 0 1800 ${Y1 + 22 + D.gates.length * 15 + 10}`);
+
+// key
+const key = document.getElementById("key");
+D.edges.forEach(([id, f, t, label, kind]) => {
+  const li = document.createElement("li"); if (kind !== "flow" && kind !== "both") li.className = "k-" + kind;
+  li.value = id; li.textContent = `${G[f].title} → ${G[t].title}: ${label}`;
+  key.appendChild(li);
+});
+</script>
+</body>
+</html>

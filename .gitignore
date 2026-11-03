@@ -31,3 +31,6 @@ dist/
 .env.local
 coverage/
 *.tsbuildinfo
+
+# Agent worktrees
+.claude/

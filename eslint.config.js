@@ -10,6 +10,7 @@ export default tseslint.config(
       'data/**',
       'workflow/evidence/**',
       'docs/**',
+      '.claude/**',
     ],
   },
   js.configs.recommended,

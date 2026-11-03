@@ -2,9 +2,9 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.1 (draft for the academic pilot) |
-| Date | 2026-10-20 |
-| Applies to | The seed catalogue, the collector (`jobs/collector`) and vendor product feeds |
+| Version | 0.2 (draft for the academic pilot) |
+| Date | 2026-11-04 |
+| Applies to | The seed catalogue, the collector (`jobs/collector`), vendor product feeds, and the public datasets used to train the recommendation engine (section 11) |
 | Review status | Written by the project team with AI assistance. **Not reviewed by a lawyer.** |
 
 ## 1. Why this policy exists
@@ -87,3 +87,12 @@ Items users add themselves are their own content. They are not scraped and carry
 ## 10. When this policy must be revisited
 
 Before any public launch; before any paid vendor tier; if a source objects; if the pilot is extended beyond about 3 months; or if the type of data collected changes.
+
+## 11. Public datasets used to train the recommendation engine
+
+Two public datasets are used offline to build the engine's models (BRD section 7.5):
+
+- **Fashion-MNIST** (Zalando Research, MIT licence): used and cited under the licence. Checksums are in `data/recommendation-engine/README.md`.
+- **H&M Personalized Fashion Recommendations** (Kaggle competition files: articles, customers, purchase lines and product photographs): released under competition rules for non-commercial research and education. The team keeps the files on team machines only; does not commit, copy into the app, display or redistribute any photograph, purchase line, customer ID or article ID; ships only trained model files and small aggregate tables that hold no such row; deletes the raw files when the course ends and any cut-outs or split lists derived from them when the model cards are final; treats the customer file (hashed IDs and ages) as pseudonymised personal data, used only to drop customers under 18 and to build counts; keeps the trained files in a private location, not in the public repository (anything the browser loads can still be downloaded by any user of the app); and keeps these parts switched off until the product owner and the solution architect have closed BRD open item OI-5. The H&M product photographs are not the seed catalogue (section 3): the seed catalogue still links to storefronts and never stores product images.
+
+Revisit this section before any public or commercial launch, if the pilot is extended, or if the competition rules change.

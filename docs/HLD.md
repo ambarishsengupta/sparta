@@ -3,12 +3,12 @@
 | Field | Value |
 | --- | --- |
 | Document | High-Level Design |
-| Version | 1.3 (adds the recommendation engine; amends 1.2) |
-| Date | 2026-10-29 |
+| Version | 1.4 (adds H&M-trained parts to the recommendation engine; amends 1.3) |
+| Date | 2026-11-04 |
 | Author | Business analyst (drafted for the product owner) |
 | Reviewer | C. Prashanth (Solution Architect) |
 | Approver | Ambarish Sengupta (Product Owner) |
-| Traces to | BRD v1.3 (BR-xx), FDD v1.4 (FR-xx, NFR-xx); legal pack in `legal` |
+| Traces to | BRD v1.4 (BR-xx), FDD v1.5 (FR-xx, NFR-xx); legal pack in `legal` |
 | Status | Final |
 
 ## 1. Purpose and scope
@@ -28,7 +28,7 @@ This document describes the architecture of the Sparta pilot: the main component
 | Open source under GPL-3.0 | BR-43 | No secrets in the repository; configuration by environment; only components that can be self-hosted. |
 | Python for ML | Earlier product decision | A Python service exists from the start for image, OCR and ML work, including the garment model of the recommendation engine. |
 | Image and receipt processing | BR-05, BR-06 | Open-source tools in a Python worker. |
-| Recommendation engine built before there is pilot data | BR-11, BR-50 to BR-55 | Rules and ranking written by the style specialist; a small image model trained offline on public Fashion-MNIST data; nothing is trained on participants (BR-28, BR-52). |
+| Recommendation engine built before there is pilot data | BR-11, BR-50 to BR-55 | Rules and ranking written by the style specialist; garment models, a pairing table and an unlock list trained offline on public Fashion-MNIST and H&M data, shipped only after the licence check (BR-56, BR-59, OI-5); nothing is trained on participants (BR-28, BR-52). |
 
 ## 3. Architecture overview
 
@@ -70,7 +70,7 @@ flowchart LR
 | **Web app, vendor area** | Vendor Pilot Agreement acceptance, dashboard, gaps, report view, feed upload and validation. Reads insights only through the aggregate functions; the only rows it writes are the vendor's own feed items (through a server function), agreement acceptances and its own usage events (FDD section 16). | FR-70 to FR-95 |
 | **Web app, admin area** | Vendor and participant invitations, supported countries, catalogue sources, aggregate run monitor, vendor query log, deletion queue, report review. | FR-8, FR-9, FR-69, FR-79, FR-86, FR-88, FR-100 to FR-104 |
 | **Web server functions** (Vercel route handlers) | Operations that must run on the server: manage the invitation list and invite vendors, delete accounts (including Leave the pilot), build exports and return signed download links, issue short-lived signed storage URLs to the worker for the job it is running, validate and publish vendor feeds, generate and review reports, and the daily housekeeping run. Those that need the Supabase secret key use it only here; it is never sent to the browser. | FR-8, FR-62, FR-63, FR-66, FR-70, FR-79, FR-90 to FR-92 |
-| **Recommendation engine, ranking** | Rule engine and ranking running in the web app from a shared rules file, using the user's own items and their shape features. No server needed, and no wardrobe data leaves the browser to make a suggestion (section 5.8). | FR-52 to FR-54, FR-58, FR-59, section 14 of FDD |
+| **Recommendation engine, ranking** | Rule engine and ranking running in the web app from a shared rules file, using the user's own items and their shape features. No server needed, and no wardrobe data leaves the browser to make a suggestion (section 5.8). | FR-52 to FR-54, FR-58, FR-59 to FR-59c, section 14 of FDD |
 | **Supabase Auth** | Email and password plus Google sign-in, email verification, sessions, roles. Apple sign-in is deferred (needs a paid Apple developer account). | FR-1, FR-70 |
 | **Supabase Postgres** | All structured data, RLS, aggregate functions, scheduled jobs (`pg_cron`). | all |
 | **Supabase Storage** | Private buckets for item images, receipts and exports; signed URLs only. | FR-23, FR-32, FR-46, FR-62 |
@@ -85,8 +85,8 @@ flowchart LR
 
 1. The browser resizes the image to at most 1,200 pixels on the long side, re-encoding it so that no EXIF metadata (such as GPS location) is kept, and uploads it to the private item-images bucket.
 2. The web app inserts a job row (type photo, status queued). The worker picks it up on its next poll (every few seconds).
-3. The worker removes the background, saves a compressed WebP cut-out and 320-pixel WebP thumbnails of the cut-out and of the original to storage, runs the garment model on the cut-out (a category and sub-type guess with its confidence, and 32 shape numbers; skipped without failing the job if the model is off or errors), and marks the job done.
-4. The browser shows the preview, with the category and sub-type pre-filled when the guess was confident enough (FR-23a). The user accepts or keeps the original, completes the attributes and saves; the shape numbers are saved with the item. The image not chosen and its thumbnail are then deleted, so each photo item keeps one full-size image and one thumbnail.
+3. The worker removes the background, saves a compressed WebP cut-out and 320-pixel WebP thumbnails of the cut-out and of the original to storage, runs the garment model on the cut-out (a category and sub-type guess with its confidence, and the look numbers: 32 for model version 1, 64 for version 2; skipped without failing the job if the model is off or errors), and marks the job done.
+4. The browser shows the preview, with the category and sub-type pre-filled when the guess was confident enough (FR-23a). The user accepts or keeps the original, completes the attributes and saves; the look numbers are saved with the item. The image not chosen and its thumbnail are then deleted, so each photo item keeps one full-size image and one thumbnail.
 
 ### 5.2 Receipt scan (FR-40 to FR-47)
 
@@ -150,26 +150,38 @@ A scheduled GitHub Actions job runs a Python collector that reads only from sour
 
 The vendor uploads a CSV or JSON file. A server function validates every row against the shared taxonomy and shows errors. On confirmation the rows are written as vendor catalogue items owned by that vendor.
 
-### 5.8 Recommendation engine (FR-52 to FR-54, FR-58, FR-59, FR-23a)
+### 5.8 Recommendation engine (FR-52 to FR-54, FR-58, FR-59, FR-59a to FR-59c, FR-23a; BR-56 to BR-60)
 
 ```mermaid
 flowchart TD
   subgraph OFF["Before the pilot, offline"]
-    F[(Fashion-MNIST CSVs<br/>public data)] --> T[Train and test<br/>ml/recommendation-engine]
-    T --> M[Garment model<br/>ONNX file + model card]
+    F[(Fashion-MNIST<br/>IDX files)] --> T[Train and test<br/>ml/recommendation-engine]
+    H1[(H&M photographs<br/>105,100 JPEGs)] --> T
+    H2[(H&M articles and<br/>purchase lines)] --> Q[Build pairing prior<br/>and unlock list]
+    T --> M[Garment models v1, v2<br/>ONNX files + model cards]
+    Q --> D[Pairing prior and H&M unlock list<br/>small JSON, no rows]
+    M --> A[(Private artifact location<br/>pinned by models.manifest.json)]
+    D --> A
   end
-  M -->|baked into the worker image| P[Python worker<br/>photo job]
-  P -->|category guess, confidence,<br/>32 shape numbers| J[(Job result in Supabase)]
+  A -->|fetched by pinned hash at worker image build| P[Python worker<br/>photo job]
+  P -->|category guess, confidence,<br/>32 or 64 look numbers| J[(Job result in Supabase)]
   J --> B[Browser: item form<br/>pre-fills, user confirms]
-  B --> I[(Item + shape features<br/>owner-only rows)]
+  B --> I[(Item + look numbers<br/>owner-only rows)]
+  A -->|fetched by pinned hash at deploy; loaded by the browser at run time| R
+  FB[(Fallback unlock list<br/>committed, style specialist)] --> R
   I --> R[Browser: rules, then ranking<br/>packages/rules]
   R --> S[Up to three suggestions<br/>with reasons; swap choices]
+  R --> C[Complete the look<br/>Wardrobe unlock]
 ```
 
 *Figure 4a. Recommendation engine.*
 
 - **Rules first, ranking second.** The rule engine builds only outfits that pass the hard rules (occasion, season and the required pieces, FDD 14.1). The ranking step scores colour, pattern, layering and footwear matching, orders the outfits and orders swap choices (FDD 14.2). Both run in the browser, so a suggestion never sends wardrobe data to a server (FR-59).
-- **The garment model is trained once, offline.** It is trained on the public Fashion-MNIST files by a script in `ml/recommendation-engine`, exported to ONNX and baked into the worker image with a model card that records the data checksums, accuracy and known limits (LLD 7.7). Nothing in the pilot retrains it.
+- **The models are trained once, offline.** Version 1 of the garment model is trained on the Fashion-MNIST files and version 2 on the H&M product photographs, by scripts in `ml/recommendation-engine`. Each is exported to ONNX and built into the worker image with a model card that records the data checksums, accuracy and known limits (LLD 7.7, 7.8). The pairing prior (LLD 7.9) is a small JSON file built from H&M purchase lines. Nothing in the pilot retrains any of them.
+- **The H&M data never enters the product.** Photographs, purchase lines, customer IDs and article IDs stay on the team's machines (BR-59). Only the ONNX file, the pairing prior and an H&M-derived list of at most 40 sub-type and colour combinations ship, and only after the licence check (BRD OI-5). If the check fails, the pilot runs on version 1, the rules and the committed fallback unlock list, and the engine still works (FDD FR-59c).
+- **Four learned parts, each with a switch.** Garment model version 2, the look embedding in swap order, the pairing prior and the H&M unlock list can each be turned off on their own (names in LLD 12.3). The fallback unlock list `packages/rules/data/unlock-fallback.json` is committed and written by the style specialist (at most 40 entries, including types such as Chinos, Joggers, Formal shoes and Sandals that the H&M types cannot express), so Wardrobe unlock works with every learned part off.
+- **Delivery of the trained files.** The trained files (`garment-cnn-v2.onnx`, `pairing-prior-v1.json`, `unlock-candidates.json`) are not committed. The offline scripts write them to a private artifact location chosen by the SA (HOI-5), and a committed `models.manifest.json` pins each file's name and SHA-256; until OI-5 is closed the manifest on `main` marks them not yet built and the hashes are in the cards only (LLD 12.1). The deploy workflow and the worker image build fetch the files by the pinned hash and fail on a mismatch; the web app loads the two JSON files at run time and, if one is missing, behaves as with its switch off. CI tests the same checks on committed synthetic fixtures (a tiny fake prior and a tiny fake ONNX file); the real SHA check happens at the host build. Anything the browser loads can be downloaded by any user of the app, so "kept out of the open-source release" is not the same as secret; the ONNX file stays on the worker only.
+- **Two functions use the same engine.** Complete the look fixes one item and ranks the rest; Wardrobe unlock tries each combination in the unlock list (the fallback list by default, the H&M list when switched on) as a pretend item. Both run in the browser from the user's own items (FDD 14.5).
 - **No learning from participants.** Neither stage uses accepted or rejected suggestions, outfit logs or purchases to change its behaviour (FR-58, BR-52). The same inputs always give the same suggestions.
 - **The model helps; it does not decide.** A guess only pre-fills a form the user confirms, and shape numbers only order the swap list. If the model is off or wrong, suggestions still work from the rules.
 
@@ -248,7 +260,7 @@ The free Supabase plan includes about 1 GB of file storage and 5 GB of egress a 
 | Transport and storage | TLS everywhere; managed encryption at rest by the providers. |
 | Input handling | Validated schemas on forms and feed files; upload size and type limits; the worker never executes uploaded content. |
 | Scraping conduct | `robots.txt` check, rate limit, identifying user agent, source records (FR-100, FR-101). |
-| Garment model | Trained only on public Fashion-MNIST data and tested on photos owned by the team, never on participant photos. The model file is built into the worker image and its SHA-256 is recorded in the model card and checked in CI, so a changed model is noticed. Shape features are the user's own data: owner-only rows, included in the export, deleted with the item, and never read by the aggregation. |
+| Garment models and pairing prior | Trained only on public data (Fashion-MNIST; H&M photographs and purchase lines, subject to BRD OI-5) and tested on photos owned by the team, never on participant photos or data. The H&M files are used offline and are not stored in the database, storage or the worker image (BR-59). The model file is built into the worker image, and its SHA-256 is recorded in the model card and, once BRD OI-5 is closed, pinned in `models.manifest.json` (until then the manifest on `main` marks the H&M-trained files not yet built, LLD 12.1); the host build checks it, and CI checks the same rules on synthetic fixtures, so a changed model is noticed. The two JSON files the browser loads can be downloaded by any user of the app. Shape features are the user's own data: owner-only rows, included in the export, deleted with the item, and never read by the aggregation. |
 | Logging | No personal data or free text in logs; aggregate run audit kept. |
 | Open-source hygiene | Secret scanning in CI; sample environment file only. |
 
@@ -265,7 +277,7 @@ Threats considered: a user reading another user's data (RLS tests), a vendor pro
 - **Web:** Vercel Hobby. Its terms limit the Hobby plan to non-commercial use, which fits an academic pilot and should be revisited before any paid vendor tier. Vercel Functions default to Washington, D.C. (`iad1`), so the project must be set to Mumbai (`bom1`), to keep function calls next to the database and personal data in India. Hobby allows a single member, so one team member holds the Vercel project; how the others cover for that holder is set out in the Incident Response Plan (`legal`, section 8).
 - **Database:** two free Supabase projects (dev and prod), each in its own free organisation because the free plan counts file storage, egress and monthly active users per organisation, and both in **South Asia (Mumbai), `ap-south-1`**. The pilot is India-only, so Mumbai keeps latency low and the data in India. The region cannot be changed after a project is created without migrating it, so choose it when creating the projects. The same region appears on the About page (FR-67) and in the Privacy Policy.
 - **Worker host (decision made, HOI-1a):** the worker is a Docker container (`docker compose`, restart policy `always`) running on a team member's always-on machine. Free hosted options were ruled out: Render's free web service (512 MB RAM, 0.1 CPU, spins down after 15 minutes) is too small for PaddleOCR plus background removal, and Hugging Face Docker Spaces now need a paid PRO plan (about $9 a month). The container needs roughly 2 GB of memory. Because the worker polls Supabase and makes only outbound connections, no inbound port, tunnel or public address is needed. The host machine needs disk encryption, automatic security updates, a firewall with no open inbound ports, temporary files purged after each job, and a heartbeat the admin console watches (section 10). The machine's owner is a member of the delivery team and handles user images and receipts only transiently. The machine also holds the encrypted weekly backups (see Backups below).
-- **CI/CD:** GitHub Actions runs lint, type checks, unit tests, RLS tests and a secret scan on each pull request. Merge to main applies database migrations (Supabase CLI) and then deploys the web app (Vercel).
+- **CI/CD:** GitHub Actions runs lint, type checks, unit tests, RLS tests, schema and SHA tests on synthetic model fixtures and a secret scan on each pull request. Merge to main applies database migrations (Supabase CLI), fetches the trained JSON files by the hash pinned in `models.manifest.json` (failing on a mismatch), and then deploys the web app (Vercel). The worker image build fetches the ONNX file the same way. Until OI-5 is closed the manifest on `main` marks them not yet built and the hashes are in the cards only (LLD 12.1).
 - **Keep-alive:** a daily scheduled request to `/api/health`, which queries the database, keeps the free Supabase project from pausing (free projects pause after 7 days without activity). GitHub disables scheduled workflows in a public repository after 60 days without repository activity, so the admin console shows the date of the latest exchange rates, and the team re-enables the workflows if it is more than 2 days old.
 - **Backups:** a weekly job on the worker host, outside the worker container, dumps the database with a separate read-only login, encrypts the dump and keeps it on the host and in one other team member's private storage, never as GitHub Actions artifacts. The key that decrypts the backups is never on the worker host. Backups older than 30 days are deleted, and a restore is rehearsed once before the pilot opens (NFR-8). Files in Supabase Storage (photos, receipt images, exports) are not backed up. After any restore, accounts deleted since that backup are deleted again (LLD 13.3).
 
@@ -314,10 +326,13 @@ sparta/
     seed/                   Taxonomy and sample data
     tests/                  RLS and aggregation tests
   packages/taxonomy/        Shared taxonomy JSON, types and validators
-  packages/rules/           Recommendation engine: rules, ranking and data (rules.json)
-  ml/recommendation-engine/ Garment model: training, evaluation and export scripts, model card
+  packages/rules/           Recommendation engine: rules, ranking and data (rules.json; data/unlock-fallback.json committed; the pairing prior and H&M unlock list are fetched by pinned hash, not committed)
+  ml/recommendation-engine/ Garment models (v1, v2), pairing prior: training, evaluation and export scripts, model cards
+  models.manifest.json      Name and SHA-256 of each trained file kept outside the repository
+  workflow/                 Build workflow files; local.env.example is committed, local.env (dataset paths) is git-ignored
   data/recommendation-engine/
-    mnist/                  Fashion-MNIST CSVs (public data; git-ignored, not committed)
+    mnist/                  Fashion-MNIST CSV and IDX files (public data; git-ignored, not committed)
+    hm/                     link to the H&M files and photographs (git-ignored, not committed; a convenience, the scripts read SPARTA_DATA_ROOT_HM)
   docs/                     BRD, FDD, HLD, LLD, charter
   legal/                    Legal and privacy pack (pilot drafts, not legal advice)
   .github/workflows/        CI, deploy, scheduled jobs
@@ -340,6 +355,8 @@ For the SA to confirm or change.
 | AD-8 | Source images are not stored (links only) | Cache images | Matches the data-sourcing rules in BRD section 9. |
 | AD-9 | Garment model: a small convolutional network trained on Fashion-MNIST, exported to ONNX and run on CPU in the existing worker | A pretrained image model fine-tuned on team photos (better on real photos, but larger, needs a licence check and more worker memory); a cloud vision API (paid, sends photos to a third party); running the model in the browser | Uses the public data the team already holds, adds little memory and no new service or recipient, and keeps photos on the worker host. Revisit with a pretrained model if accuracy on team photos is below the bar in FDD 14.4. |
 | AD-10 | The recommendation engine is built before the pilot and does not learn from participants | Personalising from accepted and rejected suggestions; training on pilot data | Keeps the promise that no participant data trains any model (BR-28, BR-52), keeps results repeatable (FR-58), and avoids a new notice. Learning from participants is open item OI-4. |
+| AD-11 | Garment model version 2: a small convolutional network trained from scratch on H&M product photographs (twenty types, 96 by 96 colour), with a 64-number look embedding, exported to ONNX and run in the existing worker. Version 1 stays as the licence-safe fallback. | Pretrained ImageNet network fine-tuned on team photos (stronger, but larger and needs a licence check); keep Fashion-MNIST only | Real colour photographs of garments, finer types than ten, and an embedding that says how alike two garments look, at under 1 MB of weights and with no new service. Used only if it passes the team-photo test in LLD 7.8. |
+| AD-12 | Pairing prior: a static JSON file of garment-type and colour-family pair scores built offline from H&M purchase lines, used as one part of the browser ranking | Learn a compatibility model from H&M photographs and baskets; a ranking service | Small, inspectable by the style specialist, deterministic, free to run, and cannot admit an outfit the rules reject. A heavier model would add risk without evidence that same-day purchases measure style. |
 
 ## 14. Risks and open items
 
@@ -353,15 +370,18 @@ For the SA to confirm or change.
 | HR-6 | Small groups make aggregates easy to difference. | Rounding, suppression of differences, review of query shapes. |
 | HR-7 | The garment model is trained on small greyscale studio pictures and may misjudge phone photos (white, folded or patterned items). | A confidence threshold, suggestions only, a pre-launch test on team photos, and a switch to turn the feature off (FDD 14.4, LLD 7.7). |
 | HR-8 | Fashion-MNIST says nothing about which clothes go together, so outfit quality rests on the rules and weights. | Style specialist owns rules and weights and reviews sample suggestions (FDD 14.4); acceptance is measured during the pilot. |
+| HR-9 | The H&M files are released for non-commercial research and education, and the photographs are H&M's. Models trained on them may not be allowed in a pilot that also offers vendor insights. | Offline use only, nothing redistributed, only weights and small tables ship (BR-59); every learned part has a switch and a rules-only fallback; no H&M-trained part ships until BRD OI-5 is closed. |
+| HR-10 | H&M product photographs are studio and model shots, unlike phone photos, the top-up from the Divided and Sport index groups is partly womenswear, and same-day purchases are not a style judgement. | Held-out evaluation by product, a team-photo test that decides whether version 2 is used, an AUC bar for the pairing prior, and the style review (FDD 14.4). |
 | HOI-1a | Closed. Worker is self-hosted in Docker on a team member's always-on machine (AD-3). Render free and Hugging Face were considered and not chosen. | C. Prashanth |
 | HOI-1b | Closed. OCR engine is PaddleOCR with rule-based parsing (AD-5). | C. Prashanth |
 | HOI-2 | Closed. Pilot sign-in is email and password plus Google. Apple is deferred until after the pilot (FR-1, BR-01). | C. Prashanth |
 | HOI-3 | Closed. No staging environment: Vercel previews and a dev Supabase project. | C. Prashanth |
 | HOI-4 | Confirm AD-9 and AD-10, and that the garment model fits the worker's memory budget alongside PaddleOCR and background removal (one job at a time, LLD 7.1). | C. Prashanth |
+| HOI-5 | Confirm AD-11 and AD-12, the licence position in BRD OI-5, and that version 2 and the other worker models fit the memory budget together (one job at a time, LLD 7.1). The SA also picks the private artifact location for the trained files (for example a private release asset or private storage) used by `models.manifest.json` and the deploy and image-build fetch steps. | C. Prashanth |
 
 ## 15. Evolution beyond the pilot
 
 - Native apps can reuse the same Supabase backend and shared taxonomy.
-- If participants agree under a new notice (BRD OI-4), accepted and rejected suggestions could be used to learn what each user likes; a better image model (AD-9) could replace the Fashion-MNIST model. Inspiration matching would also move into the Python worker, which already exists.
+- If participants agree under a new notice (BRD OI-4), accepted and rejected suggestions could be used to learn what each user likes; participant-trained models could replace the H&M-based pairing prior and photo model (AD-11, AD-12). Inspiration matching would also move into the Python worker, which already exists.
 - Vendor billing, promotions and the affiliate flow would need a payments service and a review of free-tier and licence terms.
 - A larger user base would move to the paid Supabase plan and a dedicated worker host.

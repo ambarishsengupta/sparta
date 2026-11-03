@@ -3,5 +3,20 @@ submissions/**/data/
 submissions/D2/out/
 submissions/**/raw/
 
-# Fashion-MNIST CSVs for the recommendation engine (size and licence)
+# Fashion-MNIST files for the recommendation engine (size and licence)
 data/recommendation-engine/mnist/
+
+# Link to the H&M files and photographs (size and competition licence); never commit the link or its target
+data/recommendation-engine/hm
+data/recommendation-engine/hm/
+
+# Trained model files and H&M-derived lists are not committed; they live in a private artifact location pinned by models.manifest.json (LLD 7.8)
+services/worker/models/garment-cnn-v2.onnx
+packages/rules/data/pairing-prior-v*.json
+packages/rules/data/unlock-candidates.json
+
+# Local dataset paths (SPARTA_DATA_ROOT_HM, SPARTA_DATA_ROOT_MNIST); the template workflow/local.env.example is committed
+workflow/local.env
+
+# macOS folder metadata
+.DS_Store

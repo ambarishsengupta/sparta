@@ -57,8 +57,8 @@ The pilot is invitation-only, adults only, and limited to supported countries. T
 
 - **Free or near-free hosting:** Supabase and Vercel free tiers, GitHub Actions, and a self-hosted worker container.
 - **Privacy in the database:** row-level security on every user table, consent checks, vendor access only through functions that apply the group-size rules.
-- **Python where it counts:** a Python worker from the start, which also runs the small garment model behind photo suggestions.
-- **A recommendation engine built before there is data:** style rules and ranking run in the browser; the garment model is trained once, offline, on the public Fashion-MNIST dataset (kept out of the repository, see [`data/recommendation-engine`](data/recommendation-engine)). Nothing is trained on participants.
+- **Python where it counts:** a Python worker from the start, which also runs the garment models behind photo suggestions.
+- **A recommendation engine built before there is data:** style rules and ranking run in the browser; the garment models and a small pairing table are trained once, offline, on public data: Fashion-MNIST, and the H&M product photographs and purchase history (kept out of the repository, see [`data/recommendation-engine`](data/recommendation-engine); the H&M-trained parts ship only after the data-licence check, and every function works without them). They power **Complete the look** (outfits built around one item) and **Wardrobe unlock** (what to add to make the most new outfits). Nothing is trained on participants.
 
 Full detail is in the design documents below.
 

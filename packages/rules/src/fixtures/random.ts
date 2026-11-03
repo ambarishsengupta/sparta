@@ -16,6 +16,8 @@ export function rng(seed: number): () => number {
 
 /** Mostly shorts, a few jeans and mostly formal shoes: the mix where trimming to the best eight once hid the only valid pair. */
 export const PAIR_HEAVY: SubType[] = ['T-shirt', 'T-shirt', 'Shorts', 'Shorts', 'Shorts', 'Shorts', 'Sports shorts', 'Jeans', 'Formal shoes', 'Formal shoes', 'Sneakers'];
+/** Seven in ten items are formal shoes, so nine or more pairs of footwear are common: the mix where re-adding the kept bottom made two identical outfits. */
+export const FOOTWEAR_HEAVY: SubType[] = ['T-shirt', 'T-shirt', 'Shorts', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Sneakers'];
 const SUB_TYPES: SubType[] = [
   'T-shirt', 'Shirt', 'Polo', 'Sweater', 'Cardigan', 'Hoodie', 'Sports T-shirt', 'Jeans', 'Chinos', 'Trousers', 'Shorts', 'Joggers', 'Track pants',
   'Sports shorts', 'Jacket', 'Blazer', 'Coat', 'Track jacket', 'Sneakers', 'Formal shoes', 'Boots', 'Sandals', 'Suit', 'Tuxedo', 'Waistcoat',

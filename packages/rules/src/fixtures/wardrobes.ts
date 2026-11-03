@@ -109,11 +109,12 @@ export const colourfulCasual = wardrobe('col', [
   ['Cap', 'Teal cap', '#008080'],
 ]);
 
-/** Too little to dress from: no footwear (the only pair is archived), so every occasion must say what is missing. */
+/** Thin but not empty: one active pair of sneakers, a tee and jeans. Casual, Date and Travel work; Work, Formal and Sport must say what is missing. */
 export const thinWardrobe = wardrobe('thin', [
   ['T-shirt', 'White tee', '#F4F4F4', { o: ['Casual'], c: 30 }],
   ['Jeans', 'Blue jeans', '#1E5AA8', { o: ['Casual'], c: 30 }],
-  ['Sneakers', 'Retired white sneakers', '#F0F0F0', { c: 90, off: true }],
+  ['Sneakers', 'White sneakers', '#F0F0F0', { o: ['Casual', 'Date', 'Travel'], c: 40 }],
+  ['Sneakers', 'Retired grey sneakers', '#808080', { c: 90, off: true }],
   ['Watch', 'Digital watch', '#1A1A1A'],
 ]);
 

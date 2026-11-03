@@ -30,7 +30,7 @@ function check(items: Item[], ctx: Ctx, seed: number): number {
   for (const s of result) {
     const outfit = Object.fromEntries(SLOTS.map((k) => [k, items.find((i) => i.id === s.items[k]) ?? null])) as Record<Slot, Item | null>;
     expect(SLOTS.every((k) => s.items[k] === null || outfit[k] !== null)).toBe(true);
-    expect(independentProblems(outfit, ctx)).toEqual([]);
+    expect(independentProblems(outfit, ctx, items)).toEqual([]); // with the wardrobe: also the D-A layer rule
     const ids = SLOTS.map((k) => s.items[k]).filter((id): id is string => id !== null);
     const suitInTwoSlots = s.items.bottom !== null && s.items.bottom === s.items.layer ? 1 : 0;
     expect(new Set(ids).size).toBe(ids.length - suitInTwoSlots); // no item twice, except one suit in layer and bottom
@@ -99,10 +99,17 @@ describe('suggest: the five synthetic wardrobes', () => {
     for (const items of Object.values(WARDROBES)) expect(new Set(items.map((i) => i.id)).size).toBe(items.length);
     expect(cases.length).toBe(5 * 7 * 4);
   });
-  it('the thin wardrobe names the missing footwear (FR-54) and the others each give at least one outfit somewhere', () => {
-    expect(suggest(WARDROBES['Thin wardrobe']!, at('Casual', 4, 'north'))).toEqual({ missing: ['footwear'] });
-    for (const [name, items] of Object.entries(WARDROBES)) {
-      if (name !== 'Thin wardrobe') expect(OCCASIONS.some((o) => !isMissing(suggest(items, at(o, 4, 'north'))))).toBe(true);
-    }
+  it('the thin wardrobe (one active pair of sneakers, a tee, jeans) dresses Casual, Date and Travel and names what is missing for Work, Formal and Sport (FR-54)', () => {
+    const thin = WARDROBES['Thin wardrobe']!;
+    for (const o of ['Casual', 'Date', 'Travel'] as const) expect(isMissing(suggest(thin, at(o, 4, 'north')))).toBe(false);
+    expect(suggest(thin, at('Work', 4, 'north'))).toEqual({ missing: ['top', 'bottom'] });
+    expect(suggest(thin, at('Formal', 4, 'north'))).toEqual({ missing: ['top', 'bottom', 'footwear'] });
+    expect(suggest(thin, at('Sport', 4, 'north'))).toEqual({ missing: ['top', 'bottom'] });
+    expect(thin.filter((i) => i.subType === 'Sneakers' && i.status === 'active')).toHaveLength(1);
+  });
+  it('every wardrobe gives suggestions somewhere, and together they give at least 50 (CC8)', () => {
+    const counts = Object.values(WARDROBES).map((items) => OCCASIONS.flatMap((o) => MONTHS.map((m) => suggest(items, at(o, m, 'north')))).reduce((n, r) => n + (isMissing(r) ? 0 : r.length), 0));
+    expect(counts.every((n) => n > 0)).toBe(true);
+    expect(counts.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(50);
   });
 });

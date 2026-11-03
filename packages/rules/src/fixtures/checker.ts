@@ -42,8 +42,14 @@ function slotOk(item: Item, slot: Slot, occasion: Occasion): boolean {
 const pairOk = (bottom: Item, shoes: Item, occasion: Occasion): boolean =>
   !(['Casual', 'Date', 'Travel'].includes(occasion) && shoes.subType === 'Formal shoes' && ['Shorts', 'Sports shorts'].includes(bottom.subType));
 
-/** What is wrong with an outfit: SLOTS, R2, R1 or DUPLICATE; an empty list means it is valid. */
-export function independentProblems(outfit: Record<Slot, Item | null>, ctx: Ctx): string[] {
+const isSuit = (i: Item | null): boolean => !!i && ['Suit', 'Tuxedo'].includes(i.subType);
+
+/**
+ * What is wrong with an outfit: SLOTS, R2, R1, DUPLICATE, SUIT (a Suit or Tuxedo must fill layer and bottom together, never one
+ * alone) or, when the wardrobe is given, LAYER (decision D-A: Formal and the cool seasons need a layer when a layered outfit exists).
+ * An empty list means it is valid.
+ */
+export function independentProblems(outfit: Record<Slot, Item | null>, ctx: Ctx, wardrobe?: readonly Item[]): string[] {
   const out = new Set<string>();
   const { top, bottom, layer, footwear, accessory } = outfit;
   if (!top || !bottom || !footwear) out.add('SLOTS');
@@ -55,10 +61,30 @@ export function independentProblems(outfit: Record<Slot, Item | null>, ctx: Ctx)
   }
   if (bottom && footwear && !pairOk(bottom, footwear, ctx.occasion)) out.add('R1');
   const placed = [top, bottom, layer, footwear, accessory].filter((i): i is Item => !!i);
-  const suitIsBoth = !!bottom && bottom === layer && ['Suit', 'Tuxedo'].includes(bottom.subType);
+  const suitIsBoth = !!bottom && bottom === layer && isSuit(bottom);
   if (new Set(placed.map((i) => i.id)).size !== placed.length - (suitIsBoth ? 1 : 0)) out.add('DUPLICATE');
   if (layer && bottom && layer.id === bottom.id && !suitIsBoth) out.add('DUPLICATE');
+  if ((isSuit(bottom) || isSuit(layer)) && !suitIsBoth) out.add('SUIT');
+  if (wardrobe && !layer && layerWanted(ctx) && layeredOutfitExists(wardrobe, ctx)) out.add('LAYER');
   return [...out].sort();
+}
+
+const layerWanted = (ctx: Ctx): boolean => ctx.occasion === 'Formal' || ['Autumn', 'Winter'].includes(season(ctx));
+const layered = new WeakMap<readonly Item[], Map<string, boolean>>();
+
+/** Brute force: is there any valid outfit with a layer (or a Suit or Tuxedo as bottom and layer) in this wardrobe and context? */
+function layeredOutfitExists(items: readonly Item[], ctx: Ctx): boolean {
+  const memo = layered.get(items) ?? new Map<string, boolean>();
+  layered.set(items, memo);
+  const key = `${ctx.occasion}/${season(ctx)}`;
+  if (!memo.has(key)) {
+    const fit = (slot: Slot): Item[] => items.filter((i) => r2(i, ctx) && slotOk(i, slot, ctx.occasion));
+    const [tops, bottoms, shoes, layers] = [fit('top'), fit('bottom'), fit('footwear'), fit('layer')];
+    const pairs = bottoms.flatMap((b) => (isSuit(b) ? [[b, b]] : layers.map((l) => [b, l])));
+    memo.set(key, tops.some((top) => shoes.some((footwear) => pairs.some(([bottom, layer]) =>
+      independentProblems({ top, bottom: bottom!, layer: layer!, footwear, accessory: null }, ctx).length === 0))));
+  }
+  return memo.get(key)!;
 }
 
 /** Brute force over every top, bottom (or suit) and footwear: does any valid outfit exist at all? */

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { outfitProblems } from './combinations.js';
 import type { Outfit } from './combinations.js';
 import { RULES } from './eligibility.js';
+import { independentProblems } from './fixtures/checker.js';
 import { REASON_TEMPLATES } from './reasons.js';
 import { PART_NAMES, createScorer } from './score.js';
 import { isMissing, suggest } from './suggest.js';
@@ -116,9 +117,10 @@ describe('suggest', () => {
     const items = [mk('T-shirt', 'a'), mk('Shirt', 'b'), mk('Polo', 'c'), mk('Jeans', 'j'), mk('Sneakers', 's')];
     expect(sugg(items, WARM).map((s) => s.items.bottom)).toEqual(['j', 'j', 'j']);
   });
-  it('in a cool season the outfit with a layer ranks first', () => {
+  it('in a cool season only outfits with a layer are suggested when a layer exists (D-A), and one in the top colour ranks below one in another colour', () => {
     const items = [mk('T-shirt', 't'), mk('Jeans', 'j', col('Grey', GREY)), mk('Sneakers', 's', col('Grey', GREY)), mk('Coat', 'c', col('Beige', PALE))];
-    expect(sugg(items, COOL).map((s) => s.items.layer)).toEqual(['c', null]);
+    expect(sugg(items, COOL).map((s) => s.items.layer)).toEqual(['c']);
+    expect(sugg([...items, mk('Coat', 'a')], COOL).map((s) => s.items.layer)).toEqual(['c', 'a']);
   });
   it('adds the belt in the shoes colour family (ties by ID), and no belt that does not match', () => {
     const items = [mk('T-shirt', 't'), mk('Jeans', 'j'), mk('Boots', 's', col('Brown', GREY))];
@@ -184,7 +186,7 @@ describe('swapChoices (CC9)', () => {
         for (const k of Object.keys(next) as Slot[]) if (before && next[k]?.id === before.id) next[k] = null;
         next[slot] = item;
         if (item.subType === 'Suit' || item.subType === 'Tuxedo') next.layer = next.bottom = item;
-        expect(outfitProblems(next, c)).toEqual([]);
+        expect(independentProblems(next, c)).toEqual([]); // the independent checker, not the engine's own outfitProblems
       }
     }
   });

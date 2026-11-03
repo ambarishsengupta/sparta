@@ -10,6 +10,8 @@
   "neutral_colour_families": ["Black", "White", "Grey", "Navy", "Beige", "Khaki", "Olive", "Brown"],
   "cool_seasons": ["Autumn", "Winter"],
   "cool_seasons_note": "assumed: FDD R5 says 'cool seasons' without listing them.",
+  "cool_season_layer_required_if_available": true,
+  "layer_decision_note": "Fix loop 1, decision D-A (orchestrator, 2026-11-04). FDD 14.1 R2 says to add a layer in cool seasons and R1 says 'blazer if available' for Formal; LLD 9.5 only scores the layer (R5). The FDD wins as a hard rule WHEN an eligible layer exists: in a cool season (cool_seasons) and for Formal (layer_required_if_available) an outfit without a layer, or a Suit or Tuxedo standing in for it, is dropped if at least one layered outfit exists among the candidates. With no layered outfit possible the layer-less outfit is allowed and R5 penalises it.",
   "unrated_condition": 0.7,
   "season_rules": {
     "Summer": {
@@ -43,7 +45,8 @@
       },
       "forbidden_pairs": [],
       "top_colour": null,
-      "note": "FDD R1: shirt, tailored trousers, formal shoes, blazer if available. Suit and Tuxedo (one item in layer and bottom) are allowed because they hold the blazer and trousers (assumed). The layer is optional."
+      "layer_required_if_available": true,
+      "note": "FDD R1: shirt, tailored trousers, formal shoes, blazer if available. Suit and Tuxedo (one item in layer and bottom) are allowed because they hold the blazer and trousers (assumed). The layer is optional only when no layered outfit exists (layer_required_if_available, see layer_decision_note)."
     },
     "Party": {
       "slots": {

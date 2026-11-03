@@ -1,5 +1,5 @@
 import { conditionBandOf } from '@sparta/taxonomy';
-import { allowedInSlot, pairAllowed, passesSeason, placementsOf, usablePlacements } from './eligibility.js';
+import { allowedInSlot, layerRequiredIfAvailable, pairAllowed, passesSeason, placementsOf, usablePlacements } from './eligibility.js';
 import { seasonFor } from './season.js';
 import type { Ctx, Item, Slot } from './types.js';
 
@@ -56,7 +56,7 @@ function keepOnePair(c: Candidates, full: Pick<Candidates, 'bottom' | 'both' | '
     const suit = full.both.find((x) => pairAllowed(x, f, ctx.occasion));
     const slot = b ? 'bottom' : 'both';
     const pick = b ?? suit;
-    if (pick) return { ...c, footwear: c.footwear.includes(f) ? c.footwear : [...c.footwear, f], [slot]: [...c[slot], pick] };
+    if (pick) return { ...c, footwear: c.footwear.includes(f) ? c.footwear : [...c.footwear, f], [slot]: c[slot].includes(pick) ? c[slot] : [...c[slot], pick] };
   }
   return c;
 }
@@ -82,6 +82,16 @@ export function enumerateOutfits(c: Candidates, ctx: Ctx): Outfit[] {
     }
   }
   return out;
+}
+
+/**
+ * "Layer if available" (D-A): Formal ("blazer if available", FDD R1) and the cool seasons (FDD R2) drop outfits without
+ * a layer, a Suit or Tuxedo counting as one, but only when some outfit in the list has a layer; else the list is as it was.
+ */
+export function withRequiredLayer(outfits: Outfit[], ctx: Ctx): Outfit[] {
+  if (!layerRequiredIfAvailable(ctx)) return outfits;
+  const layered = outfits.filter((o) => o.layer !== null);
+  return layered.length > 0 ? layered : outfits;
 }
 
 /**

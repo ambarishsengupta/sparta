@@ -22,29 +22,29 @@ export function toScored(outfit: Outfit, evaluation: Evaluation): Scored {
 
 /**
  * R7 variety: pick the best outfit, then take `variety_reuse` off any outfit for each item already chosen and
- * pick the next, up to three; the third also avoids items in both earlier picks where an alternative exists.
+ * pick the next, up to three. An outfit whose item set was already chosen is skipped. The third pick first
+ * avoids the items in both earlier picks that some remaining outfit can avoid (fewest of them, then score).
  * Ties go to the smaller sorted item IDs, never to input order (FR-58).
  */
 export function pickVariety(pool: readonly Scored[], limit = MAX_SUGGESTIONS): Scored[] {
   const chosen: Scored[] = [];
   const uses = new Map<string, number>();
+  const sets = new Set<string>();
   while (chosen.length < limit) {
-    const shared = chosen.length >= 2 ? [...uses].filter(([, n]) => n === chosen.length).map(([id]) => id) : [];
-    const choose = (strict: boolean): Scored | undefined => {
-      let best: Scored | undefined;
-      let bestScore = -Infinity;
-      for (const c of pool) {
-        if (chosen.includes(c) || (strict && c.ids.some((id) => shared.includes(id)))) continue;
-        const score = c.evaluation.score - PENALTIES.variety_reuse * c.ids.filter((id) => uses.has(id)).length;
-        const wins = !best || score > bestScore || (score === bestScore && (c.key < best.key || (c.key === best.key && c.order < best.order)));
-        if (wins) [best, bestScore] = [c, score];
-      }
-      return best;
-    };
-    const next = choose(true) ?? choose(false);
-    if (!next) break;
-    chosen.push(next);
-    for (const id of next.ids) uses.set(id, (uses.get(id) ?? 0) + 1);
+    const rest = pool.filter((c) => !sets.has(c.key));
+    const shared = new Set(chosen.length >= 2 ? [...uses].filter(([id, n]) => n === chosen.length && rest.some((c) => !c.ids.includes(id))).map(([id]) => id) : []);
+    let best: Scored | undefined;
+    let [bestShared, bestScore] = [0, -Infinity];
+    for (const c of rest) {
+      const avoidable = c.ids.filter((id) => shared.has(id)).length;
+      const score = c.evaluation.score - PENALTIES.variety_reuse * c.ids.filter((id) => uses.has(id)).length;
+      const wins = !best || avoidable < bestShared || (avoidable === bestShared && (score > bestScore || (score === bestScore && (c.key < best.key || (c.key === best.key && c.order < best.order)))));
+      if (wins) [best, bestShared, bestScore] = [c, avoidable, score];
+    }
+    if (!best) break;
+    chosen.push(best);
+    sets.add(best.key);
+    for (const id of best.ids) uses.set(id, (uses.get(id) ?? 0) + 1);
   }
   return chosen;
 }

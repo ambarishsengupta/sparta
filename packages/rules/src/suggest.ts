@@ -1,5 +1,5 @@
 import type { ColourFamily } from '@sparta/taxonomy';
-import { enumerateOutfits, slotCandidates } from './combinations.js';
+import { enumerateOutfits, slotCandidates, withRequiredLayer } from './combinations.js';
 import type { Candidates, Outfit } from './combinations.js';
 import { eligibleItems } from './eligibility.js';
 import { pickVariety, toScored } from './rank.js';
@@ -32,7 +32,7 @@ export const isMissing = (result: RankedSuggestion[] | Missing): result is Missi
  */
 export function suggest(items: readonly Item[], ctx: Ctx): RankedSuggestion[] | Missing {
   const candidates = slotCandidates(eligibleItems(items, ctx), ctx);
-  const outfits = enumerateOutfits(candidates, ctx);
+  const outfits = withRequiredLayer(enumerateOutfits(candidates, ctx), ctx);
   if (outfits.length === 0) return { missing: missingSlots(candidates) };
   const scorer = createScorer(ctx, candidates.belts.length > 0);
   const beltsByFamily = new Map<ColourFamily, Item[]>();

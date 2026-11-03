@@ -18,6 +18,16 @@ export function occasionRule(occasion: Occasion): OccasionRule {
   return 'uses' in entry ? occasionRule(entry.uses) : entry;
 }
 
+/**
+ * Fix loop 1 (D-A) flags in rules.json: Formal ("blazer if available") and the `cool_seasons` ask for a layer
+ * when one is possible. They are typed here, not in types.ts, because that file is outside WO-0006.
+ */
+export function layerRequiredIfAvailable(ctx: Ctx): boolean {
+  const flags = RULES as unknown as { cool_season_layer_required_if_available?: boolean };
+  const formal = (occasionRule(ctx.occasion) as OccasionRule & { layer_required_if_available?: boolean }).layer_required_if_available;
+  return !!formal || (!!flags.cool_season_layer_required_if_available && RULES.cool_seasons.includes(seasonFor(ctx.date, ctx.hemisphere)));
+}
+
 /** R2: the item's seasons include the current season or All year, or none are set; Summer drops coats and heavy knits. */
 export function passesSeason(item: Item, season: CurrentSeason): boolean {
   const { seasons } = item;

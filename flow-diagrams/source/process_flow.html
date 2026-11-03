@@ -1,0 +1,112 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sparta process flow</title>
+<style>
+  html, body { margin: 0; background: #fff; }
+  body { width: 1900px; height: 1290px; position: relative; font-family: "DejaVu Sans", Verdana, "Helvetica Neue", Arial, sans-serif; color: #1b2a4e; }
+  .abs { position: absolute; }
+  h1 { position: absolute; left: 40px; top: 16px; margin: 0; font-size: 28px; font-weight: 700; }
+  .sub { position: absolute; left: 40px; top: 62px; font-size: 13.5px; color: #555; width: 1820px; }
+  .sec { position: absolute; left: 24px; width: 1852px; border: 1.5px solid #cfd7e6; border-radius: 16px; }
+  .sec .h { position: absolute; right: 36px; top: 12px; font-size: 17.5px; font-weight: 700; text-align: right; }
+  .sec .s { position: absolute; right: 36px; top: 38px; font-size: 12.5px; color: #666; text-align: right; }
+  .box { position: absolute; border-width: 2px; border-style: solid; border-radius: 12px; padding: 11px 14px; font-size: 12.3px; line-height: 1.42; color: #222; box-sizing: border-box; overflow: hidden; }
+  .box b.t { display: block; font-size: 15px; color: #1b2a4e; margin-bottom: 4px; line-height: 1.25; }
+  .box p { margin: 0 0 3px; }
+  .A { border-color: #2a5fa0; background: #e9f0fa; }
+  .B { border-color: #b07d00; background: #fdf3dc; }
+  .C { border-color: #2c7a4b; background: #e6f4ea; }
+  .D { border-color: #6a4fb5; background: #f0edf9; border-style: dashed; }
+  .E { border-color: #1f7a8c; background: #e7f3f6; border-style: dashed; }
+  .L { border-color: #888; background: #fff; }
+  .lbl { position: absolute; font-size: 11.5px; font-style: italic; color: #444; white-space: nowrap; }
+  .lblv { color: #6a4fb5; }
+  svg { position: absolute; left: 0; top: 0; }
+</style></head>
+<body>
+<h1>Sparta process flow: outfit recommendation and inventory planning</h1>
+<div class="sub">ANCP Group M. One flow for the pilot: a user's wardrobe feeds a recommendation engine (rules and ranking) for that user and, as anonymised aggregates only, feeds the vendor insights that support range and stock decisions.</div>
+
+<!-- section backgrounds -->
+<div class="sec" style="top:95px;height:345px;background:#f5f8fd"><div class="h">A. Consumer: outfit recommendation (rules and ranking, one user, own data only)</div><div class="s">Pilot users are invited adults who accepted the first-login notice. No model is trained on participant data and no other user's data is used to build a suggestion.</div></div>
+<div class="sec" style="top:458px;height:258px;background:#fffbf2"><div class="h">B. Consent and anonymised aggregation (the only path from users to vendors)</div><div class="s">Runs nightly in the pilot. Vendors never see user-level rows, photos, receipts, names, emails or free-text notes.</div></div>
+<div class="sec" style="top:748px;height:478px;background:#f4faf6"><div class="h">C. Vendor: inventory and range planning (aggregates only)</div><div class="s">The primary decision is product design and range planning. Inventory and stocking by category is the secondary decision.</div></div>
+
+<!-- A row -->
+<div class="box A" style="left:44px;top:160px;width:262px;height:214px"><b class="t">A1 Add what you own</b>
+<p>Four entry routes: manual form; photo upload with background removal and a suggested category from the garment model (E), which the user confirms; receipt scan (OCR); catalogue or barcode lookup.</p><p>Seed catalogue from public storefront data supports quick add</p></div>
+<div class="box A" style="left:350px;top:160px;width:262px;height:214px"><b class="t">A2 Wardrobe, purchases, wishlist</b>
+<p>Items use the fixed taxonomy: category, colour (RGB, with derived colour family), fit, size, brand</p><p>Condition 0 to 100; purchases with receipts; wishlist</p></div>
+<div class="box A" style="left:656px;top:160px;width:262px;height:214px"><b class="t">A3 Pick occasion and season</b>
+<p>Occasions: Casual, Work, Formal, Party, Sport, Date, Travel</p><p>Season comes from the date and the user's hemisphere (R2)</p><p>Date and Travel use the Casual rule for now</p></div>
+<div class="box A" style="left:962px;top:160px;width:262px;height:214px"><b class="t">A4 Rules R1 to R8</b>
+<p><b>Hard:</b> R1 occasion, R2 season; a top, a bottom and footwear; no item used twice</p><p><b>Scored:</b> R3 colour harmony (at most 3 non-neutral families, 1 bold colour), R4 one pattern, R5 layering, R6 footwear and belt</p></div>
+<div class="box A" style="left:1268px;top:160px;width:262px;height:214px"><b class="t">A5 Rank and show up to three</b>
+<p>Score: rule fit, occasion fit, completeness, condition, favourites. Same inputs, same suggestions</p><p>Each shows a one-line reason (R8); R7 keeps the three varied</p><p>If the wardrobe is too thin it says what is missing</p></div>
+<div class="box A" style="left:1574px;top:160px;width:262px;height:214px"><b class="t">A6 Accept, swap or reject</b>
+<p>Accept saves the outfit</p><p>Swap lists valid items, most similar first</p><p>Accepts and rejects are counted (no item recorded) so the team can tune rules by hand</p></div>
+
+<!-- B row -->
+<div class="box B" style="left:44px;top:524px;width:262px;height:170px"><b class="t">B1 Pilot notice accepted</b>
+<p>First login: user must accept the notice to join the study</p><p>Sharing is on and locked during the pilot</p><p>Leave the pilot deletes the account and data</p></div>
+<div class="box B" style="left:350px;top:524px;width:262px;height:170px"><b class="t">B2 Anonymised copy</b>
+<p>Only consenting, active users</p><p>No names, emails, images, receipts, free text or shape features</p><p>Colour family replaces raw RGB</p></div>
+<div class="box B" style="left:656px;top:524px;width:262px;height:170px"><b class="t">B3 Segment counts</b>
+<p>Segment = category, colour family, fit, brand, size...</p><p>Distinct owning users and wishlist users, purchases by month, condition bands</p></div>
+<div class="box B" style="left:962px;top:524px;width:262px;height:170px"><b class="t">B4 Privacy rules</b>
+<p>Minimum group of 10 users (50 in production)</p><p>Counts rounded to the nearest 5; complementary suppression; one filter at a time</p></div>
+<div class="box B" style="left:1268px;top:524px;width:262px;height:170px"><b class="t">B5 Aggregate tables</b>
+<p>Gap score = wishlist users / owning users</p><p>Run log: date, users, items, suppressed segments</p></div>
+<div class="box B" style="left:1574px;top:524px;width:262px;height:170px"><b class="t">B6 Admin review</b>
+<p>Monthly report checked before a vendor sees it</p><p>Vendor query log; 200 calls per hour limit</p></div>
+
+<!-- C row -->
+<div class="box C" style="left:44px;top:814px;width:262px;height:188px"><b class="t">C1 Vendor portal (read only)</b>
+<p>Ownership mix by category, colour family, fit, brand</p><p>Purchase trend by month; wishlist trend; condition spectrum</p><p>Filters: size, season, price band or region, one at a time</p></div>
+<div class="box C" style="left:350px;top:814px;width:262px;height:188px"><b class="t">C2 Gaps and demand</b>
+<p>Gaps: high wishlist demand, low ownership, ranked by gap score</p><p>Condition spectrum shows replacement demand</p><p>Monthly gap and demand report</p></div>
+<div class="box C" style="left:656px;top:814px;width:262px;height:188px"><b class="t">C3 Range design decision</b>
+<p><b>Primary:</b> which categories, colours and fits to add or expand next season</p><p>Decision-maker: head of product and design</p></div>
+<div class="box C" style="left:962px;top:814px;width:262px;height:188px"><b class="t">C4 Inventory and stock decision</b>
+<p><b>Secondary:</b> how much to commit by category</p><p>Category-level demand and condition signals</p><p>Decision-maker: inventory and merchandising manager</p></div>
+<div class="box C" style="left:1268px;top:814px;width:262px;height:188px"><b class="t">C5 Vendor feedback</b>
+<p>Pilot proof: the vendor says whether the dashboard or report would change a range or stock decision</p><p>Documented feedback</p></div>
+<div class="box C" style="left:1574px;top:814px;width:262px;height:188px"><b class="t">C6 Product feed upload</b>
+<p>Vendor uploads its catalogue (attributes, price)</p><p>Reviewed by the admin, then joins the seed catalogue that A1 quick add uses</p></div>
+
+<!-- D, E, legend -->
+<div class="box D" style="left:44px;top:1040px;width:640px;height:156px"><b class="t">D Course analytics (ANCP D2 to D5): validates the vendor insights</b>
+<p>Public H&amp;M transaction data (proxy for purchase behaviour and seasonality, adults, cleaned in D2) plus aggregated pilot figures built under the same privacy rules. No row about an individual participant is used.</p>
+<p>Outputs: gap ranking checked on a time-based holdout (precision@10 against a most-popular baseline), seasonal demand forecast (WAPE against last year), decision brief.</p></div>
+<div class="box E" style="left:708px;top:1040px;width:560px;height:156px"><b class="t">E Built before the pilot (offline): garment model</b>
+<p>Fashion-MNIST (70,000 public garment pictures, MIT licence) trains a small image model once; it is tested on photos of team-owned clothes. It suggests a category for photo items in A1 and gives swap choices a sense of shape (A6).</p>
+<p>Never trained or tuned on participant data. Outfit compatibility comes from the style specialist's rules, not from this data.</p></div>
+<div class="box L" style="left:1292px;top:1040px;width:544px;height:156px"><b class="t">Legend and rules that apply everywhere</b>
+<p>Solid arrow: data or control flow. Dashed: feedback, review or offline work.</p><p>Blue: consumer side. Amber: consent and aggregation. Green: vendor side. Violet: course analytics. Teal: built before the pilot.</p><p>No credentials, personal data or raw H&amp;M or Fashion-MNIST files are stored in the public repository.</p></div>
+
+<!-- arrows -->
+<svg width="1900" height="1290" viewBox="0 0 1900 1290">
+  <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#444"/></marker>
+  <marker id="av" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#6a4fb5"/></marker></defs>
+  <g stroke="#444" stroke-width="2" fill="none" marker-end="url(#ah)">
+    <!-- A row -->
+    <path d="M306,267 H348"/><path d="M612,267 H654"/><path d="M918,267 H960"/><path d="M1224,267 H1266"/><path d="M1530,267 H1572"/>
+    <!-- B row -->
+    <path d="M306,609 H348"/><path d="M612,609 H654"/><path d="M918,609 H960"/><path d="M1224,609 H1266"/><path d="M1530,609 H1572"/>
+    <!-- C row -->
+    <path d="M306,908 H348"/><path d="M612,908 H654"/><path d="M918,908 H960"/><path d="M1224,908 H1266"/>
+    <!-- A2 to B2 -->
+    <path d="M481,374 V522"/>
+    <!-- B5 to C1, B6 to C2 -->
+    <path d="M1399,694 V730 H175 V812"/>
+    <path d="M1705,694 V742 H481 V812"/>
+  </g>
+  <!-- tuning loop (dashed) -->
+  <path d="M1705,374 V408 H1093 V376" stroke="#6a4fb5" stroke-width="2" stroke-dasharray="7 5" fill="none" marker-end="url(#av)"/>
+  <path d="M481,1040 V1004" stroke="#6a4fb5" stroke-width="2" stroke-dasharray="7 5" fill="none" marker-end="url(#av)"/>
+</svg>
+<div class="lbl" style="left:490px;top:430px">consenting users' data only</div>
+<div class="lbl lblv" style="left:1230px;top:412px">rules and weights tuned by hand by the style specialist (reviewed offline)</div>
+<div class="lbl" style="left:360px;top:718px">aggregate tables, only segments that pass the privacy rules</div>
+<div class="lbl" style="left:1022px;top:748px">reviewed monthly report</div>
+<div class="lbl lblv" style="left:492px;top:1018px">checks the gap ranking and forecast</div>
+</body></html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sparta data audit data flow</title>
+<style>
+  html, body { margin: 0; background: #fff; }
+  body { width: 1700px; height: 1130px; position: relative; font-family: "DejaVu Sans", Verdana, "Helvetica Neue", Arial, sans-serif; color: #1b2a4e; }
+  h1 { position: absolute; left: 40px; top: 18px; margin: 0; font-size: 27px; font-weight: 700; }
+  .sub { position: absolute; left: 40px; top: 62px; font-size: 13px; color: #555; width: 1620px; }
+  .ch { position: absolute; top: 103px; font-size: 16px; font-weight: 700; color: #2d5fa6; }
+  .box { position: absolute; border: 2px solid; border-radius: 10px; padding: 9px 13px; font-size: 11.6px; line-height: 1.42; color: #222; box-sizing: border-box; overflow: hidden; }
+  .box b.t { display: block; font-size: 13.8px; color: #1b2a4e; margin-bottom: 3px; line-height: 1.25; }
+  .box p { margin: 0 0 3px; }
+  .S { border-color: #2a5fa0; background: #eaf0fa; }
+  .R { border-color: #b07d00; background: #fdf3dc; }
+  .G { border-color: #2c7a4b; background: #e8f5ec; padding: 8px 12px 8px 46px; }
+  .G .n { position: absolute; left: 11px; top: 11px; width: 26px; height: 26px; border-radius: 50%; background: #2c7a4b; color: #fff; font-weight: 700; font-size: 13px; text-align: center; line-height: 26px; }
+  .P { border-color: #6a4fb5; background: #f1edf9; }
+  .O { border-color: #b3373b; background: #fbeaea; }
+  .U { border-color: #1f7a8c; background: #e7f3f6; }
+  .X { border-style: dashed; border-color: #888; background: #f6f6f6; }
+  .T { border-style: dashed; border-color: #1f7a8c; background: #e7f3f6; }
+  .ctl { position: absolute; left: 40px; top: 880px; width: 1620px; height: 215px; border: 2px solid #999; border-radius: 14px; background: #f4f4f4; padding: 16px 20px; box-sizing: border-box; font-size: 12.3px; line-height: 1.75; color: #222; }
+  .ctl b.t { display: block; font-size: 16.5px; margin-bottom: 4px; color: #1b2a4e; line-height: 1.3; }
+  .note { position: absolute; font-size: 11px; color: #555; }
+  svg { position: absolute; left: 0; top: 0; }
+</style></head>
+<body>
+<h1>Sparta data audit (D2): data flow</h1>
+<div class="sub">ANCP Group M. How the public H&amp;M files move through the audit and cleaning to the cleaned dataset data-v1.0. Counts and results are in the D2 report; the repeat on Sparta pilot data comes later.</div>
+
+<div class="ch" style="left:40px">1 Sources</div><div class="ch" style="left:400px">2 Raw zone</div><div class="ch" style="left:700px">3 Audit and cleaning</div><div class="ch" style="left:1090px">4 Feature engineering</div><div class="ch" style="left:1420px">5 Outputs</div>
+
+<!-- 1 Sources -->
+<div class="box S" style="left:40px;top:140px;width:310px;height:300px"><b class="t">H&amp;M Personalized Fashion Recommendations (Kaggle)</b>
+<p>articles.csv (105,542 rows): product type, colour, section, index group</p>
+<p>customers.csv (1,371,980 rows): hashed ID, age, club status</p>
+<p>transactions_train.csv (31.8M rows): date, customer, article, price, channel</p>
+<p>Access: Kaggle account, rules accepted</p>
+<p>Licence: competition rules, non-commercial research and education</p></div>
+<div class="box S" style="left:40px;top:458px;width:310px;height:128px"><b class="t">Fashion-MNIST (Zalando Research)</b>
+<p>70,000 greyscale garment pictures, MIT licence</p>
+<p>Not cleaned or joined with H&amp;M; trains the image model only</p></div>
+<div class="box X" style="left:40px;top:604px;width:310px;height:92px"><b class="t">Sparta pilot app (future)</b>
+<p>Consenting, pseudonymised wardrobe data. Not available until the pilot runs; not part of this audit</p></div>
+<div class="box X" style="left:40px;top:714px;width:310px;height:92px"><b class="t">Synthetic test data</b>
+<p>Only for testing the cleaning script. Never used for results. Clearly labelled as synthetic</p></div>
+
+<!-- 2 Raw zone -->
+<div class="box R" style="left:400px;top:140px;width:250px;height:300px"><b class="t">Raw files</b>
+<p>Team machines only. Not committed to git (size and licence)</p>
+<p>Recorded for each file:</p><p>- SHA-256 checksum<br>- row and column counts<br>(in MANIFEST.json)</p><p>Raw files are deleted when the course ends</p></div>
+<div class="box R" style="left:400px;top:458px;width:250px;height:128px"><b class="t">Working sample</b>
+<p>All purchases of a random 10% of customers: 136,670 customers, 3,205,663 rows. Tested against the full file</p></div>
+<div class="box T" style="left:400px;top:604px;width:250px;height:92px"><b class="t">Image model training</b>
+<p>Offline, outside the cleaning. Checksums in data/recommendation-engine</p></div>
+
+<!-- 3 Audit and cleaning -->
+<div class="box G" style="left:700px;top:140px;width:340px;height:66px"><div class="n">1</div><b class="t">Schema, ids and minimise</b>ids kept as text; postal code never loaded</div>
+<div class="box G" style="left:700px;top:216px;width:340px;height:66px"><div class="n">2</div><b class="t">Missing values</b>age: unknown band; FN, Active: 0; others UNKNOWN</div>
+<div class="box G" style="left:700px;top:292px;width:340px;height:66px"><div class="n">3</div><b class="t">Duplicates</b>exact duplicate rows become a quantity</div>
+<div class="box G" style="left:700px;top:368px;width:340px;height:66px"><div class="n">4</div><b class="t">Outliers and prices</b>age above 90 to missing; price is relative only</div>
+<div class="box G" style="left:700px;top:444px;width:340px;height:66px"><div class="n">5</div><b class="t">Scope filters</b>drop Baby/Children, non-apparel, under-18 customers</div>
+<div class="box G" style="left:700px;top:520px;width:340px;height:66px"><div class="n">6</div><b class="t">Time and channel</b>partial weeks dropped; channel kept as a code</div>
+<div class="box G" style="left:700px;top:596px;width:340px;height:66px"><div class="n">7</div><b class="t">Menswear flag</b>is_menswear from the index group (a proxy)</div>
+<div class="box G" style="left:700px;top:672px;width:340px;height:66px"><div class="n">8</div><b class="t">Bias and representativeness</b>sample vs full file; age, channel, mix, season</div>
+<div class="note" style="left:700px;top:748px;width:340px;line-height:1.4">The ten decisions are in D2 Table 3. The same rules run in clean_hm.py and in the D3 notebook.</div>
+
+<!-- 4 Feature engineering -->
+<div class="box P" style="left:1090px;top:140px;width:290px;height:360px"><b class="t">Feature engineering log (D2 Table 7)</b>
+<p><b>1 to 8, stored by clean_hm.py:</b> qty, role, is_menswear, age band, FN and Active, club status, week_start</p>
+<p><b>9 to 14, built in the D3 notebook:</b> visits, history hit, pair lift, weekly overlap, customer activity</p>
+<p><b>15 to 17, planned for Sparta data:</b> colour family, condition band, gap score</p>
+<p>Leakage control: each feature lists its risk; models split by customer and by date</p></div>
+
+<!-- 5 Outputs -->
+<div class="box O" style="left:1420px;top:140px;width:240px;height:112px"><b class="t">Cleaned dataset</b>version tag data-v1.0: lines, customers, articles (.csv.gz)</div>
+<div class="box O" style="left:1420px;top:266px;width:240px;height:112px"><b class="t">MANIFEST.json</b>SHA-256 of every input and output, row counts, funnel, library versions</div>
+<div class="box O" style="left:1420px;top:392px;width:240px;height:92px"><b class="t">Data dictionary</b>every column of the cleaned files</div>
+<div class="box O" style="left:1420px;top:498px;width:240px;height:92px"><b class="t">Audit report and datasheet</b>one PDF (D2)</div>
+<div class="box U" style="left:1420px;top:612px;width:240px;height:110px"><b class="t">Used by</b>D3 EDA notebook<br>D4 modelling<br>D5 evaluation</div>
+
+<div class="ctl"><b class="t">Controls that apply along the whole flow</b>
+- Licence: raw H&amp;M files stay out of git; the rules allow non-commercial research and education only. Derived files are not published.<br>
+- Privacy: customer IDs are already hashed; no attempt to re-identify; postal code and free text are dropped; under-18 customers are removed; no personal data in the repository (DPDP Act, 2023 statement in the report).<br>
+- Provenance: SHA-256 recorded for every raw and cleaned file; the cleaning script rebuilds the cleaned dataset (same input, same checksums).<br>
+- Scope: H&amp;M is one brand's mostly European customers, a stand-in for purchase demand and not for Sparta users. Fashion-MNIST holds no purchase data and says nothing about which clothes go together.<br>
+- customers.csv has no gender field, so menswear is defined by article (index group), not by customer; some buyers of menswear are not men.<br>
+- Dashed boxes are not part of the cleaning: they are offline or not yet available.</div>
+
+<svg width="1700" height="1130" viewBox="0 0 1700 1130">
+  <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#444"/></marker>
+  <marker id="at" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#1f7a8c"/></marker></defs>
+  <g stroke="#444" stroke-width="2" fill="none" marker-end="url(#ah)">
+    <path d="M350,240 H398"/>
+    <path d="M650,160 H698"/>
+    <path d="M525,440 V456"/>
+    <path d="M650,522 H675 V190 H698"/>
+    <path d="M870,206 V214"/><path d="M870,282 V290"/><path d="M870,358 V366"/><path d="M870,434 V442"/><path d="M870,510 V518"/><path d="M870,586 V594"/><path d="M870,662 V670"/>
+    <path d="M1040,420 H1088"/>
+    <path d="M1400,196 H1418"/><path d="M1400,322 H1418"/><path d="M1400,438 H1418"/><path d="M1400,544 H1418"/>
+  </g>
+  <g stroke="#444" stroke-width="2" fill="none">
+    <path d="M1380,320 H1400"/><path d="M1400,196 V544"/>
+  </g>
+  <path d="M350,522 H375 V650 H398" stroke="#1f7a8c" stroke-width="2" stroke-dasharray="7 5" fill="none" marker-end="url(#at)"/>
+</svg>
+</body></html>

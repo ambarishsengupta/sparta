@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ANCP D2: Sparta data audit report and datasheet</title>
+<style>
+  @page { size: A4; margin: 15mm 18mm 19mm 18mm;
+          @bottom-center { content: "ANCP Group M | D2 Data audit v1 | Page " counter(page); font: 8.5pt Arial, Helvetica, sans-serif; color: #777; } }
+  @page :first { margin: 0; @bottom-center { content: none; } }
+  * { box-sizing: border-box; }
+  html { font-family: Arial, Helvetica, sans-serif; color: #111; }
+  body { margin: 0; font-size: 10.1pt; line-height: 1.46; }
+  h1 { font-size: 19pt; color: #1b2a4e; margin: 0 0 10px; line-height: 1.2; }
+  h2 { font-size: 13.5pt; color: #1b2a4e; margin: 14px 0 5px; break-after: avoid; }
+  h3 { font-size: 11pt; color: #1b2a4e; margin: 12px 0 4px; break-after: avoid; }
+  p { margin: 0 0 8px; }
+  code { font-family: "Courier New", monospace; font-size: 9pt; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; font-size: 8.4pt; line-height: 1.34; }
+  th { background: #eaeef7; text-align: left; font-weight: 700; }
+  th, td { border: 1px solid #b7bfd2; padding: 4px 7px; vertical-align: top; }
+  tr { break-inside: avoid; }
+  .cap { font-size: 8.6pt; color: #444; margin: 2px 0 12px; }
+  figure { margin: 8px 0 4px; break-inside: avoid; }
+  figure img { width: 100%; display: block; }
+  figcaption { font-size: 8.6pt; color: #444; margin-top: 3px; }
+  .cover { height: 297mm; padding: 62mm 18mm 0 18mm; }
+  .cover .kicker { color: #555; font-size: 11pt; margin-bottom: 18px; }
+  .cover h1 { font-size: 25pt; margin-bottom: 6px; }
+  .cover .sub { color: #555; font-size: 11pt; margin-bottom: 30px; }
+  .cover table { font-size: 10pt; }
+  .cover td:first-child { background: #f3f5fa; font-weight: 700; width: 34%; }
+  .cover td, .cover th { padding: 7px 11px; }
+  .pb { break-before: page; }
+  .tbl { break-inside: avoid; }
+  .tbl.long { break-inside: auto; }
+  thead { display: table-header-group; }
+  .note { font-size: 9.2pt; color: #333; }
+  .nowrap { white-space: nowrap; }
+  .refs p { font-size: 9pt; margin-bottom: 5px; padding-left: 14px; text-indent: -14px; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="kicker">Analytics Capstone Project (ANCP)</div>
+  <h1>Sparta: Wardrobe Demand Analytics for Brands</h1>
+  <div class="sub">Deliverable D2: Data audit report and datasheet</div>
+  <div class="tbl"><table>
+    <tr><td>Group number</td><td>M</td></tr>
+    <tr><td>Deliverable code / version</td><td>D2 / v1</td></tr>
+    <tr><td>Date</td><td>3 November 2026</td></tr>
+    <tr><td>Lead owner for this deliverable</td><td>C. Prashanth</td></tr>
+    <tr><td>Term</td><td>Term 5, 6 October to 20 November 2026</td></tr>
+    <tr><td>Members</td><td>C. Prashanth (BA05015)<br>Arpan Shah (BA05009)<br>Ambarish Sengupta (BA05007)</td></tr>
+    <tr><td>Linked outcomes</td><td>CO2, CO6</td></tr>
+    <tr><td>Dataset version audited</td><td>data-v1.0 (cleaned H&amp;M 10% customer sample); Fashion-MNIST (public, used only for the image model)</td></tr>
+  </table>
+</div>
+
+<!-- ============ REPORT ============ -->
+<div class="pb"></div>
+<h1>Data audit report</h1>
+
+<h2>1. Purpose and scope</h2>
+<p>Sparta is a free digital wardrobe for men. With each user's consent, anonymised and aggregated wardrobe, purchase and wishlist data goes to brands and retailers to support two decisions: which categories, colours and fits to add to a range (primary), and how much stock to commit by category (secondary). The app also gives each user outfit suggestions from their own wardrobe, made by a recommendation engine: style rules decide which outfits are allowed and a ranking step orders them (business requirements BR-50 to BR-55). The process flow in the project repository (<code>flow-diagrams/sparta_process_flow.png</code>) shows both sides.</p>
+<p>The pilot has not produced data yet. This audit therefore covers the data the team uses before the pilot: the public H&amp;M Personalized Fashion Recommendations files, which stand in for purchase behaviour and seasonal demand (charter D1, Table 4), and the public Fashion-MNIST pictures, which train the small image model of the recommendation engine. It states what the files contain, what we changed, and where they cannot stand in for Sparta's own users. The same audit will be repeated on the first Sparta pilot extract.</p>
+<table><thead><tr><th style="width:24%">Source</th><th style="width:44%">Role in the project</th><th>Status in this audit</th></tr></thead>
+  <tr><td>H&amp;M articles, customers and transactions</td><td>Proxy for purchase behaviour and seasonality; checks the demand and gap methods before pilot data exists</td><td>Audited and cleaned (sections 2 to 6)</td></tr>
+  <tr><td>Fashion-MNIST (Zalando Research)</td><td>70,000 small greyscale garment pictures that train the image model suggesting a category for photo items; holds no purchase, brand, price or personal data</td><td>Source record in Table 2a and Appendix A8; not cleaned or used for demand</td></tr>
+  <tr><td>Sparta pilot app data (primary source)</td><td>Items, purchases, wishlist and outfits entered by consenting users</td><td>Not yet available; audit repeated on the first extract; consent rules in section 3</td></tr>
+  <tr><td>Synthetic records in the Sparta schema</td><td>Pipeline and script tests only</td><td>Used only to test <code>clean_hm.py</code>; never used for results</td></tr>
+</table>
+<div class="cap">Table 1. Data sources and their status. Google Trends, listed as optional in the charter, is not used.</div></div>
+
+<h2>2. Source and access</h2>
+<div class="tbl"><table><thead><tr><th style="width:15%">Item</th><th>Detail</th></tr></thead>
+  <tr><td>Dataset</td><td>H&amp;M Personalized Fashion Recommendations (H&amp;M Group, 2022): <code>articles.csv</code> (105,542 rows, 25 columns), <code>customers.csv</code> (1,371,980 rows, 7 columns) and the transactions file (31.8 million rows, 5 columns: date, customer, article, price, sales channel; 20 September 2018 to 22 September 2020).</td></tr>
+  <tr><td>Where from</td><td>Kaggle competition page, downloaded with a team member's Kaggle account after accepting the competition rules.</td></tr>
+  <tr><td>Licence or permission</td><td>Competition rules: use for non-commercial research and education. The team uses it only for this course and does not redistribute the raw files.</td></tr>
+  <tr><td>Date accessed</td><td>October 2026, before 27 October 2026, the date of the first audit run on the files.</td></tr>
+  <tr><td>Working sample</td><td><code>transactions_train_sample10pct.csv</code>: all purchases of a random 10% of customers, 3,205,663 rows from 136,670 customers. A reference profile of the full 31.8 million rows (department, channel and monthly counts, purchases per customer, basket size) is kept so the sample can be tested against the whole file (section 5).</td></tr>
+  <tr><td>Where it is kept</td><td>Team members' machines only. Raw and cleaned row-level files are not committed to the public Sparta repository (size and licence). Each run records SHA-256 checksums of inputs and outputs in <code>MANIFEST.json</code> (section 7).</td></tr>
+</table>
+<div class="cap">Table 2. Source and access record for the H&amp;M data.</div></div>
+<div class="tbl"><table><thead><tr><th style="width:15%">Item</th><th>Detail</th></tr></thead>
+  <tr><td>Dataset</td><td>Fashion-MNIST (Xiao, Rasul and Vollgraf, 2017), published by Zalando Research: 70,000 greyscale pictures, 28 by 28 pixels, of single garments in ten types (T-shirt/top, Trouser, Pullover, Dress, Coat, Sandal, Shirt, Sneaker, Bag, Ankle boot). Held as two CSV files: <code>fashion-mnist_train.csv</code> (60,000 rows) and <code>fashion-mnist_test.csv</code> (10,000 rows), each with a label and 784 pixel columns. Checked: every type has 6,000 training and 1,000 test pictures.</td></tr>
+  <tr><td>Licence</td><td>MIT licence (Zalando SE). The notice is kept with any copy and the paper is cited in the model card.</td></tr>
+  <tr><td>Date accessed</td><td>The files carry a 2019 file date; they were copied into the project on 29 October 2026. The original download date was not recorded.</td></tr>
+  <tr><td>Integrity</td><td>SHA-256 of both files is recorded in <code>data/recommendation-engine/README.md</code> (train <code>6e94982a&hellip;fd94b7f</code>, test <code>85ef50a3&hellip;a2bc01</code>).</td></tr>
+  <tr><td>Use and limits</td><td>Trains a small image model (once, before the pilot) that suggests a category and sub-type for photos of clothes. It has no colour, brand, price or purchase information and no information about which garments go together, so it cannot teach outfit compatibility; that comes from the style specialist's rules. Pictures are studio-style, so accuracy on phone photos is tested on team-owned photos before use (BRD risk RK-8).</td></tr>
+  <tr><td>Personal data</td><td>None: pictures of products only.</td></tr>
+  <tr><td>Where it is kept</td><td>Team members' machines only. Not committed to the Sparta repository (size; <code>.gitignore</code>).</td></tr>
+</table>
+<div class="cap">Table 2a. Source and access record for the Fashion-MNIST data.</div></div>
+
+<h2>3. Consent and purpose limitation (DPDP Act, 2023)</h2>
+<p><b>H&amp;M data.</b> The files carry no names or contact details. Customer identifiers and postal codes are hashed by the publisher. We use the data only for this course (non-commercial research and education), which is the purpose the competition rules allow. We do not try to identify anyone, and we never link H&amp;M customers to Sparta users. We apply data minimisation: the postal-code column is never loaded, free-text product descriptions are not used, and only seven article columns and six customer columns are read. Customers under 18 are removed before analysis. Raw files stay on team machines and are deleted when the course ends; only aggregated results are kept.</p>
+<p><b>Sparta pilot data.</b> The Digital Personal Data Protection Act, 2023 (Government of India, 2023) expects a clear notice of what is collected and why, and consent that is free and specific (sections 5 and 6), and it sets stricter rules for children's data (section 9). Sparta's design follows these points: invitation-only adults in supported countries, a first-login pilot notice that every user must accept to join the study, a Leave the pilot button that deletes the account and data, minimum group sizes of 10 before any figure reaches a vendor, and no use of participant data to train or tune machine-learning models (business requirements BR-28 and BR-52). The recommendation engine's image model is trained once, before the pilot, on the public Fashion-MNIST pictures and tested on photos of the team's own clothes. The wording is in the Privacy Policy and the legal pack in the project repository. This statement is the team's own reading of the Act. No professional legal review has taken place, and one is required before any public or commercial launch.</p>
+
+<h2>4. Quality audit and treatment</h2>
+<p>Missing values, duplicates and outliers were checked on the raw files before any change. Table 3 shows each finding, the treatment chosen and the reason. The same rules run in <code>clean_hm.py</code> and in the D3 notebook.</p>
+<div class="tbl long"><table><thead><tr><th style="width:4%">#</th><th style="width:40%">Finding (raw data)</th><th style="width:28%">Treatment</th><th>Why</th></tr></thead>
+  <tr><td>1</td><td>296,434 exact duplicate transaction rows (9.2% of the sample): same customer, day, article, price and channel. The file has no quantity column.</td><td>Keep. Collapse to one line with a quantity, so units are preserved.</td><td>Identical rows are most likely two units bought together, so dropping them would understate basket size.</td></tr>
+  <tr><td>2</td><td>Baby/Children department: 3.8% of units.</td><td>Exclude.</td><td>The buyer is dressing someone else, so the purchase says nothing about their own wardrobe.</td></tr>
+  <tr><td>3</td><td>Non-apparel product groups (cosmetics, furniture, stationery, "Unknown" and similar): 0.3% of units.</td><td>Exclude.</td><td>Not part of an outfit.</td></tr>
+  <tr><td>4</td><td>913 sampled customers under 18 (9,553 of all 1,371,980 customers, aged 16 or 17).</td><td>Exclude their purchases.</td><td>Sparta serves adults only.</td></tr>
+  <tr><td>5</td><td>Age above 90: 5 sampled customers (77 overall; maximum 99).</td><td>Set age to missing, keep the customer.</td><td>Likely default values, not real ages.</td></tr>
+  <tr><td>6</td><td>Missing demographics, whole customer file: FN flag 65.2%, Active flag 66.2%, age 1.2% (15,861), club status 0.4%, newsletter frequency 1.2%.</td><td>Age: explicit "unknown" band. FN and Active: missing means 0. Club status and newsletter: "UNKNOWN".</td><td>Imputing age would invent a signal. Missingness itself is informative (section 5).</td></tr>
+  <tr><td>7</td><td>Price is on a normalised scale (0.00003 to 0.507), not a currency. No zero, negative or missing prices; no missing values in the transactions.</td><td>Use only as a relative price. No outlier removal.</td><td>No value is impossible, so removal would hide real behaviour. Currency claims would be unfounded.</td></tr>
+  <tr><td>8</td><td>First and last weeks of the window are partial.</td><td>Drop them from weekly analyses only.</td><td>Avoids false dips at the window edges.</td></tr>
+  <tr><td>9</td><td><code>sales_channel_id</code> is an anonymous code (1 or 2). It splits 29.6% / 70.4%.</td><td>Keep as a code; never label it "store" or "online".</td><td>The data dictionary does not say which is which.</td></tr>
+  <tr><td>10</td><td>Articles: 105,542 unique 10-digit ids, no duplicates; only <code>detail_desc</code> has gaps (416, 0.4%). Customers: no duplicate ids. One postal-code hash is shared by 120,303 customers (8.8%), probably a placeholder for a missing value.</td><td>Keep ids as text so leading zeros survive. Do not use postal code.</td><td>Reading ids as numbers breaks joins. The shared hash carries no location information.</td></tr>
+</table>
+<div class="cap">Table 3. Quality findings, treatment and reasons. Counts come from the 10% sample unless "overall" or "whole file" is stated.</div></div>
+<div class="tbl"><table><thead><tr><th>Step</th><th style="width:17%">Units</th><th style="width:15%">Share of raw</th></tr></thead>
+  <tr><td>Raw rows (one row is one unit)</td><td>3,205,663</td><td>100.0%</td></tr>
+  <tr><td>Lines after collapsing exact duplicates (decision 1)</td><td>2,909,229 lines</td><td>n/a</td></tr>
+  <tr><td>After dropping Baby/Children (decision 2)</td><td>3,082,273</td><td>96.2%</td></tr>
+  <tr><td>After dropping non-apparel groups (decision 3)</td><td>3,071,946</td><td>95.8%</td></tr>
+  <tr><td>After dropping under-18 customers (decision 4): cleaned dataset</td><td>3,066,344</td><td>95.7%</td></tr>
+</table>
+<div class="cap">Table 4. Cleaning funnel. The cleaned dataset holds 132,435 customers; Menswear is 5.8% of its units.</div></div>
+
+<h2>5. Representativeness and bias checks</h2>
+<p><b>Is the 10% sample like the whole file?</b> Yes, on every check, on raw and on cleaned data (Table 5, Figure 1). The standardised mean difference (SMD) is the gap in means divided by the spread; below 0.1 is the usual sign of balance (Austin, 2009).</p>
+<div class="tbl"><table><thead><tr><th>Check</th><th style="width:10%">Raw</th><th style="width:11%">Cleaned</th><th style="width:15%">Tolerance</th><th style="width:10%">Result</th></tr></thead>
+  <tr><td>Customer age and club status (largest SMD)</td><td>0.003</td><td>0.021</td><td>below 0.1</td><td>Pass</td></tr>
+  <tr><td>Department mix (largest gap, percentage points)</td><td>0.052</td><td>0.046</td><td>below 1</td><td>Pass</td></tr>
+  <tr><td>Channel mix (largest gap, pp)</td><td>0.019</td><td>n/a</td><td>below 1</td><td>Pass</td></tr>
+  <tr><td>Monthly volume profile (largest gap, pp)</td><td>0.060</td><td>0.050</td><td>below 1</td><td>Pass</td></tr>
+  <tr><td>Purchases per customer, mean (gap)</td><td>0.5%</td><td>n/a</td><td>below 5%</td><td>Pass</td></tr>
+  <tr><td>Single-item visit share (gap, pp)</td><td>0.054</td><td>n/a</td><td>below 1</td><td>Pass</td></tr>
+</table>
+<div class="cap">Table 5. Sample against the full 31.8 million-row file. Source: D3 notebook, section 3.2.</div></div>
+<figure><img src="figs/cell18.png" alt="Figure 1"><figcaption>Figure 1. The 10% sample reproduces the full file on department mix, monthly volume and basket size (raw data). Reproduced from the D3 notebook.</figcaption></figure>
+<figure><img src="figs/cell19.png" alt="Figure 2"><figcaption>Figure 2. What our cleaning filters change: mostly Baby/Children units and under-18 customers; adult departments are almost untouched. Reproduced from the D3 notebook.</figcaption></figure>
+
+<p style="margin-top:10px"><b>Who or what is under-represented, for Sparta's purposes?</b> The sample matches H&amp;M, but H&amp;M is not Sparta. Table 6 lists the gaps that matter and what we do about each.</p>
+<div class="tbl long"><table><thead><tr><th style="width:16%">Gap or bias</th><th style="width:30%">Evidence</th><th style="width:26%">Effect on Sparta</th><th>Mitigation</th></tr></thead>
+  <tr><td>Men are few and cannot be identified directly</td><td>No gender field. Menswear is 5.6% of raw units (5.8% of cleaned). Department is the only proxy.</td><td>Men's behaviour is thinly covered and may include gifts or shared accounts.</td><td>Report Menswear separately (<code>is_menswear</code> flag); use department as a labelled proxy; re-test on pilot data.</td></tr>
+  <tr><td>European customers and assortment</td><td>Publisher is European; prices normalised.</td><td>India's price ladder, ethnic wear and climate are absent.</td><td>Treat results as patterns to re-validate on pilot data; no rupee or euro claims.</td></tr>
+  <tr><td>Purchases only</td><td>No browsing, returns, ownership or wishlist.</td><td>A purchase is a weak signal of liking; ownership is invisible.</td><td>Ownership and wishlist come from the Sparta app; H&amp;M tests only the purchase side.</td></tr>
+  <tr><td>Light buyers have missing demographics</td><td>Unknown age: median 1 visit against 3; FN missing: 2 against 4; unknown or pre-create club status: 1 against 3 (all p&lt;0.001).</td><td>Missing values mark a different kind of customer.</td><td>Keep an explicit "unknown" level instead of imputing; report by activity tier.</td></tr>
+  <tr><td>Heavy buyers dominate</td><td>Top 10% of customers buy 48% of units (Gini 0.64); 32% of customers have a single visit.</td><td>Training data is shaped by a minority.</td><td>Split by customer; weight or report by activity tier.</td></tr>
+  <tr><td>A break in 2020</td><td>Mean weekly units fell 13.1% in March to August 2020 against 2019; channel 2 rose from 69.8% to 75.1% of units.</td><td>A pooled model could learn the break as a pattern.</td><td>Validate by date; compare with and without 2020.</td></tr>
+  <tr><td>Age mix is young</td><td>Customers aged 18 to 34 are 54% of all customers; 65 and over are 3%.</td><td>Older men are under-represented.</td><td>Report results by age band; flag thin bands.</td></tr>
+</table>
+<div class="cap">Table 6. Under-representation and bias, with mitigations.</div></div>
+
+<h2>6. Feature engineering log</h2>
+<p>Table 7 lists each derived field: its logic and its leakage risk. Features 1 to 8 are written to the cleaned dataset by <code>clean_hm.py</code>. Features 9 to 14 are built in the D3 notebook and are not stored. Features 15 to 17 are planned for the Sparta pilot data and are listed so the same checks apply later.</p>
+<div class="tbl long"><table><thead><tr><th style="width:4%">#</th><th style="width:22%">Feature</th><th style="width:36%">Logic</th><th>Leakage risk and control</th></tr></thead>
+  <tr><td>1</td><td>qty</td><td>Number of identical rows collapsed into one line</td><td>Low. Describes the same-day purchase only.</td></tr>
+  <tr><td>2</td><td>role</td><td>Product group mapped to Top, Bottom, Full-body, Accessory, Footwear, Hosiery, Underwear, Nightwear or Swimwear</td><td>None. Fixed catalogue attribute.</td></tr>
+  <tr><td>3</td><td>is_menswear</td><td>Index group equals Menswear</td><td>None. A proxy, not a gender label.</td></tr>
+  <tr><td>4</td><td>age_clean, age_band</td><td>Age above 90 set to missing; bands under 18, 18 to 24, 25 to 34, 35 to 44, 45 to 54, 55 to 64, 65 and over, unknown</td><td>Low. A customer attribute, constant over time.</td></tr>
+  <tr><td>5</td><td>FN, Active</td><td>Missing filled with 0</td><td>Low. Missing meaning 0 is an assumption, tested in section 5.</td></tr>
+  <tr><td>6</td><td>club_member_status, fashion_news_frequency</td><td>Missing filled with UNKNOWN; "None" merged with NONE</td><td>Medium. Status is recorded at one point in time, so it may reflect behaviour that comes after a purchase.</td></tr>
+  <tr><td>7</td><td>week_start</td><td>Monday of the purchase week</td><td>None. Calendar field.</td></tr>
+  <tr><td>8</td><td>is_minor (used to filter, not stored)</td><td>Age under 18; missing age is not a minor</td><td>None.</td></tr>
+  <tr><td>9</td><td>Visit</td><td>One customer on one day</td><td>None.</td></tr>
+  <tr><td>10</td><td>Single-unit visit, top-and-bottom visit</td><td>Visit has one unit; visit has a Top and a Bottom role</td><td>Low. Same-day content only.</td></tr>
+  <tr><td>11</td><td>History hit</td><td>Customer bought the same article, type, colour or department on an earlier day than the item</td><td>High if misused. Built only from days before the item; the baseline shuffles within the same week; models must split by customer and date.</td></tr>
+  <tr><td>12</td><td>Adjusted lift of a type pair</td><td>Visits containing both types divided by the number expected when items are shuffled among visits of the same size and week</td><td>Medium. Uses the whole window; fine for description, not for evaluation.</td></tr>
+  <tr><td>13</td><td>Top-100 weekly overlap, new-article share</td><td>Jaccard overlap of the top 100 articles at 1, 4, 13 and 52 weeks; share of units from articles first sold up to 8 weeks earlier</td><td>Medium. Uses future weeks; any forecast must be fit on earlier weeks only.</td></tr>
+  <tr><td>14</td><td>Customer activity measures</td><td>Visits, units, single-unit share, distinct product types per customer</td><td>High. Computed over the whole window, so they must be rebuilt inside the training window for modelling.</td></tr>
+  <tr><td>15</td><td>Colour family (Sparta)</td><td>Nearest reference swatch in CIELAB, from the colour the user picks</td><td>None. Derived from the item alone.</td></tr>
+  <tr><td>16</td><td>Condition band (Sparta)</td><td>Condition 0 to 100 grouped into 0 to 9, 10 to 29, 30 to 59, 60 to 84, 85 to 100</td><td>Low. User-entered, so it may be inconsistent between users.</td></tr>
+  <tr><td>17</td><td>Gap score (Sparta)</td><td>Distinct users with an open wishlist entry in a segment divided by distinct users who own an item in it</td><td>Medium. Wishlist and ownership are measured at the run date; the holdout is the last 10 days of activity and is never used in tuning.</td></tr>
+</table>
+<div class="cap">Table 7. Feature engineering log.</div></div>
+
+<h2>7. Reproducibility, versioning and limits</h2>
+<p><b>Rerun.</b> <code>submissions/D2/clean_hm.py</code> rebuilds the cleaned dataset from the three raw files: <code>python clean_hm.py --raw-dir &lt;raw&gt; --out-dir &lt;out&gt;</code>. Rows are sorted and files are written without timestamps, so the same input gives byte-identical output. It writes <code>lines_clean.csv.gz</code>, <code>customers_clean.csv.gz</code> and <code>articles_clean.csv.gz</code> plus <code>MANIFEST.json</code>, which records the SHA-256 checksum, row count and columns of every input and output, the cleaning funnel and the library versions. The data dictionary is <code>data_dictionary.csv</code> (Appendix B).</p>
+<p><b>Checked so far.</b> The script has been run on the real H&amp;M files on a 10% customer sample drawn for the test with a fixed seed. It read the real column layout and finished without error, two runs gave identical SHA-256 checksums for all three output files, and the cleaning funnel followed the shape of Table 4 (Baby/Children 3.8% of units, non-apparel 0.3%, under-18 customers 0.2%). That test sample is a different random draw from the working sample behind this report, so its counts differ slightly and its checksums are not those of <code>data-v1.0</code>. The whole-file counts in this report (rows, columns, department and age-band counts, missing values, date range and channel split) were checked against the raw files. The numbers that come from the working sample are from the team's run, shown in the D3 notebook and the audit statistics file.</p>
+<p><b>Release.</b> <code>data-v1.0</code> is the run of the script on the working sample file <code>transactions_train_sample10pct.csv</code>. Its <code>MANIFEST.json</code> is recorded in the team repository when that run is made and the release is tagged.</p>
+<p><b>Limits.</b> The data show purchases by European shoppers in 2018 to 2020. They cannot show ownership, wishlist demand or Indian menswear. They support method checks (seasonality, concentration, cold start) but not conclusions about Sparta's users. The pilot extract replaces them as soon as it exists.</p>
+
+<h2>References</h2>
+<div class="refs">
+<p>Austin, P. C. (2009). Balance diagnostics for comparing the distribution of baseline covariates between treatment groups in propensity-score matched samples. <i>Statistics in Medicine, 28</i>(25), 3083&ndash;3107. https://doi.org/10.1002/sim.3697</p>
+<p>Gebru, T., Morgenstern, J., Vecchione, B., Vaughan, J. W., Wallach, H., Daum&eacute; III, H., &amp; Crawford, K. (2021). Datasheets for datasets. <i>Communications of the ACM, 64</i>(12), 86&ndash;92. https://doi.org/10.1145/3458723</p>
+<p>Government of India. (2023). <i>The Digital Personal Data Protection Act, 2023</i> (Act No. 22 of 2023).</p>
+<p>H&amp;M Group. (2022). <i>H&amp;M Personalized Fashion Recommendations</i> [Data set]. Kaggle. https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations</p>
+<p>Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., &hellip; Oliphant, T. E. (2020). Array programming with NumPy. <i>Nature, 585</i>, 357&ndash;362. https://doi.org/10.1038/s41586-020-2649-2</p>
+<p>McKinney, W. (2010). Data structures for statistical computing in Python. <i>Proceedings of the 9th Python in Science Conference</i>, 56&ndash;61.</p>
+<p>Xiao, H., Rasul, K., &amp; Vollgraf, R. (2017). Fashion-MNIST: a novel image dataset for benchmarking machine learning algorithms. arXiv:1708.07747. https://arxiv.org/abs/1708.07747</p>
+</div>
+
+<!-- ============ APPENDIX A ============ -->
+<div class="pb"></div>
+<h1>Appendix A. Datasheet: H&amp;M cleaned sample (data-v1.0)</h1>
+<p class="note">Structure follows Gebru et al. (2021). The datasheet describes the cleaned dataset the team derives from the public H&amp;M files, not the Sparta pilot data. The Fashion-MNIST files are described in A8.</p>
+
+<h3>A1. Motivation</h3>
+<p><b>Purpose.</b> Give Sparta a realistic purchase history to test its demand, seasonality and gap-ranking methods before the pilot produces data. It was not made for Sparta by H&amp;M.</p>
+<p><b>Who created the source.</b> H&amp;M Group released the original files for a public recommendation competition (2022). The team created the cleaned dataset for course work.</p>
+<p><b>Funding.</b> None. A student project.</p>
+
+<h3>A2. Composition</h3>
+<p><b>Instances.</b> Cleaned transaction lines: one line per customer, day, article, price and channel, with a quantity. The cleaned frame holds 3,066,344 units from 132,435 customers (Table 4). Two companion tables describe customers and articles.</p>
+<p><b>Source scale.</b> Whole customer file 1,371,980 rows; whole article file 105,542 rows; the transaction file is a 10% customer sample of 31.8 million rows, 20 September 2018 to 22 September 2020.</p>
+<p><b>Sample.</b> All purchases of a random 10% of customers. It reproduces the full file on every check in Table 5.</p>
+<p><b>Fields.</b> Date, week start, hashed customer id, article id, price (normalised), sales channel code (1 or 2), quantity, article role and attributes (product type, product group, garment group, colour, department), customer age band and flags. See Appendix B.</p>
+<p><b>Labels or targets.</b> None. Targets are defined in later deliverables.</p>
+<p><b>Missing data.</b> Customer demographics (Table 3, row 6). Transactions and article ids are complete.</p>
+<p><b>Relationships between instances.</b> Lines of one customer are linked by the hashed id; lines of one day form a visit.</p>
+<p><b>Splits.</b> None supplied. Modelling splits are made by customer and by date (D4).</p>
+<p><b>Noise and errors.</b> Exact duplicate rows (kept as quantity), implausible ages above 90 (set to missing), an anonymous channel code, and a shared postal-code hash (not used).</p>
+<p><b>Confidential or sensitive content.</b> No names or contact details. Customer ids are publisher-made hashes, and age is held as a band in the cleaned file. The postal code is not loaded.</p>
+<p><b>Does it identify people?</b> Not directly; re-identification from purchase patterns is conceivable, so we never attempt it and never link the data to Sparta users.</p>
+
+<h3>Composition of the source files (whole files, before cleaning)</h3>
+<div class="tbl"><table><thead><tr><th>Department (articles file)</th><th>Articles</th><th>Share</th><th>Kept in the cleaned dataset</th></tr></thead>
+  <tr><td>Ladieswear</td><td>39,737</td><td>37.7%</td><td>Yes</td></tr>
+  <tr><td>Baby/Children</td><td>34,711</td><td>32.9%</td><td>No (decision 2)</td></tr>
+  <tr><td>Divided</td><td>15,149</td><td>14.4%</td><td>Yes</td></tr>
+  <tr><td>Menswear</td><td>12,553</td><td>11.9%</td><td>Yes, flagged <code>is_menswear</code></td></tr>
+  <tr><td>Sport</td><td>3,392</td><td>3.2%</td><td>Yes</td></tr>
+</table>
+<div class="cap">Table 8. Articles by department. The 105,542 articles fall in 8 main product groups: upper-body garments (42,741), lower-body (19,812), full-body (13,292), accessories (11,158), underwear (5,490), shoes (5,283), swimwear (3,127) and socks and tights (2,442), plus smaller groups. The most common catalogue colours are Black (22,585), Blue (18,469), White (12,665), Pink (9,403) and Grey (8,924).</div></div>
+<div class="tbl"><table><thead><tr><th>Age band (customers file)</th><th>Customers</th><th>Share</th><th>Age band</th><th>Customers</th><th>Share</th></tr></thead>
+  <tr><td>Under 18 (16 and 17)</td><td>9,553</td><td>0.7%</td><td>45 to 54</td><td>253,951</td><td>18.5%</td></tr>
+  <tr><td>18 to 24</td><td>347,616</td><td>25.3%</td><td>55 to 64</td><td>139,064</td><td>10.1%</td></tr>
+  <tr><td>25 to 34</td><td>393,292</td><td>28.7%</td><td>65 and over</td><td>43,602</td><td>3.2%</td></tr>
+  <tr><td>35 to 44</td><td>169,041</td><td>12.3%</td><td>Age missing</td><td>15,861</td><td>1.2%</td></tr>
+</table>
+<div class="cap">Table 9. Customers by age band, all 1,371,980 customers. Median age 32, mean 36.4, range 16 to 99.</div></div>
+
+<h3>A3. Collection process</h3>
+<p><b>How the data was acquired.</b> H&amp;M recorded sales to club members and online and store buyers; the publisher hashed identifiers and normalised prices before release. The team did not collect it.</p>
+<p><b>Sampling.</b> The team drew all purchases of a random 10% of customers from the full transaction file.</p>
+<p><b>Time frame.</b> 20 September 2018 to 22 September 2020. The record includes the 2020 disruption (Table 6).</p>
+<p><b>Consent.</b> The data subjects' consent is the publisher's responsibility; we rely on the competition's terms for non-commercial research and education and do not process the data for any other purpose (section 3).</p>
+<p><b>Ethical review.</b> No formal review; the team's privacy assessment covers the Sparta pilot, not this dataset.</p>
+
+<h3>A4. Preprocessing, cleaning and labelling</h3>
+<p><b>What was done.</b> Ten checks and decisions (Table 3); collapse duplicates to quantity; drop Baby/Children, non-apparel and under-18 purchases; set ages above 90 to missing; fill missing flags; add role, is_menswear, age band and week start (Table 7).</p>
+<p><b>Raw data.</b> Kept unchanged on team machines, outside the repository.</p>
+<p><b>Software.</b> <code>clean_hm.py</code> (Python, pandas, NumPy); the run writes <code>MANIFEST.json</code> with checksums and library versions.</p>
+
+<h3>A5. Uses</h3>
+<p><b>Intended.</b> Descriptive analysis (D3), baselines and candidate models for seasonal demand and segment ranking (D4), and the checks on those models (D5), all as a proxy for the Sparta pilot.</p>
+<p><b>Not suitable for.</b> Conclusions about Indian men's wardrobes, ownership or wishlist demand, per-person profiling, gender-specific claims, or any commercial use. Any score computed on it should be reported as a result on H&amp;M data.</p>
+<p><b>Risks to people.</b> Low, given pseudonymisation and minimisation, but the data describes real purchases; treat it as personal data.</p>
+<div class="tbl"><table><thead><tr><th style="width:36%">Task</th><th style="width:11%">Suitable?</th><th>Why</th></tr></thead>
+  <tr><td>Seasonal demand patterns, concentration of sales, cold-start behaviour</td><td>Yes</td><td>Two full years of weekly data for 105,542 articles</td></tr>
+  <tr><td>Testing the gap-ranking and forecasting code and the validation design</td><td>Yes</td><td>A method check; every score stays labelled as a result on H&amp;M data</td></tr>
+  <tr><td>Checking outfit rules against what is bought together</td><td>Partly</td><td>Co-purchase cannot separate complements from alternatives (D3 insight 5), so it can only suggest candidates</td></tr>
+  <tr><td>Ownership or wishlist demand</td><td>No</td><td>Not recorded; comes from the Sparta app</td></tr>
+  <tr><td>Claims about men, or about the Indian market</td><td>No</td><td>No gender field; a European assortment and customer base</td></tr>
+  <tr><td>Profiling individuals or any commercial use</td><td>No</td><td>Outside the competition rules and the purpose in section 3</td></tr>
+</table>
+<div class="cap">Table 10. Suitability of the cleaned dataset for tasks.</div></div>
+
+<h3>A6. Distribution</h3>
+<p><b>Who gets it.</b> The course team and faculty, through the course submission folder and the team repository. It is not published, and not placed in the public Sparta repository.</p>
+<p><b>Licence.</b> The derived files remain subject to the competition rules (non-commercial research and education). The code is GPL-3.0.</p>
+
+<h3>A7. Maintenance</h3>
+<p><b>Owner.</b> C. Prashanth (lead for D2), contactable through the team.</p>
+<p><b>Updates.</b> The dataset is frozen at data-v1.0. Any change to the cleaning rules produces a new version tag and a new <code>MANIFEST.json</code>.</p>
+<p><b>Retirement.</b> Raw and cleaned row-level files are deleted from team machines when the course ends; the report, the script and the aggregated results remain.</p>
+
+<h3>A8. Companion dataset: Fashion-MNIST</h3>
+<p>Fashion-MNIST is not part of the H&amp;M dataset and is not cleaned or combined with it. It is a public benchmark of 70,000 greyscale 28 by 28 pictures in ten garment types (source record in Table 2a). Sparta uses it for one purpose: to train, once and before the pilot, the small image model that suggests a category when a user adds an item by photo. The pictures hold no personal data, no colour, no brand, no price and no purchase history, so it says nothing about demand and nothing about which garments go well together. Intended use is limited to that image model; it is not suitable for demand, ownership or outfit-compatibility claims. The model is tested on photos of the team's own clothes before it is switched on, and no participant data is used to train or tune it (BR-52). Licence: MIT; the notice and the citation stay with the model card.</p>
+
+<!-- ============ APPENDIX B ============ -->
+<div class="pb"></div>
+<h1>Appendix B. Data dictionary (cleaned dataset)</h1>
+<h3>B1. lines_clean.csv.gz (one line per customer, day, article, price and channel)</h3>
+<div class="tbl"><table><thead><tr><th style="width:34%">Column</th><th style="width:12%">Type</th><th>Description</th></tr></thead>
+  <tr><td><code>t_dat</code></td><td>date</td><td>Purchase date (YYYY-MM-DD)</td></tr>
+  <tr><td><code>week_start</code></td><td>date</td><td>Monday of the purchase week</td></tr>
+  <tr><td><code>customer_id</code></td><td>text</td><td>64-character hash from the publisher; joins to customers_clean</td></tr>
+  <tr><td><code>article_id</code></td><td>text</td><td>10-digit article id with leading zeros; joins to articles_clean</td></tr>
+  <tr><td><code>price</code></td><td>number</td><td>Normalised unit price; relative use only, not a currency</td></tr>
+  <tr><td><code>sales_channel_id</code></td><td>integer</td><td>Anonymous channel code, 1 or 2</td></tr>
+  <tr><td><code>qty</code></td><td>integer</td><td>Units in this line (identical rows collapsed)</td></tr>
+  <tr><td><code>role</code></td><td>text</td><td>Top, Bottom, Full-body, Accessory, Footwear, Hosiery, Underwear, Nightwear, Swimwear</td></tr>
+  <tr><td><code>is_menswear</code></td><td>boolean</td><td>True when the article's index group is Menswear (a proxy, not a gender label)</td></tr>
+  <tr><td><code>index_group_name</code></td><td>text</td><td>Department: Ladieswear, Divided, Menswear or Sport</td></tr>
+  <tr><td><code>product_group_name</code>, <code>product_type_name</code>, <code>garment_group_name</code></td><td>text</td><td>Catalogue hierarchy</td></tr>
+  <tr><td><code>perceived_colour_master_name</code>, <code>perceived_colour_value_name</code></td><td>text</td><td>Catalogue colour and its shade (for example Dark)</td></tr>
+  <tr><td><code>age_band</code></td><td>text</td><td>18-24, 25-34, 35-44, 45-54, 55-64, 65+ or unknown</td></tr>
+</table>
+<div class="cap">Table 11. Columns of the lines file.</div></div>
+<h3>B2. customers_clean.csv.gz and articles_clean.csv.gz</h3>
+<div class="tbl"><table><thead><tr><th style="width:38%">File and column</th><th style="width:12%">Type</th><th>Description</th></tr></thead>
+  <tr><td>customers: <code>customer_id</code></td><td>text</td><td>As above; one row per customer who remains in scope</td></tr>
+  <tr><td>customers: <code>FN</code>, <code>Active</code></td><td>0 or 1</td><td>Publisher flags; missing is stored as 0</td></tr>
+  <tr><td>customers: <code>club_member_status</code></td><td>text</td><td>ACTIVE, PRE-CREATE, LEFT CLUB or UNKNOWN</td></tr>
+  <tr><td>customers: <code>fashion_news_frequency</code></td><td>text</td><td>NONE, Regularly, Monthly or UNKNOWN</td></tr>
+  <tr><td>customers: <code>age_clean</code>, <code>age_band</code></td><td>number, text</td><td>Age with values above 90 set to missing; band as above</td></tr>
+  <tr><td>articles: <code>article_id</code> and the columns above</td><td>text</td><td>One row per article that appears in the lines file; also holds <code>role</code> and <code>is_menswear</code></td></tr>
+</table>
+<div class="cap">Table 12. Columns of the customer and article files. The postal code, product name and description are not carried over.</div></div>
+
+<h1 style="margin-top:22px">Appendix C. AI-tool disclosure</h1>
+<p>The team used Claude (Anthropic) to draft this report's text, to write the cleaning script and to build the figures' layout. Claude was also used to run the cleaning script on the real H&amp;M files as a test (two runs, identical checksums) and to check the whole-file counts in this report against the raw files. The team checked that every number traces to the D3 notebook outputs, the audit statistics or those checks, that the cleaning rules match the notebook, and that the script runs twice with identical checksums. The team did not use AI tools to produce any result from the working sample.</p>
+
+</body>
+</html>

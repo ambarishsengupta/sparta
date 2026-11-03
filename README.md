@@ -71,6 +71,9 @@ Full detail is in the design documents below.
 | [Low-Level Design (LLD)](docs/LLD.md) | Tables, policies, functions, worker, API routes, tests, operations |
 | [Legal and privacy pack](legal/README.md) | Privacy policy, terms of use, vendor pilot agreement, incident plan, privacy risk assessment, data sourcing policy, privacy contact address and review log (pilot drafts, not legal advice) |
 | [ANCP D1 project charter](docs/ANCP_TM_D1_v1.pdf) | The course charter that frames this project (Group M) |
+| [Flow diagrams](flow-diagrams/) | Process flow (outfit recommendation and inventory planning) and the D2 data flow |
+| [ANCP D2 data audit](submissions/D2/) | Audit report and datasheet, cleaning script, data dictionary (public H&M data as a proxy before the pilot) |
+| [ANCP D3 EDA](submissions/D3/) | EDA notebook, HTML export and two-page insight summary |
 
 ## Out of scope for the pilot
 

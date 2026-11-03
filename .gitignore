@@ -1,3 +1,4 @@
-# Raw data is never committed (size and licence)
-data-audit/raw/
-data-audit/audit_stats/
+# Raw and cleaned H&M row-level data is never committed (size and competition licence)
+data/
+submissions/D2/out/
+submissions/**/raw/

@@ -77,3 +77,5 @@ Fashion-MNIST can teach a model what broad kind of garment a picture shows. The 
 - H&M photographs, purchase lines, customer IDs and article IDs are never copied out of this folder, committed, uploaded to Supabase or any service, shown to users or vendors, or built into the worker image (BR-59). Raw H&M files are deleted when the course ends.
 - Record each file's SHA-256 and the date obtained here and in the model card.
 - Team photos used for evaluation stay outside the repository and are deleted after the evaluation (LLD 13.4).
+
+The folder `artifacts/` (path in `SPARTA_ARTIFACT_DIR`, git-ignored) holds the files the offline scripts write: `pairing-prior-v1.json` and `unlock-candidates.json` (from `ml/recommendation-engine/pairing/build_prior.py`, with its card `PRIOR_CARD.md` committed) and, later, `garment-cnn-v2.onnx`. Never committed; no H&M row, article ID or customer ID is written there by the pairing build.

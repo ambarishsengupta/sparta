@@ -82,5 +82,33 @@
     "condition": 0.1,
     "favourites": 0.1
   },
-  "unlock_min_rule_fit": 0.6
+  "unlock_min_rule_fit": 0.6,
+  "penalties": {
+    "note": "DRAFT (WO-0004): no document gives these magnitudes. They are invented placeholders so R3 to R6 and R7 can be scored; the style specialist owns them (FOI-9) and must confirm or replace every value. Each is taken off a 0 to 1 rule value, which never goes below 0.",
+    "families_over_three": 0.34,
+    "families_over_three_note": "R3: taken once for each distinct non-neutral colour family beyond three.",
+    "extra_bold": 0.34,
+    "extra_bold_note": "R3: taken once for each bold item beyond the first.",
+    "extra_pattern": 0.5,
+    "extra_pattern_note": "R4: taken once for each patterned item beyond the first.",
+    "missing_layer": 0.5,
+    "missing_layer_note": "R5: taken in a cool season when the outfit has no layer.",
+    "layer_same_family": 0.3,
+    "layer_same_family_note": "R5: taken in a cool season when the layer's colour family equals the top's.",
+    "belt_shoe_mismatch": 0.4,
+    "belt_shoe_mismatch_note": "R6: taken when a belt and the shoes are in different colour families.",
+    "variety_reuse": 0.1,
+    "variety_reuse_note": "R7: taken from the score of a candidate once for each of its items already in a chosen suggestion."
+  },
+  "reason_templates": {
+    "note": "R8: the only sentences a suggestion may use. Placeholders: {occasion}, {season}, {colours}. DRAFT wording, owned by the style specialist.",
+    "r1": "Every piece suits {occasion}",
+    "r2": "Every piece suits {season}",
+    "r3_neutral_one": "{colours} is neutral and goes with anything",
+    "r3_neutral_many": "{colours} are neutral and go with anything",
+    "r3_harmony": "The colours go together",
+    "r4": "At most one pattern, so nothing clashes",
+    "r5": "Layer works for cool weather",
+    "r6": "Belt and shoes share a colour family"
+  }
 }

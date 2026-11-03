@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "source": "FDD 14.1 and 14.2, LLD 9.5 and 9.5.1. DRAFT: every value is owned by the style specialist (FOI-2, FOI-8, FOI-9). Values marked 'assumed' in the notes are not in the documents and need the specialist's confirmation.",
+  "thresholds": {
+    "neutral_chroma_below": 10,
+    "bold_chroma_above": 50,
+    "dark_lightness_below": 40,
+    "dark_lightness_note": "assumed: FDD R1 Party says 'dark or statement tops' without a number. 'Statement' = bold (chroma above bold_chroma_above)."
+  },
+  "neutral_colour_families": ["Black", "White", "Grey", "Navy", "Beige", "Khaki", "Olive", "Brown"],
+  "cool_seasons": ["Autumn", "Winter"],
+  "cool_seasons_note": "assumed: FDD R5 says 'cool seasons' without listing them.",
+  "unrated_condition": 0.7,
+  "season_rules": {
+    "Summer": {
+      "excluded_sub_types": ["Coat", "Sweater", "Cardigan"],
+      "note": "FDD R2: no coats or heavy knits. Which sub-types are heavy knits is assumed: Sweater and Cardigan."
+    }
+  },
+  "occasions": {
+    "Casual": {
+      "slots": {},
+      "forbidden_pairs": [["Formal shoes", "Shorts"], ["Formal shoes", "Sports shorts"]],
+      "top_colour": null,
+      "note": "FDD R1: any tops and bottoms except formal shoes with shorts. Sports shorts counted as shorts (assumed)."
+    },
+    "Work": {
+      "slots": {
+        "top": ["Shirt", "Polo"],
+        "bottom": ["Chinos", "Trousers"],
+        "footwear": ["Sneakers", "Formal shoes", "Boots"]
+      },
+      "forbidden_pairs": [],
+      "top_colour": null,
+      "note": "FDD R1: shirt or polo, chinos or trousers, closed shoes (Sandals are open). Layer is not constrained."
+    },
+    "Formal": {
+      "slots": {
+        "top": ["Shirt"],
+        "bottom": ["Trousers", "Suit", "Tuxedo"],
+        "layer": ["Blazer", "Suit", "Tuxedo"],
+        "footwear": ["Formal shoes"]
+      },
+      "forbidden_pairs": [],
+      "top_colour": null,
+      "note": "FDD R1: shirt, tailored trousers, formal shoes, blazer if available. Suit and Tuxedo (one item in layer and bottom) are allowed because they hold the blazer and trousers (assumed). The layer is optional."
+    },
+    "Party": {
+      "slots": {
+        "bottom": ["Jeans", "Trousers"],
+        "footwear": ["Sneakers", "Boots"]
+      },
+      "forbidden_pairs": [],
+      "top_colour": "dark_or_bold",
+      "note": "FDD R1: dark or statement tops, jeans or trousers, clean sneakers or boots. 'Clean' is not checked."
+    },
+    "Sport": {
+      "slots": {
+        "top": ["Sports T-shirt"],
+        "bottom": ["Track pants", "Sports shorts"],
+        "footwear": ["Sneakers"]
+      },
+      "forbidden_pairs": [],
+      "top_colour": null,
+      "note": "FDD R1: activewear for the top and bottom, sneakers for footwear. Layer is not constrained."
+    },
+    "Date": { "uses": "Casual" },
+    "Travel": { "uses": "Casual" }
+  },
+  "weights_base": {
+    "rule_fit": 0.5,
+    "occasion_fit": 0.2,
+    "completeness": 0.1,
+    "condition": 0.1,
+    "favourites": 0.1
+  },
+  "weights_with_pairing": {
+    "rule_fit": 0.4,
+    "pairing": 0.15,
+    "occasion_fit": 0.15,
+    "completeness": 0.1,
+    "condition": 0.1,
+    "favourites": 0.1
+  },
+  "unlock_min_rule_fit": 0.6
+}

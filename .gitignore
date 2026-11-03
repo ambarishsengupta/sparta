@@ -24,3 +24,10 @@ workflow/local.env
 # Python caches
 __pycache__/
 *.pyc
+
+# Node / TypeScript build output and local env (R0)
+node_modules/
+dist/
+.env.local
+coverage/
+*.tsbuildinfo

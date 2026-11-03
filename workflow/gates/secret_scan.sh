@@ -5,9 +5,19 @@
 #         bash workflow/gates/secret_scan.sh --selftest
 #
 # Exit 0 = nothing found. Exit 1 = findings, listed as file:line (rule, redacted prefix); the secret
-# value is NEVER printed. Excluded: package-lock.json, node_modules, .git, binary files. The
-# VAR=value rule also skips *.example files and Markdown/docs files, which only DESCRIBE variable names;
-# the token-shaped rules (keys, JWTs, tokens) apply to every scanned file, docs included.
+# value is NEVER printed. Excluded: package-lock.json, yarn.lock, pnpm-lock.yaml, node_modules, .git, binary
+# files. The assignment rules also skip *.example files and Markdown/docs files, which only DESCRIBE variable
+# names; the token-shaped rules (keys, JWTs, tokens) apply to every scanned file, docs included.
+#
+# Assignment rules (a value that is not a placeholder is a finding):
+#   - UPPER_CASE names (SERVICE_ROLE, SECRET, PASSWORD, TOKEN inside the name): any value, quoted or not.
+#   - any other case (const password = '...', password: "...", "client_secret": "..."): a quoted string literal,
+#     or an unquoted value in a config-style file (.env, .yml, .ini, .toml, ...). The name must END in the
+#     keyword (password, dbPassword, api_token, client_secret), so tokenizer or token_type are not flagged.
+# The ONLY placeholders are: empty, changeme, example, placeholder, your-..., <...>, ${...}, $VAR. A value that
+# starts with test- or secret- is NOT a placeholder. Unquoted code references to the environment
+# (process.env.X, import.meta.env.X, os.environ[...], secrets.X) are not literals and are not findings.
+# This scans the working tree only, not git history.
 set -uo pipefail
 
 scan() {
@@ -42,24 +52,35 @@ RULES = [
     ('jwt-service-key', re.compile('ey' + r'J[A-Za-z0-9_-]{30,}\.ey' + 'J')),
     ('github-token', re.compile('gh' + 'p_[A-Za-z0-9]{30,}')),
 ]
-ASSIGN = re.compile(r'(?<![A-Za-z0-9])[A-Za-z0-9_]*(?:SERVICE_ROLE|SECRET|PASSWORD|TOKEN)[A-Z0-9_]*\s*[=:]\s*(\S.*)$')
+ASSIGN = re.compile(r"""(?<![A-Za-z0-9])[A-Za-z0-9_]*(?:SERVICE_ROLE|SECRET|PASSWORD|TOKEN)[A-Z0-9_]*['"`]?\s*[=:](?!=)\s*(\S.*)$""")
+# Other-case names. The name must end in the keyword; an optional type annotation (password: string = '...') is allowed.
+LOWER = re.compile(
+    r"""(?<![A-Za-z0-9])[A-Za-z0-9_]*(?:service_?role|secret|passwd|password|token)['"`]?"""
+    r"""(?:\s*:\s*[A-Za-z_][\w.<>\[\]| ]*?)?\s*[=:](?!=)\s*(?:(['"`])(.*?)(?:\1|$)|([^\s,;]+))""", re.I)
 PLACEHOLDER = re.compile(
-    r'^(?:<.*|\$\{.*\}?|\$\(.*|\$[A-Za-z_].*|\{\{.*|%.*%|\.{2,}|\*+|x{3,}|X{3,}|-+|'
-    r'(?:your|my|example|sample|dummy|fake|test|changeme|change-me|replace|placeholder|redacted|todo|tbd|null|none|undefined|true|false|unset|empty|secret|password|token)\b.*|'
-    r'process\.env.*|import\.meta.*|os\.environ.*|secrets\..*|env\..*|vars\..*)$', re.I)
+    r'^(?:changeme|example|placeholder|your[-_].*|<[^<>]*>|\$\{.*\}|\$[A-Za-z_][A-Za-z0-9_]*)$', re.I)
+ENV_REF = re.compile(r'^(?:process\.env\b.*|import\.meta\.env\b.*|os\.environ\b.*|os\.getenv\b.*|secrets\.[A-Za-z0-9_]+)$')
+CONFIG_EXT = ('.env', '.yml', '.yaml', '.ini', '.toml', '.cfg', '.conf', '.properties')
 
-def is_placeholder(raw):
-    v = raw.strip().rstrip(',;').strip()
-    v = v.strip('"\'`').strip()
+def is_placeholder(raw, quoted=False):
+    v = raw.strip()
+    if not quoted:
+        v = re.sub(r'\s+(?:#|//).*$', '', v).rstrip(',;').strip().strip('"\'`').strip()  # drop a trailing comment
     if v == '' or PLACEHOLDER.match(v):
+        return True
+    if not quoted and ENV_REF.match(v):
         return True
     # a value with no letters and digits at all (e.g. punctuation only) carries no secret
     return not re.search(r'[A-Za-z0-9]', v)
 
+def is_config_file(p):
+    base = os.path.basename(p).lower()
+    return base.endswith(CONFIG_EXT) or base.startswith('.env')
+
 def skip_file(p):
     base = os.path.basename(p)
     parts = p.split('/')
-    return base == 'package-lock.json' or 'node_modules' in parts or '.git' in parts
+    return base in ('package-lock.json', 'yarn.lock', 'pnpm-lock.yaml') or 'node_modules' in parts or '.git' in parts
 
 def assign_exempt(p):
     low = p.lower()
@@ -89,6 +110,18 @@ for rel in file_list():
             m = ASSIGN.search(line)
             if m and not is_placeholder(m.group(1)):
                 findings.append((rel, n, 'secret-assignment', m.group(1).strip().strip('"\'`')[:2] + '...[redacted]'))
+            else:
+                for m in LOWER.finditer(line):
+                    quote, lit, bare = m.group(1), m.group(2), m.group(3)
+                    if quote:
+                        val, quoted = lit, True
+                    elif is_config_file(rel):
+                        val, quoted = bare, False
+                    else:
+                        continue
+                    if not is_placeholder(val, quoted):
+                        findings.append((rel, n, 'secret-assignment-lowercase', val[:2] + '...[redacted]'))
+                        break
 
 if findings:
     print('secret_scan: FAIL, possible secrets found (values are redacted):', file=sys.stderr)
@@ -126,13 +159,71 @@ selftest() {
     else echo "selftest ok: fake secret #$i exits 1 and is redacted (leak.txt:2)"; fi
   done
 
+  # 1b) lower-case and mixed-case assignments with a non-placeholder value must fail too. test- and secret-
+  #     prefixed values are NOT placeholders. Names are split so this file holds no literal match.
+  local pw="pass""word" sec="sec""ret" lit="hunter2hunter2"
+  local -a lowers=(
+    "const $pw = '$lit'"
+    "$pw: \"$lit\""
+    "const $pw = 'test-abc123'"
+    "$pw: 'secret-xyz789'"
+    "\"client_$sec\": \"$lit\""
+    "const $pw: string = '$lit'"
+    "let dbPass""word = \"$lit\""
+  )
+  i=0
+  for val in "${lowers[@]}"; do
+    i=$((i + 1))
+    rm -rf "$tmp/lower"; mkdir -p "$tmp/lower"
+    ( cd "$tmp/lower" && git init -q . && printf 'x = 1\n%s\n' "$val" > code.ts )
+    out="$(bash "$script" "$tmp/lower" 2>&1)"; local lc=$?
+    if [ "$lc" -ne 1 ]; then echo "selftest FAIL: lower-case secret #$i exited $lc, expected 1"; rc=1
+    elif printf '%s' "$out" | grep -qF -- "$lit" || printf '%s' "$out" | grep -qF -- 'test-abc123' || printf '%s' "$out" | grep -qF -- 'secret-xyz789'; then echo "selftest FAIL: lower-case secret #$i was printed"; rc=1
+    elif ! printf '%s' "$out" | grep -q 'code.ts:2'; then echo "selftest FAIL: lower-case secret #$i not reported as file:line"; rc=1
+    else echo "selftest ok: lower-case secret #$i exits 1 and is redacted (code.ts:2)"; fi
+  done
+  # unquoted values count in config-style files
+  for val in "db_$pw=$lit" "$pw: $lit"; do
+    i=$((i + 1))
+    rm -rf "$tmp/lower"; mkdir -p "$tmp/lower"
+    ( cd "$tmp/lower" && git init -q . && printf 'x: 1\n%s\n' "$val" > app.yml && cp app.yml app.env )
+    out="$(bash "$script" "$tmp/lower" 2>&1)"; local lc=$?
+    if [ "$lc" -ne 1 ]; then echo "selftest FAIL: unquoted config secret #$i exited $lc, expected 1"; rc=1
+    elif printf '%s' "$out" | grep -qF -- "$lit"; then echo "selftest FAIL: unquoted config secret #$i was printed"; rc=1
+    elif ! printf '%s' "$out" | grep -q 'app.yml:2'; then echo "selftest FAIL: unquoted config secret #$i not reported as file:line"; rc=1
+    else echo "selftest ok: unquoted secret in a config file #$i exits 1 and is redacted (app.yml:2)"; fi
+  done
+
   # 2) a clean dir, including allowed look-alikes (*.example values, placeholders, docs naming variables): exit 0
   rm -rf "$tmp/clean"; mkdir -p "$tmp/clean/docs"
   ( cd "$tmp/clean" && git init -q . \
     && printf '%s=realvalue12345\n' "$var" > .env.example \
-    && printf '%s=\nAPI_TOKEN=<your-token>\nDB_PASSWORD=${DB_PASSWORD}\n' "$var" > settings.env \
+    && printf '%s=\n' "$var" > settings.env \
+    && cat >> settings.env <<'ENVEOF'
+API_TOKEN=<your-token>
+DB_PASSWORD=${DB_PASSWORD}
+ENVEOF
+  )
+  ( cd "$tmp/clean" \
     && printf 'Set %s=abc123 in your shell.\n' "$var" > docs/setup.md \
     && printf 'hello\n' > a.txt )
+  # placeholders (the only ones), look-alike names, env references and exempt lock files: exit 0
+  ( cd "$tmp/clean" && cat > placeholders.ts <<'TSEOF'
+const password = ''
+password: "changeme"
+password: "your-password"
+password: "<password>"
+password: "${PASSWORD}"
+password: "$PASSWORD"
+const password = 'example'
+const password = 'placeholder'
+const tokenizer = "abc123"
+token_type: "bearer"
+const token = process.env.API_TOKEN
+type Props = { password: string }
+TSEOF
+    printf 'x:\n  %s: "%s"\n' "$pw" "$lit" > yarn.lock
+    printf 'x:\n  %s: "%s"\n' "$pw" "$lit" > pnpm-lock.yaml )
   out="$(bash "$script" "$tmp/clean" 2>&1)"; local cc=$?
   if [ "$cc" -ne 0 ]; then echo "selftest FAIL: clean dir exited $cc, expected 0"; printf '%s\n' "$out"; rc=1
   else echo "selftest ok: clean dir exits 0"; fi

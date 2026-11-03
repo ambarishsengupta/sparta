@@ -2,27 +2,40 @@
 # G2 scope check: fails when the diff touches a path outside the work order's "In scope:" list.
 #
 # Usage:  bash workflow/gates/scope_check.sh BASE_REF WO_FILE     (env WO_ID picks the work order)
+#         bash workflow/gates/scope_check.sh --parse-only WO_FILE (print the scope list; exit 0, or 2 on a parse error)
 #         bash workflow/gates/scope_check.sh --selftest
+#
+# The scope is the comma (or semicolon) separated list on the work order's "In scope:" line, nothing else.
+# Commentary goes on a separate "Note:" line, which is never read. An item with a parenthetical or with
+# whitespace inside it is a parse error (exit 2): it is never dropped or trimmed, so a path that is only
+# partly in scope can not be treated as fully in scope.
 #
 # Changed paths = `git diff --name-only BASE...HEAD` + modified-uncommitted + untracked files.
 # Always allowed: workflow/work-orders/**, workflow/evidence/**, workflow/STATE.md, workflow/goals/**,
 # and package-lock.json when package.json is in scope.
 set -uo pipefail
 
-# Prints the In scope: items (comma separated in the file) one per line, for the chosen work order.
+# Prints the In scope: items (comma or semicolon separated in the file) one per line, for the chosen
+# work order. Exit 2 on a malformed item (printed to stderr), 3 when no single work order is selected.
 parse_scope() {
   local wo_file="$1" wo_id="${WO_ID:-}"
   awk -v id="$wo_id" '
     /^# Work Order / { cur = $4; sub(/:$/, "", cur); next }
     /^In scope:/ {
       if (id != "" && cur != id) next
-      if (id == "" && seen) { multi = 1 }
+      if (seen) multi = 1
       seen = 1
-      line = $0; sub(/^In scope:[ \t]*/, "", line)
-      n = split(line, parts, /[ \t]*,[ \t]*/)
-      for (i = 1; i <= n; i++) { p = parts[i]; if (p ~ /NOT created/) continue; gsub(/^[ \t]+|[ \t]+$/, "", p); sub(/ \(.*\)$/, "", p); if (p != "") print p }
+      line = $0; sub(/^In scope:[ \t]*/, "", line); sub(/[ \t\r]+$/, "", line)
+      n = split(line, parts, /[,;]/)
+      for (i = 1; i <= n; i++) {
+        p = parts[i]; gsub(/^[ \t]+|[ \t]+$/, "", p)
+        if (p == "") { printf "scope_check: empty item in the In scope line (stray separator): %s\n", $0 > "/dev/stderr"; bad = 1; continue }
+        if (p ~ /[()]/) { printf "scope_check: parenthetical in an In scope item, put commentary on a Note: line: %s\n", p > "/dev/stderr"; bad = 1; continue }
+        if (p ~ /[ \t]/) { printf "scope_check: whitespace inside an In scope item (one path or glob per item): %s\n", p > "/dev/stderr"; bad = 1; continue }
+        print p
+      }
     }
-    END { if (multi) exit 3 }
+    END { if (bad) exit 2; if (multi) exit 3 }
   ' "$wo_file"
 }
 
@@ -58,7 +71,8 @@ check() {
   [ -f "$wo_file" ] || { echo "scope_check: work order file not found: $wo_file" >&2; return 2; }
   local scope rc
   scope="$(parse_scope "$wo_file")"; rc=$?
-  if [ "$rc" -eq 3 ]; then echo "scope_check: several work orders in $wo_file; set WO_ID" >&2; return 2; fi
+  if [ "$rc" -eq 3 ]; then echo "scope_check: several 'In scope:' lines in $wo_file; set WO_ID to pick one work order" >&2; return 2; fi
+  if [ "$rc" -ne 0 ]; then echo "scope_check: cannot parse the In scope line of $wo_file (WO_ID='${WO_ID:-}')" >&2; return 2; fi
   [ -n "$scope" ] || { echo "scope_check: no 'In scope:' line found in $wo_file (WO_ID='${WO_ID:-}')" >&2; return 2; }
 
   local always="workflow/work-orders/**
@@ -83,6 +97,7 @@ package-lock.json"; fi
 
   local violations="" f ok r
   while IFS= read -r f; do
+    [ -n "$f" ] || continue   # an empty diff yields one blank line: it is not a path
     ok=0
     for r in "${regexes[@]}"; do
       if printf '%s' "$f" | python3 -c 'import re,sys; sys.exit(0 if re.match(sys.argv[1], sys.stdin.read()) else 1)' "$r"; then ok=1; break; fi
@@ -99,7 +114,20 @@ package-lock.json"; fi
   return 0
 }
 
+parse_only() {
+  local wo_file="$1" out rc
+  [ -f "$wo_file" ] || { echo "scope_check: work order file not found: $wo_file" >&2; return 2; }
+  out="$(parse_scope "$wo_file")"; rc=$?
+  if [ "$rc" -eq 3 ]; then echo "scope_check: several 'In scope:' lines in $wo_file; set WO_ID to pick one work order" >&2; return 2; fi
+  if [ "$rc" -ne 0 ]; then return 2; fi
+  [ -n "$out" ] || { echo "scope_check: no 'In scope:' line found in $wo_file (WO_ID='${WO_ID:-}')" >&2; return 2; }
+  printf '%s\n' "$out"
+  return 0
+}
+
 selftest() {
+  # The selftest builds its own work orders and repo: nothing from the caller's environment may leak in.
+  unset WO_ID GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR
   local tmp start rc=0
   start="$(pwd)"
   tmp="$(mktemp -d)"
@@ -142,12 +170,79 @@ WO
   ( cd "$tmp" && bash "$script" no-such-ref workflow/work-orders/R.md >/dev/null 2>&1 ); out=$?
   if [ "$out" -ne 2 ]; then echo "selftest FAIL: an unknown base ref exited $out, expected 2"; rc=1
   else echo "selftest ok: unknown base ref exits 2"; fi
+  # empty diff: base equal to HEAD must pass, not fail on a blank path
+  ( cd "$tmp" && bash "$script" HEAD workflow/work-orders/R.md >/dev/null 2>&1 ); out=$?
+  if [ "$out" -ne 0 ]; then echo "selftest FAIL: an empty diff exited $out, expected 0"; rc=1
+  else echo "selftest ok: empty diff (base equals HEAD) exits 0"; fi
+  # the caller's WO_ID must not change the selftest: an unrelated WO_ID exported to the script is ignored by selftest()
+  ( cd "$tmp" && WO_ID=WO-9999 bash "$script" HEAD workflow/work-orders/R.md >/dev/null 2>&1 ); out=$?
+  if [ "$out" -ne 2 ]; then echo "selftest FAIL: a WO_ID naming no work order exited $out, expected 2"; rc=1
+  else echo "selftest ok: WO_ID naming no work order exits 2"; fi
+  # parser: strict, simple. Each case writes a work order file and runs --parse-only.
+  local wo="$tmp/parse.md" want
+  parse_case() { # label expected_exit expected_first_line_or_empty ; work order text on stdin
+    local label="$1" want_rc="$2" want_out="$3" got got_rc
+    cat > "$wo"
+    got="$(bash "$script" --parse-only "$wo" 2>/dev/null)"; got_rc=$?
+    if [ "$got_rc" -ne "$want_rc" ]; then echo "selftest FAIL: $label exited $got_rc, expected $want_rc"; rc=1
+    elif [ -n "$want_out" ] && [ "$got" != "$want_out" ]; then echo "selftest FAIL: $label printed [$(printf '%s' "$got" | tr '\n' '|')], expected [$want_out]"; rc=1
+    else echo "selftest ok: $label"; fi
+  }
+  parse_case "semicolon and comma both split items" 0 $'a/**\nb.txt\nc.txt' <<'WO'
+# Work Order WO-1: x
+In scope: a/**; b.txt, c.txt
+WO
+  parse_case "Note: line is commentary and is not read" 0 $'a/**' <<'WO'
+# Work Order WO-1: x
+In scope: a/**
+Note: b.txt (not in scope); apps/web is NOT created yet
+WO
+  parse_case "parenthetical on an item is a parse error" 2 "" <<'WO'
+# Work Order WO-1: x
+In scope: a/**, .gitignore (append only)
+WO
+  parse_case "an item naming NOT created is a parse error, not silently dropped" 2 "" <<'WO'
+# Work Order WO-1: x
+In scope: a/**, apps/web/lib/colour/** is NOT created yet
+WO
+  parse_case "a stray separator (empty item) is a parse error" 2 "" <<'WO'
+# Work Order WO-1: x
+In scope: a/**,, b.txt
+WO
+  parse_case "no In scope line is a parse error" 2 "" <<'WO'
+# Work Order WO-1: x
+Out of scope: everything.
+WO
+  parse_case "several work orders without WO_ID is a parse error" 2 "" <<'WO'
+# Work Order WO-1: x
+In scope: a/**
+# Work Order WO-2: y
+In scope: b/**
+WO
+  cat > "$wo" <<'WO'
+# Work Order WO-1: x
+In scope: a/**
+# Work Order WO-2: y
+In scope: b/**, package-lock.json
+WO
+  got="$(WO_ID=WO-2 bash "$script" --parse-only "$wo" 2>/dev/null)"; out=$?
+  if [ "$out" -ne 0 ] || [ "$got" != $'b/**\npackage-lock.json' ]; then echo "selftest FAIL: WO_ID=WO-2 did not select the second work order (exit $out)"; rc=1
+  else echo "selftest ok: WO_ID selects one work order of several"; fi
+  # a malformed In scope line makes the full check exit 2 too (never a silent pass)
+  printf '# Work Order WO-1: x\nIn scope: src/** (partly)\n' > "$tmp/workflow/work-orders/bad.md"
+  ( cd "$tmp" && bash "$script" main workflow/work-orders/bad.md >/dev/null 2>&1 ); out=$?
+  if [ "$out" -ne 2 ]; then echo "selftest FAIL: a malformed In scope line exited $out in the full check, expected 2"; rc=1
+  else echo "selftest ok: malformed In scope line exits 2 in the full check"; fi
   cd "$start" && rm -rf "$tmp"
   [ "$rc" -eq 0 ] && echo "scope_check selftest: PASS"
   return "$rc"
 }
 
 if [ "${1:-}" = "--selftest" ]; then selftest; exit $?; fi
-if [ "$#" -ne 2 ]; then echo "usage: scope_check.sh BASE_REF WO_FILE | --selftest" >&2; exit 2; fi
+if [ "${1:-}" = "--parse-only" ]; then
+  if [ "$#" -ne 2 ]; then echo "usage: scope_check.sh --parse-only WO_FILE" >&2; exit 2; fi
+  parse_only "$2"; exit $?
+fi
+if [ "$#" -ne 2 ]; then echo "usage: scope_check.sh BASE_REF WO_FILE | --parse-only WO_FILE | --selftest" >&2; exit 2; fi
 check "$1" "$2"
 exit $?

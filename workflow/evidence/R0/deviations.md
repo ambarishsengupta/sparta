@@ -4,3 +4,5 @@
 3. Environment: no Docker or Supabase CLI here, so the R0 items "local Supabase, first migrations, pgTAP in CI" are NOT built or verified in R0. They move to R2 and are marked blocked-by-environment in STATE.md.
 4. The CI secret scan (BR-43) is added in the R0 fix loop as `workflow/gates/secret_scan.sh`.
 5. Spec-level ownership conflicts found by Spec QC (R0 work orders edit paths that section 3.1 gives to other makers): accepted for R0 because the build runs with one maker per work order and the owner delegated approvals; section 3.1 will be updated in the R0 retro.
+6. CI runs gate.sh without GATE_BASE, so the scope check runs only when invoked by hand or by the orchestrator at each work order; R1 retro to decide whether to enforce it in CI
+7. secret_scan checks the working tree, not git history

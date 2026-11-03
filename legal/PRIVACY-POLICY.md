@@ -2,8 +2,8 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.2 (draft for the academic pilot) |
-| Date | 2026-10-22 |
+| Version | 0.3 (draft for the academic pilot) |
+| Date | 2026-10-29 |
 | Applies to | The Sparta pilot (3 months), consumer app and vendor portal |
 | Review status | Written by the project team with AI assistance. **Not reviewed by a lawyer.** A professional review is required before any public or commercial launch. |
 
@@ -25,11 +25,11 @@ The pilot is run by the **Sparta project team**, three students taking part in t
 | --- | --- | --- |
 | Invitation | The email address we invited, when you were invited and joined, and an optional short note by the team | To limit the pilot to invited people |
 | Account | Email address, password (stored only as a secure hash by our sign-in provider) or, if you sign in with Google, the Google account identifier, name and profile picture link that Google shares, display name, country, hemisphere, preferred currency, preferred occasions (optional), your declaration that you are 18 or over | To run your account and show seasons and prices correctly |
-| Wardrobe | Items you add: category, colour, fit, material, pattern, size, brand, store, price, dates, condition rating, tags, notes, photos | To show and organise your wardrobe |
+| Wardrobe | Items you add: category, colour, fit, material, pattern, size, brand, store, price, dates, condition rating, tags, notes, photos, and for items added by photo a short list of 32 numbers that describe the shape of the garment | To show and organise your wardrobe, to suggest a category for photo items and to suggest outfits |
 | Purchases | Date, store, price, currency, quantity, notes; receipt images or files you upload | To keep your purchase history |
 | Receipts | The image or file you upload, and the lines read from it (item description, quantity, price, store, date). In the lines we keep, card numbers, email addresses, phone numbers and loyalty or membership numbers are masked and address lines are dropped; the raw text read from the scan is never stored. The image or file itself is not masked: it is kept in private storage (photos are resized and their location and other metadata removed; PDFs are kept as uploaded), until you delete it or your account, so cover or crop card numbers and addresses before you upload. | To fill in purchases for you |
 | Wishlist and plans | Wishlist entries, target prices, planned months, budgets | To plan purchases |
-| Outfits | Outfits, plans, optional "I wore this" entries, and whether you accepted or rejected outfit suggestions | To plan outfits and improve the suggestion rules |
+| Outfits | Outfits, plans, optional "I wore this" entries, and whether you accepted or rejected outfit suggestions | To plan outfits, to suggest outfits from your own items and to improve the suggestion rules by hand |
 | Consent and terms | Which notice and terms you accepted, and when | To prove that you agreed |
 | Usage | Pseudonymous events such as "item added" (no free text) | To measure whether the pilot works |
 | Technical | IP address, device and browser details, in the logs of our hosting providers and in our sign-in provider's session records | To keep the service secure and working |
@@ -46,6 +46,8 @@ We **do not** collect your contacts, your precise location, payment card details
 4. **To keep the pilot secure and fix problems.**
 
 We do not sell your data, show you advertising, or let vendors contact you. We do not use your data to train AI or machine-learning models. If a later phase wants to, we will ask you again with a new notice, and you can say no and leave.
+
+**Suggestions.** Outfit suggestions are made automatically from your own items by fixed style rules and a scoring step that run in your browser. For items you add by photo, a small image program on our worker computer looks at the cut-out picture and suggests a category, and makes the 32 shape numbers used to put similar items first when you swap one. That program was trained before the pilot on a public set of garment pictures (Fashion-MNIST) and tested on photos of the team's own clothes, not on anything from participants. Suggestions are never decisions about you: nothing changes unless you accept them, and the same items always give the same suggestions. We may adjust the style rules by hand after reading overall counts of accepted and rejected suggestions.
 
 **Why taking part means sharing.** The point of the pilot is to find out whether group data from real wardrobes is useful to vendors. Without it there is nothing to test, so sharing is part of taking part and cannot be switched off while you are in the pilot. The full product, if it ever exists, is planned to let each user turn sharing off.
 
@@ -69,7 +71,7 @@ We use these providers to run the pilot. They process data for us under their st
 | Vercel | Hosts the web app and prepares your data exports; its functions run in Mumbai, India |
 | GitHub | Stores our code and runs scheduled jobs (no user data) |
 | An email service (its name and hosting region will be added here before the first invitation is sent) | Sends account emails: vendor portal invitations, email verification, password reset, export ready, deletion confirmation and the end-of-pilot notice |
-| A team member's computer | Runs the program that removes photo backgrounds and reads receipts. It is encrypted, has no open inbound connections, and deletes temporary files after each job. It also keeps the weekly backups of the database, encrypted, for up to 30 days; the key to open them is not stored on this computer. |
+| A team member's computer | Runs the program that removes photo backgrounds, guesses what kind of garment a photo shows and reads receipts. It is encrypted, has no open inbound connections, and deletes temporary files after each job. It also keeps the weekly backups of the database, encrypted, for up to 30 days; the key to open them is not stored on this computer. |
 | Another team member's private storage | Keeps a second encrypted copy of the weekly database backups, for up to 30 days. Its provider and country will be added here before the pilot opens. |
 
 Your data may be processed outside your country, depending on the provider's region. We choose a region suited to the participants' country wherever possible.
@@ -81,6 +83,7 @@ Your data may be processed outside your country, depending on the provider's reg
 | Your account data | Until you delete your account or the pilot ends |
 | Invitation list (your email address) | Until you leave the pilot or the pilot ends. If you never sign up, it is deleted when the pilot ends. |
 | Receipt-reading results (the lines) | 7 days |
+| Shape numbers of photo items | With the item: deleted when you delete the item or your account |
 | Data exports we prepare for you | 7 days |
 | Group figures for vendors | The dashboard shows only the latest run. Reviewed monthly reports (group figures only) and the logs of runs (both with no personal data) are kept for the pilot |
 | Backups | Up to 30 days. A deleted account can remain in backups for up to 30 days and is not restored. |

@@ -3,17 +3,17 @@
 | Field | Value |
 | --- | --- |
 | Document | High-Level Design |
-| Version | 1.2 (final; amended after the full document review) |
-| Date | 2026-10-22 |
+| Version | 1.3 (adds the recommendation engine; amends 1.2) |
+| Date | 2026-10-29 |
 | Author | Business analyst (drafted for the product owner) |
 | Reviewer | C. Prashanth (Solution Architect) |
 | Approver | Ambarish Sengupta (Product Owner) |
-| Traces to | BRD v1.2 (BR-xx), FDD v1.3 (FR-xx, NFR-xx); legal pack in `legal` |
+| Traces to | BRD v1.3 (BR-xx), FDD v1.4 (FR-xx, NFR-xx); legal pack in `legal` |
 | Status | Final |
 
 ## 1. Purpose and scope
 
-This document describes the architecture of the Sparta pilot: the main components, how they interact, where data lives, how privacy is enforced, and how the system is deployed. Class-level and table-level detail is in the LLD. LLD section 16 (LD-1 to LD-7) lists where the LLD refines or departs from this document.
+This document describes the architecture of the Sparta pilot: the main components, how they interact, where data lives, how privacy is enforced, and how the system is deployed. Class-level and table-level detail is in the LLD. LLD section 16 (LD-1 to LD-8) lists where the LLD refines or departs from this document.
 
 ## 2. Design drivers
 
@@ -26,8 +26,9 @@ This document describes the architecture of the Sparta pilot: the main component
 | Consent recorded; delete and export on request | BR-20 to BR-24 | Consent table, deletion cascade, export built by a server function. |
 | Web first, installable PWA | BR-13 | Single responsive web app; no native clients in the pilot. |
 | Open source under GPL-3.0 | BR-43 | No secrets in the repository; configuration by environment; only components that can be self-hosted. |
-| Python for later ML | Earlier product decision | A Python service exists from the start for image, OCR and later ML work. |
+| Python for ML | Earlier product decision | A Python service exists from the start for image, OCR and ML work, including the garment model of the recommendation engine. |
 | Image and receipt processing | BR-05, BR-06 | Open-source tools in a Python worker. |
+| Recommendation engine built before there is pilot data | BR-11, BR-50 to BR-55 | Rules and ranking written by the style specialist; a small image model trained offline on public Fashion-MNIST data; nothing is trained on participants (BR-28, BR-52). |
 
 ## 3. Architecture overview
 
@@ -35,7 +36,7 @@ The design uses four building blocks.
 
 1. **Web app** (Next.js, TypeScript) on Vercel. One codebase serves the consumer PWA, the vendor portal and the minimal admin console, separated by role and route.
 2. **Supabase** for Postgres, authentication, file storage, row-level security (RLS) and scheduled database jobs.
-3. **Python worker** (FastAPI app in a Docker container, self-hosted on a team member's always-on machine) for background removal, receipt OCR and parsing, and later ML. It pulls its jobs from the database; nothing connects in to it.
+3. **Python worker** (FastAPI app in a Docker container, self-hosted on a team member's always-on machine) for background removal, receipt OCR and parsing, and the garment model (a small image model that runs on each photo). It pulls its jobs from the database; nothing connects in to it.
 4. **Scheduled jobs** on GitHub Actions for catalogue collection and housekeeping.
 
 ```mermaid
@@ -69,11 +70,11 @@ flowchart LR
 | **Web app, vendor area** | Vendor Pilot Agreement acceptance, dashboard, gaps, report view, feed upload and validation. Reads insights only through the aggregate functions; the only rows it writes are the vendor's own feed items (through a server function), agreement acceptances and its own usage events (FDD section 16). | FR-70 to FR-95 |
 | **Web app, admin area** | Vendor and participant invitations, supported countries, catalogue sources, aggregate run monitor, vendor query log, deletion queue, report review. | FR-8, FR-9, FR-69, FR-79, FR-86, FR-88, FR-100 to FR-104 |
 | **Web server functions** (Vercel route handlers) | Operations that must run on the server: manage the invitation list and invite vendors, delete accounts (including Leave the pilot), build exports and return signed download links, issue short-lived signed storage URLs to the worker for the job it is running, validate and publish vendor feeds, generate and review reports, and the daily housekeeping run. Those that need the Supabase secret key use it only here; it is never sent to the browser. | FR-8, FR-62, FR-63, FR-66, FR-70, FR-79, FR-90 to FR-92 |
-| **Outfit suggestion logic** | Rule engine running in the web app from a shared rules file, using the user's own items. No server needed. | FR-52 to FR-54, section 14 of FDD |
+| **Recommendation engine, ranking** | Rule engine and ranking running in the web app from a shared rules file, using the user's own items and their shape features. No server needed, and no wardrobe data leaves the browser to make a suggestion (section 5.8). | FR-52 to FR-54, FR-58, FR-59, section 14 of FDD |
 | **Supabase Auth** | Email and password plus Google sign-in, email verification, sessions, roles. Apple sign-in is deferred (needs a paid Apple developer account). | FR-1, FR-70 |
 | **Supabase Postgres** | All structured data, RLS, aggregate functions, scheduled jobs (`pg_cron`). | all |
 | **Supabase Storage** | Private buckets for item images, receipts and exports; signed URLs only. | FR-23, FR-32, FR-46, FR-62 |
-| **Python worker** | Polls the `jobs` table for queued photo and receipt jobs, runs background removal, compression and thumbnails, or PaddleOCR, line parsing and redaction, and writes results back. Stateless, outbound connections only; a limited database role for the job queue, and files only through short-lived signed URLs, never the Supabase secret key (LLD 7.1, LD-3). Later also ML. Its host also runs the weekly encrypted database backup, outside the worker container (section 8); backups are never stored as GitHub Actions artifacts. | FR-23, FR-40 to FR-45, FR-47, NFR-8 |
+| **Python worker** | Polls the `jobs` table for queued photo and receipt jobs, runs background removal, compression, thumbnails and the garment model (category suggestion and shape features, LLD 7.7), or PaddleOCR, line parsing and redaction, and writes results back. Stateless, outbound connections only; a limited database role for the job queue, and files only through short-lived signed URLs, never the Supabase secret key (LLD 7.1, LD-3). Its host also runs the weekly encrypted database backup, outside the worker container (section 8); backups are never stored as GitHub Actions artifacts. | FR-23, FR-23a, FR-40 to FR-45, FR-47, NFR-8 |
 | **GitHub Actions** | Scheduled catalogue collection from approved sources, taxonomy mapping, daily exchange-rate fetch, a daily uptime ping to keep the free database from pausing, daily housekeeping (export expiry, deletion retries), and a health check every 6 hours that alerts the team. | FR-33, FR-64, FR-100 to FR-104 |
 | **Currency rates API** | Daily rates for display conversion and for the price bands in the aggregates (a free, keyless source such as the ECB-based Frankfurter service). Fetched by a scheduled GitHub Actions job and stored in the database. | FR-33 |
 | **Email provider** | Transactional email only: vendor portal invitations, verification, password reset, export ready, deletion confirmation, end-of-pilot notice (FR-69). Supabase Auth sends through it as custom SMTP; the web server functions send the rest. | FR-60, FR-62, FR-63, FR-70 |
@@ -84,8 +85,8 @@ flowchart LR
 
 1. The browser resizes the image to at most 1,200 pixels on the long side, re-encoding it so that no EXIF metadata (such as GPS location) is kept, and uploads it to the private item-images bucket.
 2. The web app inserts a job row (type photo, status queued). The worker picks it up on its next poll (every few seconds).
-3. The worker removes the background, saves a compressed WebP cut-out and 320-pixel WebP thumbnails of the cut-out and of the original to storage, and marks the job done.
-4. The browser shows the preview. The user accepts or keeps the original, completes the attributes and saves. The image not chosen and its thumbnail are then deleted, so each photo item keeps one full-size image and one thumbnail.
+3. The worker removes the background, saves a compressed WebP cut-out and 320-pixel WebP thumbnails of the cut-out and of the original to storage, runs the garment model on the cut-out (a category and sub-type guess with its confidence, and 32 shape numbers; skipped without failing the job if the model is off or errors), and marks the job done.
+4. The browser shows the preview, with the category and sub-type pre-filled when the guess was confident enough (FR-23a). The user accepts or keeps the original, completes the attributes and saves; the shape numbers are saved with the item. The image not chosen and its thumbnail are then deleted, so each photo item keeps one full-size image and one thumbnail.
 
 ### 5.2 Receipt scan (FR-40 to FR-47)
 
@@ -130,7 +131,7 @@ flowchart TD
 
 *Figure 3. Aggregation flow.*
 
-- A nightly `pg_cron` job builds an anonymised fact table: one row per owned, wishlisted or purchased item, with attributes (category, colour family, fit, brand, size, season, price band, condition band, region) and a salted hash in place of the user ID. No names, emails, images, receipts, notes or outfit logs enter it.
+- A nightly `pg_cron` job builds an anonymised fact table: one row per owned, wishlisted or purchased item, with attributes (category, colour family, fit, brand, size, season, price band, condition band, region) and a salted hash in place of the user ID. No names, emails, images, receipts, notes, outfit logs or shape features enter it.
 - The job computes segment counts by distinct hashed user, drops segments below 10, rounds counts to the nearest 5, and writes the results to aggregate tables.
 - Vendors reach aggregate data only through database functions in `analytics`, and each function checks the caller's role. Supabase gives every signed-in user, consumer or vendor, the same database role. So vendors are kept out of consumer data in `app` by RLS policies that require the consumer role, and out of `analytics_private` and the aggregate tables because those are not exposed and have no grants. Apart from these functions, a vendor can read only their own account records (profile and acceptances) and the taxonomy lookups (LLD 10, LD-1).
 - The salt rotates every run, so the hashes cannot be joined across runs.
@@ -149,13 +150,36 @@ A scheduled GitHub Actions job runs a Python collector that reads only from sour
 
 The vendor uploads a CSV or JSON file. A server function validates every row against the shared taxonomy and shows errors. On confirmation the rows are written as vendor catalogue items owned by that vendor.
 
+### 5.8 Recommendation engine (FR-52 to FR-54, FR-58, FR-59, FR-23a)
+
+```mermaid
+flowchart TD
+  subgraph OFF["Before the pilot, offline"]
+    F[(Fashion-MNIST CSVs<br/>public data)] --> T[Train and test<br/>ml/recommendation-engine]
+    T --> M[Garment model<br/>ONNX file + model card]
+  end
+  M -->|baked into the worker image| P[Python worker<br/>photo job]
+  P -->|category guess, confidence,<br/>32 shape numbers| J[(Job result in Supabase)]
+  J --> B[Browser: item form<br/>pre-fills, user confirms]
+  B --> I[(Item + shape features<br/>owner-only rows)]
+  I --> R[Browser: rules, then ranking<br/>packages/rules]
+  R --> S[Up to three suggestions<br/>with reasons; swap choices]
+```
+
+*Figure 4a. Recommendation engine.*
+
+- **Rules first, ranking second.** The rule engine builds only outfits that pass the hard rules (occasion, season and the required pieces, FDD 14.1). The ranking step scores colour, pattern, layering and footwear matching, orders the outfits and orders swap choices (FDD 14.2). Both run in the browser, so a suggestion never sends wardrobe data to a server (FR-59).
+- **The garment model is trained once, offline.** It is trained on the public Fashion-MNIST files by a script in `ml/recommendation-engine`, exported to ONNX and baked into the worker image with a model card that records the data checksums, accuracy and known limits (LLD 7.7). Nothing in the pilot retrains it.
+- **No learning from participants.** Neither stage uses accepted or rejected suggestions, outfit logs or purchases to change its behaviour (FR-58, BR-52). The same inputs always give the same suggestions.
+- **The model helps; it does not decide.** A guess only pre-fills a form the user confirms, and shape numbers only order the swap list. If the model is off or wrong, suggestions still work from the rules.
+
 ## 6. Data architecture
 
 ### 6.1 Schemas
 
 | Schema | Contents | Who can read |
 | --- | --- | --- |
-| `app` | Profiles (including the `deleting` flag behind the admin deletion queue), items, purchases, receipts, wishlist, outfits (with plans and logs), collections, tags, suggestion feedback, analytics events, pilot-notice consent records, Terms and Privacy Policy acceptances, jobs | The owning user (RLS and the consent gate, section 5.3); the service role |
+| `app` | Profiles (including the `deleting` flag behind the admin deletion queue), items, item shape features, purchases, receipts, wishlist, outfits (with plans and logs), collections, tags, suggestion feedback, analytics events, pilot-notice consent records, Terms and Privacy Policy acceptances, jobs | The owning user (RLS and the consent gate, section 5.3); the service role |
 | `catalog` | Taxonomy lookup tables (including colour swatches and the country-to-region map), catalogue items (from approved sources or vendor feeds), sources, vendors and their members, vendor agreement acceptances | Lookup tables: all signed-in users. Active catalogue items: eligible consumers (consent gate). Agreement acceptances: the vendor's own members. Sources, and vendors' changes to their own items: the service role through server functions only |
 | `analytics_private` | Anonymised fact table (hashed user, attributes only) | The aggregation job only |
 | `analytics` | Aggregate tables and the functions vendors call | Vendors through functions only |
@@ -178,6 +202,7 @@ erDiagram
   VENDOR ||--o{ CATALOG_ITEM : supplies
   SOURCE ||--o{ CATALOG_ITEM : provides
   PROFILE ||--o{ JOB : requests
+  ITEM ||--o| ITEM_FEATURES : has
 ```
 
 *Figure 4. Core entities.*
@@ -223,6 +248,7 @@ The free Supabase plan includes about 1 GB of file storage and 5 GB of egress a 
 | Transport and storage | TLS everywhere; managed encryption at rest by the providers. |
 | Input handling | Validated schemas on forms and feed files; upload size and type limits; the worker never executes uploaded content. |
 | Scraping conduct | `robots.txt` check, rate limit, identifying user agent, source records (FR-100, FR-101). |
+| Garment model | Trained only on public Fashion-MNIST data and tested on photos owned by the team, never on participant photos. The model file is built into the worker image and its SHA-256 is recorded in the model card and checked in CI, so a changed model is noticed. Shape features are the user's own data: owner-only rows, included in the export, deleted with the item, and never read by the aggregation. |
 | Logging | No personal data or free text in logs; aggregate run audit kept. |
 | Open-source hygiene | Secret scanning in CI; sample environment file only. |
 
@@ -281,14 +307,17 @@ The expected pilot cost is zero. The budget ceiling of about $20 a month would n
 ```
 sparta/
   apps/web/                 Next.js app (consumer, vendor, admin)
-  services/worker/          FastAPI worker (photo, receipt, later ML)
+  services/worker/          FastAPI worker (photo, receipt, garment model)
   jobs/collector/           Catalogue collector (Python, run on GitHub Actions)
   supabase/
     migrations/             Schema, RLS policies, functions, cron jobs
     seed/                   Taxonomy and sample data
     tests/                  RLS and aggregation tests
   packages/taxonomy/        Shared taxonomy JSON, types and validators
-  packages/rules/           Outfit rule engine and rules data (rules.json)
+  packages/rules/           Recommendation engine: rules, ranking and data (rules.json)
+  ml/recommendation-engine/ Garment model: training, evaluation and export scripts, model card
+  data/recommendation-engine/
+    mnist/                  Fashion-MNIST CSVs (public data; git-ignored, not committed)
   docs/                     BRD, FDD, HLD, LLD, charter
   legal/                    Legal and privacy pack (pilot drafts, not legal advice)
   .github/workflows/        CI, deploy, scheduled jobs
@@ -306,9 +335,11 @@ For the SA to confirm or change.
 | AD-3 | Python worker, self-hosted in Docker, pulling jobs from the database | Browser-side models; paid APIs; Hugging Face or Render hosting | Open-source and free, enough memory for PaddleOCR and background removal, no inbound exposure, portable to any host, and the base for later ML. Browser-side is the last fallback. |
 | AD-4 | Aggregation as SQL in Postgres with `pg_cron` | Python batch job; separate warehouse | Keeps raw data in the database and is simple at pilot scale. |
 | AD-5 | Receipt OCR with PaddleOCR and rule-based line parsing (SA decision) | Tesseract; cloud document APIs | Better accuracy than Tesseract on receipts, open source and consistent with GPL-3.0. Needs more memory, which drives the worker host choice. The user always confirms the draft (FR-42). |
-| AD-6 | Outfit rules run in the web app from a shared rules file | Server-side service | No server needed, easy to review by the style specialist, and a clean seam for a later ML service. |
+| AD-6 | Outfit rules and ranking run in the web app from a shared rules file | Server-side service | No server needed, no wardrobe data leaves the browser, easy to review by the style specialist, and a clean seam for a later ML service. |
 | AD-7 | Collector on GitHub Actions | Always-on scraper | Free for public repositories; scheduled and auditable. |
 | AD-8 | Source images are not stored (links only) | Cache images | Matches the data-sourcing rules in BRD section 9. |
+| AD-9 | Garment model: a small convolutional network trained on Fashion-MNIST, exported to ONNX and run on CPU in the existing worker | A pretrained image model fine-tuned on team photos (better on real photos, but larger, needs a licence check and more worker memory); a cloud vision API (paid, sends photos to a third party); running the model in the browser | Uses the public data the team already holds, adds little memory and no new service or recipient, and keeps photos on the worker host. Revisit with a pretrained model if accuracy on team photos is below the bar in FDD 14.4. |
+| AD-10 | The recommendation engine is built before the pilot and does not learn from participants | Personalising from accepted and rejected suggestions; training on pilot data | Keeps the promise that no participant data trains any model (BR-28, BR-52), keeps results repeatable (FR-58), and avoids a new notice. Learning from participants is open item OI-4. |
 
 ## 14. Risks and open items
 
@@ -320,14 +351,17 @@ For the SA to confirm or change.
 | HR-4 | Free tiers change terms during the pilot. | Keep the design portable (standard Postgres, Docker worker). |
 | HR-5 | RLS mistakes expose data. | Automated RLS tests in CI; peer review of all policies by the SA. |
 | HR-6 | Small groups make aggregates easy to difference. | Rounding, suppression of differences, review of query shapes. |
+| HR-7 | The garment model is trained on small greyscale studio pictures and may misjudge phone photos (white, folded or patterned items). | A confidence threshold, suggestions only, a pre-launch test on team photos, and a switch to turn the feature off (FDD 14.4, LLD 7.7). |
+| HR-8 | Fashion-MNIST says nothing about which clothes go together, so outfit quality rests on the rules and weights. | Style specialist owns rules and weights and reviews sample suggestions (FDD 14.4); acceptance is measured during the pilot. |
 | HOI-1a | Closed. Worker is self-hosted in Docker on a team member's always-on machine (AD-3). Render free and Hugging Face were considered and not chosen. | C. Prashanth |
 | HOI-1b | Closed. OCR engine is PaddleOCR with rule-based parsing (AD-5). | C. Prashanth |
 | HOI-2 | Closed. Pilot sign-in is email and password plus Google. Apple is deferred until after the pilot (FR-1, BR-01). | C. Prashanth |
 | HOI-3 | Closed. No staging environment: Vercel previews and a dev Supabase project. | C. Prashanth |
+| HOI-4 | Confirm AD-9 and AD-10, and that the garment model fits the worker's memory budget alongside PaddleOCR and background removal (one job at a time, LLD 7.1). | C. Prashanth |
 
 ## 15. Evolution beyond the pilot
 
 - Native apps can reuse the same Supabase backend and shared taxonomy.
-- ML recommendations and inspiration matching move into the Python worker, which already exists.
+- If participants agree under a new notice (BRD OI-4), accepted and rejected suggestions could be used to learn what each user likes; a better image model (AD-9) could replace the Fashion-MNIST model. Inspiration matching would also move into the Python worker, which already exists.
 - Vendor billing, promotions and the affiliate flow would need a payments service and a review of free-tier and licence terms.
 - A larger user base would move to the paid Supabase plan and a dedicated worker host.

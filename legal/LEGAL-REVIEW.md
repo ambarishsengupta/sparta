@@ -2,8 +2,8 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.2 |
-| Date | 2026-10-22 |
+| Version | 0.3 |
+| Date | 2026-10-29 |
 | Nature | A check of the BRD and FDD against the main legal frameworks, written by an AI assistant at the product owner's request because the team has no legal expert. **It is not legal advice.** |
 | Decision | The product owner has decided that a **professional review is out of scope for the pilot**, which is treated as an academic proof of concept, and required before any public, commercial or wider launch. |
 | Frameworks considered | India's Digital Personal Data Protection Act, 2023 (and Rules, 2025); the EU and UK GDPR; CCPA/CPRA; research-ethics norms; scraping and database law in general; open-source licensing |
@@ -31,13 +31,14 @@
 | 9 | No breach plan | Medium | **Resolved** | `INCIDENT-RESPONSE-PLAN.md`. |
 | 10 | Backups keep deleted data up to 30 days | Low | **Resolved** | Disclosed in Privacy Policy sections 7 and 8; deletion within 7 days, backups within 30. |
 | 11 | Age checked only by declaration | Low | **Accepted** | Adults only, invitation only, 18+ tick recorded (FR-2); terms say under 18 must not use the app. |
-| 12 | Purpose limitation: later ML training | Medium | **Resolved** | The notice and policy say no model training; a new purpose needs a new notice and acceptance (BR-28; FR-5). |
+| 12 | Purpose limitation: later ML training | Medium | **Resolved** | The notice and policy say no model training; a new purpose needs a new notice and acceptance (BR-28; FR-5). The recommendation engine added on 2026-10-29 is built on public data and does not train on participants (BR-52; FDD 14). |
 | 13 | Scraping: "public" is not "permitted" | Medium | **Resolved** (rules), **Accepted** (residual), **Deferred** (professional opinion before any paid tier) | `DATA-SOURCING-POLICY.md`: ask first, attributes only, `robots.txt`, rate limit, takedown, record keeping. |
 | 14 | No vendor agreement | Medium | **Resolved** | `VENDOR-PILOT-AGREEMENT.md`, accepted in the portal and recorded (FR-94). |
 | 15 | No terms of use | Medium | **Resolved** | `TERMS-OF-USE.md`, accepted at sign-up and recorded (FR-68). |
 | 16 | Cookies and analytics | Low | **Resolved** | Only essential cookies and first-party pseudonymous events; stated in the Privacy Policy section 11. |
-| 17 | Open-source and model licences | Low | **Accepted**, with a check | GPL-3.0 code with MIT and Apache-2.0 libraries is generally compatible. Check each model's licence before release (LLD open item LOI-3). |
+| 17 | Open-source and model licences | Low | **Accepted**, with a check | GPL-3.0 code with MIT and Apache-2.0 libraries is generally compatible. Check each model's licence before release (LLD open items LOI-3 and LOI-10; the Fashion-MNIST data and the garment model are covered by LOI-10). |
 | 18 | The "Sparta" name may clash with trademarks | Low | **Deferred** | Do a trademark search before any public launch. |
+| 19 | Automated suggestions (outfits, and a category guessed from a photo) | Low | **Resolved** | Added 2026-10-29. Suggestions have no legal or similarly significant effect, always need the user's choice, give a one-line reason (FDD R8), use only the user's own items, and are not trained on participant data (BR-52; FDD 14). Disclosed in Privacy Policy sections 3, 4 and 6 and Terms of Use sections 7 and 8. |
 
 ## 3. Things that remain with the team
 

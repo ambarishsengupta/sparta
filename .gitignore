@@ -1,4 +1,7 @@
 # Raw and cleaned H&M row-level data is never committed (size and competition licence)
-data/
+submissions/**/data/
 submissions/D2/out/
 submissions/**/raw/
+
+# Fashion-MNIST CSVs for the recommendation engine (size and licence)
+data/recommendation-engine/mnist/

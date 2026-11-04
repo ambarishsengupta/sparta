@@ -7,3 +7,4 @@
 6. CI runs gate.sh without GATE_BASE, so the scope check runs only when invoked by hand or by the orchestrator at each work order; R1 retro to decide whether to enforce it in CI
 7. secret_scan checks the working tree, not git history
 8. R3 WO-0020 changed about 1,108 counted lines (about 550 production, 550 tests) against the 500 limit; accepted (scaffold plus tests), logged here by the orchestrator. Also: Next.js builds with webpack (`--webpack`) because Turbopack failed on the workspace packages' `.js`-suffixed TypeScript imports.
+9. R3 WO-0021 changed about 872 counted lines (466 production, 406 tests) against the 500 limit; accepted and logged by the orchestrator.

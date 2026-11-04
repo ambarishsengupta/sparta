@@ -1,7 +1,7 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-04 (R0 to R4 merged; stopped at weekly usage 86%)
-Status: waiting-for-owner
+Updated: 2026-11-04 (weekly usage 87%; resume scheduled)
+Status: waiting-for-limit-reset
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
 Integration branch: none yet (release/R0 is cut from main after the preconditions below are ticked)
@@ -63,3 +63,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-04 (later): R1 engine core built and merged to main after 2 fix loops (WO-0006, 0007, 0008). WO-0010 (H&M pairing prior pipeline) was imported early: prior AUC 0.608 [0.601, 0.615] ships narrowly; artifacts stay in data/recommendation-engine/artifacts (git-ignored); manifest still not-built (G4). AI style review: 80.8% acceptable (not the specialist's G9). R3 (app) is next, then R4 TS parts (WO-0011, WO-0012).
 - 2026-11-04 (later): R3 (app) merged to main after Spec QC pass 2. R4 built on release/R4 (WO-0010 prior, WO-0011 engine, WO-0013 unlock layer rule, WO-0012 app): gate green, 672 tests. R4 verification (Spec QC and G4/Model QC, Opus) was interrupted by the 5-hour limit and resumed. R2, R5 to R8 not started: blocked by environment (no Docker/Supabase CLI/torch) except where noted in the final report.
 - 2026-11-04 (end): R4 merged to main after Spec QC PASS, Model QC PASS and G4 (FAIL on the pre-existing D3 notebook exposure, recorded in legal finding 20; R4's own diff clean). MVP-1 as built: R0 harness, R1 engine, R3 app on a browser-local repository, R4 learned layer (off by default). NOT built: R2 (Supabase accounts/RLS/data), R5 (worker, photo path, garment models), R6, R7, R8: blocked by the environment (no Docker, Supabase CLI or torch) and by the weekly usage limit. Next when resumed: R5a garment model v1 on the Fashion-MNIST IDX files if torch is installable; R2 needs Docker and Supabase CLI.
+- 2026-11-04 (owner said 'Continue with it'): weekly usage was 87% (stop threshold 90%), resets 21:30 IST. Resume trigger created: sparta-resume-202611042132 (fires 2026-11-04 21:32 IST, one-shot) to continue with R5a (garment model v1 on the Fashion-MNIST IDX files). Resume trigger: sparta-resume-202611042132. In-flight branches: none.

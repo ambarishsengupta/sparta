@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { CATEGORIES, COLOUR_FAMILIES, conditionBandOf } from '@sparta/taxonomy';
 import type { Category, ColourFamily } from '@sparta/taxonomy';
+import { isOffered } from '@sparta/rules';
 import { DEMO_WARDROBE_NAMES, loadDemoWardrobe } from '../../lib/demo';
 import { NO_FILTER, filterItems } from '../../lib/filters';
 import type { WardrobeFilter } from '../../lib/filters';
@@ -11,7 +12,7 @@ import { useRepository } from '../use-repository';
 
 const REASONS: ArchiveReason[] = ['sold', 'donated', 'discarded', 'lost'];
 
-function ItemCard({ item, onArchive, onRestore }: {
+export function ItemCard({ item, onArchive, onRestore }: {
   item: StoredItem; onArchive: (reason: ArchiveReason) => void; onRestore: () => void;
 }) {
   const [reason, setReason] = useState<ArchiveReason>('sold');
@@ -25,6 +26,9 @@ function ItemCard({ item, onArchive, onRestore }: {
           {item.colourFamily} · {item.subType}{band ? ` · ${band}` : ''}
           {item.favourite ? ' · Favourite' : ''}{item.status === 'archived' && item.archiveReason ? ` · ${item.archiveReason}` : ''}
         </p>
+        {item.status === 'active' && isOffered(item) && (
+          <Link href={`/outfits?anchor=${item.id}`} prefetch={false} className="button secondary" aria-label={`Build outfits around this: ${item.name}`}>Build outfits around this</Link>
+        )}
         {item.status === 'archived' ? (
           <button type="button" onClick={onRestore}>Restore {item.name}</button>
         ) : (

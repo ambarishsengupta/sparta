@@ -16,3 +16,7 @@
 .sheet h3 { margin: 0; font-size: 1rem; }
 .choice { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; }
 .notice { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.anchor { margin: 8px 0 16px; padding: 12px; border: 2px solid var(--accent); border-radius: var(--radius); display: grid; gap: 8px; }
+.anchor h2 { margin: 0; font-size: 1.1rem; }
+.unlock { margin-top: 24px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); }
+.unlock h2 { margin: 0 0 4px; font-size: 1.1rem; }

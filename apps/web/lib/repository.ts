@@ -1,4 +1,4 @@
-import type { Fit, Material, SubType } from '@sparta/taxonomy';
+import type { ColourFamily, Fit, Material, SubType } from '@sparta/taxonomy';
 import type { Item, ItemId, Slot } from '@sparta/rules';
 import type { Occasion } from '@sparta/taxonomy';
 
@@ -27,10 +27,15 @@ export interface SavedOutfit {
 }
 export type OutfitInput = Omit<SavedOutfit, 'id' | 'createdAt'>;
 
+/** `unlock` marks an entry made by Wardrobe unlock (FR-59b); it never counts toward vendor figures (see lib/wishlist.ts). */
+export type WishlistOrigin = 'user' | 'unlock';
 export interface WishlistEntry {
   id: string;
   name: string;
   subType: SubType;
+  /** Both optional so entries saved before R4 still read; no origin means 'user'. */
+  colourFamily?: ColourFamily | null;
+  origin?: WishlistOrigin;
   note: string | null;
   createdAt: string;
 }

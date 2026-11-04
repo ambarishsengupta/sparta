@@ -12,7 +12,7 @@ import { OutfitsView } from './OutfitsView';
 import { SwapSheet } from './SwapSheet';
 
 const sources = import.meta.glob<string>(
-  ['./*.tsx', '../../app/outfits/**/*.tsx', '../../lib/**/*.ts', '!../../lib/**/*.test.ts', '../use-repository.ts'],
+  ['./*.tsx', '../../app/outfits/**/*.tsx', '../../lib/**/*.ts', '!../../lib/**/*.test.ts', '../use-repository.ts', '../use-learned.ts'],
   { query: '?raw', import: 'default', eager: true },
 );
 const NETWORK = /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|axios)\b|https?:\/\//;
@@ -42,12 +42,13 @@ describe('no request leaves the browser in the suggestion path (FR-59, CC4)', ()
   });
   it('covers every non-test file in lib, the repository hook, the demo loader and the local repository (WO-0022 item 2)', () => {
     const names = Object.keys(sources).map((f) => f.replace(/^.*\/(lib\/)/, '$1').replace(/^.*\/(use-repository\.ts)$/, 'components/$1'));
-    for (const f of ['lib/local-repository.ts', 'lib/demo.ts', 'lib/events.ts', 'lib/repository.ts', 'lib/item-form.ts', 'lib/filters.ts', 'lib/suggestions-view-model.ts', 'components/use-repository.ts']) expect(names, f).toContain(f);
+    for (const f of ['lib/local-repository.ts', 'lib/demo.ts', 'lib/events.ts', 'lib/repository.ts', 'lib/item-form.ts', 'lib/filters.ts', 'lib/suggestions-view-model.ts', 'lib/engine-config.ts', 'lib/wishlist.ts', 'components/use-repository.ts']) expect(names, f).toContain(f);
     expect(names.some((f) => f.endsWith('.test.ts'))).toBe(false);
   });
-  it('none of them calls fetch, XHR, sendBeacon, a socket or names a URL', () => {
+  it('none of them calls fetch, XHR, sendBeacon, a socket or names a URL, except the two fixed GETs of lib/engine-config.ts (WO-0012)', () => {
     for (const [file, text] of Object.entries(sources)) {
-      const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      let code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      if (file.endsWith('/lib/engine-config.ts')) code = code.replace('fetch(PRIOR_URL, init())', '').replace('fetch(UNLOCK_URL, init())', ''); // exactly these two calls, nowhere else
       expect(code.match(NETWORK), file).toBeNull();
     }
   });

@@ -13,9 +13,11 @@ export interface CardProps {
   onSwap: (slot: Slot) => void;
   /** Set when a swapped card now holds the same pieces as outfit N. */
   sameAs?: number | null;
+  /** Complete the look: the item that stays where it is, so it gets no Swap button. */
+  anchorId?: string;
 }
 
-export function OutfitCard({ card, index, items, onAccept, onReject, onSwap, sameAs = null }: CardProps) {
+export function OutfitCard({ card, index, items, onAccept, onReject, onSwap, sameAs = null, anchorId }: CardProps) {
   const n = index + 1;
   const percent = matchPercent(card);
   const { line, rest } = reasonSummary(card);
@@ -30,9 +32,9 @@ export function OutfitCard({ card, index, items, onAccept, onReject, onSwap, sam
               <span className={styles.dot} style={{ background: item?.hex ?? 'transparent' }} aria-hidden="true" />
               <span className="grow">
                 <span className="title">{item?.name ?? 'Removed item'}</span>
-                <span className="muted"> {slots.map((s) => SLOT_LABEL[s]).join(' and ')}</span>
+                <span className="muted"> {slots.map((s) => SLOT_LABEL[s]).join(' and ')}{itemId === anchorId ? ' · your pick' : ''}</span>
               </span>
-              {!card.saved && (
+              {!card.saved && itemId !== anchorId && (
                 <button type="button" data-swap={`${card.key}:${slots[0]}`} onClick={() => onSwap(slots[0]!)} aria-label={`Swap ${item?.name ?? 'item'}`}>Swap</button>
               )}
             </li>

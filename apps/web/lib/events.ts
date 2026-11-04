@@ -2,14 +2,16 @@ import type { Occasion } from '@sparta/taxonomy';
 import type { CurrentSeason, Slot } from '@sparta/rules';
 import { browserStorage } from './local-repository';
 import type { StorageLike } from './local-repository';
+import { currentEngineConfig } from './engine-config';
 import type { ItemInput, StoredItem, WardrobeRepository } from './repository';
 
 /** Bump the suffix when the stored shape changes; a log of another version is read as empty. */
 export const EVENTS_KEY = 'sparta.events.v1';
-/** FDD 16 `engine_config`: garment model 1, embedding swap off, pairing prior off, unlock list fallback, base weights. All learned parts are off in R3. */
+/** FDD 16 `engine_config` with every learned part off (what an event carries unless a switch is on; see lib/engine-config.ts). */
 export const ENGINE_CONFIG = 'gm1;emb0;pair0;ul:fb;w:base';
 export const EVENT_TYPES = ['suggestion_accepted', 'suggestion_rejected', 'suggestion_swapped', 'item_added'] as const;
-export type EventType = (typeof EVENT_TYPES)[number];
+/** The four R3 types plus `wishlist_added` (R4: origin 'user' or 'unlock'). */
+export type EventType = (typeof EVENT_TYPES)[number] | 'wishlist_added';
 const MAX_EVENTS = 1000;
 
 let lastMs = 0;
@@ -39,7 +41,7 @@ export type EventDetails = Partial<Pick<UsageEvent, 'occasion' | 'season' | 'slo
 export class EventLog {
   private memory: UsageEvent[] = [];
 
-  constructor(private storage: StorageLike | null = browserStorage(), private now: () => string = tickingNow) {}
+  constructor(private storage: StorageLike | null = browserStorage(), private now: () => string = tickingNow, private config: () => string = currentEngineConfig) {}
 
   list(): UsageEvent[] {
     try {
@@ -58,7 +60,7 @@ export class EventLog {
 
   record(type: EventType, d: EventDetails = {}): UsageEvent {
     const event: UsageEvent = {
-      type, at: this.now(), occasion: d.occasion ?? null, season: d.season ?? null, engine_config: ENGINE_CONFIG,
+      type, at: this.now(), occasion: d.occasion ?? null, season: d.season ?? null, engine_config: this.config(),
       rule_ids: [...(d.ruleIds ?? [])], slot: d.slot ?? null, origin: d.origin ?? null,
     };
     this.memory = [...this.list(), event].slice(-MAX_EVENTS);

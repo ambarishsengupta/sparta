@@ -20,7 +20,7 @@ function ItemCard({ item, onArchive, onRestore }: {
     <li className="card">
       <span className="swatch" style={{ background: item.hex }} aria-hidden="true" />
       <div className="grow">
-        <Link href={`/items/${item.id}`} className="title">{item.name}</Link>
+        <Link href={`/items/${item.id}`} prefetch={false} className="title">{item.name}</Link>
         <p className="muted">
           {item.colourFamily} · {item.subType}{band ? ` · ${band}` : ''}
           {item.favourite ? ' · Favourite' : ''}{item.status === 'archived' && item.archiveReason ? ` · ${item.archiveReason}` : ''}

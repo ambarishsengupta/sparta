@@ -1,6 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { EventLog, createItemLogged } from '../../lib/events';
 import type { StoredItem } from '../../lib/repository';
 import { FITS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, conditionBandOf } from '@sparta/taxonomy';
 import { categoryChoices, emptyForm, familyOfHex, formFromItem, subTypeChoices, updateForm, validateForm } from '../../lib/item-form';
@@ -55,7 +56,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
     const result = validateForm(values);
     if (!result.ok) return setErrors(result.errors);
     if (itemId && existing) await repo!.items.update(itemId, { ...result.input, status: existing.status, archiveReason: existing.archiveReason });
-    else if (!itemId) await repo!.items.create(result.input);
+    else if (!itemId) await createItemLogged(repo!, new EventLog(), result.input, 'manual');
     router.push('/');
   };
   const remove = async () => {

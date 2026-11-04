@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: 'Sparta',
   description: 'Your wardrobe, and what to wear from it. Everything stays in this browser.',
   manifest: '/manifest.webmanifest',
+  icons: { icon: '/icon.svg' },
 };
 export const viewport: Viewport = { themeColor: '#2f4f4f', colorScheme: 'light dark' };
 

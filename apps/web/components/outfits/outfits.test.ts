@@ -12,7 +12,7 @@ import { OutfitsView } from './OutfitsView';
 import { SwapSheet } from './SwapSheet';
 
 const sources = import.meta.glob<string>(
-  ['./*.tsx', '../../app/outfits/**/*.tsx', '../../lib/suggestions-view-model.ts', '../../lib/events.ts'],
+  ['./*.tsx', '../../app/outfits/**/*.tsx', '../../lib/**/*.ts', '!../../lib/**/*.test.ts', '../use-repository.ts'],
   { query: '?raw', import: 'default', eager: true },
 );
 const NETWORK = /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|axios)\b|https?:\/\//;
@@ -39,6 +39,11 @@ afterEach(() => vi.unstubAllGlobals());
 describe('no request leaves the browser in the suggestion path (FR-59, CC4)', () => {
   it('finds the suggestion sources', () => {
     expect(Object.keys(sources).length).toBeGreaterThanOrEqual(6);
+  });
+  it('covers every non-test file in lib, the repository hook, the demo loader and the local repository (WO-0022 item 2)', () => {
+    const names = Object.keys(sources).map((f) => f.replace(/^.*\/(lib\/)/, '$1').replace(/^.*\/(use-repository\.ts)$/, 'components/$1'));
+    for (const f of ['lib/local-repository.ts', 'lib/demo.ts', 'lib/events.ts', 'lib/repository.ts', 'lib/item-form.ts', 'lib/filters.ts', 'lib/suggestions-view-model.ts', 'components/use-repository.ts']) expect(names, f).toContain(f);
+    expect(names.some((f) => f.endsWith('.test.ts'))).toBe(false);
   });
   it('none of them calls fetch, XHR, sendBeacon, a socket or names a URL', () => {
     for (const [file, text] of Object.entries(sources)) {
@@ -100,6 +105,51 @@ describe('outfits screen: accessible names (CC6)', () => {
     const html = renderToStaticMarkup(createElement(OutfitCard, { card: { ...card, saved: true }, index: 1, items: stored, onAccept: noop, onReject: noop, onSwap: noop }));
     expect(html).toMatch(/<button[^>]*disabled[^>]*aria-label="Accept outfit 2"/);
     expect(html).not.toContain('>Swap<');
+  });
+});
+
+describe('outfit card: reasons, duplicates and focus targets (WO-0022 items 5, 9, 10)', () => {
+  const render = (c: Card, extra: { sameAs?: number | null } = {}) =>
+    renderToStaticMarkup(createElement(OutfitCard, { card: c, index: 0, items: stored, onAccept: noop, onReject: noop, onSwap: noop, ...extra }));
+  it('shows the top two reasons joined with a semicolon, and the rest inside a native details disclosure', () => {
+    const html = render(card);
+    expect(card.reasons.length).toBeGreaterThan(2);
+    expect(html).toContain(`>${card.reasons[0]}; ${card.reasons[1]}</p>`);
+    expect(html).toMatch(/<details><summary>Why this outfit\?<\/summary><ul[^>]*>/);
+    const inside = html.slice(html.indexOf('<details>'), html.indexOf('</details>'));
+    for (const r of card.reasons.slice(2)) expect(inside).toContain(r);
+    for (const r of card.reasons.slice(0, 2)) expect(inside).not.toContain(r);
+  });
+  it('has no disclosure when there is nothing beyond the two reasons, e.g. a swapped card', () => {
+    const html = render({ ...card, reasons: card.reasons.slice(0, 2), score: null });
+    expect(html).not.toContain('<details>');
+    expect(html).toContain(`${card.reasons[0]}; ${card.reasons[1]}`);
+  });
+  it('shows a plain "Same as outfit N" note only when told so', () => {
+    expect(render(card, { sameAs: 2 })).toContain('Same as outfit 2');
+    expect(render(card)).not.toContain('Same as outfit');
+  });
+  it('the heading can take focus (tabindex -1) and each Swap button names the slot it opens', () => {
+    const html = render(card);
+    expect(html).toMatch(/<h2 id="outfit-title-1" tabindex="-1"/);
+    expect(html).toContain(`data-swap="${card.key}:top"`);
+  });
+});
+
+describe('outfits screen: focus handling (WO-0022 item 5)', () => {
+  const view = sources['./OutfitsView.tsx']!;
+  it('moves focus to the card heading after Accept', () => {
+    expect(view).toMatch(/markSaved\(v!, card\.key\)\);\s*document\.getElementById\(`outfit-title-\$\{n\}`\)\?\.focus\(\)/);
+  });
+  it('logs the swapped event from the card as it is after the swap, not the pre-swap card', () => {
+    expect(view).toContain("events().record('suggestion_swapped', details(after, slot))");
+    expect(view).not.toContain("'suggestion_swapped', details(card");
+  });
+  it('returns focus to the Swap button that opened the sheet once it is closed by Cancel, Escape or a pick', () => {
+    expect(view).toContain('opener.current = `${card.key}:${slot}`');
+    expect(view).toMatch(/swap === null && opener\.current[\s\S]*querySelector<HTMLElement>\(`\[data-swap="\$\{opener\.current\}"\]`\)\?\.focus\(\)/);
+    expect(view).toMatch(/onClose=\{\(\) => setSwap\(null\)\}/);
+    expect(view).toMatch(/const result = applySwap[\s\S]*setSwap\(null\);\s*\};/);
   });
 });
 

@@ -20,7 +20,8 @@ export interface SavedOutfit {
   id: string;
   occasion: Occasion;
   items: Record<Slot, ItemId | null>;
-  score: number;
+  /** The engine's score; null once the person has swapped a piece, because the edited outfit was not scored. */
+  score: number | null;
   reasons: string[];
   createdAt: string;
 }

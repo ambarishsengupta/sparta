@@ -1,5 +1,5 @@
 import type { Slot } from '@sparta/rules';
-import { SLOT_LABEL, chipsOf, matchPercent } from '../../lib/suggestions-view-model';
+import { SLOT_LABEL, chipsOf, matchPercent, reasonSummary } from '../../lib/suggestions-view-model';
 import type { Card } from '../../lib/suggestions-view-model';
 import type { StoredItem } from '../../lib/repository';
 import styles from './outfits.module.css';
@@ -11,14 +11,17 @@ export interface CardProps {
   onAccept: () => void;
   onReject: () => void;
   onSwap: (slot: Slot) => void;
+  /** Set when a swapped card now holds the same pieces as outfit N. */
+  sameAs?: number | null;
 }
 
-export function OutfitCard({ card, index, items, onAccept, onReject, onSwap }: CardProps) {
+export function OutfitCard({ card, index, items, onAccept, onReject, onSwap, sameAs = null }: CardProps) {
   const n = index + 1;
   const percent = matchPercent(card);
+  const { line, rest } = reasonSummary(card);
   return (
     <>
-      <h2 className={styles.heading}>Outfit {n}{card.saved ? ' (saved)' : ''}</h2>
+      <h2 id={`outfit-title-${n}`} tabIndex={-1} className={styles.heading}>Outfit {n}{card.saved ? ' (saved)' : ''}</h2>
       <ul className={styles.chips} aria-label={`Pieces in outfit ${n}`}>
         {chipsOf(card).map(({ itemId, slots }) => {
           const item = items.get(itemId);
@@ -30,15 +33,22 @@ export function OutfitCard({ card, index, items, onAccept, onReject, onSwap }: C
                 <span className="muted"> {slots.map((s) => SLOT_LABEL[s]).join(' and ')}</span>
               </span>
               {!card.saved && (
-                <button type="button" onClick={() => onSwap(slots[0]!)} aria-label={`Swap ${item?.name ?? 'item'}`}>Swap</button>
+                <button type="button" data-swap={`${card.key}:${slots[0]}`} onClick={() => onSwap(slots[0]!)} aria-label={`Swap ${item?.name ?? 'item'}`}>Swap</button>
               )}
             </li>
           );
         })}
       </ul>
-      <ul className={styles.reasons} aria-label={`Why outfit ${n}`}>
-        {card.reasons.map((r) => <li key={r}>{r}</li>)}
-      </ul>
+      <p className={styles.line}>{line}</p>
+      {rest.length > 0 && (
+        <details>
+          <summary>Why this outfit?</summary>
+          <ul className={styles.reasons} aria-label={`More reasons for outfit ${n}`}>
+            {rest.map((r) => <li key={r}>{r}</li>)}
+          </ul>
+        </details>
+      )}
+      {sameAs !== null && <p className="muted">Same as outfit {sameAs}</p>}
       {percent === null ? (
         <p className="muted">Swapped by you, so it is not scored again.</p>
       ) : (

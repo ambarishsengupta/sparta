@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { OCCASIONS } from '@sparta/taxonomy';
-import type { Item } from '@sparta/rules';
-import { outfitProblems } from '@sparta/rules';
+import type { Ctx, Item } from '@sparta/rules';
+import { outfitProblems, usablePlacements } from '@sparta/rules';
 import { WARDROBES } from '../../../packages/rules/src/fixtures/wardrobes';
 import { LocalRepository } from './local-repository';
 import type { StorageLike } from './local-repository';
 import {
-  SETTINGS_KEY, SLOTS, activeItems, applySwap, buildCtx, chipsOf, loadHemisphere, markSaved, matchPercent, missingMessage,
-  reject, saveHemisphere, seasonOf, startView, swapOptions, toOutfitInput,
+  SETTINGS_KEY, SLOTS, activeItems, applySwap, buildCtx, chipsOf, eventDetails, loadHemisphere, markSaved, matchPercent, missingMessage,
+  reasonSummary, reject, sameAs, saveHemisphere, seasonOf, startView, swapOptions, toOutfitInput,
 } from './suggestions-view-model';
 import type { Card, View } from './suggestions-view-model';
 
@@ -159,7 +159,7 @@ describe('swap (FR-53, re-validated by the engine)', () => {
     expect(next.score).toBeNull();
     expect(next.ruleIds).toEqual(['R1', 'R2']);
     expect(next.reasons).toEqual(card.reasons.slice(0, 2));
-    expect(toOutfitInput(next, 'Work').score).toBe(0);
+    expect(toOutfitInput(next, 'Work').score).toBeNull();
   });
   it('refuses a piece that would break the rules and changes nothing', () => {
     const cap = WARDROBES['Starter student']!.find((i) => i.subType === 'Cap')!;
@@ -194,5 +194,93 @@ describe('swap (FR-53, re-validated by the engine)', () => {
       }
     }
     expect(checked).toBeGreaterThan(100);
+  });
+});
+
+describe('swap re-validation with the engine check (WO-0022 item 3)', () => {
+  const january = new Date('2026-01-15T12:00:00Z');
+  const ctx = ctxOf('Casual', 'north', january);
+  const pool = Object.values(WARDROBES).flat();
+  const summer = (subType: string, id: string): Item => ({ ...pool.find((i) => i.subType === subType)!, id, seasons: ['Summer'], occasions: ['Casual'], status: 'active' });
+  const items = [...office, summer('Shorts', 'x-shorts'), summer('Sandals', 'x-sandals')];
+  const view = startView(items, ctx);
+  it.each([['bottom', 'x-shorts'], ['footwear', 'x-sandals']] as const)('refuses %s %s in January: the placement is valid, the season rule R2 is not', (slot, id) => {
+    const candidate = items.find((i) => i.id === id)!;
+    expect(usablePlacements(candidate, 'Casual').some((p) => p.includes(slot))).toBe(true);
+    const card = cardsOf(view)[0]!;
+    const result = applySwap(view, card.key, slot, id, items, ctx);
+    expect(result.ok).toBe(false);
+    expect(result.problems).toContain('R2');
+    expect(result.view).toBe(view);
+    expect(swapOptions(card, slot, items, ctx)).not.toContain(id);
+  });
+  it('the same shorts are accepted in July, so the refusal comes from the season rule', () => {
+    const july = ctxOf('Casual', 'north', new Date('2026-07-15T12:00:00Z'));
+    const v = startView(items, july);
+    expect(applySwap(v, cardsOf(v)[0]!.key, 'bottom', 'x-shorts', items, july).ok).toBe(true);
+  });
+});
+
+describe('a swapped outfit: saving, events, reasons and duplicates (WO-0022 items 7, 9, 10)', () => {
+  const ctx = ctxOf('Work');
+  const view = startView(office, ctx);
+  const [first, second] = cardsOf(view) as [Card, Card];
+  const swapped = cardsOf(applySwap(view, first.key, 'bottom', swapOptions(first, 'bottom', office, ctx)[0]!, office, ctx).view)[0]!;
+  it('saves a swapped outfit with a null score and it stays null after a reload', async () => {
+    const storage = mem();
+    await new LocalRepository(storage).outfits.create(toOutfitInput(swapped, 'Work'));
+    expect((await new LocalRepository(storage).outfits.list())[0]!.score).toBeNull();
+    expect(toOutfitInput(first, 'Work').score).toBe(first.score);
+  });
+  it('the swapped event carries the occasion, season, slot and only the rule ids that still hold', () => {
+    expect(first.ruleIds.length).toBeGreaterThan(2);
+    expect(eventDetails(ctx, swapped, 'bottom')).toEqual({ occasion: 'Work', season: 'Spring', ruleIds: ['R1', 'R2'], slot: 'bottom' });
+    expect(eventDetails(ctx, swapped, 'bottom').ruleIds).not.toEqual(first.ruleIds);
+  });
+  it('shows the top two reasons joined with a semicolon and keeps the rest for the disclosure', () => {
+    const { line, rest } = reasonSummary(first);
+    expect(first.reasons.length).toBeGreaterThan(2);
+    expect(line).toBe(`${first.reasons[0]}; ${first.reasons[1]}`);
+    expect(rest).toEqual(first.reasons.slice(2));
+    expect(reasonSummary(swapped)).toEqual({ line: `${swapped.reasons[0]}; ${swapped.reasons[1]}`, rest: [] });
+    expect(reasonSummary({ ...first, reasons: ['Only one'] })).toEqual({ line: 'Only one', rest: [] });
+  });
+  it('says "Same as outfit N" when swaps make a card hold the same pieces as another card, and does not rescore', () => {
+    /** Swap every differing piece of `a` for the one in `b`, one engine-checked swap at a time; null when one is refused. */
+    const turnInto = (v: View, a: Card, b: Card, c: Ctx): View | null => {
+      for (const slot of SLOTS) {
+        if (b.items[slot] === null || cardsOf(v).find((x) => x.key === a.key)!.items[slot] === b.items[slot]) continue;
+        const r = applySwap(v, a.key, slot, b.items[slot]!, office, c);
+        if (!r.ok) return null;
+        v = r.view;
+      }
+      return v;
+    };
+    const shape = (c: Card) => SLOTS.map((s) => c.items[s] === null).join();
+    let done = false;
+    for (const o of OCCASIONS) {
+      const c = ctxOf(o);
+      const v = startView(office, c);
+      if (v.kind !== 'cards' || done) continue;
+      for (const a of v.cards) for (const b of v.cards.filter((x) => x !== a && shape(x) === shape(a))) {
+        const w = done ? null : turnInto(v, a, b, c);
+        if (!w) continue;
+        done = true;
+        const cards = cardsOf(w);
+        const mine = cards.find((x) => x.key === a.key)!;
+        expect(Object.values(mine.items).sort()).toEqual(Object.values(b.items).sort());
+        expect(sameAs(cards, mine)).toBe(cards.findIndex((x) => x.key === b.key) + 1);
+        expect(mine.score).toBeNull();
+        expect(sameAs(cards, cards.find((x) => x.key === b.key)!)).toBeNull();
+      }
+    }
+    expect(done).toBe(true);
+  });
+  it('shows no note for an unswapped card or when no other card matches', () => {
+    const twin = { ...first, key: 'twin', swaps: 1 };
+    expect(sameAs(cardsOf(view), first)).toBeNull();
+    expect(sameAs([swapped, second], swapped)).toBeNull();
+    expect(sameAs([second, twin], twin)).toBeNull();
+    expect(sameAs([first, twin], twin)).toBe(1);
   });
 });

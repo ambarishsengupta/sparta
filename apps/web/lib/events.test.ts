@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { WARDROBES } from '../../../packages/rules/src/fixtures/wardrobes';
-import { ENGINE_CONFIG, EVENTS_KEY, EVENT_TYPES, EventLog } from './events';
+import { ENGINE_CONFIG, EVENTS_KEY, EVENT_TYPES, EventLog, createItemLogged, tickingNow } from './events';
+import { LocalRepository } from './local-repository';
 import type { StorageLike } from './local-repository';
+import type { ItemInput } from './repository';
 import { buildCtx, seasonOf, startView } from './suggestions-view-model';
 
 const mem = (): StorageLike & { map: Map<string, string> } => {
@@ -80,5 +83,38 @@ describe('local usage-event log (FDD 16)', () => {
       log.record('suggestion_accepted');
       expect(log.list().map((e) => e.type)).toEqual(['suggestion_rejected', 'suggestion_accepted']);
     }
+  });
+});
+
+describe('item_added events (WO-0022 item 4)', () => {
+  const shirt: ItemInput = {
+    name: 'Navy Shirt', category: 'Tops', subType: 'Shirt', hex: '#1F2A44', rgb: [31, 42, 68], colourFamily: 'Navy', pattern: null, seasons: [],
+    occasions: [], condition: null, favourite: false, status: 'active', fit: null, material: null, neverWorn: false, archiveReason: null,
+  };
+  it('creating an item through the helper logs exactly one item_added event with the origin, and no item name or id', async () => {
+    const repo = new LocalRepository(mem());
+    const log = new EventLog(mem());
+    const item = await createItemLogged(repo, log, shirt, 'manual');
+    expect(log.list()).toHaveLength(1);
+    expect(log.list()[0]).toMatchObject({ type: 'item_added', origin: 'manual', occasion: null, engine_config: ENGINE_CONFIG });
+    expect(JSON.stringify(log.list())).not.toContain(item.id);
+    expect(JSON.stringify(log.list())).not.toContain(item.name);
+    expect(await repo.items.list()).toHaveLength(1);
+  });
+  it('the default clock never repeats, so a burst of events has distinct timestamps in order', () => {
+    const log = new EventLog(mem());
+    for (let i = 0; i < 50; i++) log.record('item_added', { origin: 'demo' });
+    const times = log.list().map((e) => e.at);
+    expect(new Set(times).size).toBe(50);
+    expect([...times].sort()).toEqual(times);
+    expect(tickingNow() > times[49]!).toBe(true);
+  });
+  it('the form and the demo loader both create items through the logging helper', () => {
+    const form = readFileSync(new URL('../components/wardrobe/ItemForm.tsx', import.meta.url), 'utf8');
+    const demo = readFileSync(new URL('./demo.ts', import.meta.url), 'utf8');
+    expect(form).toContain("createItemLogged(repo!, new EventLog(), result.input, 'manual')");
+    expect(demo).toContain("createItemLogged(repo, log, input, 'demo')");
+    expect(demo).not.toMatch(/items\.create\(/);
+    expect(form).not.toMatch(/items\.create\(/);
   });
 });

@@ -139,3 +139,18 @@ describe('LocalRepository persistence', () => {
     }
   });
 });
+
+describe('LocalRepository with a stored document of an unknown version (M3)', () => {
+  it('ignores a version-2 document that holds real items, outfits and a wishlist, and starts empty', async () => {
+    const storage = fakeStorage();
+    const saved = await make(storage).items.create(shirt());
+    const doc = JSON.parse(storage.data.get(STORAGE_KEY)!) as Record<string, unknown>;
+    storage.data.set(STORAGE_KEY, JSON.stringify({ ...doc, version: 2, outfits: [{ id: 'outfit-9' }], wishlist: [{ id: 'wish-9' }] }));
+    const repo = make(storage);
+    expect(saved.id).toBeTruthy();
+    expect(await repo.items.list()).toEqual([]);
+    expect(await repo.outfits.list()).toEqual([]);
+    expect(await repo.wishlist.list()).toEqual([]);
+    expect(await repo.items.get(saved.id)).toBeUndefined();
+  });
+});

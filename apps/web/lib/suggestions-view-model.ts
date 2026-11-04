@@ -3,6 +3,7 @@ import type { Occasion } from '@sparta/taxonomy';
 import { isMissing, outfitProblems, seasonFor, suggest, swapChoices, usablePlacements } from '@sparta/rules';
 import type { Ctx, CurrentSeason, Hemisphere, Item, ItemId, RankedSuggestion, Slot } from '@sparta/rules';
 import type { StorageLike } from './local-repository';
+import type { EventDetails } from './events';
 import type { OutfitInput } from './repository';
 
 export { OCCASIONS };
@@ -40,8 +41,10 @@ export function missingMessage(missing: readonly string[]): string {
   return `You need ${list} for this occasion`;
 }
 
+const itemSetKey = (items: Record<Slot, ItemId | null>): string => Object.values(items).filter((id): id is string => id !== null).sort().join('+');
+
 const toCard = (s: RankedSuggestion): Card => ({
-  key: Object.values(s.items).filter((id): id is string => id !== null).sort().join('+'),
+  key: itemSetKey(s.items),
   items: { ...s.items }, score: s.score, reasons: [...s.reasons], ruleIds: [...s.ruleIds], saved: false, swaps: 0,
 });
 
@@ -62,8 +65,21 @@ export const reject = (view: View, key: string): View => mapCards(view, key, () 
 /** Accept marks the card saved; a saved card cannot be accepted or swapped again. */
 export const markSaved = (view: View, key: string): View => mapCards(view, key, (c) => ({ ...c, saved: true }));
 export const toOutfitInput = (card: Card, occasion: Occasion): OutfitInput => ({
-  occasion, items: { ...card.items }, score: card.score ?? 0, reasons: [...card.reasons],
+  occasion, items: { ...card.items }, score: card.score, reasons: [...card.reasons],
 });
+
+/** FR-52: the top two reasons on one line joined with '; ', the rest for a "Why this outfit?" disclosure. */
+export const reasonSummary = (card: Card): { line: string; rest: string[] } => ({ line: card.reasons.slice(0, 2).join('; '), rest: card.reasons.slice(2) });
+
+/** For a swapped card that now holds the same pieces as another card: that card's number (1 based), else null. Nothing is re-scored. */
+export function sameAs(cards: readonly Card[], card: Card): number | null {
+  if (card.swaps === 0) return null;
+  const at = cards.findIndex((c) => c.key !== card.key && itemSetKey(c.items) === itemSetKey(card.items));
+  return at < 0 ? null : at + 1;
+}
+
+/** What a usage event records: occasion, season, the card's CURRENT rule ids (after a swap that is only R1 and R2) and the slot. */
+export const eventDetails = (ctx: Ctx, card?: Card, slot?: Slot): EventDetails => ({ occasion: ctx.occasion, season: seasonOf(ctx), ruleIds: card?.ruleIds, slot });
 
 /** The pieces of a card, in slot order; a piece that fills two slots (Suit) appears once. */
 export function chipsOf(card: Card): { itemId: ItemId; slots: Slot[] }[] {

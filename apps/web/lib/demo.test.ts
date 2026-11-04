@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { hexToRgb } from '@sparta/taxonomy';
 import { suggest, isMissing } from '@sparta/rules';
 import { DEMO_WARDROBE_NAMES, loadDemoWardrobe } from './demo';
+import { EventLog } from './events';
 import { LocalRepository } from './local-repository';
 import type { StorageLike } from './local-repository';
 
@@ -38,5 +39,13 @@ describe('demo wardrobe loader', () => {
     await loadDemoWardrobe(repo, 'Office regular');
     const result = suggest(await repo.items.list(), { occasion: 'Work', hemisphere: 'north', date: new Date(Date.UTC(2026, 3, 15)) });
     expect(isMissing(result)).toBe(false);
+  });
+  it('logs one item_added event with origin demo per item and distinct timestamps (WO-0022 item 4)', async () => {
+    const log = new EventLog(mem());
+    const n = await loadDemoWardrobe(new LocalRepository(mem()), 'Office regular', log);
+    const events = log.list();
+    expect(events).toHaveLength(n);
+    expect(events.every((e) => e.type === 'item_added' && e.origin === 'demo')).toBe(true);
+    expect(new Set(events.map((e) => e.at)).size).toBe(n);
   });
 });

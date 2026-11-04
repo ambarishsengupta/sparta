@@ -8,7 +8,7 @@ import { EventLog } from '../../lib/events';
 import { browserStorage } from '../../lib/local-repository';
 import type { StoredItem } from '../../lib/repository';
 import {
-  OCCASIONS, applySwap, buildCtx, loadHemisphere, markSaved, reject, saveHemisphere, seasonOf, startView, swapOptions, toOutfitInput,
+  OCCASIONS, applySwap, buildCtx, eventDetails, loadHemisphere, markSaved, reject, saveHemisphere, sameAs, seasonOf, startView, swapOptions, toOutfitInput,
 } from '../../lib/suggestions-view-model';
 import type { Card, View } from '../../lib/suggestions-view-model';
 import { useRepository } from '../use-repository';
@@ -28,15 +28,23 @@ export function OutfitsView() {
   const [swap, setSwap] = useState<{ key: string; slot: Slot } | null>(null);
   const [note, setNote] = useState('');
   const [today, setToday] = useState<Date | null>(null); // read in the browser only, so the server page never bakes in a season
+  const opener = useRef<string | null>(null); // `key:slot` of the Swap button that opened the sheet, so focus can return to it
   const log = useRef<EventLog | null>(null);
   const events = () => (log.current ??= new EventLog());
   const byId = useMemo(() => new Map((items ?? []).map((i) => [i.id, i])), [items]);
 
   useEffect(() => { setHemisphere(loadHemisphere(browserStorage())); setToday(new Date()); }, []);
   useEffect(() => { if (repo) void repo.items.list().then(setItems); }, [repo]);
+  useEffect(() => { // after Cancel, Escape or a pick, focus goes back to the Swap button that opened the sheet (or its replacement)
+    if (swap === null && opener.current) {
+      document.querySelector<HTMLElement>(`[data-swap="${opener.current}"]`)?.focus();
+      opener.current = null;
+    }
+  }, [swap, view]);
 
   const ask = (o: Occasion | null, h: Hemisphere, list: StoredItem[] | null = items) => {
     setSwap(null);
+    opener.current = null;
     setNote('');
     if (!o || !list) { setCtx(null); setView(null); return; }
     const next = buildCtx(o, h);
@@ -50,12 +58,13 @@ export function OutfitsView() {
     saveHemisphere(browserStorage(), h);
     ask(occasion, h);
   };
-  const details = (card?: Card, slot?: Slot) => ({ occasion: ctx!.occasion, season: seasonOf(ctx!), ruleIds: card?.ruleIds, slot });
+  const details = (card?: Card, slot?: Slot) => eventDetails(ctx!, card, slot);
 
   const accept = async (card: Card, n: number) => {
     await repo!.outfits.create(toOutfitInput(card, ctx!.occasion));
     events().record('suggestion_accepted', details(card));
     setView((v) => markSaved(v!, card.key));
+    document.getElementById(`outfit-title-${n}`)?.focus(); // Accept is about to become disabled: keep keyboard focus on the card
     setNote(`Outfit ${n} saved.`);
   };
   const dismiss = (card: Card, n: number) => {
@@ -67,7 +76,8 @@ export function OutfitsView() {
   const pickSwap = (card: Card, slot: Slot, id: string) => {
     const result = applySwap(view!, card.key, slot, id, items!, ctx!);
     if (result.ok) {
-      events().record('suggestion_swapped', details(card, slot));
+      const after = result.view.kind === 'cards' ? result.view.cards.find((c) => c.key === card.key) : undefined;
+      events().record('suggestion_swapped', details(after, slot)); // the card as it is now (R1 and R2), not its pre-swap rule ids
       setView(result.view);
       setNote(`Swapped the ${slot}. The outfit still follows the rules.`);
     } else {
@@ -76,8 +86,7 @@ export function OutfitsView() {
     setSwap(null);
   };
   const loadDemo = async () => {
-    const n = await loadDemoWardrobe(repo!, DEMO);
-    for (let i = 0; i < n; i++) events().record('item_added', { origin: 'demo' });
+    const n = await loadDemoWardrobe(repo!, DEMO, events());
     const list = await repo!.items.list();
     setItems(list);
     ask(occasion, hemisphere, list);
@@ -131,7 +140,8 @@ export function OutfitsView() {
             <li key={card.key} className={`card ${styles.outfit}`}>
               <OutfitCard card={card} index={i} items={byId}
                 onAccept={() => void accept(card, i + 1)} onReject={() => dismiss(card, i + 1)}
-                onSwap={(slot) => setSwap({ key: card.key, slot })} />
+                sameAs={sameAs(view.cards, card)}
+                onSwap={(slot) => { opener.current = `${card.key}:${slot}`; setSwap({ key: card.key, slot }); }} />
               {swap?.key === card.key && (
                 <SwapSheet slot={swap.slot} items={byId} choices={swapOptions(card, swap.slot, items!, ctx!)}
                   onPick={(id) => pickSwap(card, swap.slot, id)} onClose={() => setSwap(null)} />

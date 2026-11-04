@@ -36,3 +36,21 @@ describe('best-eight trimming never causes a false "missing" (WO-0005)', () => {
     expect(isMissing(r) ? [] : r.map((s) => s.items.bottom)).toEqual(['suit']);
   });
 });
+
+describe('best-eight trimming never hides the only layered outfit (WO-0008)', () => {
+  const hoodies = Array.from({ length: 8 }, (_, n) => mk('Hoodie', `h${n}`, { occasions: ['Casual'] }));
+  const wardrobe = [mk('Shirt', 't'), mk('Jeans', 'j'), mk('Formal shoes', 's'), ...hoodies, mk('Jacket', 'jk')];
+  const winter: Ctx = { ...casual, date: new Date(Date.UTC(2026, 0, 15)) };
+  it('adds the one layer (and the trio it goes with) that makes a layered outfit; the best eight stay as they were', () => {
+    const c = slotCandidates(wardrobe, winter);
+    expect(c.layer.map((i) => i.id)).toEqual([...hoodies.map((i) => i.id), 'jk']);
+    expect(c.top.map((i) => i.id)).toEqual([...hoodies.map((i) => i.id), 't']);
+    expect(c.bottom.map((i) => i.id)).toEqual(['j']);
+    expect(c.footwear.map((i) => i.id)).toEqual(['s']);
+  });
+  it('the result does not depend on the input order, and the input array is left alone', () => {
+    const copy = [...wardrobe];
+    expect(suggest(shuffled(wardrobe, 5), winter)).toEqual(suggest(wardrobe, winter));
+    expect(wardrobe).toEqual(copy);
+  });
+});

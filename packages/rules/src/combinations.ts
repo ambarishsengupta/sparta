@@ -36,31 +36,55 @@ export function slotCandidates(eligible: readonly Item[], ctx: Ctx): Candidates 
   }
   const order = (a: Item, b: Item): number => preScore(b, ctx) - preScore(a, ctx) || cmp(a.id, b.id);
   for (const key of Object.keys(groups) as (keyof Candidates)[]) groups[key].sort(order);
-  const full = { top: groups.top, bottom: groups.bottom, both: groups.both, footwear: groups.footwear };
+  const full = { top: groups.top, bottom: groups.bottom, layer: groups.layer, both: groups.both, footwear: groups.footwear };
   for (const key of Object.keys(groups) as (keyof Candidates)[]) {
     if (key !== 'belts') groups[key] = groups[key].slice(0, BEST_PER_SLOT);
   }
   return keepOneOutfit(groups, full, ctx);
 }
 
+type Pool = Pick<Candidates, 'top' | 'bottom' | 'layer' | 'both' | 'footwear'>;
+type Found = { top: Item; bottom: Item; footwear: Item; layer?: Item };
+
 /**
- * Trimming to the best eight can drop every top, bottom or pair of shoes that R1 lets the others go with (nine shorts
- * and one pair of jeans under Casual with formal shoes; eight T-shirts and one shirt with formal shoes). If no kept
- * top, bottom (or suit) and footwear form an allowed outfit but untrimmed ones do, the first such trio (by pre-score order) is added back.
+ * The first allowed outfit in pre-score order: top, footwear, then bottom (or suit) and, if `layered`, a layer to go with
+ * it (a Suit or Tuxedo being its own layer). Same pruning as `enumerateOutfits`, so it finds exactly what that would.
  */
-function keepOneOutfit(c: Candidates, full: Pick<Candidates, 'top' | 'bottom' | 'both' | 'footwear'>, ctx: Ctx): Candidates {
-  const firstTrio = (g: typeof full): { top: Item; bottom: Item; footwear: Item } | null => {
-    for (const top of g.top) for (const footwear of g.footwear) {
+function firstOutfit(g: Pool, ctx: Ctx, layered: boolean): Found | null {
+  for (const top of g.top) for (const footwear of g.footwear) {
+    if (!comboAllowed({ top, footwear }, ctx.occasion)) continue;
+    if (!layered) {
       const bottom = [...g.bottom, ...g.both].find((b) => comboAllowed({ top, bottom: b, footwear }, ctx.occasion));
       if (bottom) return { top, bottom, footwear };
+      continue;
     }
-    return null;
-  };
-  const pick = firstTrio(c) ? null : firstTrio(full);
+    for (const bottom of g.bottom) {
+      if (!comboAllowed({ top, bottom, footwear }, ctx.occasion)) continue;
+      const layer = g.layer.find((l) => l.id !== top.id && comboAllowed({ top, bottom, layer: l, footwear }, ctx.occasion));
+      if (layer) return { top, bottom, footwear, layer };
+    }
+    const suit = g.both.find((b) => comboAllowed({ top, bottom: b, layer: b, footwear }, ctx.occasion));
+    if (suit) return { top, bottom: suit, footwear, layer: suit };
+  }
+  return null;
+}
+
+/**
+ * Trimming to the best eight can drop every top, bottom, layer or pair of shoes that R1 lets the others go with (nine
+ * shorts and one pair of jeans under Casual with formal shoes; eight T-shirts and one shirt with formal shoes; eight
+ * hoodies and one jacket with formal shoes in winter). If the kept ones form no allowed outfit but untrimmed ones do,
+ * the first such outfit (by pre-score order) is added back. Where a layer is wanted (D-A) the outfit looked for is a
+ * layered one, so `withRequiredLayer` is decided on all the candidates, not only on the best eight.
+ */
+function keepOneOutfit(c: Candidates, full: Pool, ctx: Ctx): Candidates {
+  const wantLayer = layerRequiredIfAvailable(ctx);
+  const pick = (wantLayer && !firstOutfit(c, ctx, true) ? firstOutfit(full, ctx, true) : null) ?? (firstOutfit(c, ctx, false) ? null : firstOutfit(full, ctx, false));
   if (!pick) return c;
   const add = (list: Item[], x: Item): Item[] => (list.includes(x) ? list : [...list, x]);
-  const slot = full.both.includes(pick.bottom) ? 'both' : 'bottom';
-  return { ...c, top: add(c.top, pick.top), footwear: add(c.footwear, pick.footwear), [slot]: add(c[slot], pick.bottom) };
+  const suit = full.both.includes(pick.bottom);
+  const next = { ...c, top: add(c.top, pick.top), footwear: add(c.footwear, pick.footwear) };
+  if (pick.layer && !suit) next.layer = add(c.layer, pick.layer);
+  return suit ? { ...next, both: add(c.both, pick.bottom) } : { ...next, bottom: add(c.bottom, pick.bottom) };
 }
 
 /**

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { withRequiredLayer } from './combinations.js';
+import { slotCandidates, withRequiredLayer } from './combinations.js';
 import { RULES } from './eligibility.js';
 import { independentProblems } from './fixtures/checker.js';
 import { at, mk } from './fixtures/items.js';
+import type { Occasion } from '@sparta/taxonomy';
 import rules from '../data/rules.json';
 import { isMissing, suggest } from './suggest.js';
 import type { Item, Slot } from './types.js';
@@ -98,5 +99,34 @@ describe('the independent checker (WO-0006 items 3 and 6)', () => {
     expect(independentProblems(outfit({ top: shirt!, bottom: suit, footwear: formalShoes! }), f)).toEqual(['SUIT']);
     expect(independentProblems(outfit({ top: shirt!, bottom: trousers!, layer: suit, footwear: formalShoes! }), f)).toEqual(['SUIT']);
     expect(independentProblems(outfit({ top: shirt!, bottom: suit, layer: tux, footwear: formalShoes! }), f)).toEqual(['SUIT']);
+  });
+});
+
+describe('the layer rule is decided on all the candidates, not on the best eight (WO-0008, defect F1)', () => {
+  const hoodiesFor = (occasion: Occasion): Item[] => Array.from({ length: 8 }, (_, n) => mk('Hoodie', `h${n}`, { occasions: [occasion] })); // tagged, so they outrank the jacket; formal shoes forbid them in Casual, Date, Travel
+  const [hoodies, wardrobe] = [hoodiesFor('Casual'), [mk('Shirt', 't'), mk('Jeans', 'j'), mk('Formal shoes', 's'), ...hoodiesFor('Casual'), mk('Jacket', 'jk')]];
+  it.each(['Casual', 'Date', 'Travel'] as const)('%s in January: eight tagged Hoodies and one untagged Jacket still give the jacket outfit, which the independent checker accepts', (occasion) => {
+    const ctx = at(occasion, 1);
+    const wardrobe = [mk('Shirt', 't'), mk('Jeans', 'j'), mk('Formal shoes', 's'), ...hoodiesFor(occasion), mk('Jacket', 'jk')];
+    const r = suggest(wardrobe, ctx);
+    expect(isMissing(r) ? [] : r.map((s) => s.items.layer)).toEqual(['jk']);
+    if (!isMissing(r)) for (const s of r) expect(independentProblems(Object.fromEntries(Object.entries(s.items).map(([k, id]) => [k, wardrobe.find((i) => i.id === id) ?? null])) as Record<Slot, Item | null>, ctx, wardrobe)).toEqual([]);
+  });
+  it('the layer is only brought back where a layer is wanted: in April the hoodies stay the only layers', () => {
+    expect(slotCandidates(wardrobe, at('Casual', 4)).layer.map((i) => i.id)).toEqual(hoodies.map((i) => i.id));
+    expect(slotCandidates(wardrobe, at('Casual', 1)).layer.map((i) => i.id)).toEqual([...hoodies.map((i) => i.id), 'jk']);
+  });
+  it('a Suit rescues the layer too (Date: the suit is bottom and layer, and no layer-less outfit is left)', () => {
+    const r = suggest([mk('Shirt', 't'), mk('Jeans', 'j'), mk('Formal shoes', 's'), ...hoodiesFor('Date'), mk('Suit', 'su')], at('Date', 1));
+    expect(isMissing(r) ? [] : r.map((s) => [s.items.bottom, s.items.layer])).toEqual([['su', 'su']]);
+  });
+  it('Work in winter: eight tagged bold coats clash with the bold top (one bold item at most), so the untagged navy coat is kept', () => {
+    const red: Partial<Item> = { rgb: [220, 20, 20], colourFamily: 'Red' };
+    const coats = Array.from({ length: 8 }, (_, n) => mk('Coat', `c${n}`, { ...red, occasions: ['Work'] }));
+    const items = [mk('Shirt', 't', red), mk('Chinos', 'c'), mk('Boots', 'b'), ...coats, mk('Coat', 'navy')];
+    expect(layers(items, at('Work', 1))).toEqual(['navy']);
+  });
+  it('with no layered outfit anywhere (every layer clashes) the layer-less outfit stays', () => {
+    expect(layers([mk('Shirt', 't'), mk('Jeans', 'j'), mk('Formal shoes', 's'), ...hoodies], at('Casual', 1))).toEqual([null]);
   });
 });

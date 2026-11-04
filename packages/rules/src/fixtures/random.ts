@@ -18,6 +18,8 @@ export function rng(seed: number): () => number {
 export const PAIR_HEAVY: SubType[] = ['T-shirt', 'T-shirt', 'Shorts', 'Shorts', 'Shorts', 'Shorts', 'Sports shorts', 'Jeans', 'Formal shoes', 'Formal shoes', 'Sneakers'];
 /** Seven in ten items are formal shoes, so nine or more pairs of footwear are common: the mix where re-adding the kept bottom made two identical outfits. */
 export const FOOTWEAR_HEAVY: SubType[] = ['T-shirt', 'T-shirt', 'Shorts', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Formal shoes', 'Sneakers'];
+/** Mostly Hoodies (a top or a layer that formal shoes forbid in Casual, Date and Travel) with a few jackets, coats and blazers: nine or more layers are common, so trimming to the best eight can drop the one layer that still makes a layered outfit. */
+export const LAYER_HEAVY: SubType[] = ['Hoodie', 'Hoodie', 'Hoodie', 'Hoodie', 'Hoodie', 'Hoodie', 'Hoodie', 'Jacket', 'Coat', 'Blazer', 'Shirt', 'Jeans', 'Chinos', 'Formal shoes', 'Formal shoes', 'Sneakers', 'T-shirt'];
 const SUB_TYPES: SubType[] = [
   'T-shirt', 'Shirt', 'Polo', 'Sweater', 'Cardigan', 'Hoodie', 'Sports T-shirt', 'Jeans', 'Chinos', 'Trousers', 'Shorts', 'Joggers', 'Track pants',
   'Sports shorts', 'Jacket', 'Blazer', 'Coat', 'Track jacket', 'Sneakers', 'Formal shoes', 'Boots', 'Sandals', 'Suit', 'Tuxedo', 'Waistcoat',

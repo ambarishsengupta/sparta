@@ -2,7 +2,7 @@ import { OCCASIONS } from '@sparta/taxonomy';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { independentProblems, validOutfitExists } from './fixtures/checker.js';
-import { PAIR_HEAVY, randomWardrobe, shuffled } from './fixtures/random.js';
+import { LAYER_HEAVY, PAIR_HEAVY, randomWardrobe, shuffled } from './fixtures/random.js';
 import { WARDROBES } from './fixtures/wardrobes.js';
 import { REASON_TEMPLATES } from './reasons.js';
 import { MAX_SUGGESTIONS } from './rank.js';
@@ -84,6 +84,25 @@ describe('suggest: properties over random wardrobes (CC3)', () => {
     );
     expect(valid).toBeGreaterThan(300);
   });
+  it('layer-heavy wardrobes (9+ layers, mostly Hoodies): in winter under Casual, Date and Travel, and Formal, a layered outfit is returned whenever one exists (the F1 defect)', () => {
+    let layered = 0, contexts = 0, nineLayers = 0;
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 2 ** 31 - 1 }), (seed) => {
+        const items = randomWardrobe(seed, LAYER_HEAVY, 20);
+        nineLayers += items.filter((i) => ['Hoodie', 'Jacket', 'Coat', 'Blazer'].includes(i.subType)).length >= 9 ? 1 : 0;
+        for (const ctx of [...(['Casual', 'Date', 'Travel'] as const).map((o) => at(o, 1, 'north')), at('Formal', 1, 'north'), at('Formal', 4, 'north')]) {
+          contexts++;
+          const result = suggest(items, ctx);
+          check(items, ctx, seed); // valid, deterministic, and (through independentProblems with the wardrobe) never layer-less when a layered outfit exists
+          layered += isMissing(result) ? 0 : result.filter((s) => s.items.layer !== null).length;
+        }
+      }),
+      { numRuns: 300, seed: 20261106 },
+    );
+    expect(contexts).toBe(1500);
+    expect(nineLayers).toBeGreaterThanOrEqual(250); // most of the 300 wardrobes have nine or more layers
+    expect(layered).toBeGreaterThan(300); // the generator must reach real layered suggestions
+  }, 120_000);
   it('the random wardrobe is the same for the same seed', () => {
     expect(randomWardrobe(7)).toEqual(randomWardrobe(7));
     expect(randomWardrobe(7)).not.toEqual(randomWardrobe(8));

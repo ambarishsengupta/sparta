@@ -6,7 +6,8 @@
   "include": [
     "vitest.config.ts",
     "packages/*/src/**/*.ts",
-    "packages/*/src/**/*.json"
+    "packages/*/src/**/*.json",
+    "apps/web/lib/**/*.ts"
   ],
   "exclude": ["**/node_modules/**", "**/dist/**"]
 }

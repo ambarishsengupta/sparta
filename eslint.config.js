@@ -11,6 +11,8 @@ export default tseslint.config(
       'workflow/evidence/**',
       'docs/**',
       '.claude/**',
+      '**/.next/**',
+      '**/next-env.d.ts',
     ],
   },
   js.configs.recommended,

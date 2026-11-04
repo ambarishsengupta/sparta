@@ -6,3 +6,4 @@
 5. Spec-level ownership conflicts found by Spec QC (R0 work orders edit paths that section 3.1 gives to other makers): accepted for R0 because the build runs with one maker per work order and the owner delegated approvals; section 3.1 will be updated in the R0 retro.
 6. CI runs gate.sh without GATE_BASE, so the scope check runs only when invoked by hand or by the orchestrator at each work order; R1 retro to decide whether to enforce it in CI
 7. secret_scan checks the working tree, not git history
+8. R3 WO-0020 changed about 1,108 counted lines (about 550 production, 550 tests) against the 500 limit; accepted (scaffold plus tests), logged here by the orchestrator. Also: Next.js builds with webpack (`--webpack`) because Turbopack failed on the workspace packages' `.js`-suffixed TypeScript imports.

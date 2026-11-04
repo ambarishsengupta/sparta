@@ -1,0 +1,10 @@
+{
+  "name": "Sparta",
+  "short_name": "Sparta",
+  "description": "Your wardrobe, and what to wear from it.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf8f5",
+  "theme_color": "#2f4f4f",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

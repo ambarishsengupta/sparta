@@ -58,4 +58,12 @@ export interface Rules {
   weights_base: Record<string, number>;
   weights_with_pairing: Record<string, number>;
   unlock_min_rule_fit: number;
+  /** Wardrobe unlock (LLD 9.5.2): the most items per slot that are tried with a pretend item. */
+  unlock_bound_per_slot: number;
+}
+
+/** What `suggest` takes besides items and context (LLD 9.5.2, 7.9). `prior` is plain data, parsed defensively; the engine never fetches. */
+export interface SuggestOpts {
+  prior?: unknown;
+  anchor?: ItemId;
 }

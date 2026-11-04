@@ -3,15 +3,17 @@ import type { ColourFamily } from '@sparta/taxonomy';
 import rulesJson from '../data/rules.json';
 import type { Outfit } from './combinations.js';
 import { RULES, styleRule } from './eligibility.js';
+import { outfitPairing } from './pairing.js';
+import type { PairingPrior } from './pairing.js';
 import { seasonFor } from './season.js';
 import type { Ctx, Item } from './types.js';
 
 /** Draft penalty magnitudes for R3 to R7 (rules.json `penalties`, owned by the style specialist). */
 export const PENALTIES = rulesJson.penalties;
 
-/** The five parts of the base score (LLD 9.5.1). There is no `pairing` part until the prior exists (R4). */
+/** The five parts of the base score (LLD 9.5.1). The sixth, `pairing`, exists only when a valid prior is passed (LLD 7.9). */
 export const PART_NAMES = ['rule_fit', 'occasion_fit', 'completeness', 'condition', 'favourites'] as const;
-export type ScoreParts = Record<(typeof PART_NAMES)[number], number>;
+export type ScoreParts = Record<(typeof PART_NAMES)[number], number> & { pairing?: number };
 
 /** How an outfit scored, and what the reasons (R8) need to know about it. */
 export interface Evaluation {
@@ -38,8 +40,8 @@ export function itemsOf(outfit: Outfit): Item[] {
   return out;
 }
 
-/** A scorer for one request; `hasBelts` makes the belt check of `completeness` apply. Chroma is cached per item. */
-export function createScorer(ctx: Ctx, hasBelts: boolean) {
+/** A scorer for one request; `hasBelts` makes the belt check of `completeness` apply; a valid `prior` adds the `pairing` part and switches to `weights_with_pairing`. Chroma is cached per item. */
+export function createScorer(ctx: Ctx, hasBelts: boolean, prior: PairingPrior | null = null) {
   const cool = RULES.cool_seasons.includes(seasonFor(ctx.date, ctx.hemisphere));
   const profiles = new Map<string, { neutral: boolean; bold: boolean }>();
   const profile = (item: Item): { neutral: boolean; bold: boolean } => {
@@ -64,8 +66,8 @@ export function createScorer(ctx: Ctx, hasBelts: boolean) {
     return clamp01(1 - PENALTIES.families_over_three * Math.max(0, families.size - maxFamilies) - PENALTIES.extra_bold * Math.max(0, bold - 1) - PENALTIES.clashing_pair * clashing);
   };
 
-  const evaluate = (outfit: Outfit): Evaluation => {
-    const items = itemsOf(outfit);
+  /** R3 to R6, each 1 when fully met, and whether the belt matches the shoes. */
+  const rulesOf = (outfit: Outfit, items: readonly Item[]): Evaluation['rules'] & { beltMatches: boolean } => {
     const { top, layer, footwear, accessory: belt } = outfit;
     const patterned = items.filter((i) => i.pattern !== null && i.pattern !== 'Solid').length;
     const beltMatches = !!belt && !!footwear && belt.colourFamily === footwear.colourFamily;
@@ -73,7 +75,18 @@ export function createScorer(ctx: Ctx, hasBelts: boolean) {
     const R4 = clamp01(1 - PENALTIES.extra_pattern * Math.max(0, patterned - 1));
     const R5 = !cool ? 1 : !layer ? 1 - PENALTIES.missing_layer : layer.colourFamily === top?.colourFamily ? 1 - PENALTIES.layer_same_family : 1;
     const R6 = belt && !beltMatches ? 1 - PENALTIES.belt_shoe_mismatch : 1;
-    const checks = [...(cool ? [layer ? 1 : 0] : []), ...(hasBelts ? [beltMatches ? 1 : 0] : [])];
+    return { R3, R4, R5, R6, beltMatches };
+  };
+  /** The rule_fit part alone (the mean of R3 to R6), for Wardrobe unlock, which counts thousands of outfits. */
+  const ruleFit = (outfit: Outfit): number => {
+    const { R3, R4, R5, R6 } = rulesOf(outfit, itemsOf(outfit));
+    return mean([R3, R4, R5, R6]);
+  };
+
+  const evaluate = (outfit: Outfit): Evaluation => {
+    const items = itemsOf(outfit);
+    const { R3, R4, R5, R6, beltMatches } = rulesOf(outfit, items);
+    const checks = [...(cool ? [outfit.layer ? 1 : 0] : []), ...(hasBelts ? [beltMatches ? 1 : 0] : [])];
     const parts: ScoreParts = {
       rule_fit: mean([R3, R4, R5, R6]),
       occasion_fit: mean(items.map((i) => (i.occasions.length === 0 ? 0.5 : i.occasions.includes(ctx.occasion) ? 1 : 0))),
@@ -81,10 +94,12 @@ export function createScorer(ctx: Ctx, hasBelts: boolean) {
       condition: mean(items.map((i) => (i.condition === null ? RULES.unrated_condition : conditionBandOf(i.condition) === 'Falling apart' ? 0 : 1 - i.condition / 100))),
       favourites: mean(items.map((i) => (i.favourite ? 1 : 0))),
     };
-    const score = PART_NAMES.reduce((sum, k) => sum + (RULES.weights_base[k] ?? 0) * parts[k], 0);
+    if (prior) parts.pairing = outfitPairing(prior, outfit);
+    const [names, weights] = prior ? [[...PART_NAMES, 'pairing' as const], RULES.weights_with_pairing] : [PART_NAMES, RULES.weights_base];
+    const score = names.reduce((sum, k) => sum + (weights[k] ?? 0) * (parts[k] ?? 0), 0);
     const neutrals = [...new Set(items.filter((i) => profile(i).neutral).map((i) => i.colourFamily))];
     return { score, parts, rules: { R3, R4, R5, R6 }, neutrals, cool, beltMatches };
   };
 
-  return { evaluate, harmony };
+  return { evaluate, harmony, ruleFit };
 }

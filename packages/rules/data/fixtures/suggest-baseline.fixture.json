@@ -1,0 +1,8684 @@
+{
+ "note": "Frozen output of suggest(items, ctx) at engine commit 8a7eeab, BEFORE the learned layer (WO-0011) changed anything. wardrobes: the five fixture wardrobes, north, the 15th of months 1,4,7,10, all 7 occasions, key occasion|month. random_digests: cyrb53 of JSON.stringify of the 28 results (OCCASIONS x months 1,4,7,10) of randomWardrobe(seed) for seeds 1 to 200, hemisphere north for even seeds, south for odd. Never regenerate from changed code.",
+ "engine_commit": "8a7eeab",
+ "months": [
+  1,
+  4,
+  7,
+  10
+ ],
+ "wardrobes": {
+  "Starter student": {
+   "Casual|1": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.935,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Casual",
+      "Navy, grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.6000000000000001,
+      "favourites": 0.75
+     }
+    },
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-07",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.8775,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Casual",
+      "White, black and grey are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.525,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "stu-04",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.90625,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Casual",
+      "Grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.5625,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Casual|4": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-13",
+      "accessory": null
+     },
+     "score": 0.9299999999999999,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.6333333333333334,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-08",
+      "layer": "stu-14",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.8574999999999999,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "White, khaki, olive and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.575,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "stu-02",
+      "bottom": "stu-07",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.8466666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "Grey, black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.4666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|7": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-13",
+      "accessory": null
+     },
+     "score": 0.9299999999999999,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.6333333333333334,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-08",
+      "layer": null,
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.855,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "White, khaki and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.5499999999999999,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "stu-02",
+      "bottom": "stu-07",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.8466666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "Grey, black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.4666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|10": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.935,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Casual",
+      "Navy, grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.6000000000000001,
+      "favourites": 0.75
+     }
+    },
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-07",
+      "layer": "stu-14",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.855,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Casual",
+      "White, black and olive are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.55,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "stu-04",
+      "bottom": "stu-09",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.82875,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Black and grey are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.5375000000000001,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Work|1": {
+    "missing": [
+     "bottom"
+    ]
+   },
+   "Work|4": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Work|7": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Work|10": {
+    "missing": [
+     "bottom"
+    ]
+   },
+   "Formal|1": {
+    "missing": [
+     "bottom",
+     "footwear"
+    ]
+   },
+   "Formal|4": {
+    "missing": [
+     "top",
+     "bottom",
+     "footwear"
+    ]
+   },
+   "Formal|7": {
+    "missing": [
+     "top",
+     "bottom",
+     "footwear"
+    ]
+   },
+   "Formal|10": {
+    "missing": [
+     "bottom",
+     "footwear"
+    ]
+   },
+   "Party|1": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.7850000000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "Navy, grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.6000000000000001,
+      "favourites": 0.75
+     }
+    },
+    {
+     "items": {
+      "top": "stu-04",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.7050000000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "Grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.55,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.78375,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.5875,
+      "favourites": 0.75
+     }
+    }
+   ],
+   "Party|4": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.7949999999999999,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6166666666666667,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.7933333333333332,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-14",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.7625000000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Navy, olive and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.625,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Party|7": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.7949999999999999,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6166666666666667,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.7933333333333332,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Party|10": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.7850000000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "Navy, grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.6000000000000001,
+      "favourites": 0.75
+     }
+    },
+    {
+     "items": {
+      "top": "stu-04",
+      "bottom": "stu-06",
+      "layer": "stu-14",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.6825,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "Olive and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.575,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.78375,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.5875,
+      "favourites": 0.75
+     }
+    }
+   ],
+   "Sport|1": [
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.7937500000000001,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Winter",
+      "Grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.925,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.5625,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.7425,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Winter",
+      "Grey, black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.925,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.55,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Sport|4": [
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": null,
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.8566666666666666,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Sport",
+      "Grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.5666666666666667,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.7883333333333333,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Spring",
+      "Grey, black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.5499999999999999,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": "stu-14",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.80875,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Spring",
+      "Grey, black and olive are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.5875,
+      "favourites": 0
+     }
+    }
+   ],
+   "Sport|7": [
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": null,
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.8566666666666666,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Sport",
+      "Grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.5666666666666667,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.7883333333333333,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Summer",
+      "Grey, black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.5499999999999999,
+      "favourites": 0
+     }
+    }
+   ],
+   "Sport|10": [
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": "stu-14",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.80875,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Autumn",
+      "Grey, black and olive are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.5875,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.7425,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Autumn",
+      "Grey, black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.925,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.55,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "stu-10",
+      "bottom": "stu-09",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.7937500000000001,
+     "reasons": [
+      "Meets the Sport dress rule",
+      "Nothing is out of season for Autumn",
+      "Grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.925,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.5625,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Date|1": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.83375,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.5875,
+      "favourites": 0.75
+     }
+    },
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-07",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.67875,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "White, black and grey are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.5375000000000001,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "stu-04",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.805,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "Grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.55,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Date|4": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.8599999999999999,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.6,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-13",
+      "accessory": null
+     },
+     "score": 0.7616666666666666,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "White and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6166666666666666,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "stu-02",
+      "bottom": "stu-08",
+      "layer": "stu-14",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.6537499999999999,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Grey, khaki, olive and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.5375,
+      "favourites": 0
+     }
+    }
+   ],
+   "Date|7": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.8599999999999999,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.6,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-13",
+      "accessory": null
+     },
+     "score": 0.7616666666666666,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "White and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6166666666666666,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "stu-02",
+      "bottom": "stu-08",
+      "layer": null,
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.65,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Grey, khaki and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.5,
+      "favourites": 0
+     }
+    }
+   ],
+   "Date|10": [
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.83375,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.5875,
+      "favourites": 0.75
+     }
+    },
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-07",
+      "layer": "stu-14",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.65625,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "White, black and olive are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.5625,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "stu-04",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.805,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "Grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.55,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Travel|1": [
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.9075,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Travel",
+      "White and grey are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.575,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-07",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.805,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "Navy, black and grey are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.55,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "stu-04",
+      "bottom": "stu-06",
+      "layer": "stu-05",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.8550000000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "Grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.55,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Travel|4": [
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.8916666666666666,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Travel",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.5833333333333333,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-07",
+      "layer": "stu-14",
+      "footwear": "stu-13",
+      "accessory": null
+     },
+     "score": 0.78375,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Navy, black, olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.5874999999999999,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "stu-02",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.755,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.5499999999999999,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Travel|7": [
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.8916666666666666,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Travel",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.5833333333333333,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-07",
+      "layer": null,
+      "footwear": "stu-13",
+      "accessory": null
+     },
+     "score": 0.7566666666666666,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Navy, black and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.5666666666666667,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "stu-02",
+      "bottom": "stu-06",
+      "layer": null,
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.755,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.5499999999999999,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Travel|10": [
+    {
+     "items": {
+      "top": "stu-05",
+      "bottom": "stu-06",
+      "layer": "stu-14",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.90875,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Travel",
+      "Grey, olive and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.5874999999999999,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "stu-01",
+      "bottom": "stu-07",
+      "layer": "stu-05",
+      "footwear": "stu-12",
+      "accessory": null
+     },
+     "score": 0.82875,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "White, black and grey are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.5375000000000001,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "stu-03",
+      "bottom": "stu-06",
+      "layer": "stu-14",
+      "footwear": "stu-11",
+      "accessory": null
+     },
+     "score": 0.8612500000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "Navy, olive and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.6125,
+      "favourites": 0.5
+     }
+    }
+   ]
+  },
+  "Office regular": {
+   "Casual|1": [
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-13",
+      "layer": "off-07",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.85375,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Casual",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.7875000000000001,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-11",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.782,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "White, beige, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.2,
+      "completeness": 1,
+      "condition": 0.8200000000000001,
+      "favourites": 0.6
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-12",
+      "layer": "off-16",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.7170000000000001,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Olive, grey and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.2,
+      "completeness": 1,
+      "condition": 0.77,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|4": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-13",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.7830000000000001,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "White, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.2,
+      "completeness": 1,
+      "condition": 0.8300000000000001,
+      "favourites": 0.6
+     }
+    },
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-11",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.7766666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "Navy, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.7666666666666666,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-12",
+      "layer": null,
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.7250000000000001,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|7": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-13",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.7830000000000001,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "White, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.2,
+      "completeness": 1,
+      "condition": 0.8300000000000001,
+      "favourites": 0.6
+     }
+    },
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-11",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.7766666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "Navy, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.7666666666666666,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-12",
+      "layer": null,
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.7250000000000001,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|10": [
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-13",
+      "layer": "off-07",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.85375,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Casual",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.7875000000000001,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-11",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.782,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "White, beige, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.2,
+      "completeness": 1,
+      "condition": 0.8200000000000001,
+      "favourites": 0.6
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-12",
+      "layer": "off-15",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.7150000000000001,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Olive, grey and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.2,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0
+     }
+    }
+   ],
+   "Work|1": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.964,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Work",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-10",
+      "layer": "off-07",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.8979999999999999,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Work",
+      "Navy, grey and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.78,
+      "favourites": 0.2
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-11",
+      "layer": "off-16",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.8300000000000001,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Work",
+      "Beige, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.8,
+      "favourites": 0
+     }
+    }
+   ],
+   "Work|4": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.964,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Work",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-10",
+      "layer": null,
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.8775,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Work",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.775,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-11",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.7783333333333333,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Work",
+      "Beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.7833333333333333,
+      "favourites": 0
+     }
+    }
+   ],
+   "Work|7": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.964,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Work",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-10",
+      "layer": null,
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.8775,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Work",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.775,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-11",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.7783333333333333,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Work",
+      "Beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.7833333333333333,
+      "favourites": 0
+     }
+    }
+   ],
+   "Work|10": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.964,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Work",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-10",
+      "layer": "off-07",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.8979999999999999,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Work",
+      "Navy, grey and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.78,
+      "favourites": 0.2
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-11",
+      "layer": "off-15",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.8275,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Work",
+      "Beige, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.7749999999999999,
+      "favourites": 0
+     }
+    }
+   ],
+   "Formal|1": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.964,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Formal",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.9049999999999999,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Formal",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-10",
+      "layer": "off-15",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.8600000000000001,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Winter",
+      "Navy, grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.8,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.2
+     }
+    }
+   ],
+   "Formal|4": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.964,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Formal",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.9049999999999999,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Formal",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.88375,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.8375000000000001,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Formal|7": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.964,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Formal",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.9049999999999999,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Formal",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.88375,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.8375000000000001,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Formal|10": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.964,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Formal",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.9049999999999999,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Formal",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-10",
+      "layer": "off-15",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.8600000000000001,
+     "reasons": [
+      "Meets the Formal dress rule",
+      "Nothing is out of season for Autumn",
+      "Navy, grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.8,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.2
+     }
+    }
+   ],
+   "Party|1": [
+    {
+     "items": {
+      "top": "off-07",
+      "bottom": "off-10",
+      "layer": "off-14",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.7312500000000002,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "Grey, navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 0.5,
+      "condition": 0.8125,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-13",
+      "layer": "off-16",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6800000000000002,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 0.5,
+      "condition": 0.8,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-07",
+      "bottom": "off-09",
+      "layer": "off-08",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6787500000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "Grey, brown and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 0.5,
+      "condition": 0.7874999999999999,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Party|4": [
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-10",
+      "layer": "off-14",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6550000000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 0,
+      "condition": 0.8,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-13",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.645,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.7833333333333333,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-09",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6133333333333334,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 0,
+      "condition": 0.8000000000000002,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Party|7": [
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-10",
+      "layer": "off-14",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6550000000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 0,
+      "condition": 0.8,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-13",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.645,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.7833333333333333,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-09",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6133333333333334,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 0,
+      "condition": 0.8000000000000002,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Party|10": [
+    {
+     "items": {
+      "top": "off-07",
+      "bottom": "off-10",
+      "layer": "off-14",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.7312500000000002,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "Grey, navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 0.5,
+      "condition": 0.8125,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "off-05",
+      "bottom": "off-13",
+      "layer": "off-15",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6775000000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 0.5,
+      "condition": 0.7749999999999999,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-07",
+      "bottom": "off-09",
+      "layer": "off-08",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6787500000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "Grey, brown and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 0.5,
+      "condition": 0.7874999999999999,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Sport|1": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|4": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|7": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|10": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Date|1": [
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-13",
+      "layer": "off-14",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.8562500000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Date",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.8125,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-11",
+      "layer": "off-07",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.7810000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "White, beige, grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.2,
+      "completeness": 1,
+      "condition": 0.8100000000000002,
+      "favourites": 0.6
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.705,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Date|4": [
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-13",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.8420000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6,
+      "completeness": 1,
+      "condition": 0.8200000000000001,
+      "favourites": 0.4
+     }
+    },
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-11",
+      "layer": null,
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.7525000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "White, beige and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.775,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6833333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Date|7": [
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-13",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.8420000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6,
+      "completeness": 1,
+      "condition": 0.8200000000000001,
+      "favourites": 0.4
+     }
+    },
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-11",
+      "layer": null,
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.7525000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "White, beige and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.775,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6833333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Date|10": [
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-13",
+      "layer": "off-14",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.8562500000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Date",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.8125,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-11",
+      "layer": "off-07",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.7810000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "White, beige, grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.2,
+      "completeness": 1,
+      "condition": 0.8100000000000002,
+      "favourites": 0.6
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-17",
+      "layer": "off-17",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.705,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Travel|1": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.764,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-10",
+      "layer": "off-07",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.698,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "Navy, grey and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.78,
+      "favourites": 0.2
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-13",
+      "layer": "off-16",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.6312500000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 0.5,
+      "condition": 0.8125,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|4": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.764,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-10",
+      "layer": null,
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.6775,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.775,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-13",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.5800000000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 0,
+      "condition": 0.8000000000000002,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|7": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.764,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-10",
+      "layer": null,
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.6775,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.775,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-13",
+      "layer": null,
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.5800000000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Navy and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 0,
+      "condition": 0.8000000000000002,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|10": [
+    {
+     "items": {
+      "top": "off-01",
+      "bottom": "off-09",
+      "layer": "off-14",
+      "footwear": "off-18",
+      "accessory": "off-21"
+     },
+     "score": 0.764,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "White, grey, navy and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.8400000000000001,
+      "favourites": 0.8
+     }
+    },
+    {
+     "items": {
+      "top": "off-02",
+      "bottom": "off-10",
+      "layer": "off-07",
+      "footwear": "off-19",
+      "accessory": "off-22"
+     },
+     "score": 0.698,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "Navy, grey and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.78,
+      "favourites": 0.2
+     }
+    },
+    {
+     "items": {
+      "top": "off-04",
+      "bottom": "off-13",
+      "layer": "off-15",
+      "footwear": "off-20",
+      "accessory": null
+     },
+     "score": 0.62875,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "Navy, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0,
+      "completeness": 0.5,
+      "condition": 0.7875000000000001,
+      "favourites": 0
+     }
+    }
+   ]
+  },
+  "Minimalist neutrals": {
+   "Casual|1": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-07",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.9075,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Casual",
+      "Black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.75
+     }
+    },
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-09",
+      "layer": "min-11",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.8600000000000001,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "White, black and grey are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.9,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "min-03",
+      "bottom": "min-08",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8575000000000002,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Grey, black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.75
+     }
+    }
+   ],
+   "Casual|4": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-07",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8483333333333333,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "Black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-09",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.815,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7833333333333333,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Casual|7": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-07",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8483333333333333,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "Black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-09",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.815,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7833333333333333,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Casual|10": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-07",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.9075,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Casual",
+      "Black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.75
+     }
+    },
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-09",
+      "layer": "min-10",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.859,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.9,
+      "completeness": 1,
+      "condition": 0.79,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "min-03",
+      "bottom": "min-08",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8575000000000002,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Grey, black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.75
+     }
+    }
+   ],
+   "Work|1": [
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-08",
+      "layer": "min-11",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8325000000000001,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Winter",
+      "Beige, black, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-07",
+      "layer": "min-06",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.7224999999999999,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Winter",
+      "Beige and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 0.925,
+      "occasion_fit": 0.3,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.2
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-07",
+      "layer": "min-11",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8062500000000001,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Winter",
+      "Beige, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 0.5,
+      "condition": 0.8125,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Work|4": [
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8516666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Work",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.85,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-07",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7466666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Spring",
+      "Beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.7999999999999999,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-07",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8166666666666667,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Work",
+      "White and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Work|7": [
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8516666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Work",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.85,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-07",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7466666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Summer",
+      "Beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.7999999999999999,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-07",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8166666666666667,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Work",
+      "White and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Work|10": [
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-08",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.77,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Autumn",
+      "Beige, black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.925,
+      "occasion_fit": 0.5,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.75
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-07",
+      "layer": "min-06",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.7224999999999999,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Autumn",
+      "Beige and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 0.925,
+      "occasion_fit": 0.3,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.2
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-07",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7437500000000001,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Autumn",
+      "Beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.925,
+      "occasion_fit": 0.5,
+      "completeness": 0.5,
+      "condition": 0.8125,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Formal|1": {
+    "missing": [
+     "footwear"
+    ]
+   },
+   "Formal|4": {
+    "missing": [
+     "footwear"
+    ]
+   },
+   "Formal|7": {
+    "missing": [
+     "footwear"
+    ]
+   },
+   "Formal|10": {
+    "missing": [
+     "footwear"
+    ]
+   },
+   "Party|1": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": "min-06",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.8819999999999999,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "Black and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.7,
+      "completeness": 1,
+      "condition": 0.82,
+      "favourites": 0.6
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-09",
+      "layer": "min-11",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7812500000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "Black, grey and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 0.5,
+      "condition": 0.8125,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.83375,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "Black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 0.5,
+      "condition": 0.8375,
+      "favourites": 1
+     }
+    }
+   ],
+   "Party|4": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8166666666666667,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 1
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-09",
+      "layer": "min-10",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.78,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 0,
+      "condition": 0.8,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-09",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7799999999999999,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.7999999999999999,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Party|7": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8166666666666667,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 1
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-09",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7799999999999999,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.7999999999999999,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Party|10": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": "min-06",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.8819999999999999,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "Black and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.7,
+      "completeness": 1,
+      "condition": 0.82,
+      "favourites": 0.6
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-09",
+      "layer": "min-10",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7925000000000002,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.925,
+      "occasion_fit": 0.75,
+      "completeness": 0.5,
+      "condition": 0.8,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.83375,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "Black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 0.5,
+      "condition": 0.8375,
+      "favourites": 1
+     }
+    }
+   ],
+   "Sport|1": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|4": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|7": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|10": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Date|1": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.93375,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Date",
+      "Black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.8375,
+      "favourites": 1
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-09",
+      "layer": "min-11",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.859,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "Beige, black and grey are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.9,
+      "completeness": 1,
+      "condition": 0.79,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-07",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7825000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "White and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Date|4": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8833333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Date",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 1
+     }
+    },
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-09",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.815,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Date",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8483333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Date",
+      "Beige, black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Date|7": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8833333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Date",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 1
+     }
+    },
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-09",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.815,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Date",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8483333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Date",
+      "Beige, black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Date|10": [
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.93375,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Date",
+      "Black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0.5,
+      "condition": 0.8375,
+      "favourites": 1
+     }
+    },
+    {
+     "items": {
+      "top": "min-05",
+      "bottom": "min-09",
+      "layer": "min-10",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.818,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "Beige and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.7,
+      "completeness": 1,
+      "condition": 0.7799999999999999,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-07",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7825000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "White and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Travel|1": [
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-07",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8325000000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "White and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": "min-11",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.742,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "Black and grey are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.1,
+      "completeness": 1,
+      "condition": 0.82,
+      "favourites": 0.4
+     }
+    },
+    {
+     "items": {
+      "top": "min-03",
+      "bottom": "min-09",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7300000000000002,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "Grey, black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 0.5,
+      "condition": 0.8,
+      "favourites": 0.5
+     }
+    }
+   ],
+   "Travel|4": [
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-07",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.815,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Travel",
+      "White and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.75,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 1
+     }
+    },
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-09",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.6816666666666666,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Travel|7": [
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-07",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.815,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Travel",
+      "White and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-08",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.75,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.8333333333333334,
+      "favourites": 1
+     }
+    },
+    {
+     "items": {
+      "top": "min-04",
+      "bottom": "min-09",
+      "layer": null,
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.6816666666666666,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "White and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.8166666666666668,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Travel|10": [
+    {
+     "items": {
+      "top": "min-02",
+      "bottom": "min-07",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.8325000000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "White and beige are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 0.5,
+      "condition": 0.8250000000000001,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "min-03",
+      "bottom": "min-08",
+      "layer": "min-10",
+      "footwear": "min-13",
+      "accessory": "min-14"
+     },
+     "score": 0.72,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "Grey and black are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather",
+      "Belt and shoes share a colour family"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.1,
+      "completeness": 1,
+      "condition": 0.8,
+      "favourites": 0.2
+     }
+    },
+    {
+     "items": {
+      "top": "min-01",
+      "bottom": "min-09",
+      "layer": "min-06",
+      "footwear": "min-12",
+      "accessory": null
+     },
+     "score": 0.7562500000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "Black, beige and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 0.5,
+      "condition": 0.8125,
+      "favourites": 0.75
+     }
+    }
+   ]
+  },
+  "Colourful casual": {
+   "Casual|1": [
+    {
+     "items": {
+      "top": "col-03",
+      "bottom": "col-09",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.9,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Casual",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-08",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.8987499999999999,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Casual",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7375,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-10",
+      "layer": "col-07",
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.77125,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Casual",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.75,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7124999999999999,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Casual|4": [
+    {
+     "items": {
+      "top": "col-05",
+      "bottom": "col-09",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.945,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7833333333333333,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-08",
+      "layer": null,
+      "footwear": "col-16",
+      "accessory": null
+     },
+     "score": 0.9033333333333332,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "Brown is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7000000000000001,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-03",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.8716666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "Olive is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|7": [
+    {
+     "items": {
+      "top": "col-05",
+      "bottom": "col-09",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.945,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7833333333333333,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-08",
+      "layer": null,
+      "footwear": "col-16",
+      "accessory": null
+     },
+     "score": 0.9033333333333332,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "Brown is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7000000000000001,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-03",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.8716666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "Olive is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|10": [
+    {
+     "items": {
+      "top": "col-03",
+      "bottom": "col-09",
+      "layer": "col-13",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.90125,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Casual",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7625,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-08",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.8987499999999999,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Casual",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7375,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-10",
+      "layer": "col-07",
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.77125,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Casual",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.75,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7124999999999999,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Work|1": [
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.6441666666666667,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Winter",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.7333333333333334,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.6091666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Winter",
+      "Olive and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.7166666666666667,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.6425,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Winter",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.7166666666666667,
+      "favourites": 0
+     }
+    }
+   ],
+   "Work|4": [
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.8066666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Spring",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7333333333333334,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.7716666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Spring",
+      "Olive and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.8049999999999999,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Spring",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0
+     }
+    }
+   ],
+   "Work|7": [
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.8066666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Summer",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7333333333333334,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.7716666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Summer",
+      "Olive and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.8049999999999999,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Summer",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0
+     }
+    }
+   ],
+   "Work|10": [
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.6441666666666667,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Autumn",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.7333333333333334,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.6091666666666666,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Autumn",
+      "Olive and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.7166666666666667,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.6425,
+     "reasons": [
+      "Meets the Work dress rule",
+      "Nothing is out of season for Autumn",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 0,
+      "condition": 0.7166666666666667,
+      "favourites": 0
+     }
+    }
+   ],
+   "Formal|1": {
+    "missing": [
+     "bottom"
+    ]
+   },
+   "Formal|4": {
+    "missing": [
+     "bottom"
+    ]
+   },
+   "Formal|7": {
+    "missing": [
+     "bottom"
+    ]
+   },
+   "Formal|10": {
+    "missing": [
+     "bottom"
+    ]
+   },
+   "Party|1": [
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-09",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.7825,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.915,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-08",
+      "layer": "col-07",
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.64875,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.755,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.7124999999999999,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-09",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.76875,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Winter",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.84,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.7375,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Party|4": [
+    {
+     "items": {
+      "top": "col-05",
+      "bottom": "col-09",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.945,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Party",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7833333333333333,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-08",
+      "layer": null,
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.7625,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.915,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-09",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.8766666666666666,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Spring",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7666666666666666,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Party|7": [
+    {
+     "items": {
+      "top": "col-05",
+      "bottom": "col-09",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.945,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Party",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7833333333333333,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-08",
+      "layer": null,
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.7625,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.915,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-09",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.8766666666666666,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Summer",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7666666666666666,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Party|10": [
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-09",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.7825,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.915,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-08",
+      "layer": "col-13",
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.65,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.755,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.7250000000000001,
+      "favourites": 0
+     }
+    },
+    {
+     "items": {
+      "top": "col-04",
+      "bottom": "col-09",
+      "layer": "col-13",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.7700000000000001,
+     "reasons": [
+      "Meets the Party dress rule",
+      "Nothing is out of season for Autumn",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.84,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Sport|1": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|4": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|7": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|10": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Date|1": [
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-09",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.85,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-02",
+      "bottom": "col-08",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.7675000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.84,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.725,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-10",
+      "layer": "col-07",
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.57125,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.75,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.7124999999999999,
+      "favourites": 0.25
+     }
+    }
+   ],
+   "Date|4": [
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-09",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.9099999999999999,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Date",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7666666666666666,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-05",
+      "bottom": "col-08",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.8433333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Brown is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7666666666666666,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-02",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.8383333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "Olive and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Date|7": [
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-09",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.9099999999999999,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Date",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7666666666666666,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-05",
+      "bottom": "col-08",
+      "layer": null,
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.8433333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Brown is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7666666666666666,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-02",
+      "bottom": "col-10",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.8383333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "Olive and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.6666666666666666,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0.3333333333333333
+     }
+    }
+   ],
+   "Date|10": [
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-09",
+      "layer": "col-13",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.8512500000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.7625,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-02",
+      "bottom": "col-08",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.7675000000000001,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.84,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.725,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-10",
+      "layer": "col-13",
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.7737499999999999,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.7375,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|1": [
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-08",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.83125,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.915,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.7375,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "col-03",
+      "bottom": "col-09",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.7500000000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "Black and white are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-10",
+      "layer": "col-07",
+      "footwear": "col-15",
+      "accessory": null
+     },
+     "score": 0.5537500000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.765,
+      "occasion_fit": 0,
+      "completeness": 1,
+      "condition": 0.7124999999999999,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|4": [
+    {
+     "items": {
+      "top": "col-05",
+      "bottom": "col-08",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.9433333333333332,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Travel",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7666666666666666,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-11",
+      "layer": null,
+      "footwear": "col-16",
+      "accessory": null
+     },
+     "score": 0.8999999999999999,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Travel",
+      "Brown is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.6666666666666666,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-09",
+      "layer": "col-13",
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.7262500000000001,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "Black and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.7625,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|7": [
+    {
+     "items": {
+      "top": "col-05",
+      "bottom": "col-08",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.9433333333333332,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Travel",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7666666666666666,
+      "favourites": 0.6666666666666666
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-12",
+      "layer": null,
+      "footwear": "col-16",
+      "accessory": null
+     },
+     "score": 0.9016666666666666,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Travel",
+      "Brown is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.6833333333333332,
+      "favourites": 0.3333333333333333
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-11",
+      "layer": null,
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.9383333333333332,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Travel",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.7166666666666667,
+      "favourites": 0.6666666666666666
+     }
+    }
+   ],
+   "Travel|10": [
+    {
+     "items": {
+      "top": "col-03",
+      "bottom": "col-08",
+      "layer": "col-13",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.85,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.75,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0.25
+     }
+    },
+    {
+     "items": {
+      "top": "col-01",
+      "bottom": "col-09",
+      "layer": "col-07",
+      "footwear": "col-14",
+      "accessory": null
+     },
+     "score": 0.7825,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 0.915,
+      "occasion_fit": 0.5,
+      "completeness": 1,
+      "condition": 0.75,
+      "favourites": 0.5
+     }
+    },
+    {
+     "items": {
+      "top": "col-06",
+      "bottom": "col-10",
+      "layer": "col-13",
+      "footwear": "col-17",
+      "accessory": null
+     },
+     "score": 0.72375,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "Olive and brown are neutral and go with anything",
+      "At most one pattern, so nothing clashes",
+      "Layer works for cool weather"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.25,
+      "completeness": 1,
+      "condition": 0.7375,
+      "favourites": 0
+     }
+    }
+   ]
+  },
+  "Thin wardrobe": {
+   "Casual|1": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.7041666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Winter",
+      "Every piece is tagged for Casual",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|4": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.8666666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Spring",
+      "Every piece is tagged for Casual",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|7": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.8666666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Summer",
+      "Every piece is tagged for Casual",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 1,
+      "completeness": 1,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Casual|10": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.7041666666666666,
+     "reasons": [
+      "Meets the Casual dress rule",
+      "Nothing is out of season for Autumn",
+      "Every piece is tagged for Casual",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "OCC",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 1,
+      "completeness": 0,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Work|1": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Work|4": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Work|7": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Work|10": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Formal|1": {
+    "missing": [
+     "top",
+     "bottom",
+     "footwear"
+    ]
+   },
+   "Formal|4": {
+    "missing": [
+     "top",
+     "bottom",
+     "footwear"
+    ]
+   },
+   "Formal|7": {
+    "missing": [
+     "top",
+     "bottom",
+     "footwear"
+    ]
+   },
+   "Formal|10": {
+    "missing": [
+     "top",
+     "bottom",
+     "footwear"
+    ]
+   },
+   "Party|1": {
+    "missing": [
+     "top"
+    ]
+   },
+   "Party|4": {
+    "missing": [
+     "top"
+    ]
+   },
+   "Party|7": {
+    "missing": [
+     "top"
+    ]
+   },
+   "Party|10": {
+    "missing": [
+     "top"
+    ]
+   },
+   "Sport|1": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|4": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|7": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Sport|10": {
+    "missing": [
+     "top",
+     "bottom"
+    ]
+   },
+   "Date|1": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.5708333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Winter",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Date|4": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.7333333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Spring",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Date|7": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.7333333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Summer",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Date|10": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.5708333333333333,
+     "reasons": [
+      "Meets the Date dress rule",
+      "Nothing is out of season for Autumn",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|1": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.5708333333333333,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Winter",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|4": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.7333333333333333,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Spring",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|7": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.7333333333333333,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Summer",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 1,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 1,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ],
+   "Travel|10": [
+    {
+     "items": {
+      "top": "thin-01",
+      "bottom": "thin-02",
+      "layer": null,
+      "footwear": "thin-03",
+      "accessory": null
+     },
+     "score": 0.5708333333333333,
+     "reasons": [
+      "Meets the Travel dress rule",
+      "Nothing is out of season for Autumn",
+      "White is neutral and goes with anything",
+      "At most one pattern, so nothing clashes"
+     ],
+     "ruleIds": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+     ],
+     "parts": {
+      "rule_fit": 0.875,
+      "occasion_fit": 0.3333333333333333,
+      "completeness": 0,
+      "condition": 0.6666666666666666,
+      "favourites": 0
+     }
+    }
+   ]
+  }
+ },
+ "random_digests": [
+  "1f05fcf4452ff8",
+  "a30bd358dcfea",
+  "4d4e1f872fbb9",
+  "1511e06e70a742",
+  "f05d3c5b85bdc",
+  "ed5c88d5a472d",
+  "179fd7cca034ae",
+  "114ee0fd2971ac",
+  "f6bfaa4e2396e",
+  "2accc17847f0e",
+  "b8521ffb601cc",
+  "1e405352f5e2b",
+  "1c1cbd31b882a4",
+  "164cc52c0c18b",
+  "163f2e5b6a3d3d",
+  "1fb4ac1ff235d3",
+  "17821ef0f2469c",
+  "3037a91cb56bf",
+  "198d23c17b7456",
+  "1eac0d662d8a75",
+  "470760bfad511",
+  "1f5db5587134b4",
+  "15e350fbb87581",
+  "1c48aff0ce2ac9",
+  "f71375ddd4525",
+  "be12a7d91f3d0",
+  "27f56ed88cd4f",
+  "179928a0004f7f",
+  "15be4156a02fb7",
+  "1dd57bf3b8eae1",
+  "bd3682be288b8",
+  "10f8d1c9aba379",
+  "1872d2a30443df",
+  "11fd0f6cb97e87",
+  "18a0843a62f24",
+  "ddcdd9aebf69f",
+  "169e7e23336b25",
+  "171ef74e0f7e37",
+  "1103c816b47c02",
+  "72db7ed379a1e",
+  "1af4889f7325ac",
+  "50682a05dda4b",
+  "a17513ed20e66",
+  "1dae8688901760",
+  "f939e15855953",
+  "8fa16d0674d1d",
+  "b77424fbad7dd",
+  "1e232738e9939f",
+  "1a3c48736c10c7",
+  "1df4ef0cf344a0",
+  "1b13c7819cc433",
+  "f878021d0db06",
+  "6e44d21f8c78c",
+  "62bb02dd8b2a5",
+  "1d7d5419dc5809",
+  "2c17d3fb33e68",
+  "1de5afc49842ee",
+  "f9623e3d0da7a",
+  "1dcaea2331b3fe",
+  "b4fcb4be48f3e",
+  "1e008d6bae6a3a",
+  "1eb9ec25698fd",
+  "15d042467dd638",
+  "e48374965dcd8",
+  "f69a7da122707",
+  "1ba8bb0b16c29e",
+  "1499931ad542cb",
+  "d657f5997eb7e",
+  "1eee9f9f943352",
+  "899c978564a5b",
+  "cc05e8cf6ac4f",
+  "c5f12110d9f92",
+  "1b4c27d61d97d4",
+  "1903c458c23386",
+  "1e98f121087033",
+  "183323fd0420f2",
+  "891e1c39e6a9a",
+  "7069a6191e919",
+  "f939e15855953",
+  "1916ee095c9802",
+  "165a25211854a7",
+  "1e2c2a00fd6363",
+  "1fd613bebc238c",
+  "3e2c0efd39303",
+  "1075a57fb1cfd3",
+  "1c9fd334d26133",
+  "7f2c6270314fd",
+  "1e8ffeac53d13a",
+  "1f660dfc915aa9",
+  "16ca33ac0cc7c4",
+  "195821a2fefb6d",
+  "198886f3ecf0b2",
+  "e1f5bce6eec74",
+  "1c6303055ceabc",
+  "c7b1efa7d340b",
+  "f939e15855953",
+  "b6b3a3ea6769b",
+  "1c385c5ed2b4ad",
+  "12c91966f94906",
+  "1c36d786a9c9a7",
+  "a2292b414d4c7",
+  "15a3fad3d2fe5",
+  "644b858b148a8",
+  "2622e8e5da86",
+  "10f07866c7e63e",
+  "e963d7847d4aa",
+  "1384d27a9481dd",
+  "d3943df736019",
+  "1fdec64108438c",
+  "1fa940851915f",
+  "9b7402ae93def",
+  "1ad08cad19e864",
+  "75523f6beb988",
+  "8f331113faeea",
+  "1927c12d1d5ced",
+  "359dd367188f4",
+  "155b162fa40022",
+  "4202e3f21dcc3",
+  "1d370df58ab017",
+  "8c3f58e7abddd",
+  "842f692a3de5e",
+  "111232a9a2d817",
+  "1a81f9cea3e90b",
+  "1cf4ebe7d7813e",
+  "d0fb00c44fef5",
+  "11854b0bbb8d1d",
+  "177bde4d8481b2",
+  "1076dfd657ed09",
+  "def19249d73eb",
+  "8a5bee22ab9f1",
+  "1b442aa5960c7",
+  "ea2a2dc70c58b",
+  "5e4208f61c766",
+  "a25e24b99074",
+  "17fe9552042a9",
+  "1ccbb7e659edee",
+  "1bb9fb84e82060",
+  "20a5fdbb57416",
+  "1c6f0cf21d1e83",
+  "3c233966a6136",
+  "1a69298b0fa845",
+  "127a2ae94223e9",
+  "c6039087015bb",
+  "179c4ac2534dc4",
+  "38d8434ba82d3",
+  "f939e15855953",
+  "e16b4bf3251af",
+  "40c872105e418",
+  "1e0ed218d3bde",
+  "15f86bb5371885",
+  "444734b1e91bb",
+  "12e6893c86caae",
+  "d48f9d627798",
+  "f9f933e028588",
+  "41fd7c9f8e9b",
+  "f553bca8e0180",
+  "15476b975ff55e",
+  "178bc3c34a3860",
+  "8fff708659296",
+  "13c66287d553b",
+  "4daedfe5b2db",
+  "e4f80bd1d2aa8",
+  "19f3f2fd43c715",
+  "bd7d48889d316",
+  "15ffdd83ba23df",
+  "1b7e81addebcb7",
+  "1ca0bd5f19384e",
+  "11a76fe6614425",
+  "1523943630a37f",
+  "1950f1f04af3e8",
+  "27f0ebbcd421",
+  "1f4c6fb96bb4ba",
+  "bb58598a5c124",
+  "1d0315f724d768",
+  "bb42b3a78e9b2",
+  "121167ccb6a3",
+  "ee34249cb59cc",
+  "8eb092e419be2",
+  "124e1109d1169a",
+  "7ccf0bbb67ac4",
+  "10f75bea72b2d0",
+  "44994328d67fc",
+  "1519e352b06068",
+  "1a84203488992e",
+  "c00f3cc3b1b15",
+  "1816f9a0384851",
+  "17f2dbb5d65349",
+  "ff35248057139",
+  "2333430c7566c",
+  "71f811daf87c9",
+  "8fcf4a5a4b3bf",
+  "b100cc546858c",
+  "6d4357c5ef511",
+  "da8d220e6d4f0",
+  "8bda06d060124",
+  "1ef76e7bfeba71",
+  "196da90f93f6aa",
+  "1ed8fdbff01ed1",
+  "df3dd3a76609",
+  "30d19dfc348e9"
+ ]
+}

@@ -26,8 +26,8 @@ export function preScore(item: Item, ctx: Ctx): number {
   return 2 * match + (wornOut ? 0 : 1);
 }
 
-/** Step 2: group eligible items by slot, best first (pre-score, then item ID), best eight per slot. */
-export function slotCandidates(eligible: readonly Item[], ctx: Ctx): Candidates {
+/** Step 2: group eligible items by slot, best first (pre-score, then item ID), best `limit` (eight) per slot; `keepOne` false skips the add-back below (Wardrobe unlock keeps its bound exact). */
+export function slotCandidates(eligible: readonly Item[], ctx: Ctx, limit = BEST_PER_SLOT, keepOne = true): Candidates {
   const groups: Candidates = { top: [], bottom: [], layer: [], footwear: [], both: [], belts: [] };
   for (const item of eligible) {
     for (const p of usablePlacements(item, ctx.occasion)) {
@@ -38,9 +38,9 @@ export function slotCandidates(eligible: readonly Item[], ctx: Ctx): Candidates 
   for (const key of Object.keys(groups) as (keyof Candidates)[]) groups[key].sort(order);
   const full = { top: groups.top, bottom: groups.bottom, layer: groups.layer, both: groups.both, footwear: groups.footwear };
   for (const key of Object.keys(groups) as (keyof Candidates)[]) {
-    if (key !== 'belts') groups[key] = groups[key].slice(0, BEST_PER_SLOT);
+    if (key !== 'belts') groups[key] = groups[key].slice(0, limit);
   }
-  return keepOneOutfit(groups, full, ctx);
+  return keepOne ? keepOneOutfit(groups, full, ctx) : groups;
 }
 
 type Pool = Pick<Candidates, 'top' | 'bottom' | 'layer' | 'both' | 'footwear'>;

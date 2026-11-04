@@ -119,3 +119,9 @@ export function validOutfitExists(items: readonly Item[], ctx: Ctx): boolean {
     return independentProblems({ layer: suit ? bottom : null, accessory: null, top, bottom, footwear }, ctx).length === 0;
   })));
 }
+
+/** Per the independent tables: does the item pass R2 and fit the slot (any of top, bottom, layer or footwear when none is named) for this occasion? A Suit or Tuxedo must fit both layer and bottom. */
+export const independentFits = (item: Item, ctx: Ctx, slot?: Slot): boolean => {
+  const fits = (s: Slot): boolean => slotOk(item, s, ctx.occasion);
+  return r2(item, ctx) && (isSuit(item) ? fits('layer') && fits('bottom') : (slot ? [slot] : (['top', 'bottom', 'layer', 'footwear'] as Slot[])).some(fits));
+};

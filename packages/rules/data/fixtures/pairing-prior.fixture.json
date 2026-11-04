@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "min_pairs": 30,
+  "type_pairs": {
+    "Top+Bottom": {
+      "T-shirt": { "Jeans": 0.8, "Chinos": 0.4, "Shorts": 0.65 },
+      "Shirt": { "Jeans": 0.3, "Chinos": 0.7, "Trousers": 0.75 },
+      "Polo": { "Chinos": 0.6 },
+      "Hoodie": { "Joggers": 0.7 }
+    },
+    "Top+Footwear": {
+      "T-shirt": { "Sneakers": 0.7, "Formal shoes": 0.2 },
+      "Shirt": { "Formal shoes": 0.65, "Sneakers": 0.45 }
+    },
+    "Bottom+Footwear": {
+      "Jeans": { "Sneakers": 0.6, "Boots": 0.65 },
+      "Chinos": { "Sneakers": 0.55 },
+      "Trousers": { "Formal shoes": 0.7 }
+    },
+    "Layer+Top": {
+      "Jacket": { "T-shirt": 0.6 },
+      "Blazer": { "Shirt": 0.7 }
+    }
+  },
+  "colour_pairs": {
+    "Top+Bottom": {
+      "White": { "Blue": 0.7, "Black": 0.55 },
+      "Navy": { "Beige": 0.65, "Grey": 0.6 },
+      "Black": { "Black": 0.35 }
+    },
+    "Top+Footwear": {
+      "White": { "White": 0.6, "Black": 0.5 },
+      "Navy": { "Brown": 0.62 }
+    },
+    "Bottom+Footwear": {
+      "Blue": { "White": 0.7 },
+      "Beige": { "Brown": 0.65 }
+    },
+    "Layer+Top": {
+      "Navy": { "White": 0.7 }
+    }
+  }
+}

@@ -120,6 +120,7 @@
     "favourites": 0.1
   },
   "unlock_min_rule_fit": 0.6,
+  "unlock_bound_per_slot": 20,
   "penalties": {
     "note": "DRAFT (WO-0004): no document gives these magnitudes. They are invented placeholders so R3 to R6 and R7 can be scored; the style specialist owns them (FOI-9) and must confirm or replace every value. Each is taken off a 0 to 1 rule value, which never goes below 0.",
     "families_over_three": 0.34,

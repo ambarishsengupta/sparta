@@ -1,0 +1,198 @@
+{
+ "count": 10000,
+ "accuracy": 0.8953,
+ "per_class": [
+  {
+   "class": 0,
+   "name": "T-shirt/top",
+   "correct": 835,
+   "total": 1000,
+   "accuracy": 0.835
+  },
+  {
+   "class": 1,
+   "name": "Trouser",
+   "correct": 969,
+   "total": 1000,
+   "accuracy": 0.969
+  },
+  {
+   "class": 2,
+   "name": "Pullover",
+   "correct": 852,
+   "total": 1000,
+   "accuracy": 0.852
+  },
+  {
+   "class": 3,
+   "name": "Dress",
+   "correct": 895,
+   "total": 1000,
+   "accuracy": 0.895
+  },
+  {
+   "class": 4,
+   "name": "Coat",
+   "correct": 832,
+   "total": 1000,
+   "accuracy": 0.832
+  },
+  {
+   "class": 5,
+   "name": "Sandal",
+   "correct": 966,
+   "total": 1000,
+   "accuracy": 0.966
+  },
+  {
+   "class": 6,
+   "name": "Shirt",
+   "correct": 700,
+   "total": 1000,
+   "accuracy": 0.7
+  },
+  {
+   "class": 7,
+   "name": "Sneaker",
+   "correct": 966,
+   "total": 1000,
+   "accuracy": 0.966
+  },
+  {
+   "class": 8,
+   "name": "Bag",
+   "correct": 977,
+   "total": 1000,
+   "accuracy": 0.977
+  },
+  {
+   "class": 9,
+   "name": "Ankle boot",
+   "correct": 961,
+   "total": 1000,
+   "accuracy": 0.961
+  }
+ ],
+ "confusion": [
+  [
+   835,
+   0,
+   13,
+   28,
+   6,
+   1,
+   103,
+   0,
+   14,
+   0
+  ],
+  [
+   0,
+   969,
+   1,
+   24,
+   4,
+   0,
+   2,
+   0,
+   0,
+   0
+  ],
+  [
+   12,
+   0,
+   852,
+   12,
+   64,
+   0,
+   59,
+   0,
+   1,
+   0
+  ],
+  [
+   15,
+   4,
+   9,
+   895,
+   22,
+   0,
+   52,
+   0,
+   3,
+   0
+  ],
+  [
+   1,
+   1,
+   51,
+   42,
+   832,
+   0,
+   70,
+   0,
+   3,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   0,
+   0,
+   966,
+   0,
+   26,
+   0,
+   8
+  ],
+  [
+   124,
+   0,
+   56,
+   31,
+   82,
+   0,
+   700,
+   0,
+   7,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   0,
+   0,
+   8,
+   0,
+   966,
+   0,
+   26
+  ],
+  [
+   2,
+   0,
+   3,
+   3,
+   4,
+   3,
+   4,
+   3,
+   977,
+   1
+  ],
+  [
+   0,
+   0,
+   1,
+   0,
+   0,
+   3,
+   0,
+   35,
+   0,
+   961
+  ]
+ ]
+}

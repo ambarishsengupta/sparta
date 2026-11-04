@@ -1,0 +1,4 @@
+Settings were chosen on the 6,000-picture validation split only (the test pictures were never loaded by these runs).
+Run 1 (train.py as first written: lr 2e-3, rotation +-12 deg, shift +-2 px, scale 0.9-1.1 p=0.8, brightness/contrast p=0.5, blur p=0.25, erasing p=0.25): 30 epochs, best validation accuracy 0.8817 (epoch 29), still rising; judged too strong for a 25,706-weight network. Its log was overwritten by the final run.
+Run 2 "mid" (tuning-mid-aug-lr3e-3.log): lr 3e-3, p_geo 0.6, rot 10, shift 2, scale 0.1, p_bc 0.4, p_blur 0.15, p_erase 0.15: best validation accuracy 0.8940.
+Run 3 "soft" (tuning-soft-aug-lr3e-3.log): lr 3e-3, p_geo 0.5, rot 8, shift 1.5, scale 0.08, p_bc 0.3, p_blur 0.1, p_erase 0.1: best validation accuracy 0.8983. Chosen; train.log is the final run of train.py with these values (identical result, same seed).

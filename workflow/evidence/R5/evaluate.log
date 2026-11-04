@@ -1,0 +1,23 @@
+test pictures 10000  overall accuracy 0.8953
+  0 T-shirt/top   835/1000  0.8350
+  1 Trouser       969/1000  0.9690
+  2 Pullover      852/1000  0.8520
+  3 Dress         895/1000  0.8950
+  4 Coat          832/1000  0.8320
+  5 Sandal        966/1000  0.9660
+  6 Shirt         700/1000  0.7000
+  7 Sneaker       966/1000  0.9660
+  8 Bag           977/1000  0.9770
+  9 Ankle boot    961/1000  0.9610
+confusion matrix (rows true, columns predicted):
+   835    0   13   28    6    1  103    0   14    0
+     0  969    1   24    4    0    2    0    0    0
+    12    0  852   12   64    0   59    0    1    0
+    15    4    9  895   22    0   52    0    3    0
+     1    1   51   42  832    0   70    0    3    0
+     0    0    0    0    0  966    0   26    0    8
+   124    0   56   31   82    0  700    0    7    0
+     0    0    0    0    0    8    0  966    0   26
+     2    0    3    3    4    3    4    3  977    1
+     0    0    1    0    0    3    0   35    0  961
+wrote /Users/ambarish/Documents/Claude/Sparta/sparta/ml/recommendation-engine/garment/model_card.md

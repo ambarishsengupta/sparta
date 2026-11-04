@@ -1,0 +1,54 @@
+=== GATE: typecheck ===
+
+> typecheck
+> tsc -p tsconfig.json
+
+--- typecheck: PASS
+=== GATE: test ===
+
+> test
+> vitest run
+
+
+ RUN  v5.1.0 /Users/ambarish/Documents/Claude/Sparta/sparta
+
+
+ Test Files  36 passed (36)
+      Tests  691 passed (691)
+   Start at  15:09:51
+   Duration  8.90s (tests 94%, import 3%, transform 2%)
+
+--- test: PASS
+=== GATE: lint ===
+
+> lint
+> eslint .
+
+--- lint: PASS
+=== GATE: manifest_check ===
+garment-cnn-v2.onnx: ok, not built (status "not-built", no hash pinned)
+pairing-prior-v1.json: ok, not built (status "not-built", no hash pinned)
+unlock-candidates.json: ok, not built (status "not-built", no hash pinned)
+manifest_check: PASS (/Users/ambarish/Documents/Claude/Sparta/sparta/models.manifest.json)
+--- manifest_check: PASS
+=== GATE: secret_scan ===
+secret_scan: PASS (no secrets found in 279 candidate files)
+--- secret_scan: PASS
+=== GATE: release_map ===
+defined: 99 FR, 8 NFR, 51 BR (40 Must); releases parsed: R0, R1, R2, R3, R4, R5, R6, R7, R8; FDD 16 events: 15
+release_map: PASS
+--- release_map: PASS
+=== GATE: check_goals ===
+skipped   workflow/goals/R0-gate-green.md (the gate is already running; predicate: bash workflow/gates/gate.sh >/dev/null 2>&1)
+holding   workflow/goals/R0-manifest-not-built.md
+holding   workflow/goals/R1-engine-tests.md
+holding   workflow/goals/R1-review-pack.md
+holding   workflow/goals/R3-app-build.md
+holding   workflow/goals/R4-learned-parts-off.md
+check_goals: 6 goal file(s), none violated
+--- check_goals: PASS
+=== GATE: scope_check ===
+scope_check: PASS (all changed paths are inside the In scope list)
+--- scope_check: PASS
+GATE: PASS
+WO_ID=WO-0031 GATE_BASE=$(git rev-parse HEAD) GATE_WO= bash   55.92s user 10.45s system 264% cpu 25.113 total

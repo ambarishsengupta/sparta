@@ -43,3 +43,8 @@ data/recommendation-engine/artifacts/
 # Local caches and evaluation photos (LLD 13.4)
 data/recommendation-engine/hm-cache/
 data/recommendation-engine/team-photos/
+
+# Python virtualenvs and training caches for the offline model scripts (R5)
+.venv/
+venv*/
+ml/recommendation-engine/garment/.cache/

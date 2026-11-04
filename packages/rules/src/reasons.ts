@@ -16,14 +16,15 @@ function listColours(families: readonly string[]): string {
   return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
-/** R8: one fixed sentence per rule met. R1 and R2 always hold, so there is at least one reason. */
+/** R8: one fixed sentence per rule met, and the tag sentence when occasion_fit is 1. R1 and R2 always hold, so there is at least one reason. */
 export function reasonsFor(evaluation: Evaluation, ctx: Ctx): { reasons: string[]; ruleIds: string[] } {
-  const { rules, neutrals, cool, beltMatches } = evaluation;
+  const { rules, neutrals, cool, beltMatches, parts } = evaluation;
   const season = seasonFor(ctx.date, ctx.hemisphere);
   const found: [string, string][] = [
     ['R1', fill('r1', { occasion: ctx.occasion })],
     ['R2', fill('r2', { season })],
   ];
+  if (parts.occasion_fit === 1) found.push(['OCC', fill('r_tagged', { occasion: ctx.occasion })]); // only when every piece carries the tag
   if (rules.R3 === 1) {
     found.push(['R3', neutrals.length === 0 ? fill('r3_harmony', {}) : fill(neutrals.length === 1 ? 'r3_neutral_one' : 'r3_neutral_many', { colours: listColours(neutrals) })]);
   }

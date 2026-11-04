@@ -34,7 +34,7 @@ describe('reasons only for rules fully met (M32)', () => {
     }
   });
   it('R1 and R2 always remain, so there is always a reason', () => {
-    expect(reasonsFor(ev({ R3: 0, R4: 0, R5: 0, R6: 0 }), at('Casual', 1)).reasons).toEqual(['Every piece suits Casual', 'Every piece suits Winter']);
+    expect(reasonsFor(ev({ R3: 0, R4: 0, R5: 0, R6: 0 }), at('Casual', 1)).reasons).toEqual(['Meets the Casual dress rule', 'Nothing is out of season for Winter']);
   });
   it('through suggest: two bold items (R3 0.66) give no colour reason', () => {
     const r = suggest([mk('T-shirt', 't', { rgb: [214, 40, 40], colourFamily: 'Red' }), mk('Jeans', 'j', { rgb: [40, 160, 70], colourFamily: 'Green' }), mk('Sneakers', 's', { rgb: [255, 255, 255], colourFamily: 'White' })], at('Casual', 4));
@@ -64,7 +64,7 @@ describe('rule_fit is the mean of R3 to R6 (M48)', () => {
   const score = createScorer(at('Casual', 4), false);
   it('two bold items (R3 0.66) and two patterns (R4 0.5) give (0.66 + 0.5 + 1 + 1) / 4, not the minimum', () => {
     const e = score.evaluate({
-      top: mk('T-shirt', 't', { rgb: [214, 40, 40], colourFamily: 'Red', pattern: 'Striped' }), bottom: mk('Jeans', 'j', { rgb: [40, 160, 70], colourFamily: 'Green', pattern: 'Checked' }),
+      top: mk('T-shirt', 't', { rgb: [214, 40, 40], colourFamily: 'Red', pattern: 'Striped' }), bottom: mk('Jeans', 'j', { rgb: [40, 160, 70], colourFamily: 'Teal', pattern: 'Checked' }),
       layer: null, footwear: mk('Sneakers', 's'), accessory: null,
     });
     expect([e.rules.R3, e.rules.R4, e.rules.R5, e.rules.R6]).toEqual([0.66, 0.5, 1, 1].map((n) => expect.closeTo(n, 12)));

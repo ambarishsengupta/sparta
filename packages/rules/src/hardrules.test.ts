@@ -52,7 +52,7 @@ describe('R2 season and status', () => {
 describe('R1 occasion filter', () => {
   type Row = [top: SubType, bottom: SubType, shoe: SubType];
   const allowed: [Occasion, Row[], Row[]][] = [
-    ['Casual', [['T-shirt', 'Jeans', 'Sandals'], ['Hoodie', 'Joggers', 'Sneakers'], ['T-shirt', 'Shorts', 'Sandals'], ['T-shirt', 'Jeans', 'Formal shoes']], [['T-shirt', 'Shorts', 'Formal shoes'], ['Sports T-shirt', 'Sports shorts', 'Formal shoes']]],
+    ['Casual', [['T-shirt', 'Jeans', 'Sandals'], ['Hoodie', 'Joggers', 'Sneakers'], ['T-shirt', 'Shorts', 'Sandals'], ['Shirt', 'Jeans', 'Formal shoes']], [['T-shirt', 'Jeans', 'Formal shoes'], ['T-shirt', 'Shorts', 'Formal shoes'], ['Sports T-shirt', 'Sports shorts', 'Formal shoes']]],
     ['Date', [['Polo', 'Chinos', 'Boots']], [['T-shirt', 'Shorts', 'Formal shoes']]],
     ['Travel', [['Hoodie', 'Joggers', 'Sandals']], [['T-shirt', 'Shorts', 'Formal shoes']]],
     ['Work', [['Shirt', 'Chinos', 'Formal shoes'], ['Polo', 'Trousers', 'Boots'], ['Polo', 'Chinos', 'Sneakers']], [['T-shirt', 'Chinos', 'Formal shoes'], ['Shirt', 'Jeans', 'Formal shoes'], ['Shirt', 'Chinos', 'Sandals']]],
@@ -72,11 +72,11 @@ describe('R1 occasion filter', () => {
   it('lets a tag alone not break R1: a Work-tagged pair of sandals is still no Work footwear', () => {
     expect(outfitsFor([mk('Shirt', 't'), mk('Chinos', 'c'), mk('Sandals', 's', { occasions: ['Work'] })], ctx('Work'))).toEqual([]);
   });
-  it('allows a layer only where R1 allows it (Formal: blazer yes, hoodie no; Work: any layer)', () => {
+  it('allows a layer only where R1 allows it (Formal: blazer yes, hoodie no; Work: a blazer yes; the rest of the Work layer list is in styleRules.test.ts)', () => {
     const formal = [mk('Shirt', 't'), mk('Trousers', 'b'), mk('Formal shoes', 's')];
     expect(keys([...formal, mk('Blazer', 'l')], ctx('Formal'))).toEqual(['t/b/-/s/-', 't/b/l/s/-']);
     expect(keys([...formal, mk('Hoodie', 'l')], ctx('Formal'))).toEqual(['t/b/-/s/-']);
-    expect(keys([mk('Shirt', 't'), mk('Chinos', 'b'), mk('Boots', 's'), mk('Jacket', 'l')], ctx('Work'))).toHaveLength(2);
+    expect(keys([mk('Shirt', 't'), mk('Chinos', 'b'), mk('Boots', 's'), mk('Blazer', 'l')], ctx('Work'))).toHaveLength(2);
   });
 });
 

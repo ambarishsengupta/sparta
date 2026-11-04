@@ -2,7 +2,7 @@ import { conditionBandOf, rgbToLab } from '@sparta/taxonomy';
 import type { ColourFamily } from '@sparta/taxonomy';
 import rulesJson from '../data/rules.json';
 import type { Outfit } from './combinations.js';
-import { RULES } from './eligibility.js';
+import { RULES, styleRule } from './eligibility.js';
 import { seasonFor } from './season.js';
 import type { Ctx, Item } from './types.js';
 
@@ -54,11 +54,14 @@ export function createScorer(ctx: Ctx, hasBelts: boolean) {
     return p;
   };
 
-  /** R3: at most three non-neutral colour families and at most one bold item. */
+  const maxFamilies = styleRule(ctx.occasion).max_non_neutral_families ?? 3;
+  const clashes = rulesJson.clashing_family_pairs as [ColourFamily, ColourFamily][];
+  /** R3: at most three non-neutral colour families (two for Work, Formal and Date), at most one bold item, no clashing pair of families. */
   const harmony = (items: readonly Item[]): number => {
     const families = new Set(items.filter((i) => !profile(i).neutral).map((i) => i.colourFamily));
     const bold = items.filter((i) => profile(i).bold).length;
-    return clamp01(1 - PENALTIES.families_over_three * Math.max(0, families.size - 3) - PENALTIES.extra_bold * Math.max(0, bold - 1));
+    const clashing = clashes.filter(([a, b]) => families.has(a) && families.has(b)).length;
+    return clamp01(1 - PENALTIES.families_over_three * Math.max(0, families.size - maxFamilies) - PENALTIES.extra_bold * Math.max(0, bold - 1) - PENALTIES.clashing_pair * clashing);
   };
 
   const evaluate = (outfit: Outfit): Evaluation => {

@@ -1,5 +1,5 @@
 import { conditionBandOf } from '@sparta/taxonomy';
-import { allowedInSlot, layerRequiredIfAvailable, pairAllowed, passesSeason, placementsOf, usablePlacements } from './eligibility.js';
+import { allowedInSlot, comboAllowed, layerRequiredIfAvailable, passesSeason, placementsOf, usablePlacements } from './eligibility.js';
 import { seasonFor } from './season.js';
 import type { Ctx, Item, Slot } from './types.js';
 
@@ -36,29 +36,31 @@ export function slotCandidates(eligible: readonly Item[], ctx: Ctx): Candidates 
   }
   const order = (a: Item, b: Item): number => preScore(b, ctx) - preScore(a, ctx) || cmp(a.id, b.id);
   for (const key of Object.keys(groups) as (keyof Candidates)[]) groups[key].sort(order);
-  const full = { bottom: groups.bottom, both: groups.both, footwear: groups.footwear };
+  const full = { top: groups.top, bottom: groups.bottom, both: groups.both, footwear: groups.footwear };
   for (const key of Object.keys(groups) as (keyof Candidates)[]) {
     if (key !== 'belts') groups[key] = groups[key].slice(0, BEST_PER_SLOT);
   }
-  return keepOnePair(groups, full, ctx);
+  return keepOneOutfit(groups, full, ctx);
 }
 
 /**
- * Trimming to the best eight can drop the only bottom that R1 lets a kept pair of shoes go with (nine shorts
- * and one pair of jeans under Casual, with formal shoes). If no kept bottom or suit pairs with a kept pair of
- * shoes but an untrimmed one does, the best such pair (by pre-score order) is added back.
+ * Trimming to the best eight can drop every top, bottom or pair of shoes that R1 lets the others go with (nine shorts
+ * and one pair of jeans under Casual with formal shoes; eight T-shirts and one shirt with formal shoes). If no kept
+ * top, bottom (or suit) and footwear form an allowed outfit but untrimmed ones do, the first such trio (by pre-score order) is added back.
  */
-function keepOnePair(c: Candidates, full: Pick<Candidates, 'bottom' | 'both' | 'footwear'>, ctx: Ctx): Candidates {
-  const ok = (bottoms: Item[], shoes: Item[]): boolean => bottoms.some((b) => shoes.some((f) => pairAllowed(b, f, ctx.occasion)));
-  if (ok([...c.bottom, ...c.both], c.footwear)) return c;
-  for (const f of full.footwear) {
-    const b = full.bottom.find((x) => pairAllowed(x, f, ctx.occasion));
-    const suit = full.both.find((x) => pairAllowed(x, f, ctx.occasion));
-    const slot = b ? 'bottom' : 'both';
-    const pick = b ?? suit;
-    if (pick) return { ...c, footwear: c.footwear.includes(f) ? c.footwear : [...c.footwear, f], [slot]: c[slot].includes(pick) ? c[slot] : [...c[slot], pick] };
-  }
-  return c;
+function keepOneOutfit(c: Candidates, full: Pick<Candidates, 'top' | 'bottom' | 'both' | 'footwear'>, ctx: Ctx): Candidates {
+  const firstTrio = (g: typeof full): { top: Item; bottom: Item; footwear: Item } | null => {
+    for (const top of g.top) for (const footwear of g.footwear) {
+      const bottom = [...g.bottom, ...g.both].find((b) => comboAllowed({ top, bottom: b, footwear }, ctx.occasion));
+      if (bottom) return { top, bottom, footwear };
+    }
+    return null;
+  };
+  const pick = firstTrio(c) ? null : firstTrio(full);
+  if (!pick) return c;
+  const add = (list: Item[], x: Item): Item[] => (list.includes(x) ? list : [...list, x]);
+  const slot = full.both.includes(pick.bottom) ? 'both' : 'bottom';
+  return { ...c, top: add(c.top, pick.top), footwear: add(c.footwear, pick.footwear), [slot]: add(c[slot], pick.bottom) };
 }
 
 /**
@@ -69,15 +71,17 @@ function keepOnePair(c: Candidates, full: Pick<Candidates, 'bottom' | 'both' | '
  */
 export function enumerateOutfits(c: Candidates, ctx: Ctx): Outfit[] {
   const out: Outfit[] = [];
+  const ok = (o: Partial<Record<Slot, Item>>): boolean => comboAllowed(o, ctx.occasion);
   for (const top of c.top) {
     for (const footwear of c.footwear) {
+      if (!ok({ top, footwear })) continue;
       for (const bottom of c.bottom) {
-        if (!pairAllowed(bottom, footwear, ctx.occasion)) continue;
+        if (!ok({ top, bottom, footwear })) continue;
         out.push({ ...emptyOutfit(), top, bottom, footwear });
-        for (const layer of c.layer) if (layer.id !== top.id) out.push({ ...emptyOutfit(), top, bottom, layer, footwear });
+        for (const layer of c.layer) if (layer.id !== top.id && ok({ top, bottom, layer, footwear })) out.push({ ...emptyOutfit(), top, bottom, layer, footwear });
       }
       for (const suit of c.both) {
-        if (pairAllowed(suit, footwear, ctx.occasion)) out.push({ ...emptyOutfit(), top, bottom: suit, layer: suit, footwear });
+        if (ok({ top, bottom: suit, layer: suit, footwear })) out.push({ ...emptyOutfit(), top, bottom: suit, layer: suit, footwear });
       }
     }
   }
@@ -96,7 +100,7 @@ export function withRequiredLayer(outfits: Outfit[], ctx: Ctx): Outfit[] {
 
 /**
  * The hard rules an outfit breaks, empty when it is valid: SLOTS (a top, a bottom and footwear),
- * R2 (season, active), R1 (occasion, per slot and footwear with bottom) and DUPLICATE (an item in
+ * R2 (season, active), R1 (occasion, per slot and the pieces together) and DUPLICATE (an item in
  * slots it cannot fill together, so an item is never used twice; a Suit is one item in two slots).
  */
 export function outfitProblems(outfit: Outfit, ctx: Ctx): string[] {
@@ -108,13 +112,13 @@ export function outfitProblems(outfit: Outfit, ctx: Ctx): string[] {
     const item = outfit[slot];
     if (!item) continue;
     held.set(item.id, { item, slots: [...(held.get(item.id)?.slots ?? []), slot] });
-    if (item.status !== 'active' || !passesSeason(item, season)) problems.add('R2');
+    if (item.status !== 'active' || !passesSeason(item, season, ctx.occasion)) problems.add('R2');
     if (!allowedInSlot(item, slot, ctx.occasion)) problems.add('R1');
   }
   for (const { item, slots } of held.values()) {
     const key = [...slots].sort().join();
     if (!placementsOf(item).some((p) => [...p].sort().join() === key)) problems.add('DUPLICATE');
   }
-  if (outfit.bottom && outfit.footwear && !pairAllowed(outfit.bottom, outfit.footwear, ctx.occasion)) problems.add('R1');
+  if (!comboAllowed(outfit, ctx.occasion)) problems.add('R1');
   return [...problems].sort();
 }

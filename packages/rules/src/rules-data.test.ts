@@ -17,9 +17,9 @@ it('holds the chroma thresholds 10 and 50, unlock_min_rule_fit 0.6, unrated cond
   expect([rules.unlock_min_rule_fit, rules.unrated_condition]).toEqual([0.6, 0.7]);
   expect([...rules.neutral_colour_families].sort()).toEqual(['Beige', 'Black', 'Brown', 'Grey', 'Khaki', 'Navy', 'Olive', 'White']);
 });
-it('has an entry for every occasion, Date and Travel use Casual, and only real sub-types are named', () => {
+it('has an entry for every occasion, Date and Travel have their own entries (the AI style review), and only real sub-types are named', () => {
   expect(Object.keys(rules.occasions).sort()).toEqual([...OCCASIONS].sort());
-  expect([rules.occasions.Date, rules.occasions.Travel]).toEqual([{ uses: 'Casual' }, { uses: 'Casual' }]);
-  const named = Object.values(rules.occasions).flatMap((o) => ('slots' in o ? [...Object.values(o.slots).flat(), ...o.forbidden_pairs.flat()] : []));
+  expect([rules.occasions.Date, rules.occasions.Travel].every((o) => 'slots' in o && !('uses' in o))).toBe(true);
+  const named = Object.values(rules.occasions).flatMap((o) => ('slots' in o ? [...Object.values(o.slots).flat(), ...o.forbidden_pairs.flat(), ...Object.values('excluded_sub_types' in o ? o.excluded_sub_types : {}).flat(), ...('forbidden_top_footwear' in o ? o.forbidden_top_footwear.flat() : [])] : []));
   expect(named.filter((n) => !(SUB_TYPES as string[]).includes(n))).toEqual([]);
 });

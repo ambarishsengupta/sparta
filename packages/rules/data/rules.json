@@ -17,24 +17,39 @@
     "Summer": {
       "excluded_sub_types": ["Coat", "Sweater", "Cardigan"],
       "note": "FDD R2: no coats or heavy knits. Which sub-types are heavy knits is assumed: Sweater and Cardigan."
+    },
+    "Autumn": {
+      "excluded_sub_types": ["Sandals"],
+      "note": "DRAFT, AI style review 2026-11-04, pending Arpan Shah: Sandals are not worn in autumn. The FDD names no such exclusion; the style specialist may overrule it."
+    },
+    "Winter": {
+      "excluded_sub_types": ["Shorts", "Sports shorts", "Sandals"],
+      "exempt": { "Sport": ["Sports shorts"] },
+      "note": "DRAFT, AI style review 2026-11-04, pending Arpan Shah: no Shorts, Sports shorts or Sandals in winter; Sports shorts are exempt for the Sport occasion (exempt lists the sub-types an occasion keeps). The FDD names no such exclusion; the style specialist may overrule it."
     }
   },
   "occasions": {
     "Casual": {
       "slots": {},
       "forbidden_pairs": [["Formal shoes", "Shorts"], ["Formal shoes", "Sports shorts"]],
+      "excluded_sub_types": { "bottom": ["Suit", "Tuxedo"] },
+      "forbidden_top_footwear": [["Formal shoes", "T-shirt"], ["Formal shoes", "Polo"], ["Formal shoes", "Hoodie"]],
       "top_colour": null,
-      "note": "FDD R1: any tops and bottoms except formal shoes with shorts. Sports shorts counted as shorts (assumed)."
+      "note": "FDD R1: any tops and bottoms except formal shoes with shorts. Sports shorts counted as shorts (assumed). DRAFT, AI style review 2026-11-04, pending Arpan Shah: Suit and Tuxedo are not Casual bottoms; Formal shoes are not worn with a T-shirt, Polo or Hoodie (as top or layer). The FDD allows the specialist to set these."
     },
     "Work": {
       "slots": {
         "top": ["Shirt", "Polo"],
         "bottom": ["Chinos", "Trousers"],
+        "layer": ["Blazer", "Coat", "Sweater", "Cardigan", "Waistcoat", "Nehru jacket"],
         "footwear": ["Sneakers", "Formal shoes", "Boots"]
       },
       "forbidden_pairs": [],
       "top_colour": null,
-      "note": "FDD R1: shirt or polo, chinos or trousers, closed shoes (Sandals are open). Layer is not constrained."
+      "top_forbidden_patterns": ["Printed", "Graphic"],
+      "max_bold_items": 1,
+      "max_non_neutral_families": 2,
+      "note": "FDD R1: shirt or polo, chinos or trousers, closed shoes (Sandals are open). DRAFT, AI style review 2026-11-04, pending Arpan Shah: the layer list leaves out Hoodie, Track jacket and Jacket (the taxonomy has no windcheater sub-type, so Jacket, which holds windcheaters, is left out; Sherwani also); no Printed or Graphic tops; at most one bold item among top, bottom, layer and shoes (max_bold_items, a hard rule; a belt is scored under R3 only); at most two non-neutral colour families (scored in R3)."
     },
     "Formal": {
       "slots": {
@@ -46,7 +61,8 @@
       "forbidden_pairs": [],
       "top_colour": null,
       "layer_required_if_available": true,
-      "note": "FDD R1: shirt, tailored trousers, formal shoes, blazer if available. Suit and Tuxedo (one item in layer and bottom) are allowed because they hold the blazer and trousers (assumed). The layer is optional only when no layered outfit exists (layer_required_if_available, see layer_decision_note)."
+      "max_non_neutral_families": 2,
+      "note": "FDD R1: shirt, tailored trousers, formal shoes, blazer if available. Suit and Tuxedo (one item in layer and bottom) are allowed because they hold the blazer and trousers (assumed). The layer is optional only when no layered outfit exists (layer_required_if_available, see layer_decision_note). DRAFT, AI style review 2026-11-04, pending Arpan Shah: at most two non-neutral colour families (scored in R3)."
     },
     "Party": {
       "slots": {
@@ -61,15 +77,33 @@
       "slots": {
         "top": ["Sports T-shirt"],
         "bottom": ["Track pants", "Sports shorts"],
+        "layer": ["Track jacket", "Hoodie", "Jacket"],
         "footwear": ["Sneakers"]
       },
       "forbidden_pairs": [],
       "top_colour": null,
-      "note": "FDD R1: activewear for the top and bottom, sneakers for footwear. Layer is not constrained."
+      "note": "FDD R1: activewear for the top and bottom, sneakers for footwear. DRAFT, AI style review 2026-11-04, pending Arpan Shah: the layer is limited to Track jacket, Hoodie and Jacket."
     },
-    "Date": { "uses": "Casual" },
-    "Travel": { "uses": "Casual" }
+    "Date": {
+      "slots": {},
+      "forbidden_pairs": [["Formal shoes", "Shorts"], ["Formal shoes", "Sports shorts"]],
+      "excluded_sub_types": { "top": ["Sports T-shirt"], "bottom": ["Sports shorts", "Track pants"] },
+      "forbidden_top_footwear": [["Formal shoes", "T-shirt"], ["Formal shoes", "Polo"], ["Formal shoes", "Hoodie"]],
+      "top_colour": null,
+      "max_non_neutral_families": 2,
+      "note": "FDD 14.1 says Date uses the Casual rule and that the specialist may set it. DRAFT, AI style review 2026-11-04, pending Arpan Shah: Date has its own entry: no Sports T-shirt, Sports shorts or Track pants, the Casual footwear pairs, and at most two non-neutral colour families (scored in R3). Suit and Tuxedo are not removed for Date (the review names Casual and Travel only)."
+    },
+    "Travel": {
+      "slots": {},
+      "forbidden_pairs": [["Formal shoes", "Shorts"], ["Formal shoes", "Sports shorts"]],
+      "excluded_sub_types": { "top": ["Sports T-shirt"], "bottom": ["Sports shorts", "Track pants", "Suit", "Tuxedo"] },
+      "forbidden_top_footwear": [["Formal shoes", "T-shirt"], ["Formal shoes", "Polo"], ["Formal shoes", "Hoodie"]],
+      "top_colour": null,
+      "note": "FDD 14.1 says Travel uses the Casual rule and that the specialist may set it. DRAFT, AI style review 2026-11-04, pending Arpan Shah: Travel has its own entry: no Sports T-shirt, Sports shorts, Track pants, Suit or Tuxedo, and the Casual footwear pairs."
+    }
   },
+  "clashing_family_pairs": [["Red", "Purple"], ["Red", "Yellow"], ["Pink", "Yellow"], ["Pink", "Purple"], ["Green", "Red"]],
+  "clashing_family_pairs_note": "DRAFT, AI style review 2026-11-04, pending Arpan Shah: two non-neutral colour families of a pair in one outfit take penalties.clashing_pair off R3, once for each pair present. A scored rule, not a hard one.",
   "weights_base": {
     "rule_fit": 0.5,
     "occasion_fit": 0.2,
@@ -89,7 +123,9 @@
   "penalties": {
     "note": "DRAFT (WO-0004): no document gives these magnitudes. They are invented placeholders so R3 to R6 and R7 can be scored; the style specialist owns them (FOI-9) and must confirm or replace every value. Each is taken off a 0 to 1 rule value, which never goes below 0.",
     "families_over_three": 0.34,
-    "families_over_three_note": "R3: taken once for each distinct non-neutral colour family beyond three.",
+    "families_over_three_note": "R3: taken once for each distinct non-neutral colour family beyond the occasion's limit: three, or max_non_neutral_families (two for Work, Formal and Date, AI style review 2026-11-04, pending Arpan Shah).",
+    "clashing_pair": 0.3,
+    "clashing_pair_note": "R3: taken once for each pair in clashing_family_pairs present in the outfit (AI style review 2026-11-04, pending Arpan Shah).",
     "extra_bold": 0.34,
     "extra_bold_note": "R3: taken once for each bold item beyond the first.",
     "extra_pattern": 0.5,
@@ -104,9 +140,11 @@
     "variety_reuse_note": "R7: taken from the score of a candidate once for each of its items already in a chosen suggestion."
   },
   "reason_templates": {
-    "note": "R8: the only sentences a suggestion may use. Placeholders: {occasion}, {season}, {colours}. DRAFT wording, owned by the style specialist.",
-    "r1": "Every piece suits {occasion}",
-    "r2": "Every piece suits {season}",
+    "note": "R8: the only sentences a suggestion may use. Placeholders: {occasion}, {season}, {colours}. DRAFT wording, owned by the style specialist. r1 and r2 reworded by the AI style review 2026-11-04, pending Arpan Shah.",
+    "r1": "Meets the {occasion} dress rule",
+    "r2": "Nothing is out of season for {season}",
+    "r_tagged": "Every piece is tagged for {occasion}",
+    "r_tagged_note": "Used only when the occasion_fit part is exactly 1 (every item carries the occasion tag), and then it comes right after r2. DRAFT, AI style review 2026-11-04, pending Arpan Shah.",
     "r3_neutral_one": "{colours} is neutral and goes with anything",
     "r3_neutral_many": "{colours} are neutral and go with anything",
     "r3_harmony": "The colours go together",

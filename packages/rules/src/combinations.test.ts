@@ -14,7 +14,7 @@ const casual: Ctx = { occasion: 'Casual', hemisphere: 'north', date: new Date(Da
 const shorts = Array.from({ length: 9 }, (_, n) => mk('Shorts', `s${n}`, { occasions: ['Casual'] })); // tagged, so they outrank the jeans
 
 describe('best-eight trimming never causes a false "missing" (WO-0005)', () => {
-  const wardrobe = [mk('T-shirt', 't'), ...shorts, mk('Jeans', 'jeans'), mk('Formal shoes', 'shoes')];
+  const wardrobe = [mk('Shirt', 't'), ...shorts, mk('Jeans', 'jeans'), mk('Formal shoes', 'shoes')]; // a shirt: a T-shirt may not go with formal shoes in Casual (AI style review)
   it('9 shorts + formal shoes + 1 jeans under Casual still gives the jeans outfit', () => {
     const result = suggest(wardrobe, casual);
     expect(isMissing(result)).toBe(false);
@@ -29,10 +29,10 @@ describe('best-eight trimming never causes a false "missing" (WO-0005)', () => {
     expect(c.footwear.map((i) => i.id)).toEqual(['shoes']);
   });
   it('when the pair really is forbidden (only shorts and formal shoes) it is still missing', () => {
-    expect(suggest([mk('T-shirt', 't'), ...shorts, mk('Formal shoes', 'shoes')], casual)).toEqual({ missing: ['bottom', 'footwear'] });
+    expect(suggest([mk('Shirt', 't'), ...shorts, mk('Formal shoes', 'shoes')], casual)).toEqual({ missing: ['bottom', 'footwear'] });
   });
-  it('a suit rescues the pair as well', () => {
-    const r = suggest([mk('T-shirt', 't'), ...shorts, mk('Suit', 'suit'), mk('Formal shoes', 'shoes')], casual);
+  it('a suit rescues the pair as well (under Date: Suit and Tuxedo are no longer Casual or Travel bottoms)', () => {
+    const r = suggest([mk('Shirt', 't'), ...shorts, mk('Suit', 'suit'), mk('Formal shoes', 'shoes')], { ...casual, occasion: 'Date' });
     expect(isMissing(r) ? [] : r.map((s) => s.items.bottom)).toEqual(['suit']);
   });
 });

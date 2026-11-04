@@ -11,27 +11,44 @@ const TOPS = ['T-shirt', 'Shirt', 'Polo', 'Sweater', 'Cardigan', 'Hoodie', 'Spor
 const BOTTOMS = ['Jeans', 'Chinos', 'Trousers', 'Shorts', 'Joggers', 'Pyjama', 'Dhoti', 'Track pants', 'Sports shorts', 'Suit', 'Tuxedo'];
 const LAYERS = ['Jacket', 'Blazer', 'Coat', 'Sherwani', 'Nehru jacket', 'Waistcoat', 'Track jacket', 'Sweater', 'Cardigan', 'Hoodie', 'Suit', 'Tuxedo'];
 const SHOES = ['Sneakers', 'Formal shoes', 'Boots', 'Sandals'];
-const BY_OCCASION: Record<string, { top?: SubType[]; bottom?: SubType[]; layer?: SubType[]; footwear?: SubType[]; dark?: boolean }> = {
-  Work: { top: ['Shirt', 'Polo'], bottom: ['Chinos', 'Trousers'], footwear: ['Sneakers', 'Formal shoes', 'Boots'] },
+const ACTIVE_TOPS: SubType[] = ['Sports T-shirt'];
+const ACTIVE_BOTTOMS: SubType[] = ['Sports shorts', 'Track pants'];
+type Rule = { top?: SubType[]; bottom?: SubType[]; layer?: SubType[]; footwear?: SubType[]; dark?: boolean; not?: { top?: SubType[]; bottom?: SubType[] }; plain?: boolean; oneBold?: boolean };
+const BY_OCCASION: Record<string, Rule> = {
+  Work: { top: ['Shirt', 'Polo'], bottom: ['Chinos', 'Trousers'], layer: ['Blazer', 'Coat', 'Sweater', 'Cardigan', 'Waistcoat', 'Nehru jacket'], footwear: ['Sneakers', 'Formal shoes', 'Boots'], plain: true, oneBold: true },
+  Casual: { not: { bottom: ['Suit', 'Tuxedo'] } },
+  Date: { not: { top: ACTIVE_TOPS, bottom: ACTIVE_BOTTOMS } },
+  Travel: { not: { top: ACTIVE_TOPS, bottom: [...ACTIVE_BOTTOMS, 'Suit', 'Tuxedo'] } },
   Formal: { top: ['Shirt'], bottom: ['Trousers', 'Suit', 'Tuxedo'], layer: ['Blazer', 'Suit', 'Tuxedo'], footwear: ['Formal shoes'] },
   Party: { bottom: ['Jeans', 'Trousers'], footwear: ['Sneakers', 'Boots'], dark: true },
-  Sport: { top: ['Sports T-shirt'], bottom: ['Track pants', 'Sports shorts'], footwear: ['Sneakers'] },
+  Sport: { top: ['Sports T-shirt'], bottom: ['Track pants', 'Sports shorts'], layer: ['Track jacket', 'Hoodie', 'Jacket'], footwear: ['Sneakers'] },
 };
 const MONTH_TO_SEASON = ['Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer', 'Summer', 'Summer', 'Autumn', 'Autumn', 'Autumn', 'Winter'];
 
 const season = (ctx: Ctx): string => MONTH_TO_SEASON[(ctx.date.getUTCMonth() + (ctx.hemisphere === 'south' ? 6 : 0)) % 12]!;
 const inList = (list: readonly string[] | undefined, s: SubType): boolean => !list || list.includes(s);
 
+const BANNED: Record<string, string[]> = { Summer: ['Coat', 'Sweater', 'Cardigan'], Autumn: ['Sandals'], Winter: ['Shorts', 'Sports shorts', 'Sandals'] };
+
 function r2(item: Item, ctx: Ctx): boolean {
   const s = season(ctx);
   const okSeason = item.seasons.length === 0 || item.seasons.includes(s as 'Winter') || item.seasons.includes('All year');
-  return item.status === 'active' && okSeason && !(s === 'Summer' && ['Coat', 'Sweater', 'Cardigan'].includes(item.subType));
+  const keeps = ctx.occasion === 'Sport' && item.subType === 'Sports shorts' && s === 'Winter';
+  return item.status === 'active' && okSeason && (keeps || !(BANNED[s] ?? []).includes(item.subType));
 }
+
+/** Bold: not one of the eight neutral families and chroma above 50. */
+const bold = (i: Item): boolean => {
+  const [, a, b] = rgbToLab(...i.rgb);
+  return !['Black', 'White', 'Grey', 'Navy', 'Beige', 'Khaki', 'Olive', 'Brown'].includes(i.colourFamily) && Math.hypot(a, b) > 50;
+};
 
 function slotOk(item: Item, slot: Slot, occasion: Occasion): boolean {
   const rule = BY_OCCASION[occasion] ?? {};
   const fills = { top: TOPS, bottom: BOTTOMS, layer: LAYERS, footwear: SHOES, accessory: ['Belt'] }[slot];
   if (!fills.includes(item.subType) || (slot !== 'accessory' && !inList(rule[slot], item.subType))) return false;
+  if ((slot === 'top' || slot === 'bottom') && rule.not?.[slot]?.includes(item.subType)) return false;
+  if (slot === 'top' && rule.plain && ['Printed', 'Graphic'].includes(item.pattern ?? '')) return false;
   if (slot === 'top' && rule.dark) {
     const [L, a, b] = rgbToLab(...item.rgb);
     return L < 40 || Math.hypot(a, b) > 50;
@@ -41,6 +58,9 @@ function slotOk(item: Item, slot: Slot, occasion: Occasion): boolean {
 
 const pairOk = (bottom: Item, shoes: Item, occasion: Occasion): boolean =>
   !(['Casual', 'Date', 'Travel'].includes(occasion) && shoes.subType === 'Formal shoes' && ['Shorts', 'Sports shorts'].includes(bottom.subType));
+
+const noFormalShoes = (o: Occasion, shoes: Item, ...tops: (Item | null)[]): boolean =>
+  !(['Casual', 'Date', 'Travel'].includes(o) && shoes.subType === 'Formal shoes' && tops.some((t) => t && ['T-shirt', 'Polo', 'Hoodie'].includes(t.subType)));
 
 const isSuit = (i: Item | null): boolean => !!i && ['Suit', 'Tuxedo'].includes(i.subType);
 
@@ -60,6 +80,8 @@ export function independentProblems(outfit: Record<Slot, Item | null>, ctx: Ctx,
     if (!slotOk(item, slot, ctx.occasion)) out.add('R1');
   }
   if (bottom && footwear && !pairOk(bottom, footwear, ctx.occasion)) out.add('R1');
+  if (footwear && !noFormalShoes(ctx.occasion, footwear, top, layer)) out.add('R1');
+  if (BY_OCCASION[ctx.occasion]?.oneBold && new Set([top, bottom, layer, footwear].filter((i) => i && bold(i))).size > 1) out.add('R1');
   const placed = [top, bottom, layer, footwear, accessory].filter((i): i is Item => !!i);
   const suitIsBoth = !!bottom && bottom === layer && isSuit(bottom);
   if (new Set(placed.map((i) => i.id)).size !== placed.length - (suitIsBoth ? 1 : 0)) out.add('DUPLICATE');
@@ -87,12 +109,13 @@ function layeredOutfitExists(items: readonly Item[], ctx: Ctx): boolean {
   return memo.get(key)!;
 }
 
-/** Brute force over every top, bottom (or suit) and footwear: does any valid outfit exist at all? */
+/** Brute force over every top, bottom (or suit) and footwear that can fill its slot in season: does any valid outfit exist at all? */
 export function validOutfitExists(items: readonly Item[], ctx: Ctx): boolean {
-  const none = { layer: null, accessory: null };
-  return items.some((top) => items.some((bottom) => items.some((footwear) => {
+  const fit = (slot: Slot): Item[] => items.filter((i) => r2(i, ctx) && slotOk(i, slot, ctx.occasion));
+  const [tops, bottoms, shoes] = [fit('top'), fit('bottom'), fit('footwear')];
+  return tops.some((top) => shoes.some((footwear) => bottoms.some((bottom) => {
     if (new Set([top.id, bottom.id, footwear.id]).size < 3) return false;
     const suit = ['Suit', 'Tuxedo'].includes(bottom.subType);
-    return independentProblems({ ...none, top, bottom, footwear, layer: suit ? bottom : null }, ctx).length === 0;
+    return independentProblems({ layer: suit ? bottom : null, accessory: null, top, bottom, footwear }, ctx).length === 0;
   })));
 }

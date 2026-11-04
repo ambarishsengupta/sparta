@@ -34,10 +34,10 @@ const asOutfit = (s: RankedSuggestion, items: Item[]): Outfit =>
 const near = (a: number, b: number): void => expect(a).toBeCloseTo(b, 12);
 
 describe('score parts', () => {
-  const four = (rgb: Rgb): Parts => ({ ...base(col('Pink', rgb), col('Teal', rgb), col('Purple', rgb)), layer: mk('Blazer', 'l', col('Orange', rgb)) });
+  const four = (rgb: Rgb): Parts => ({ ...base(col('Pink', rgb), col('Teal', rgb), col('Blue', rgb)), layer: mk('Blazer', 'l', col('Orange', rgb)) });
   it.each([
-    ['all neutral', base({}, col('Grey', GREY)), 1], ['three non-neutral families', base(col('Pink', PALE), col('Teal', PALE), col('Purple', PALE)), 1],
-    ['four non-neutral families', four(PALE), 0.66], ['one bold item', base(col('Red', RED)), 1], ['two bold items', base(col('Red', RED), col('Green', GREEN)), 0.66],
+    ['all neutral', base({}, col('Grey', GREY)), 1], ['three non-neutral families', base(col('Pink', PALE), col('Teal', PALE), col('Blue', PALE)), 1],
+    ['four non-neutral families', four(PALE), 0.66], ['one bold item', base(col('Red', RED)), 1], ['two bold items', base(col('Red', RED), col('Teal', GREEN)), 0.66],
     ['a bold colour in a neutral family is not bold', base(col('Navy', RED), col('Red', RED)), 1],
     ['a non-neutral family with chroma under 10 is neutral', four(DULL), 1],
   ] as [string, Parts, number][])('R3 colour: %s', (_, o, r3) => near(ev(o).rules.R3, r3));
@@ -134,7 +134,7 @@ describe('reasons (R8)', () => {
   it('states the rules met, in the fixed wording', () => {
     const items = [mk('T-shirt', 't'), mk('Jeans', 'j', col('Grey', GREY)), mk('Sneakers', 's', col('Black', GREY))];
     const first = sugg(items, WARM)[0]!;
-    expect(first.reasons).toEqual(['Every piece suits Casual', 'Every piece suits Spring', 'Navy, grey and black are neutral and go with anything', 'At most one pattern, so nothing clashes']);
+    expect(first.reasons).toEqual(['Meets the Casual dress rule', 'Nothing is out of season for Spring', 'Navy, grey and black are neutral and go with anything', 'At most one pattern, so nothing clashes']);
     expect(first.ruleIds).toEqual(['R1', 'R2', 'R3', 'R4']);
     expect(sugg([...items, mk('Coat', 'c', col('Beige', PALE))], COOL)[0]!.reasons).toContain('Layer works for cool weather');
   });

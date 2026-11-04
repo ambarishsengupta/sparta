@@ -4,7 +4,7 @@
 | --- | --- |
 | `ANCP_TM_D2_v1.pdf` | Audit report (6 pages), datasheet (Appendix A), data dictionary (Appendix B), AI-tool disclosure (Appendix C) |
 | `clean_hm.py` | Rebuilds the cleaned dataset from the raw H&M files |
-| `data_dictionary.csv` | Every column of the three cleaned files |
+| `data_dictionary.csv` | Every column of the three cleaned files, with its source column and how missing values are stored. It also lists the derived features from Table 7 that are not stored: the D3 notebook features and the planned Sparta pilot fields. Filter on the `status` column to see only the stored columns |
 | `source/` | HTML source and figures of the report, to edit and re-render (see below) |
 
 ## Rerun

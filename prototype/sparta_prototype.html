@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sparta Pilot Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Kalam&display=swap">
+<style>
+/* Layout: wireframe sheets on a drafting table; graphite ink, one blue "redline" annotation colour, lanes keep the source diagram's hue legend at low strength */
+:root{
+  --paper:#F3F4F2; --sheet:#FFFFFF; --ink:#202327; --ink2:#4B5158; --line:#878E95; --faint:#DADDE0;
+  --note:#2152B8; --notebg:#E7EDFA; --laneA:#EDF1F8; --laneB:#F8F1E3; --laneC:#ECF5EE; --laneE:#E8F2F3; --laneD:#F1EEF8;
+  --warn:#94460A; --ok:#2B6A3E; --bar:#5C636B;
+  --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --f-note:"Kalam","Comic Sans MS","Segoe Print",cursive;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#141619; --sheet:#1C1F23; --ink:#E6E8EA; --ink2:#A8AEB4; --line:#737A81; --faint:#33373C;
+  --note:#8AABFF; --notebg:#1D2944; --laneA:#1A2130; --laneB:#2A2418; --laneC:#19261D; --laneE:#162527; --laneD:#221E2E;
+  --warn:#E4A466; --ok:#82C897; --bar:#9AA1A8; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#141619; --sheet:#1C1F23; --ink:#E6E8EA; --ink2:#A8AEB4; --line:#737A81; --faint:#33373C;
+  --note:#8AABFF; --notebg:#1D2944; --laneA:#1A2130; --laneB:#2A2418; --laneC:#19261D; --laneE:#162527; --laneD:#221E2E;
+  --warn:#E4A466; --ok:#82C897; --bar:#9AA1A8; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:56px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,4.6vw,44px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:24px;font-weight:800}
+h3{font-size:16px;font-weight:600}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+.note{font-family:var(--f-note);color:var(--note);font-size:15.5px;line-height:1.35}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;color:var(--ink2);white-space:nowrap}
+.tag.ex{border-style:dashed;color:var(--note);border-color:var(--note)}
+a{color:var(--note)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--note);outline-offset:2px}
+
+/* header */
+header.top{display:grid;gap:14px;border-bottom:1.5px solid var(--ink);padding-bottom:22px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px}
+.lede{max-width:68ch;color:var(--ink2);font-size:16px}
+nav.jump{display:flex;flex-wrap:wrap;gap:8px}
+nav.jump a{font-family:var(--f-mono);font-size:13px;text-decoration:none;border:1.5px solid var(--ink);color:var(--ink);padding:4px 10px;border-radius:3px}
+nav.jump a:hover{background:var(--ink);color:var(--paper)}
+
+section{display:grid;gap:18px}
+.sec-head{display:grid;gap:6px}
+.sec-head p{max-width:72ch;color:var(--ink2)}
+
+/* diagram */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1.5px solid var(--ink);background:var(--sheet);padding:6px 12px;border-radius:3px;font-size:14px}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.diagram-scroll{overflow-x:auto;border:1.5px solid var(--ink);background:var(--sheet);border-radius:4px}
+.diagram{min-width:1040px;padding:18px;display:grid;gap:10px}
+.lane{display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:stretch;border-radius:4px;padding:10px}
+.lane .ln{display:flex;flex-direction:column;gap:4px;justify-content:center;border-right:1.5px dashed var(--line);padding-right:10px}
+.lane .ln b{font-family:var(--f-display);font-size:14px}
+.lane .ln span{font-size:12px;color:var(--ink2);line-height:1.3}
+.lane.A{background:var(--laneA)} .lane.B{background:var(--laneB)} .lane.C{background:var(--laneC)} .lane.E{background:var(--laneE)} .lane.D{background:var(--laneD)}
+.steps{display:flex;align-items:stretch;gap:0}
+.node{flex:1 1 0;min-width:0;text-align:left;background:var(--sheet);border:1.5px solid var(--ink);border-radius:4px;padding:8px 10px;display:grid;gap:3px;align-content:start;transition:transform .15s ease-out}
+.node.off{border-style:dashed}
+.node:hover{transform:translateY(-1px)}
+.node[aria-pressed="true"]{outline:3px solid var(--note);outline-offset:1px}
+.node .id{font-family:var(--f-mono);font-size:11px;color:var(--ink2)}
+.node .nt{font-weight:600;font-size:13.5px;line-height:1.25}
+.node .ns{font-size:12px;color:var(--ink2);line-height:1.3}
+.arrow{flex:0 0 22px;display:flex;align-items:center;justify-content:center;color:var(--ink);font-family:var(--f-mono);font-size:16px}
+.strip{display:flex;flex-wrap:wrap;gap:6px 26px;padding:2px 12px 2px 156px}
+.strip .note{font-size:14.5px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--ink2);padding:4px 2px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px;margin-right:5px;border:1px solid var(--line)}
+.d2grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;align-items:stretch}
+.d2col{display:grid;gap:8px;align-content:start;position:relative;padding-right:22px}
+.d2col:not(:last-child)::after{content:"→";position:absolute;right:3px;top:44%;font-family:var(--f-mono);font-size:16px}
+.d2col .label{padding-left:2px}
+
+.detail{background:var(--sheet);border:1.5px solid var(--ink);border-radius:4px;padding:16px 18px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px}
+.detail ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.detail pre{margin:0;font-family:var(--f-mono);font-size:12px;line-height:1.5;background:var(--paper);border:1px dashed var(--line);border-radius:3px;padding:10px;overflow-x:auto;white-space:pre}
+.refs{display:flex;flex-wrap:wrap;gap:5px}
+
+/* screens */
+.screens{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;align-items:start}
+.phone{background:var(--sheet);border:2px solid var(--ink);border-radius:22px;padding:14px 12px 16px;display:grid;gap:10px;min-width:0}
+.phone .bar{display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid var(--ink);padding-bottom:8px}
+.phone .bar b{font-family:var(--f-display);font-size:15px}
+.scr-cap{display:grid;gap:4px}
+.box{border:1.5px solid var(--ink);border-radius:4px;padding:10px;display:grid;gap:8px}
+.box.dash{border-style:dashed}
+.btn{border:1.5px solid var(--ink);background:var(--sheet);border-radius:4px;padding:8px 10px;min-height:40px;text-align:center;font-size:14px}
+.btn.pri{background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{min-height:32px;padding:4px 8px;font-size:12.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row > *{min-width:0}
+.chip{border:1.5px solid var(--line);background:transparent;border-radius:14px;padding:3px 10px;font-size:12.5px}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.items{display:grid;gap:6px;max-height:330px;overflow-y:auto;padding-right:2px}
+.item{display:grid;grid-template-columns:36px 1fr auto;gap:8px;align-items:center;border-bottom:1px dashed var(--faint);padding-bottom:6px}
+.thumb{width:36px;height:36px;border:1.5px solid var(--line);border-radius:3px;background:
+  linear-gradient(45deg,transparent 47%,var(--line) 48%,var(--line) 52%,transparent 53%),
+  linear-gradient(-45deg,transparent 47%,var(--line) 48%,var(--line) 52%,transparent 53%)}
+.item .in{font-size:13px;font-weight:500;line-height:1.25}
+.item .im{font-size:11.5px;color:var(--ink2);font-family:var(--f-mono)}
+.swatch{width:12px;height:12px;border-radius:50%;border:1px solid var(--line);display:inline-block;vertical-align:-1px}
+.toggle{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
+.switch{width:38px;height:22px;border-radius:11px;border:1.5px solid var(--line);background:var(--faint);position:relative;flex:none}
+.switch::after{content:"";position:absolute;right:2px;top:2px;width:15px;height:15px;border-radius:50%;background:var(--line)}
+label.ck{display:flex;gap:8px;align-items:flex-start;font-size:13px}
+label.ck input{margin-top:3px;width:18px;height:18px;flex:none}
+select{font:inherit;font-size:14px;border:1.5px solid var(--ink);border-radius:4px;padding:6px 8px;background:var(--sheet);color:var(--ink);min-height:38px;width:100%}
+.field{display:grid;gap:3px;flex:1 1 110px}
+.field span{font-size:12px;color:var(--ink2)}
+.sugg{border:1.5px solid var(--ink);border-radius:4px;padding:9px;display:grid;gap:6px}
+.sugg .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.slots{display:flex;flex-wrap:wrap;gap:5px}
+.slotbtn{border:1.5px dashed var(--line);background:var(--paper);border-radius:3px;padding:3px 7px;font-size:12px;text-align:left;line-height:1.3}
+.slotbtn small{display:block;font-family:var(--f-mono);font-size:10px;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+.reason{font-size:12.5px;color:var(--ink2)}
+.score{font-family:var(--f-mono);font-size:12px}
+.trace{font-family:var(--f-mono);font-size:11.5px;line-height:1.55;background:var(--paper);border:1px dashed var(--line);border-radius:3px;padding:8px;color:var(--ink2);overflow-x:auto}
+.trace b{color:var(--ink);font-weight:500}
+.status{font-size:12.5px;font-family:var(--f-mono)}
+.status.ok{color:var(--ok)} .status.warn{color:var(--warn)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--faint);vertical-align:middle}
+th{font-family:var(--f-mono);font-weight:500;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tr.sup td{color:var(--ink2)}
+.gapbar{height:8px;background:var(--bar);border-radius:1px;min-width:2px}
+.tbl-scroll{overflow-x:auto}
+
+/* data section */
+.data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.card{background:var(--sheet);border:1.5px solid var(--ink);border-radius:4px;padding:16px;display:grid;gap:12px;align-content:start;min-width:0}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.fact{border-top:1.5px solid var(--ink);padding-top:6px;display:grid;gap:2px}
+.fact b{font-family:var(--f-mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.fact span{font-size:12.5px;color:var(--ink2);line-height:1.35}
+.hbars{display:grid;gap:7px}
+.hbar{display:grid;grid-template-columns:118px 1fr 92px;gap:8px;align-items:center;font-size:12.5px}
+.hbar .track{height:14px;background:var(--faint);border-radius:1px;position:relative}
+.hbar .fill{position:absolute;inset:0 auto 0 0;background:var(--bar);border-radius:1px}
+.hbar.drop .fill{background:repeating-linear-gradient(45deg,var(--line) 0 3px,transparent 3px 6px);border:1px solid var(--line)}
+.hbar .v{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.src{font-size:12px;color:var(--ink2)}
+.src code{font-family:var(--f-mono);font-size:11.5px}
+.mnist{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.mnist div{border:1px dashed var(--line);border-radius:3px;padding:6px 4px;text-align:center;font-size:11.5px;line-height:1.25}
+.mnist div b{display:block;font-family:var(--f-mono);font-size:10.5px;color:var(--ink2);font-weight:400}
+footer{border-top:1.5px solid var(--ink);padding-top:14px;font-size:12.5px;color:var(--ink2);display:grid;gap:6px}
+
+@media (max-width:720px){
+  .detail{grid-template-columns:1fr}
+  .hbar{grid-template-columns:92px 1fr 78px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="meta">
+    <span class="label">Low-fidelity prototype</span>
+    <span class="label">Refers to BRD v1.3 · 29 Oct 2026</span>
+    <span class="label">ANCP Group M</span>
+  </div>
+  <h1>Sparta: how the pilot works, screen by screen and row by row</h1>
+  <p class="lede">Sparta is a free digital wardrobe for men. A user's own items feed outfit suggestions for that user. Their anonymised, aggregated data feeds the gap and demand insights that help a brand or retailer plan its range and stock. This page sketches that flow, runs the outfit rules on an example wardrobe, and shows the public data the team works from before the pilot has data of its own.</p>
+  <p class="note">Wireframe only: boxes stand in for real UI. Anything tagged <span class="tag ex">example</span> is made-up sample data. Figures in section 3 are the real D2 audit numbers.</p>
+  <nav class="jump" aria-label="Sections">
+    <a href="#flow">1 · Data workflow</a>
+    <a href="#screens">2 · Prototype screens</a>
+    <a href="#data">3 · The data behind it</a>
+  </nav>
+</header>
+
+<!-- 1. FLOW -->
+<section id="flow">
+  <div class="sec-head">
+    <span class="label">Section 1</span>
+    <h2>Data workflow</h2>
+    <p>The pilot flow has three lanes: consumer, consent and aggregation, vendor. The aggregation lane is the only path from users to vendors. Click any box to see what happens there, which requirements it serves, and what the data looks like at that point.</p>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Diagram view">
+    <button role="tab" id="tab-pilot" aria-selected="true" aria-controls="diag">Pilot data flow</button>
+    <button role="tab" id="tab-d2" aria-selected="false" aria-controls="diag">D2 dataset pipeline (H&amp;M + Fashion-MNIST)</button>
+  </div>
+  <div class="diagram-scroll"><div class="diagram" id="diag" role="tabpanel"></div></div>
+  <div class="detail" id="detail" aria-live="polite"></div>
+</section>
+
+<!-- 2. SCREENS -->
+<section id="screens">
+  <div class="sec-head">
+    <span class="label">Section 2</span>
+    <h2>Prototype screens</h2>
+    <p>Four screens follow one user through the pilot, then one vendor. The outfit screen runs the FDD 14.1 rules for real on the example wardrobe from screen 2. Change the occasion or season and watch the candidate count shrink.</p>
+  </div>
+  <div class="screens">
+
+    <!-- S1 -->
+    <div class="scr-cap">
+      <span class="label">Screen 1 · BR-20, BR-21, BR-22</span>
+      <div class="phone">
+        <div class="bar"><b>Welcome to the pilot</b><span class="tag">first login</span></div>
+        <div class="box">
+          <h3>A free 3-month study</h3>
+          <p style="font-size:13px">Run by the Sparta team. Anonymised, aggregated data from all participants is shared with brands and retailers. They never see you, your wardrobe, photos or receipts. No data is used to train AI models. You can leave at any time.</p>
+          <a href="../legal/PRIVACY-POLICY.md" style="font-size:13px">Read the Privacy Policy</a>
+        </div>
+        <label class="ck"><input type="checkbox" id="ck-notice"> I have read the notice and want to join the study</label>
+        <button class="btn pri" id="btn-accept" disabled>Accept and continue</button>
+        <p class="status" id="notice-status">Not accepted yet: the app stays locked.</p>
+        <div class="box dash">
+          <span class="label">Settings (after accepting)</span>
+          <div class="toggle"><span>Share anonymised data<br><small style="color:var(--ink2)">Locked on during the pilot. The shipped app will let you turn this off.</small></span><span class="switch" role="img" aria-label="On, locked"></span></div>
+          <button class="btn" id="btn-leave">Leave the pilot</button>
+          <p class="status warn" id="leave-status" hidden>This would delete your account and all your data. No reason needed. (Not wired up in the prototype.)</p>
+        </div>
+      </div>
+      <p class="note">Acceptance is stored with the notice version and a timestamp.</p>
+    </div>
+
+    <!-- S2 -->
+    <div class="scr-cap">
+      <span class="label">Screen 2 · BR-02 to BR-07, BR-14, BR-51</span>
+      <div class="phone">
+        <div class="bar"><b>My wardrobe</b><span class="tag ex">example</span></div>
+        <div class="row" id="wf-chips" role="group" aria-label="Filter by category"></div>
+        <div class="items" id="wf-list"></div>
+        <div class="box dash">
+          <span class="label">Add an item: 4 routes</span>
+          <div class="row">
+            <button class="btn sm" id="ph-1">Photo: sneakers</button>
+            <button class="btn sm" id="ph-2">Photo: blurry</button>
+            <button class="btn sm" disabled title="Manual form, receipt scan and catalogue lookup are not sketched">Form · Receipt · Barcode</button>
+          </div>
+          <div id="ph-out" class="status">Pick a photo to see the garment model's suggestion.</div>
+        </div>
+      </div>
+      <p class="note">Every item uses the same taxonomy (category, colour, fit, material, brand, size). That keeps vendor totals comparable.</p>
+    </div>
+
+    <!-- S3 -->
+    <div class="scr-cap">
+      <span class="label">Screen 3 · BR-11, BR-50, BR-53, BR-55</span>
+      <div class="phone">
+        <div class="bar"><b>What should I wear?</b><span class="tag">runs in browser</span></div>
+        <div class="row">
+          <label class="field"><span>Occasion</span>
+            <select id="sel-occ"><option>Casual</option><option selected>Work</option><option>Formal</option><option>Party</option><option>Sport</option><option>Date</option><option>Travel</option></select></label>
+          <label class="field"><span>Season</span>
+            <select id="sel-sea"><option>Summer</option><option>Spring</option><option selected>Autumn</option><option>Winter</option></select></label>
+        </div>
+        <div id="out-sugg" style="display:grid;gap:8px"></div>
+        <div class="trace" id="out-trace"></div>
+        <div class="status" id="out-events">No accepts or rejects yet.</div>
+      </div>
+      <p class="note">Tap an item in a suggestion to swap it. Swaps only offer items that keep the outfit valid, same sub-type first.</p>
+    </div>
+
+    <!-- S4 -->
+    <div class="scr-cap">
+      <span class="label">Screen 4 · BR-25, BR-26, BR-30, BR-31</span>
+      <div class="phone">
+        <div class="bar"><b>Vendor: gaps and demand</b><span class="tag ex">example</span></div>
+        <div class="row" role="group" aria-label="Minimum group size">
+          <span style="font-size:12.5px">Minimum group:</span>
+          <button class="chip" id="th-10" aria-pressed="true">10 users (pilot)</button>
+          <button class="chip" id="th-50" aria-pressed="false">50 (shipped)</button>
+        </div>
+        <div class="tbl-scroll"><table id="vend"></table></div>
+        <p class="status" id="vend-status"></p>
+      </div>
+      <p class="note">Read only. Counts are rounded to the nearest 5. Any count under the minimum group size is hidden, along with its gap score.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- 3. DATA -->
+<section id="data">
+  <div class="sec-head">
+    <span class="label">Section 3</span>
+    <h2>The data behind it</h2>
+    <p>The pilot has no user data yet. Until it does, the team works with two public datasets. H&amp;M purchase records stand in for purchase behaviour and seasonal demand. Fashion-MNIST teaches the small garment model to recognise a garment type. Neither one shows ownership, wishlists, or which clothes go well together.</p>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><b>31.8M</b><span>H&amp;M transaction rows, 20 Sep 2018 to 22 Sep 2020</span></div>
+    <div class="fact"><b>136,670</b><span>customers in the 10% working sample (3,205,663 rows)</span></div>
+    <div class="fact"><b>3,066,344</b><span>units in the cleaned dataset data-v1.0, from 132,435 customers</span></div>
+    <div class="fact"><b>5.8%</b><span>of cleaned units are Menswear, the closest available proxy for men</span></div>
+    <div class="fact"><b>70,000</b><span>Fashion-MNIST garment pictures in 10 types (MIT licence)</span></div>
+  </div>
+
+  <div class="data-grid">
+    <div class="card">
+      <h3>Cleaning funnel (10% sample)</h3>
+      <div class="hbars" id="funnel"></div>
+      <p style="font-size:13px">Before these steps, 296,434 exact duplicate rows (9.2%) were folded into one line with a quantity, so no units are lost.</p>
+      <p class="src">Source: D2 report, Table 4 and Table 3 (<code>submissions/D2/ANCP_TM_D2_v1.pdf</code>)</p>
+    </div>
+
+    <div class="card">
+      <h3>H&amp;M articles by department</h3>
+      <div class="hbars" id="dept"></div>
+      <p style="font-size:13px">Baby/Children is dropped because the buyer is dressing someone else. Menswear is kept and flagged <span class="mono">is_menswear</span>.</p>
+      <p class="src">Source: D2 datasheet, all 105,542 articles</p>
+    </div>
+
+    <div class="card">
+      <h3>H&amp;M customers by age band</h3>
+      <div class="hbars" id="age"></div>
+      <p style="font-size:13px">The mix is young: 18 to 34 is 54% of customers, and 65 and over is 3%. The 9,553 customers aged 16 and 17 are removed.</p>
+      <p class="src">Source: D2 datasheet, all 1,371,980 customers</p>
+    </div>
+
+    <div class="card">
+      <h3>What the audit found</h3>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>Finding</th><th>What it means for Sparta</th></tr></thead>
+        <tbody>
+          <tr><td>Top 10% of customers buy 48% of units (Gini 0.64)</td><td>Split and report by activity tier</td></tr>
+          <tr><td>32% of customers visit once</td><td>Cold start is common</td></tr>
+          <tr><td>Weekly units fell 13.1% in Mar to Aug 2020</td><td>Validate by date, with and without 2020</td></tr>
+          <tr><td>Channel split 29.6% / 70.4% (codes only)</td><td>Never labelled store or online</td></tr>
+          <tr><td>No gender field</td><td>Menswear is defined by article, not by buyer</td></tr>
+        </tbody>
+      </table></div>
+      <p class="src">Source: D2 report, Tables 3 and 6</p>
+    </div>
+
+    <div class="card">
+      <h3>Shape of one cleaned purchase line</h3>
+      <pre class="mono" style="margin:0;font-size:11.5px;line-height:1.5;background:var(--paper);border:1px dashed var(--line);border-radius:3px;padding:10px;overflow-x:auto">t_dat              2019-10-14
+week_start         2019-10-14
+customer_id        9c1e…(64-char hash)
+article_id         0706016001
+price              0.0338   <span style="color:var(--ink2)"># relative, not a currency</span>
+sales_channel_id   2
+qty                2        <span style="color:var(--ink2)"># duplicates folded</span>
+role               Top
+is_menswear        True
+product_type_name  Shirt
+perceived_colour…  Blue / Dark
+age_band           25-34</pre>
+      <p class="src"><span class="tag ex">example</span> These values are made up. The columns and their rules come from <code>submissions/D2/data_dictionary.csv</code>. Real rows stay off git under the competition rules.</p>
+    </div>
+
+    <div class="card">
+      <h3>Fashion-MNIST: what the garment model learns</h3>
+      <div class="mnist" id="mnist"></div>
+      <p style="font-size:13px">Each picture is 28 × 28 greyscale. There are 6,000 training and 1,000 test pictures per type. The team's target is about 90% accuracy on the 10,000 test pictures. The model only suggests a category when an item is added by photo. It never decides which clothes go together.</p>
+      <p class="src">Source: BRD §7.5, §11; <code>data/recommendation-engine/README.md</code></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Built from the <span class="mono">ambarishsengupta/sparta</span> main branch (BRD v1.3, FDD §14, the D2 report and both flow diagrams). The FDD §14.2 ranking weights are still open (FOI-9), so the weights on screen 3 are placeholders. The wardrobe and the vendor segments are invented examples. The pilot has produced no data.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------------- 1. DIAGRAM ---------------- */
+const N={
+ E:{t:"Garment model",s:"Built once, offline, before the pilot",off:true,refs:["BR-51","BR-52","BO-6"],
+   body:["Trained on Fashion-MNIST: 60,000 training and 10,000 test pictures of 10 garment types.","Tested on photos of clothes the team owns. The target is about 90% on the test pictures.","Gives a best guess, how sure it is, and 32 shape numbers. The shape numbers are used only to order swap choices.","It is never trained or tuned on participant data."],
+   sample:'input   cut-out photo → 28×28 greyscale\noutput  { guess: "Sneaker", confidence: 0.94,\n          shape: [32 numbers], model: "v1" }\nmaps to Footwear › Sneakers  (labelled "Suggested")'},
+ A1:{t:"Add what you own",s:"Form, photo, receipt, barcode",refs:["BR-03","BR-04","BR-05","BR-06","BR-07"],
+   body:["Four ways in: a manual form, a photo with the background removed, a receipt scan (OCR), or a catalogue or barcode lookup.","Quick add uses the seed catalogue, built from public storefront attributes.","A photo item gets a suggested category from the garment model (E). The user confirms or changes it."],
+   sample:'receipt scan keeps: store, date, currency, item lines\nmasked: card no., email, phone, loyalty no.\ndropped: address lines · raw text never stored\nreading results deleted after 7 days (BR-29)'},
+ A2:{t:"Wardrobe, purchases, wishlist",s:"One fixed taxonomy",refs:["BR-02","BR-08","BR-09","BR-14","BR-40"],
+   body:["Every item uses the same fields: category, sub-type, colour (RGB plus a derived colour family), fit, size, material, brand.","The user rates condition from 0 (brand new) to 100 (falling apart).","Purchases keep the date, store, price and receipt. Wishlist items record demand."],
+   sample:'{ "id":"I07", "category":"Outerwear", "sub_type":"Blazer",\n  "colour_rgb":"#1F2A44", "colour_family":"Navy",\n  "fit":"Slim", "size":"40", "brand":"(user text)",\n  "condition":20, "occasions":["Formal","Work","Party"],\n  "season":"All year", "favourite":false }'},
+ A3:{t:"Pick occasion and season",s:"7 occasions",refs:["BR-11"],
+   body:["Occasions: Casual, Work, Formal, Party, Sport, Date, Travel. Date and Travel use the Casual rule until the style specialist sets their own.","The season comes from the date and the user's hemisphere."],
+   sample:'request { occasion:"Work", date:"2026-11-04",\n          hemisphere:"N" } → season "Autumn" (cool)'},
+ A4:{t:"Rules R1 to R8",s:"Hard filters, then scored rules",refs:["BR-50"],
+   body:["Hard rules: R1 occasion and R2 season. Every outfit needs a top, a bottom and footwear, and no item is used twice.","Scored rules: R3 colour harmony (at most 3 non-neutral families and 1 bold colour), R4 at most one pattern, R5 layering, R6 footwear and belt.","An outfit that breaks a hard rule is never shown."],
+   sample:'R1 Work: shirt or polo · chinos or trousers · closed shoes\nR2 Summer: no coats or heavy knits · Winter: add a layer\nR3 neutrals: Black White Grey Navy Beige Khaki Olive Brown'},
+ A5:{t:"Rank, show up to three",s:"Score 0 to 1, deterministic",refs:["BR-50","BR-53","BR-55"],
+   body:["The score is a weighted sum of five parts: rule fit, occasion fit, completeness, condition and favourites.","R7 keeps the three suggestions varied. R8 gives each one a one-line reason.","Ties are broken by item ID, so the same inputs always give the same suggestions. Ranking runs in the user's browser."],
+   sample:'score = w1·rule_fit + w2·occasion_fit + w3·completeness\n      + w4·condition + w5·favourites\n(weights set by the style specialist, FOI-9: still open)'},
+ A6:{t:"Accept, swap or reject",s:"Counts, never items",refs:["BR-53","BR-54","BR-44"],
+   body:["Accept saves the outfit. Swap lists other valid items, most similar first.","Accepts and rejects are counted with the occasion and the rules involved, but no item.","The team reads the totals and adjusts rules and weights by hand. Nothing learns automatically."],
+   sample:'event { type:"suggestion_rejected", occasion:"Work",\n        rules:["R1","R2","R3","R6"] }   // no item ids'},
+ B1:{t:"Pilot notice accepted",s:"Required to use the app",refs:["BR-20","BR-21","BR-22"],
+   body:["On first login, the user must accept the notice to join the study.","Sharing is on and locked during the pilot.","Leave the pilot deletes the account and data at any time."],
+   sample:'consent { user, notice_version:"pilot-1.0",\n          accepted_at:"2026-11-04T09:12:44Z" }'},
+ B2:{t:"Anonymised copy",s:"Runs nightly",refs:["BR-25","BR-27","BR-33"],
+   body:["Only consenting, active users are copied.","Removed: names, emails, images, receipts, free text and shape features.","The colour family replaces the raw RGB value."],
+   sample:'kept:    category, sub_type, colour_family, fit,\n         size, brand, condition band, month\nremoved: name, email, photo, receipt, notes, rgb'},
+ B3:{t:"Segment counts",s:"Distinct users per segment",refs:["BR-30"],
+   body:["A segment is a combination such as category, colour family, fit, brand or size.","Counts are distinct owning users and wishlist users, purchases by month, and condition bands."],
+   sample:'segment "Blazer · Navy"  owning_users 14\n                         wishlist_users 19'},
+ B4:{t:"Privacy rules",s:"Minimum group 10 (pilot)",refs:["BR-26","BR-34"],
+   body:["A segment needs at least 10 users in the pilot and 50 in the shipped product.","Counts are rounded to the nearest 5, with complementary suppression.","Vendors can apply one filter at a time."],
+   sample:'14 → 15 (shown) · 9 → hidden · 19 → 20 (shown)'},
+ B5:{t:"Aggregate tables",s:"Gap score",refs:["BR-31"],
+   body:["Gap score = wishlist users ÷ owning users. A high score means demand the market isn't meeting.","A run log records the date, users, items and suppressed segments."],
+   sample:'gap("Blazer · Navy") = 20 / 15 = 1.33'},
+ B6:{t:"Admin review",s:"Before a vendor sees it",refs:["BR-35","BR-36"],
+   body:["The monthly report is checked before release.","Every vendor query is logged, with a limit of 200 calls per hour, to catch attempts to single someone out."],
+   sample:'query_log { vendor, filter:"size=40", at, rows }\nlimit 200 / hour'},
+ C1:{t:"Vendor portal",s:"Read only",refs:["BR-30","BR-34","BR-25"],
+   body:["Shows the ownership mix by category, colour family, fit and brand.","Also shows purchase and wishlist trends by month, and the condition spectrum.","Filters: size, season, price band or region, one at a time."],
+   sample:'never shown: individual users, wardrobes,\nreceipts or purchase records'},
+ C2:{t:"Gaps and demand",s:"Monthly report",refs:["BR-31"],
+   body:["Lists segments with high wishlist demand and low ownership, ranked by gap score.","The condition spectrum hints at replacement demand."],
+   sample:'top gaps: Kurta · White (2.50), Jacket · Olive (hidden),\nBlazer · Navy (1.33)'},
+ C3:{t:"Range design decision",s:"Primary decision",refs:["BO-2"],
+   body:["Which categories, colours and fits to add or expand next season.","The decision-maker is the head of product and design."],sample:''},
+ C4:{t:"Inventory decision",s:"Secondary decision",refs:["BO-2"],
+   body:["How much to commit to each category.","The decision-maker is the inventory and merchandising manager."],sample:''},
+ C5:{t:"Vendor feedback",s:"Pilot proof",refs:["BO-3","§11"],
+   body:["The vendor says whether the dashboard or report would change a range or stock decision.","This feedback is the commercial proof the pilot sets out to get."],sample:''},
+ C6:{t:"Product feed upload",s:"Joins the seed catalogue",refs:["BR-32","BR-41"],
+   body:["A vendor uploads its catalogue (attributes and price).","An admin reviews it, then it joins the seed catalogue that quick add (A1) uses."],sample:''},
+ D:{t:"Course analytics (ANCP D2 to D5)",s:"Validates the vendor insights",off:true,refs:["D2","D3","D4","D5"],
+   body:["Uses public H&M transactions (cleaned in D2) plus aggregate pilot figures built under the same privacy rules.","Tests the gap ranking on a time-based holdout (precision@10 against a most-popular baseline).","Tests the seasonal demand forecast (WAPE against last year).","No row about an individual participant is used."],
+   sample:'H&M data-v1.0: 3,066,344 units · 132,435 customers\nMenswear 5.8% of units'}
+};
+const D2N={
+ S1:{t:"H&M Kaggle files",s:"articles 105,542 · customers 1,371,980 · transactions 31.8M",refs:["D2"],body:["Public H&M Personalized Fashion Recommendations files. The licence allows non-commercial research and education only.","These are purchase records only: no ownership, no wishlist, no returns."],sample:"articles.csv      105,542 rows · 25 cols\ncustomers.csv   1,371,980 rows ·  7 cols\ntransactions     31.8M rows ·  5 cols"},
+ S2:{t:"Fashion-MNIST",s:"70,000 pictures · MIT",refs:["BR-52"],body:["Trains the image model only. It is never cleaned or joined with the H&M data."],sample:"fashion-mnist_train.csv 60,000 · test 10,000\nlabel + pixel1..pixel784 (0-255)"},
+ S3:{t:"Sparta pilot app",s:"Future, not in this audit",off:true,refs:["BR-44"],body:["Consenting, pseudonymised wardrobe data. The same audit will be repeated on the first pilot extract."],sample:""},
+ R1:{t:"Raw files",s:"Team machines only",refs:["BR-43"],body:["The raw files are not committed to git. A SHA-256 checksum and row and column counts are recorded for each.","Raw files are deleted when the course ends."],sample:'MANIFEST.json { file, sha256, rows, cols }'},
+ R2:{t:"Working sample",s:"10% of customers",refs:["D2"],body:["Holds all purchases of a random 10% of customers: 136,670 customers and 3,205,663 rows.","It reproduces the full file on every check (SMD below 0.1)."],sample:"department mix, monthly volume, basket size:\nall pass against the full-file profile"},
+ K:{t:"Audit and cleaning",s:"10 decisions, 8 steps",refs:["D2 T3"],body:["1 Keep ids as text; postal code is never loaded. 2 Fill missing values (unknown age band; FN and Active = 0).","3 Fold duplicate rows into a quantity. 4 Ages over 90 become missing; price is relative only.","5 Drop Baby/Children, non-apparel and under-18 customers. 6 Drop partial weeks; keep channel as a code.","7 Set is_menswear from the department. 8 Check bias and whether the sample represents the full file."],sample:"3,205,663 → 3,082,273 → 3,071,946 → 3,066,344 units"},
+ F:{t:"Feature engineering",s:"17 features",refs:["D2 T7"],body:["Features 1 to 8 come from clean_hm.py: qty, role, is_menswear, age band, FN and Active, club status, week_start.","Features 9 to 14 are built in the D3 notebook: visits, history hit, pair lift, weekly overlap, customer activity.","Features 15 to 17 are planned for Sparta data: colour family, condition band, gap score."],sample:"leakage control: split by customer and by date"},
+ O:{t:"Outputs: data-v1.0",s:"Used by D3, D4, D5",refs:["D2"],body:["Outputs are lines, customers and articles (.csv.gz), plus MANIFEST.json, the data dictionary and the audit report.","Same input, same checksums: the cleaning script is deterministic."],sample:"lines_clean.csv.gz · customers_clean.csv.gz\narticles_clean.csv.gz · MANIFEST.json"}
+};
+let view="pilot", sel="A4";
+const nodeBtn=(id,src)=>{const n=src[id];return `<button class="node${n.off?' off':''}" data-id="${id}" aria-pressed="${id===sel}"><span class="id">${id}</span><span class="nt">${esc(n.t)}</span><span class="ns">${esc(n.s)}</span></button>`};
+const chain=(ids,src)=>`<div class="steps">${ids.map(i=>nodeBtn(i,src)).join('<span class="arrow" aria-hidden="true">→</span>')}</div>`;
+function drawDiagram(){
+  const d=$("#diag");
+  if(view==="pilot"){
+    d.innerHTML=`
+    <div class="lane E"><div class="ln"><b>E · Before pilot</b><span>Offline, public data only</span></div>
+      <div class="steps">${nodeBtn("E",N)}<span class="arrow">⇢</span><div style="flex:3;display:flex;align-items:center" class="note">suggests a category for photo items in A1 and orders swap choices in A6</div></div></div>
+    <div class="lane A"><div class="ln"><b>A · Consumer</b><span>One user, own data only</span></div>${chain(["A1","A2","A3","A4","A5","A6"],N)}</div>
+    <div class="strip"><span class="note">A2 ⇣ B1–B2: consenting users' data only, copied nightly</span><span class="note">A6 ⇢ A4: accept/reject counts → rules tuned by hand</span></div>
+    <div class="lane B"><div class="ln"><b>B · Consent &amp; aggregation</b><span>The only path to vendors</span></div>${chain(["B1","B2","B3","B4","B5","B6"],N)}</div>
+    <div class="strip"><span class="note">B5 ⇣ C1: only segments that pass the privacy rules</span><span class="note">B6 ⇣ C2: reviewed monthly report</span></div>
+    <div class="lane C"><div class="ln"><b>C · Vendor</b><span>Aggregates only</span></div>${chain(["C1","C2","C3","C4","C5"],N)}</div>
+    <div class="lane C" style="padding-top:0"><div class="ln" style="border-right-color:transparent"></div><div class="steps">${nodeBtn("C6",N)}<span class="arrow">⇢</span><div style="flex:4;display:flex;align-items:center" class="note">feeds the seed catalogue used by quick add in A1</div></div></div>
+    <div class="lane D"><div class="ln"><b>D · Course</b><span>ANCP D2–D5</span></div><div class="steps">${nodeBtn("D",N)}<span class="arrow">⇢</span><div style="flex:3;display:flex;align-items:center" class="note">checks the gap ranking (C2) and the demand forecast</div></div></div>
+    <div class="legend"><span><i style="background:var(--laneA)"></i>consumer</span><span><i style="background:var(--laneB)"></i>consent &amp; aggregation</span><span><i style="background:var(--laneC)"></i>vendor</span><span><i style="background:var(--laneE)"></i>built before pilot</span><span><i style="background:var(--laneD)"></i>course analytics</span><span>dashed box = offline or not live yet · → data flow · ⇢ feedback or offline</span></div>`;
+  }else{
+    d.innerHTML=`<div class="d2grid">
+      <div class="d2col"><span class="label">1 Sources</span>${nodeBtn("S1",D2N)}${nodeBtn("S2",D2N)}${nodeBtn("S3",D2N)}</div>
+      <div class="d2col"><span class="label">2 Raw zone</span>${nodeBtn("R1",D2N)}${nodeBtn("R2",D2N)}</div>
+      <div class="d2col"><span class="label">3 Audit &amp; cleaning</span>${nodeBtn("K",D2N)}<span class="note" style="font-size:14px">8 steps, run identically in clean_hm.py and the D3 notebook</span></div>
+      <div class="d2col"><span class="label">4 Features</span>${nodeBtn("F",D2N)}</div>
+      <div class="d2col"><span class="label">5 Outputs</span>${nodeBtn("O",D2N)}<span class="note" style="font-size:14px">Fashion-MNIST skips 3–4 and goes straight to model training</span></div>
+    </div>
+    <div class="legend"><span>dashed box = not available yet</span><span>raw H&amp;M and Fashion-MNIST files never enter the public repository</span></div>`;
+  }
+  d.querySelectorAll(".node").forEach(b=>b.addEventListener("click",()=>{sel=b.dataset.id;drawDiagram();drawDetail()}));
+}
+function drawDetail(){
+  const n=(view==="pilot"?N:D2N)[sel];
+  $("#detail").innerHTML=`<div style="display:grid;gap:10px;min-width:0">
+      <span class="label">${esc(sel)} · selected step</span><h3 style="font-size:19px">${esc(n.t)}</h3>
+      <ul>${n.body.map(b=>`<li>${esc(b)}</li>`).join("")}</ul>
+      <div class="refs">${n.refs.map(r=>`<span class="tag">${esc(r)}</span>`).join("")}</div></div>
+    <div style="display:grid;gap:8px;align-content:start;min-width:0"><span class="label">Data at this step</span>
+      ${n.sample?`<pre>${esc(n.sample)}</pre>`:`<p class="note">A decision or feedback step: people act on the report here, and no new data is created.</p>`}</div>`;
+}
+function setView(v){view=v;sel=v==="pilot"?"A4":"K";
+  $("#tab-pilot").setAttribute("aria-selected",v==="pilot");$("#tab-d2").setAttribute("aria-selected",v==="d2");drawDiagram();drawDetail()}
+$("#tab-pilot").onclick=()=>setView("pilot");$("#tab-d2").onclick=()=>setView("d2");
+
+/* ---------------- 2a. NOTICE ---------------- */
+$("#ck-notice").addEventListener("change",e=>{$("#btn-accept").disabled=!e.target.checked});
+$("#btn-accept").addEventListener("click",()=>{const t=new Date().toISOString().slice(0,19)+"Z";
+  const s=$("#notice-status");s.className="status ok";s.textContent=`Accepted · notice pilot-1.0 · ${t}`;$("#btn-accept").disabled=true;$("#ck-notice").disabled=true});
+$("#btn-leave").addEventListener("click",()=>{$("#leave-status").hidden=false});
+
+/* ---------------- 2b. WARDROBE (example) ---------------- */
+const FAM={White:"#F4F4F2",Blue:"#8DB3DD",Navy:"#1F2A44",Black:"#16181A",Red:"#7A1F2B",Grey:"#7D8288",Olive:"#5B6236",Beige:"#D8C7A6",Khaki:"#B9A77A",Brown:"#6B4528",Yellow:"#F2C21B",Orange:"#F07C1E"};
+const NEUTRAL=["Black","White","Grey","Navy","Beige","Khaki","Olive","Brown"];
+const W=[
+ {id:"I01",n:"White oxford shirt",cat:"Tops",sub:"Shirt",fam:"White",pat:"Solid",sea:["all"],occ:["Work","Formal","Casual"],cond:15,fav:true},
+ {id:"I02",n:"Light blue shirt",cat:"Tops",sub:"Shirt",fam:"Blue",pat:"Solid",sea:["all"],occ:["Work","Casual"],cond:30},
+ {id:"I03",n:"Navy polo",cat:"Tops",sub:"Polo",fam:"Navy",pat:"Solid",sea:["Summer","Spring"],occ:["Casual","Work"],cond:25},
+ {id:"I04",n:"Black graphic tee",cat:"Tops",sub:"T-shirt",fam:"Black",pat:"Graphic",sea:["Summer","Spring"],occ:["Casual","Party"],cond:40},
+ {id:"I05",n:"Maroon check shirt",cat:"Tops",sub:"Shirt",fam:"Red",dark:true,pat:"Check",sea:["all"],occ:["Casual","Party"],cond:20,fav:true},
+ {id:"I06",n:"Yellow tee",cat:"Tops",sub:"T-shirt",fam:"Yellow",bold:true,pat:"Solid",sea:["Summer"],occ:["Casual"],cond:55},
+ {id:"I07",n:"Grey crew sweater",cat:"Tops",sub:"Sweater",fam:"Grey",pat:"Solid",sea:["Autumn","Winter"],occ:["Casual","Work"],cond:35},
+ {id:"I08",n:"Navy blazer",cat:"Outerwear",sub:"Blazer",fam:"Navy",pat:"Solid",sea:["all"],occ:["Formal","Work","Party"],cond:20},
+ {id:"I09",n:"Olive bomber jacket",cat:"Outerwear",sub:"Jacket",fam:"Olive",pat:"Solid",sea:["Autumn","Winter"],occ:["Casual"],cond:45},
+ {id:"I10",n:"Dark indigo jeans",cat:"Bottoms",sub:"Jeans",fam:"Blue",dark:true,pat:"Solid",sea:["all"],occ:["Casual","Party"],cond:30,fav:true},
+ {id:"I11",n:"Beige chinos",cat:"Bottoms",sub:"Chinos",fam:"Beige",pat:"Solid",sea:["all"],occ:["Work","Casual"],cond:25},
+ {id:"I12",n:"Charcoal trousers",cat:"Bottoms",sub:"Trousers",fam:"Grey",pat:"Solid",sea:["all"],occ:["Formal","Work"],cond:10},
+ {id:"I13",n:"Khaki shorts",cat:"Bottoms",sub:"Shorts",fam:"Khaki",pat:"Solid",sea:["Summer"],occ:["Casual"],cond:50},
+ {id:"I14",n:"White sneakers",cat:"Footwear",sub:"Sneakers",fam:"White",pat:"Solid",sea:["all"],occ:["Casual","Party","Sport"],cond:60},
+ {id:"I15",n:"Brown derby shoes",cat:"Footwear",sub:"Formal shoes",fam:"Brown",pat:"Solid",sea:["all"],occ:["Work","Formal"],cond:20},
+ {id:"I16",n:"Black chelsea boots",cat:"Footwear",sub:"Boots",fam:"Black",pat:"Solid",sea:["Autumn","Winter"],occ:["Party","Casual"],cond:30},
+ {id:"I17",n:"Brown leather belt",cat:"Accessories",sub:"Belt",fam:"Brown",pat:"Solid",sea:["all"],occ:["Work","Formal","Casual"],cond:30},
+ {id:"I18",n:"Black track pants",cat:"Activewear",sub:"Track pants",fam:"Black",pat:"Solid",sea:["all"],occ:["Sport"],cond:40},
+ {id:"I19",n:"Orange sports tee",cat:"Activewear",sub:"Sports T-shirt",fam:"Orange",bold:true,pat:"Solid",sea:["all"],occ:["Sport"],cond:35}
+];
+const byId=Object.fromEntries(W.map(i=>[i.id,i]));
+let wf="All";
+const WF={All:()=>true,Tops:i=>i.cat==="Tops",Bottoms:i=>i.cat==="Bottoms",Footwear:i=>i.cat==="Footwear",Layers:i=>i.cat==="Outerwear"||["Sweater"].includes(i.sub),Other:i=>["Accessories","Activewear"].includes(i.cat)};
+function drawWardrobe(){
+  $("#wf-chips").innerHTML=Object.keys(WF).map(k=>`<button class="chip" data-k="${k}" aria-pressed="${k===wf}">${k} <span class="mono">${W.filter(WF[k]).length}</span></button>`).join("");
+  $("#wf-chips").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{wf=b.dataset.k;drawWardrobe()});
+  $("#wf-list").innerHTML=W.filter(WF[wf]).map(i=>`<div class="item"><span class="thumb" aria-hidden="true"></span>
+    <div><div class="in">${esc(i.n)}${i.fav?' <span title="favourite" aria-label="favourite">★</span>':''}</div>
+    <div class="im">${esc(i.sub)} · <span class="swatch" style="background:${FAM[i.fam]}"></span> ${esc(i.fam)} · ${esc(i.pat)}</div></div>
+    <span class="tag" title="Condition 0 = new, 100 = falling apart">c${i.cond}</span></div>`).join("");
+}
+$("#ph-1").onclick=()=>{$("#ph-out").className="status ok";$("#ph-out").innerHTML=`Model guess: <b>Sneaker</b>, 94% sure → form pre-filled with <b>Footwear › Sneakers</b>, labelled "Suggested from your photo". You can change it before saving.`};
+$("#ph-2").onclick=()=>{$("#ph-out").className="status";$("#ph-out").innerHTML=`Model guess: Shirt, 41% sure. That's below the cut-off, so no suggestion appears and the form stays empty. No error is shown (FR-23a).`};
+
+/* ---------------- 2c. ENGINE ---------------- */
+// Placeholder weights: FDD 14.2 leaves these to the style specialist (FOI-9, open)
+const WT={rule:.35,occ:.25,comp:.15,cond:.15,fav:.10};
+const slotOf=i=>{
+  if(["Shirt","Polo","T-shirt","Sports T-shirt"].includes(i.sub))return["top"];
+  if(["Sweater","Cardigan","Hoodie"].includes(i.sub))return["top","layer"];
+  if(i.cat==="Bottoms"||["Track pants","Sports shorts"].includes(i.sub))return["bottom"];
+  if(i.cat==="Outerwear")return["layer"];
+  if(i.cat==="Footwear")return["foot"];
+  return[];
+};
+const can=(i,s)=>slotOf(i).includes(s);
+const seasonOK=(i,sea)=>(i.sea.includes("all")||i.sea.includes(sea))&&!(sea==="Summer"&&["Coat","Sweater","Cardigan","Hoodie"].includes(i.sub));
+const ruleName=o=>(o==="Date"||o==="Travel")?"Casual":o;
+const hasBlazer=W.some(i=>i.sub==="Blazer");
+function R1(o,occ){const r=ruleName(occ),{top,bottom,foot,layer}=o;
+  switch(r){
+   case"Casual":return top.cat!=="Activewear"&&bottom.cat!=="Activewear"&&!(foot.sub==="Formal shoes"&&bottom.sub==="Shorts");
+   case"Work":return["Shirt","Polo"].includes(top.sub)&&["Chinos","Trousers"].includes(bottom.sub)&&foot.sub!=="Sandals";
+   case"Formal":return top.sub==="Shirt"&&bottom.sub==="Trousers"&&foot.sub==="Formal shoes"&&(!hasBlazer||(layer&&layer.sub==="Blazer"));
+   case"Party":return(top.dark||top.bold||top.pat!=="Solid"||["Black","Navy"].includes(top.fam))&&["Jeans","Trousers"].includes(bottom.sub)&&["Sneakers","Boots"].includes(foot.sub);
+   case"Sport":return top.sub==="Sports T-shirt"&&["Track pants","Sports shorts"].includes(bottom.sub)&&foot.sub==="Sneakers"&&(!layer||layer.sub==="Track jacket");
+  }return false}
+function R2(o,sea){const parts=[o.top,o.bottom,o.foot,o.layer].filter(Boolean);
+  return parts.every(i=>seasonOK(i,sea))&&(sea!=="Winter"||!!o.layer)}
+const cool=s=>s==="Autumn"||s==="Winter";
+function evaluate(o,occ,sea){
+  const parts=[o.top,o.bottom,o.foot,o.layer].filter(Boolean);
+  const belt=W.find(i=>i.sub==="Belt"&&i.fam===o.foot.fam&&occ!=="Sport")||null;
+  const nn=[...new Set(parts.filter(i=>!NEUTRAL.includes(i.fam)).map(i=>i.fam))];
+  const bold=parts.filter(i=>i.bold).length;
+  const r3=nn.length<=3&&bold<=1, r4=parts.filter(i=>i.pat!=="Solid").length<=1;
+  const r5=!cool(sea)?1:(o.layer?(o.layer.fam!==o.top.fam?1:.5):0);
+  const r6=o.foot.occ.includes(ruleName(occ))||o.foot.occ.includes(occ)?1:.6;
+  const rule=((r3?1:0)+(r4?1:0)+r5+r6)/4;
+  const all=belt?[...parts,belt]:parts;
+  const occFit=all.filter(i=>i.occ.includes(occ)||i.occ.includes(ruleName(occ))).length/all.length;
+  const comp=cool(sea)?((o.layer?.5:0)+(belt?.5:0)):(belt?1:.5);
+  const cond=all.reduce((a,i)=>a+(i.cond==null?.5:i.cond>=80?0:1-i.cond/100),0)/all.length;
+  const fav=all.some(i=>i.fav)?1:0;
+  const score=WT.rule*rule+WT.occ*occFit+WT.comp*comp+WT.cond*cond+WT.fav*fav;
+  const why=[`${ruleName(occ)} rule: ${o.top.sub.toLowerCase()}, ${o.bottom.sub.toLowerCase()}, ${o.foot.sub.toLowerCase()}`];
+  why.push(nn.length===0?"all neutral colours":`${nn.join(", ").toLowerCase()} with neutrals`);
+  if(bold===1)why.push("one bold colour");
+  if(!r4)why.push("two patterns (scored down)");
+  if(o.layer&&cool(sea))why.push("layer for cool weather");
+  if(belt)why.push("belt matches shoes");
+  return{score,belt,why:why.join(" · "),rules:["R1","R2",r3?"R3":null,"R4",cool(sea)?"R5":null,"R6"].filter(Boolean)};
+}
+let state={cards:[],events:[]};
+function run(){
+  const occ=$("#sel-occ").value, sea=$("#sel-sea").value;
+  const tops=W.filter(i=>can(i,"top")),bottoms=W.filter(i=>can(i,"bottom")),feet=W.filter(i=>can(i,"foot")),layers=[null,...W.filter(i=>can(i,"layer"))];
+  let total=0,f1=0,f2=0;const pass=[];
+  for(const top of tops)for(const bottom of bottoms)for(const foot of feet)for(const layer of layers){
+    if(layer&&layer.id===top.id)continue;total++;
+    const o={top,bottom,foot,layer};
+    if(!R1(o,occ)){f1++;continue}
+    if(!R2(o,sea)){f2++;continue}
+    pass.push({o,...evaluate(o,occ,sea)});
+  }
+  const key=c=>[c.o.top,c.o.bottom,c.o.foot,c.o.layer].filter(Boolean).map(i=>i.id).join("+");
+  pass.sort((a,b)=>b.score-a.score||key(a).localeCompare(key(b)));
+  // R7 variety: no item in all three picks where an alternative exists
+  const picks=[];
+  const ids=c=>[c.o.top,c.o.bottom,c.o.foot,c.o.layer].filter(Boolean).map(i=>i.id);
+  for(const c of pass){
+    if(picks.length>=3)break;
+    if(picks.length===2){const shared=ids(picks[0]).filter(x=>ids(picks[1]).includes(x)&&ids(c).includes(x));
+      if(shared.length&&pass.some(d=>!picks.includes(d)&&d!==c&&!shared.some(x=>ids(d).includes(x))))continue}
+    if(picks.length===1&&key(c).split("+").filter(x=>ids(picks[0]).includes(x)).length>=3&&pass.length>4)continue;
+    picks.push(c);
+  }
+  state.cards=picks.map(c=>({orig:{...c.o},o:{...c.o},idx:{top:0,bottom:0,foot:0,layer:0},ev:c,done:null}));
+  state.occ=occ;state.sea=sea;
+  drawCards();
+  const missing=[];
+  if(!pass.length){
+    if(!W.some(i=>can(i,"top")&&seasonOK(i,sea)))missing.push("a top for this season");
+    if(sea==="Winter"&&!W.some(i=>can(i,"layer")&&seasonOK(i,sea)))missing.push("a winter layer");
+  }
+  $("#out-trace").innerHTML=
+   `<b>Trace</b> (wardrobe of ${W.length} example items)<br>`+
+   `combinations built ··· <b>${total}</b><br>`+
+   `removed by R1 ${esc(ruleName(occ))} ··· ${f1}<br>`+
+   `removed by R2 ${esc(sea)} ··· ${f2}<br>`+
+   `valid outfits ranked ··· <b>${pass.length}</b> → shown ${picks.length}<br>`+
+   `weights (placeholder) rule ${WT.rule} · occasion ${WT.occ} · complete ${WT.comp} · condition ${WT.cond} · fav ${WT.fav}`+
+   (pass.length?``:`<br><span style="color:var(--warn)">Not enough to build an outfit${missing.length?": add "+missing.join(" and "):""}. The FDD rule set needs a top, a bottom and footwear that fit the occasion.</span>`);
+}
+function altsFor(card,slot){
+  const cur=card.orig[slot];
+  const cands=W.filter(i=>can(i,slot)&&(!cur||i.id!==cur.id)).filter(i=>{
+    const o={...card.o,[slot]:i};if(o.layer&&o.top&&o.layer.id===o.top.id)return false;
+    return R1(o,state.occ)&&R2(o,state.sea)});
+  cands.sort((a,b)=>((b.sub===cur?.sub)-(a.sub===cur?.sub))||((b.fam===cur?.fam)-(a.fam===cur?.fam))||a.id.localeCompare(b.id));
+  return cur?[cur,...cands]:cands;
+}
+function drawCards(){
+  const box=$("#out-sugg");
+  if(!state.cards.length){box.innerHTML=`<div class="box dash"><p class="note">No suggestion for this occasion and season.</p></div>`;return}
+  box.innerHTML=state.cards.map((c,k)=>{
+    const ev=c.ev;const slots=[["top","Top"],["layer","Layer"],["bottom","Bottom"],["foot","Shoes"]];
+    return `<div class="sugg"><div class="hd"><b style="font-size:13.5px">Outfit ${k+1}</b><span class="score">score ${ev.score.toFixed(3)}</span></div>
+     <div class="slots">${slots.filter(([s])=>c.o[s]).map(([s,l])=>`<button class="slotbtn" data-k="${k}" data-s="${s}" title="Swap"><small>${l}</small><span class="swatch" style="background:${FAM[c.o[s].fam]}"></span> ${esc(c.o[s].n)}</button>`).join("")}
+       ${ev.belt?`<span class="slotbtn" style="cursor:default"><small>Belt</small><span class="swatch" style="background:${FAM[ev.belt.fam]}"></span> ${esc(ev.belt.n)}</span>`:""}</div>
+     <p class="reason">${esc(ev.why)}</p>
+     ${c.done?`<p class="status ${c.done==="accepted"?"ok":"warn"}">${c.done==="accepted"?"Saved as an outfit":"Rejected"}</p>`:
+      `<div class="row"><button class="btn sm pri" data-act="accept" data-k="${k}">Accept</button><button class="btn sm" data-act="reject" data-k="${k}">Reject</button></div>`}</div>`}).join("");
+  box.querySelectorAll(".slotbtn[data-s]").forEach(b=>b.onclick=()=>{
+    const c=state.cards[+b.dataset.k],s=b.dataset.s;const list=altsFor(c,s);
+    if(list.length<2){b.title="No other valid item";return}
+    c.idx[s]=(c.idx[s]+1)%list.length;c.o={...c.o,[s]:list[c.idx[s]]};c.ev=evaluate(c.o,state.occ,state.sea);c.done=null;drawCards()});
+  box.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
+    const c=state.cards[+b.dataset.k];c.done=b.dataset.act==="accept"?"accepted":"rejected";
+    state.events.push({type:"suggestion_"+c.done,occasion:state.occ,rules:c.ev.rules});drawCards();drawEvents()});
+}
+function drawEvents(){
+  const a=state.events.filter(e=>e.type.endsWith("accepted")).length,r=state.events.length-a;
+  const last=state.events[state.events.length-1];
+  $("#out-events").innerHTML=`Accepted ${a} · Rejected ${r}${last?`<br>logged: {type:"${last.type}", occasion:"${esc(last.occasion)}", rules:[${last.rules.join(",")}]} <span style="color:var(--ink2)">(no item ids)</span>`:""}`;
+}
+$("#sel-occ").onchange=run;$("#sel-sea").onchange=run;
+
+/* ---------------- 2d. VENDOR (example aggregates) ---------------- */
+const SEG=[["Kurta · White",11,23],["Blazer · Navy",14,19],["Sneakers · White",58,25],["Chinos · Beige",38,21],["Jacket · Olive",9,16],["Shirt · Green",6,12],["Shirt · White",64,12],["Boots · Black",18,7],["Shirt · Blue",51,9],["Formal shoes · Brown",27,6],["Jeans · Blue",72,8]];
+let th=10;
+const r5=n=>Math.round(n/5)*5;
+function drawVendor(){
+  const rows=SEG.map(([s,own,wish])=>{const so=own>=th,sw=wish>=th;const ro=r5(own),rw=r5(wish);
+    return{s,own:so?ro:null,wish:sw?rw:null,gap:so&&sw?rw/ro:null}});
+  rows.sort((a,b)=>(b.gap??-1)-(a.gap??-1)||a.s.localeCompare(b.s));
+  const max=Math.max(...rows.map(r=>r.gap||0),1);
+  $("#vend").innerHTML=`<thead><tr><th>Segment</th><th class="n">Own</th><th class="n">Want</th><th class="n">Gap</th><th style="width:60px"></th></tr></thead><tbody>`+
+   rows.map(r=>`<tr class="${r.gap==null?"sup":""}"><td>${esc(r.s)}</td><td class="n">${r.own??"—"}</td><td class="n">${r.wish??"—"}</td><td class="n">${r.gap==null?"hidden":r.gap.toFixed(2)}</td><td>${r.gap==null?"":`<div class="gapbar" style="width:${(r.gap/max*100).toFixed(0)}%"></div>`}</td></tr>`).join("")+`</tbody>`;
+  const hidden=rows.filter(r=>r.gap==null).length;
+  $("#vend-status").textContent=`${rows.length-hidden} of ${rows.length} segments shown, ${hidden} hidden. Gap = wanting users ÷ owning users.`;
+  $("#th-10").setAttribute("aria-pressed",th===10);$("#th-50").setAttribute("aria-pressed",th===50);
+}
+$("#th-10").onclick=()=>{th=10;drawVendor()};$("#th-50").onclick=()=>{th=50;drawVendor()};
+
+/* ---------------- 3. DATA (real D2 figures) ---------------- */
+function bars(el,rows,total,fmtV){
+  const max=Math.max(...rows.map(r=>r[1]));
+  $(el).innerHTML=rows.map(([l,v,cls])=>`<div class="hbar ${cls||""}"><span>${esc(l)}</span><span class="track"><span class="fill" style="width:${(v/max*100).toFixed(1)}%"></span></span><span class="v">${fmtV(v,total)}</span></div>`).join("");
+}
+const nf=n=>n.toLocaleString("en-US");
+const pct=(v,t)=>(v/t*100).toFixed(1)+"%";
+bars("#funnel",[["Raw rows",3205663],["− Baby/Children",3082273],["− Non-apparel",3071946],["− Under-18",3066344]],3205663,(v,t)=>`${nf(v)}`);
+$("#funnel").insertAdjacentHTML("beforeend",`<p class="src mono" style="margin-top:2px">kept 95.7% of raw units · dropped 123,390 / 10,327 / 5,602</p>`);
+bars("#dept",[["Ladieswear",39737],["Baby/Children",34711,"drop"],["Divided",15149],["Menswear",12553],["Sport",3392]],105542,(v,t)=>`${nf(v)} · ${pct(v,t)}`);
+bars("#age",[["16–17 (removed)",9553,"drop"],["18–24",347616],["25–34",393292],["35–44",169041],["45–54",253951],["55–64",139064],["65+",43602],["Missing",15861]],1371980,(v,t)=>`${pct(v,t)}`);
+$("#mnist").innerHTML=["T-shirt/top","Trouser","Pullover","Dress","Coat","Sandal","Shirt","Sneaker","Bag","Ankle boot"].map((t,i)=>`<div><b>${i}</b>${t}</div>`).join("");
+
+drawDiagram();drawDetail();drawWardrobe();run();drawVendor();
+})();
+</script>
+</body>
+</html>

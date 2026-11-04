@@ -1,33 +1,43 @@
-file,column,type,description
-lines_clean.csv.gz,t_dat,date,Purchase date (YYYY-MM-DD)
-lines_clean.csv.gz,week_start,date,Monday of the purchase week
-lines_clean.csv.gz,customer_id,text,64-character hash from the publisher; joins to customers_clean
-lines_clean.csv.gz,article_id,text,10-digit article id with leading zeros; joins to articles_clean
-lines_clean.csv.gz,price,number,"Normalised unit price; relative use only, not a currency"
-lines_clean.csv.gz,sales_channel_id,integer,"Anonymous channel code, 1 or 2"
-lines_clean.csv.gz,qty,integer,Units in this line (identical rows collapsed)
-lines_clean.csv.gz,role,text,"Top, Bottom, Full-body, Accessory, Footwear, Hosiery, Underwear, Nightwear, Swimwear"
-lines_clean.csv.gz,is_menswear,boolean,"True when the article's index group is Menswear (a proxy, not a gender label)"
-lines_clean.csv.gz,index_group_name,text,"Department: Ladieswear, Divided, Menswear or Sport"
-lines_clean.csv.gz,product_group_name,text,Catalogue product group
-lines_clean.csv.gz,product_type_name,text,Catalogue product type
-lines_clean.csv.gz,garment_group_name,text,Catalogue garment group
-lines_clean.csv.gz,perceived_colour_master_name,text,Catalogue master colour
-lines_clean.csv.gz,perceived_colour_value_name,text,Catalogue colour shade (for example Dark)
-lines_clean.csv.gz,age_band,text,"18-24, 25-34, 35-44, 45-54, 55-64, 65+ or unknown"
-customers_clean.csv.gz,customer_id,text,64-character hash; one row per customer who remains in scope
-customers_clean.csv.gz,FN,integer,"Publisher flag, 0 or 1; missing stored as 0"
-customers_clean.csv.gz,Active,integer,"Publisher flag, 0 or 1; missing stored as 0"
-customers_clean.csv.gz,club_member_status,text,"ACTIVE, PRE-CREATE, LEFT CLUB or UNKNOWN"
-customers_clean.csv.gz,fashion_news_frequency,text,"NONE, Regularly, Monthly or UNKNOWN"
-customers_clean.csv.gz,age_clean,number,Age; values above 90 set to missing
-customers_clean.csv.gz,age_band,text,"18-24, 25-34, 35-44, 45-54, 55-64, 65+ or unknown"
-articles_clean.csv.gz,article_id,text,10-digit article id with leading zeros; one row per article in the lines file
-articles_clean.csv.gz,product_type_name,text,Catalogue product type
-articles_clean.csv.gz,product_group_name,text,Catalogue product group
-articles_clean.csv.gz,perceived_colour_master_name,text,Catalogue master colour
-articles_clean.csv.gz,perceived_colour_value_name,text,Catalogue colour shade
-articles_clean.csv.gz,index_group_name,text,Department
-articles_clean.csv.gz,garment_group_name,text,Catalogue garment group
-articles_clean.csv.gz,role,text,Outfit role derived from product_group_name
-articles_clean.csv.gz,is_menswear,boolean,True when index_group_name is Menswear
+file,column,type,status,description,derived_from,missing_values
+lines_clean.csv.gz,t_dat,date,stored,Purchase date (YYYY-MM-DD),transactions.t_dat,None
+lines_clean.csv.gz,week_start,date,stored,Monday of the purchase week (D2 Table 7 feature 7),t_dat,None
+lines_clean.csv.gz,customer_id,text,stored,64-character hash from the publisher; joins to customers_clean,transactions.customer_id,None
+lines_clean.csv.gz,article_id,text,stored,10-digit article id with leading zeros; joins to articles_clean,transactions.article_id (read as text),None
+lines_clean.csv.gz,price,number,stored,"Normalised unit price; relative use only, not a currency",transactions.price,None
+lines_clean.csv.gz,sales_channel_id,integer,stored,"Anonymous channel code, 1 or 2; never labelled store or online",transactions.sales_channel_id,None
+lines_clean.csv.gz,qty,integer,stored,Units in this line: identical rows on the five transaction columns collapsed into one (D2 decision 1; Table 7 feature 1),count of identical transaction rows,None
+lines_clean.csv.gz,role,text,stored,"Top, Bottom, Full-body, Accessory, Footwear, Hosiery, Underwear, Nightwear, Swimwear (Table 7 feature 2)",articles.product_group_name mapped by ROLE in clean_hm.py,None: unmapped (non-apparel) groups are dropped
+lines_clean.csv.gz,is_menswear,boolean,stored,"True when the article's index group is Menswear (a proxy, not a gender label; Table 7 feature 3)",articles.index_group_name,None
+lines_clean.csv.gz,index_group_name,text,stored,"Department: Ladieswear, Divided, Menswear or Sport (Baby/Children dropped)",articles.index_group_name,None
+lines_clean.csv.gz,product_group_name,text,stored,Catalogue product group,articles.product_group_name,None
+lines_clean.csv.gz,product_type_name,text,stored,Catalogue product type,articles.product_type_name,As in source
+lines_clean.csv.gz,garment_group_name,text,stored,Catalogue garment group,articles.garment_group_name,As in source
+lines_clean.csv.gz,perceived_colour_master_name,text,stored,Catalogue master colour,articles.perceived_colour_master_name,As in source
+lines_clean.csv.gz,perceived_colour_value_name,text,stored,Catalogue colour shade (for example Dark),articles.perceived_colour_value_name,As in source
+lines_clean.csv.gz,age_band,text,stored,"18-24, 25-34, 35-44, 45-54, 55-64, 65+ or unknown (under-18 customers are removed)",customers_clean.age_band,unknown
+customers_clean.csv.gz,customer_id,text,stored,64-character hash; one row per customer who remains in scope,customers.customer_id,None
+customers_clean.csv.gz,FN,integer,stored,"Publisher flag, 0 or 1 (Table 7 feature 5)",customers.FN,Stored as 0
+customers_clean.csv.gz,Active,integer,stored,"Publisher flag, 0 or 1 (Table 7 feature 5)",customers.Active,Stored as 0
+customers_clean.csv.gz,club_member_status,text,stored,"ACTIVE, PRE-CREATE, LEFT CLUB or UNKNOWN (Table 7 feature 6)",customers.club_member_status,UNKNOWN
+customers_clean.csv.gz,fashion_news_frequency,text,stored,"NONE, Regularly, Monthly or UNKNOWN; source value None merged into NONE (Table 7 feature 6)",customers.fashion_news_frequency,UNKNOWN
+customers_clean.csv.gz,age_clean,number,stored,Age; values above 90 set to missing (Table 7 feature 4),customers.age,Empty
+customers_clean.csv.gz,age_band,text,stored,"18-24, 25-34, 35-44, 45-54, 55-64, 65+ or unknown (Table 7 feature 4)",age_clean,unknown
+articles_clean.csv.gz,article_id,text,stored,10-digit article id with leading zeros; one row per article in the lines file,articles.article_id (read as text),None
+articles_clean.csv.gz,product_type_name,text,stored,Catalogue product type,articles.product_type_name,As in source
+articles_clean.csv.gz,product_group_name,text,stored,Catalogue product group,articles.product_group_name,None
+articles_clean.csv.gz,perceived_colour_master_name,text,stored,Catalogue master colour,articles.perceived_colour_master_name,As in source
+articles_clean.csv.gz,perceived_colour_value_name,text,stored,Catalogue colour shade,articles.perceived_colour_value_name,As in source
+articles_clean.csv.gz,index_group_name,text,stored,Department,articles.index_group_name,None
+articles_clean.csv.gz,garment_group_name,text,stored,Catalogue garment group,articles.garment_group_name,As in source
+articles_clean.csv.gz,role,text,stored,Outfit role derived from product_group_name,product_group_name,None
+articles_clean.csv.gz,is_menswear,boolean,stored,True when index_group_name is Menswear,index_group_name,None
+(filter only),is_minor,boolean,used to filter; not stored,Age under 18; used to drop under-18 customers (Table 7 feature 8),customers.age,Missing age is not a minor
+D3 notebook,visit,key,derived in D3; not stored,One customer on one day (Table 7 feature 9),"customer_id, t_dat",None
+D3 notebook,single_unit_visit / top_and_bottom_visit,boolean,derived in D3; not stored,Visit has one unit; visit has both a Top and a Bottom role (Table 7 feature 10),"visit, qty, role",None
+D3 notebook,history_hit,boolean,derived in D3; not stored,"Customer bought the same article, type, colour or department on an earlier day; built only from earlier days (Table 7 feature 11)","customer_id, t_dat, article attributes",None
+D3 notebook,pair_lift,number,derived in D3; not stored,Visits with both product types divided by the count expected when items are shuffled among visits of the same size and week (Table 7 feature 12),"visit, product_type_name, week_start",None
+D3 notebook,top100_weekly_overlap / new_article_share,number,derived in D3; not stored,Jaccard overlap of the top 100 articles at 1/4/13/52 weeks; share of units from articles first sold up to 8 weeks earlier (Table 7 feature 13),"article_id, week_start, qty",None
+D3 notebook,customer_activity,number,derived in D3; not stored,"Visits, units, single-unit share and distinct product types per customer; rebuild inside the training window for modelling (Table 7 feature 14)","customer_id, visit, qty, product_type_name",None
+Sparta pilot data,colour_family,text,planned for pilot,Nearest reference swatch in CIELAB to the colour the user picks (Table 7 feature 15; HLD 6.3),"item colour_r, colour_g, colour_b",Not applicable until the pilot runs
+Sparta pilot data,condition_band,text,planned for pilot,"Condition 0-100 grouped into 0-9, 10-29, 30-59, 60-84, 85-100 (Table 7 feature 16)",item condition,Not applicable until the pilot runs
+Sparta pilot data,gap_score,number,planned for pilot,Distinct users with an open wishlist entry in a segment divided by distinct users who own an item in it (Table 7 feature 17),"wishlist entries, owned items per segment",Not shown for segments below the minimum group size (BR-26)

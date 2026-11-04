@@ -46,13 +46,15 @@ The pilot is invitation-only, adults only, and limited to supported countries. T
 
 ```
  Web app (Next.js PWA on Vercel)   consumer, vendor and admin areas
-          |
+          |                         outfit rules and ranking run in the browser
           v
  Supabase: Postgres, Auth, Storage, row-level security, scheduled jobs
+          |                         nightly anonymised aggregates for vendors
           ^
           |  polls jobs (outbound only)
- Python worker (Docker, self-hosted): background removal, receipt OCR
- GitHub Actions: catalogue collector, exchange rates, keep-alive
+ Python worker (Docker, self-hosted): background removal, receipt OCR,
+                                      garment model (trained offline on Fashion-MNIST)
+ GitHub Actions: catalogue collector, exchange rates, keep-alive, health check
 ```
 
 - **Free or near-free hosting:** Supabase and Vercel free tiers, GitHub Actions, and a self-hosted worker container.
@@ -61,6 +63,19 @@ The pilot is invitation-only, adults only, and limited to supported countries. T
 - **A recommendation engine built before there is data:** style rules and ranking run in the browser; the garment model is trained once, offline, on the public Fashion-MNIST dataset (kept out of the repository, see [`data/recommendation-engine`](data/recommendation-engine)). Nothing is trained on participants.
 
 Full detail is in the design documents below.
+
+## Data used before the pilot
+
+The pilot has not produced data yet. Until it does, the team works with two public datasets. Neither is committed to this repository, because of file size and licence terms.
+
+| Dataset | What it is used for | Size | Licence |
+| --- | --- | --- | --- |
+| [H&M Personalized Fashion Recommendations](submissions/D2/) (Kaggle) | A stand-in for purchase behaviour and seasonal demand in the course analytics (ANCP D2 to D5) | 105,542 articles; 1,371,980 customers; 31.8 million transactions (20 Sep 2018 to 22 Sep 2020) | Competition rules: non-commercial research and education only |
+| [Fashion-MNIST](data/recommendation-engine/) (Zalando Research) | Trains the small garment model that suggests a category for photo items | 70,000 greyscale 28 × 28 pictures in 10 garment types (60,000 train, 10,000 test) | MIT |
+
+- **Working sample:** all purchases of a random 10% of customers, which is 136,670 customers and 3,205,663 rows. It matches the full file on every check in the D2 report.
+- **Cleaned dataset `data-v1.0`:** 3,066,344 units from 132,435 customers, of which 5.8% are Menswear. [`clean_hm.py`](submissions/D2/clean_hm.py) rebuilds it, and every column is described in [`data_dictionary.csv`](submissions/D2/data_dictionary.csv).
+- **Limits:** H&M shows purchases only, by mostly European shoppers, with no gender field. It cannot show ownership, wishlist demand or Indian menswear. Fashion-MNIST says nothing about which clothes go together. The Sparta pilot extract replaces H&M as soon as it exists.
 
 ## Documents
 
@@ -75,6 +90,8 @@ Full detail is in the design documents below.
 | [Flow diagrams](flow-diagrams/) | Process flow (outfit recommendation and inventory planning) and the D2 data flow |
 | [ANCP D2 data audit](submissions/D2/) | Audit report and datasheet, cleaning script, data dictionary (public H&M data as a proxy before the pilot) |
 | [ANCP D3 EDA](submissions/D3/) | EDA notebook, HTML export and two-page insight summary |
+| [Low-fidelity prototype](prototype/sparta_prototype.html) | One HTML page, opened locally in a browser. It shows a clickable data-workflow diagram, four wireframe screens (pilot notice, wardrobe, outfit suggestions running the FDD 14.1 rules, vendor gaps) and the D2 data figures. The wardrobe and vendor numbers are made-up examples, and the ranking weights are placeholders until FOI-9 is closed |
+| [Recommendation engine data](data/recommendation-engine/) | Source, licence and checksums of the Fashion-MNIST files (the files themselves are git-ignored) |
 
 ## Out of scope for the pilot
 
@@ -82,7 +99,7 @@ Native iOS and Android apps; paid AI features, inspiration matching and a style 
 
 ## Status
 
-The design documents (BRD, FDD, HLD, LLD) are final; each lists its remaining open items. The legal and privacy pack is a set of pilot drafts and is not legal advice. The charter is the course document already submitted. Implementation has not started, so there is no application code in this repository yet. The recommendation engine was added to the pilot design on 2026-10-29 (BRD section 7.5, FDD section 14). Build order and milestones are in section 14 of the LLD.
+The design documents (BRD, FDD, HLD, LLD) are final; each lists its remaining open items. The legal and privacy pack is a set of pilot drafts and is not legal advice. The charter is the course document already submitted. Implementation has not started, so there is no application code in this repository yet. The recommendation engine was added to the pilot design on 2026-10-29 (BRD section 7.5, FDD section 14). The ANCP D2 data audit and D3 exploratory data analysis were submitted on 2026-11-03, using the public H&M data. Still open: the ranking weights and the review of sample suggestions by the style specialist (FDD FOI-9), and the `data-v1.0` release tag with its `MANIFEST.json` (see [`submissions/D2`](submissions/D2/)). Build order and milestones are in section 14 of the LLD.
 
 ## Contributing
 

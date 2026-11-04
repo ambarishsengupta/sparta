@@ -43,6 +43,12 @@ Test customers 6,730; test baskets with a pair 7,079.
 
 Draw check: the replacement draw uses a fixed seed (the AUC above). With 4 other fixed seeds (1 to 4) the overall AUC is 0.6049 to 0.6067. This is a check on the draw, not a choice of seed; the seed above was fixed before the first run.
 
+## How narrow the margin is, and which pair is weak
+
+- The margin over the 0.60 bar is narrow: with other negative-draw seeds the overall AUC ranges from 0.6036 to 0.6110 over 50 seeds.
+- The interval above holds the negatives fixed (it resamples customers only); a bootstrap that also redraws the negatives gives about [0.5995, 0.6129], which includes values below the bar.
+- The Bottom+Footwear interval [0.485, 0.599] includes 0.5, so that pair should be treated as weak: its table is not evidence that those pairs go together.
+
 ## Counts
 
 | What | Count |

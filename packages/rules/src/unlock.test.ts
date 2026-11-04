@@ -150,6 +150,39 @@ describe('Wardrobe unlock: the result list', () => {
   });
 });
 
+describe('Wardrobe unlock: the threshold and the tie-break order (WO-0014, Model QC Q10, Q11)', () => {
+  const hmOf = (...c: [SubType, string][]): { unlockList: 'hm'; hm: Candidate[] } => ({ unlockList: 'hm', hm: c.map(([sub_type, colour_family]) => ({ sub_type, colour_family })) as Candidate[] });
+  it('an outfit whose rule_fit is exactly 0.6 counts (the threshold is "at least"): no layer in winter (R5 0.5), two patterned pieces (R4 0.5), Red-Purple and Red-Yellow clash (R3 0.4)', () => {
+    const items = [mk('T-shirt', 't', { colourFamily: 'Red', rgb: [170, 90, 90], pattern: 'Striped' }), mk('Jeans', 'j', { colourFamily: 'Purple', rgb: [110, 80, 130], pattern: 'Striped' })];
+    const ctx = at('Casual', 1), pretend = { sub_type: 'Sneakers' as const, colour_family: 'Yellow' as const };
+    const p = pretendItem(pretend)!;
+    const outfit: Outfit = { top: items[0]!, bottom: items[1]!, layer: null, footwear: p, accessory: null };
+    expect(independentProblems(outfit, ctx)).toEqual([]);
+    expect(createScorer(ctx, false).evaluate(outfit).parts.rule_fit).toBe(rules.unlock_min_rule_fit); // exactly equal, not near
+    expect(rules.unlock_min_rule_fit).toBe(0.6);
+    expect(unlock(items, ctx, hmOf(['Sneakers', 'Yellow']))).toEqual([{ subType: 'Sneakers', colourFamily: 'Yellow', newOutfits: 1 }]);
+    expect(brute(items, ctx, pretend).n).toBe(1);
+  });
+  it('an outfit just below 0.6 does not count (the same outfit with a second bold piece: R3 falls by 0.34, the mean to 0.515)', () => {
+    const items = [mk('T-shirt', 't', { colourFamily: 'Red', rgb: [220, 30, 30], pattern: 'Striped' }), mk('Jeans', 'j', { colourFamily: 'Purple', rgb: [110, 80, 130], pattern: 'Striped' })];
+    const ctx = at('Casual', 1), p = pretendItem({ sub_type: 'Sneakers', colour_family: 'Yellow' })!;
+    const fit = createScorer(ctx, false).evaluate({ top: items[0]!, bottom: items[1]!, layer: null, footwear: p, accessory: null }).parts.rule_fit;
+    expect(fit).toBeLessThan(0.6);
+    expect(fit).toBeGreaterThan(0.5);
+    expect(unlock(items, ctx, hmOf(['Sneakers', 'Yellow']))).toEqual([]);
+  });
+  const red = mk('T-shirt', 't', { colourFamily: 'Red', rgb: [170, 90, 90] }), shoes = mk('Sneakers', 's');
+  const names = (opts: object): string[] => unlock([red, shoes], at('Casual'), opts).map((r) => `${r.subType} ${r.colourFamily}`);
+  it('at equal counts the larger mean rule_fit comes first, even against the name order (Chinos Purple clashes with the red tee and would win on name)', () => {
+    expect(names(hmOf(['Chinos', 'Purple'], ['Jeans', 'Blue']))).toEqual(['Jeans Blue', 'Chinos Purple']);
+    expect(names(hmOf(['Jeans', 'Blue'], ['Chinos', 'Purple']))).toEqual(['Jeans Blue', 'Chinos Purple']); // and not the order of the list
+  });
+  it('mean rule_fit comes before the pairing prior: the prior likes Jeans with a T-shirt, but the clashing Jeans still rank second', () => {
+    expect(names({ ...hmOf(['Jeans', 'Purple'], ['Chinos', 'Blue']), prior: priorJson })).toEqual(['Chinos Blue', 'Jeans Purple']);
+    expect(names({ ...hmOf(['Jeans', 'Blue'], ['Chinos', 'Blue']), prior: priorJson })).toEqual(['Jeans Blue', 'Chinos Blue']); // equal fit: now the prior decides
+  });
+});
+
 describe('Wardrobe unlock: the candidate list (LLD 9.5.2)', () => {
   const items = WARDROBES['Office regular']!, ctx = at('Casual', 4);
   const hm = [{ sub_type: 'Polo', colour_family: 'Red' }, { sub_type: 'Chinos', colour_family: 'Navy' }];

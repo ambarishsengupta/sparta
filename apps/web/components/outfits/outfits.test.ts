@@ -154,6 +154,20 @@ describe('outfits screen: focus handling (WO-0022 item 5)', () => {
   });
 });
 
+describe('outfits screen: the unlock list gets the switches (Model QC Q34)', () => {
+  it('OutfitsView asks for the unlock list through unlockFor with the learned data from the hook, and no longer builds options by hand', () => {
+    const view = sources['./OutfitsView.tsx']!;
+    expect(view).toContain('unlockFor(items, ctx, undefined, learned)'); // undefined = the real switches
+    expect(view).toContain('const { learned, ready } = useLearned()');
+    expect(view).not.toMatch(/unlockEntries\(/);
+  });
+  it('the line under "Complete the look" comes from anchorIntro, so it is never shown over zero outfits (WO-0014 item 2)', () => {
+    const view = sources['./OutfitsView.tsx']!;
+    expect(view).toContain('anchorIntro(view, occasion)');
+    expect(view).not.toContain('keeps this item');
+  });
+});
+
 describe('outfits screen: keyboard (CC6)', () => {
   const view = sources['./OutfitsView.tsx']!;
   const cardSource = sources['./OutfitCard.tsx']!;

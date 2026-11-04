@@ -3,7 +3,7 @@ import { outfitProblems, parsePrior, swapChoices } from '@sparta/rules';
 import type { Item } from '@sparta/rules';
 import prior from '../../../packages/rules/data/fixtures/pairing-prior.fixture.json';
 import { WARDROBES } from '../../../packages/rules/src/fixtures/wardrobes';
-import { SLOTS, applySwap, buildCtx, markSaved, reject, startView, swapOptions, thinMessage } from './suggestions-view-model';
+import { SLOTS, anchorIntro, applySwap, buildCtx, markSaved, notValidMessage, reject, startView, swapOptions, thinMessage } from './suggestions-view-model';
 import type { Card, View } from './suggestions-view-model';
 
 const APRIL = new Date('2026-04-15T12:00:00Z');
@@ -23,12 +23,24 @@ describe('Complete the look view (FR-59a)', () => {
       expect([c.ruleIds[0], c.reasons[0]]).toEqual(['ANCHOR', `Built around your ${nameOf(id)}`]);
     }
   });
-  it.each(['off-06', 'off-13'])('says so in plain words when %s does not suit the occasion and season', (id) => {
-    expect(startView(office, work, { anchor: id })).toEqual({ kind: 'anchor_invalid', reason: 'anchor_not_valid', message: 'This item does not suit Work in Spring' });
+  it.each(['off-06', 'off-13'])('names only the occasion when the occasion rule is the cause (%s is refused by R1 for Work, not by the season)', (id) => {
+    expect(startView(office, work, { anchor: id })).toEqual({ kind: 'anchor_invalid', reason: 'anchor_not_valid', message: 'This item does not suit Work' });
+  });
+  it('names the season too when the season rule is a cause (a Winter-only overcoat in April)', () => {
+    expect(startView(office, work, { anchor: 'off-16' })).toEqual({ kind: 'anchor_invalid', reason: 'anchor_not_valid', message: 'This item does not suit Work in Spring' });
+    expect(notValidMessage(undefined, work)).toBe('This item does not suit Work');
   });
   it('the season in that message follows the hemisphere', () => {
-    const v = startView(office, buildCtx('Work', 'south', APRIL), { anchor: 'off-06' });
+    const v = startView(office, buildCtx('Work', 'south', APRIL), { anchor: 'off-16' });
     expect(v).toMatchObject({ kind: 'anchor_invalid', message: expect.stringMatching(/in Autumn$/) as string });
+  });
+  it('the intro under "Complete the look" promises outfits only when outfits are on screen', () => {
+    const none: View = { kind: 'cards', cards: [], anchor: 'off-01' };
+    expect(anchorIntro(startView(office, work, { anchor: 'off-01' }), 'Work')).toBe('Every outfit below keeps this item.');
+    for (const v of [startView(office, work, { anchor: 'off-06' }), startView(office, work, { anchor: 'off-16' }), startView(office, work, { anchor: 'off-21' }), startView(office, work, { anchor: 'nope' }), none, null]) {
+      expect(anchorIntro(v, 'Work')).toBeNull();
+    }
+    expect(anchorIntro(null, null)).toBe('Pick an occasion to build outfits around this item.');
   });
   it('accessories, an archived item and an unknown id get their own clear message', () => {
     expect(startView(office, work, { anchor: 'off-21' })).toMatchObject({ reason: 'anchor_not_offered', message: 'Outfits are not built around accessories, underwear or socks' });

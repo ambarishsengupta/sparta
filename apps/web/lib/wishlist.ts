@@ -1,6 +1,8 @@
 import type { SubType } from '@sparta/taxonomy';
 import { unlock } from '@sparta/rules';
 import type { Ctx, Item, UnlockOpts, UnlockSuggestion } from '@sparta/rules';
+import { engineOpts } from './engine-config';
+import type { Learned, Switches } from './engine-config';
 import type { EventLog } from './events';
 import type { WardrobeRepository, WishlistEntry, WishlistInput } from './repository';
 import { activeItems, seasonOf } from './suggestions-view-model';
@@ -22,6 +24,9 @@ export const unlockKey = (e: { subType: string; colourFamily?: string | null }):
 
 /** Up to three entries from the engine over the active items; computed here from the wardrobe, nothing leaves the browser. */
 export const unlockEntries = (items: readonly Item[], ctx: Ctx, opts: UnlockOpts): UnlockSuggestion[] => unlock(activeItems(items), ctx, opts);
+/** What the outfits screen shows: `unlockEntries` with the options the switches and the loaded data give (prior only when its switch is on, H&M list only for `hm`). */
+export const unlockFor = (items: readonly Item[], ctx: Ctx, switches?: Switches, learned?: Learned): UnlockSuggestion[] =>
+  unlockEntries(items, ctx, engineOpts(switches, learned).unlock);
 
 /** The ordinary wishlist entry (FR-34) with sub-type and colour family filled in and no brand or price, marked as coming from Wardrobe unlock. */
 export const unlockWishlistInput = (e: UnlockSuggestion): WishlistInput => ({

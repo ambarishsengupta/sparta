@@ -142,6 +142,14 @@ class EndToEndTests(unittest.TestCase):
             for text in ("T1", "C0001"):
                 self.assertNotRegex(card, r"\b" + text + r"\b")
             self.assertIn(pl.sha256_file(root / "hm" / "articles.csv"), card)
+            for note in build_prior.HONESTY_NOTES:                          # WO-0014: the narrow-margin and weak-pair sentences
+                self.assertIn(note, card)
+
+    def test_honesty_notes_say_the_three_required_things(self):
+        text = " ".join(build_prior.HONESTY_NOTES)
+        for needle in ("narrow", "0.6036 to 0.6110", "50 seeds", "[0.5995, 0.6129]", "redraws the negatives",
+                       "Bottom+Footwear", "[0.485, 0.599]", "includes 0.5", "weak"):
+            self.assertIn(needle, text)
 
 
 if __name__ == "__main__":

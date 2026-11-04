@@ -44,6 +44,12 @@ describe('engine_config and engine options (FDD 16)', () => {
     expect(currentEngineConfig()).toBe('gm1;emb0;pair0;ul:fb;w:base');
     expect(engineOpts(OFF, { prior: parsePrior(prior), hm: null }).suggest).toEqual({ prior: null }); // a switch that is off wins over loaded data
   });
+  it('the unlock options get the prior only when its switch is on (Model QC Q23), and the H&M list only for the hm setting', () => {
+    const loaded = { prior: parsePrior(prior), hm: LIST as never };
+    expect(engineOpts(OFF, loaded).unlock).toEqual({ unlockList: 'fallback', hm: loaded.hm, prior: null });
+    expect(engineOpts(PAIR, loaded).unlock).toEqual({ unlockList: 'fallback', hm: loaded.hm, prior: parsePrior(prior) });
+    expect(engineOpts({ ...PAIR, unlockList: 'hm' }, loaded).unlock).toEqual({ unlockList: 'hm', hm: loaded.hm, prior: parsePrior(prior) });
+  });
   it('prior on and valid: pair1 and w:pairing, and the prior reaches the engine options', () => {
     const o = engineOpts(PAIR, { prior: parsePrior(prior), hm: null });
     expect(o.config).toBe('gm1;emb0;pair1;ul:fb;w:pairing');

@@ -9,10 +9,10 @@ import { EventLog } from '../../lib/events';
 import { browserStorage } from '../../lib/local-repository';
 import type { StoredItem } from '../../lib/repository';
 import {
-  OCCASIONS, applySwap, buildCtx, eventDetails, loadHemisphere, markSaved, reject, saveHemisphere, sameAs, seasonOf, startView, swapOptions, thinMessage, toOutfitInput,
+  OCCASIONS, anchorIntro, applySwap, buildCtx, eventDetails, loadHemisphere, markSaved, reject, saveHemisphere, sameAs, seasonOf, startView, swapOptions, thinMessage, toOutfitInput,
 } from '../../lib/suggestions-view-model';
 import type { Card, View } from '../../lib/suggestions-view-model';
-import { addUnlockToWishlist, unlockEntries, unlockKey } from '../../lib/wishlist';
+import { addUnlockToWishlist, unlockFor, unlockKey } from '../../lib/wishlist';
 import { useLearned } from '../use-learned';
 import { useRepository } from '../use-repository';
 import { OutfitCard } from './OutfitCard';
@@ -76,7 +76,7 @@ export function OutfitsView() {
   };
   const details = (card?: Card, slot?: Slot) => eventDetails(ctx!, card, slot);
   const leaveAnchor = () => { setAnchor(null); window.history.replaceState(null, '', '/outfits'); ask(occasion, hemisphere, items, null); };
-  const unlockList = useMemo(() => (ctx && items ? unlockEntries(items, ctx, engine.unlock) : []), [ctx, items, learned]);
+  const unlockList = useMemo(() => (ctx && items ? unlockFor(items, ctx, undefined, learned) : []), [ctx, items, learned]);
   const addUnlock = async (e: UnlockSuggestion) => {
     const { added } = await addUnlockToWishlist(repo!, events(), e, ctx!);
     setWished((w) => new Set(w).add(unlockKey({ subType: e.subType, colourFamily: e.colourFamily })));
@@ -138,7 +138,7 @@ export function OutfitsView() {
       {anchor && (
         <section className={styles.anchor} aria-labelledby="anchor-title">
           <h2 id="anchor-title">Complete the look{anchorName ? ` around ${anchorName}` : ''}</h2>
-          <p className="muted">{occasion ? 'Every outfit below keeps this item.' : 'Pick an occasion to build outfits around this item.'}</p>
+          {anchorIntro(view, occasion) && <p className="muted">{anchorIntro(view, occasion)}</p>}
           <div className="row"><button type="button" onClick={leaveAnchor}>Back to normal suggestions</button></div>
         </section>
       )}

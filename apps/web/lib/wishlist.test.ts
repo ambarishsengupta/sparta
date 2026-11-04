@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { unlock } from '@sparta/rules';
+import { parsePrior, unlock } from '@sparta/rules';
+import prior from '../../../packages/rules/data/fixtures/pairing-prior.fixture.json';
+import { mk } from '../../../packages/rules/src/fixtures/items';
 import { WARDROBES } from '../../../packages/rules/src/fixtures/wardrobes';
+import type { Switches } from './engine-config';
 import { EventLog } from './events';
 import { LocalRepository } from './local-repository';
 import type { StorageLike } from './local-repository';
 import { buildCtx, seasonOf } from './suggestions-view-model';
-import { addUnlockToWishlist, unlockEntries, unlockKey, unlockLabel, unlockWishlistInput, wishlistAggregate } from './wishlist';
+import { addUnlockToWishlist, unlockEntries, unlockFor, unlockKey, unlockLabel, unlockWishlistInput, wishlistAggregate } from './wishlist';
 
 const mem = (): StorageLike => { const m = new Map<string, string>(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => void m.set(k, v) }; };
 const ctx = buildCtx('Casual', 'north', new Date('2026-04-15T12:00:00Z'));
@@ -40,6 +43,21 @@ describe('Wardrobe unlock entries (FR-59b)', () => {
     expect(entries.length).toBeLessThanOrEqual(3);
     for (const e of entries) expect(Object.keys(e).sort()).toEqual(['colourFamily', 'newOutfits', 'subType']);
     expect(JSON.stringify(entries)).not.toMatch(/price|store|photo|image|brand/i);
+  });
+  it('the outfits screen asks through unlockFor, which passes the switches and the loaded data to the engine (Model QC Q34)', () => {
+    const off: Switches = { pairingPrior: false, unlockList: 'fallback', embeddingSwap: false };
+    const hm = [{ sub_type: 'Polo', colour_family: 'Red' }, { sub_type: 'Chinos', colour_family: 'Navy' }] as never;
+    const loaded = { prior: parsePrior(prior), hm };
+    expect(unlockFor(office, ctx, off, loaded)).toEqual(unlock(office, ctx)); // both switches off: the fallback list and no prior, whatever was loaded
+    const viaHm = unlockFor(office, ctx, { ...off, unlockList: 'hm' }, loaded);
+    expect(viaHm).toEqual(unlock(office, ctx, { unlockList: 'hm', hm }));
+    expect(viaHm).not.toEqual(unlockFor(office, ctx, off, loaded));
+    expect(viaHm.length).toBeGreaterThan(0);
+    const small = [mk('T-shirt', 't', { colourFamily: 'White', rgb: [255, 255, 255] }), mk('Sneakers', 's')];
+    const two = [{ sub_type: 'Jeans', colour_family: 'Blue' }, { sub_type: 'Chinos', colour_family: 'Blue' }] as never;
+    const order = (s: Switches) => unlockFor(small, buildCtx('Casual', 'north', new Date('2026-04-15T12:00:00Z')), s, { prior: parsePrior(prior), hm: two }).map((e) => e.subType);
+    expect(order({ ...off, unlockList: 'hm' })).toEqual(['Chinos', 'Jeans']); // no prior: equal counts and fit, by name
+    expect(order({ ...off, unlockList: 'hm', pairingPrior: true })).toEqual(['Jeans', 'Chinos']); // the prior likes a T-shirt with Jeans
   });
   it('ignore archived items, so an all-archived wardrobe has none', () => {
     expect(unlockEntries(office.map((i) => ({ ...i, status: 'archived' as const })), ctx, {})).toEqual([]);

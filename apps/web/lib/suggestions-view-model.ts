@@ -1,6 +1,6 @@
 import { OCCASIONS } from '@sparta/taxonomy';
 import type { Occasion } from '@sparta/taxonomy';
-import { MAX_SUGGESTIONS, isMissing, outfitProblems, seasonFor, suggest, swapChoices, usablePlacements } from '@sparta/rules';
+import { MAX_SUGGESTIONS, isMissing, outfitProblems, passesSeason, seasonFor, suggest, swapChoices, usablePlacements } from '@sparta/rules';
 import type { Ctx, CurrentSeason, Hemisphere, Item, ItemId, RankedSuggestion, Slot, SuggestOpts } from '@sparta/rules';
 import type { StorageLike } from './local-repository';
 import type { EventDetails } from './events';
@@ -51,6 +51,15 @@ const toCard = (s: RankedSuggestion): Card => ({
 });
 
 const invalid = (reason: 'anchor_not_valid' | 'anchor_not_offered' | 'anchor_not_active', message: string): View => ({ kind: 'anchor_invalid', reason, message });
+/**
+ * Why the anchor does not suit: the season (R2) is named only when the season rule is a cause (checked with the engine's own `passesSeason`);
+ * when only the occasion rule (R1) refuses the item the message names the occasion alone.
+ */
+export const notValidMessage = (item: Item | undefined, ctx: Ctx): string =>
+  item && !passesSeason(item, seasonOf(ctx), ctx.occasion) ? `This item does not suit ${ctx.occasion} in ${seasonOf(ctx)}` : `This item does not suit ${ctx.occasion}`;
+/** The line under "Complete the look": the promise that every outfit keeps the item is made only when outfits are on screen. */
+export const anchorIntro = (view: View | null, occasion: Occasion | null): string | null =>
+  !occasion ? 'Pick an occasion to build outfits around this item.' : view?.kind === 'cards' && view.cards.length > 0 ? 'Every outfit below keeps this item.' : null;
 /** FR-59a / FR-54: `opts.anchor` asks for outfits around that item; `opts.prior` is the loaded pairing prior (null or absent = off). */
 export function startView(items: readonly Item[], ctx: Ctx, opts: SuggestOpts = {}): View {
   const active = activeItems(items);
@@ -58,7 +67,7 @@ export function startView(items: readonly Item[], ctx: Ctx, opts: SuggestOpts = 
   if (opts.anchor !== undefined && !active.some((i) => i.id === opts.anchor)) return invalid('anchor_not_active', 'That item is not in your active wardrobe');
   const result = suggest(active, ctx, opts);
   if (isMissing(result)) {
-    if (result.missing.includes('anchor_not_valid')) return invalid('anchor_not_valid', `This item does not suit ${ctx.occasion} in ${seasonOf(ctx)}`);
+    if (result.missing.includes('anchor_not_valid')) return invalid('anchor_not_valid', notValidMessage(active.find((i) => i.id === opts.anchor), ctx));
     if (result.missing.includes('anchor_not_offered')) return invalid('anchor_not_offered', 'Outfits are not built around accessories, underwear or socks');
     return { kind: 'missing', missing: result.missing, message: missingMessage(result.missing) };
   }

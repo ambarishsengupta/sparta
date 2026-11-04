@@ -34,6 +34,11 @@ const BAD: [string, unknown][] = [
   ['an unknown slot pair', { ...(prior as object), type_pairs: { 'Top+Layer': {} } }], ['an unknown sub-type', { ...(prior as object), type_pairs: { 'Top+Bottom': { Cape: { Jeans: 0.5 } } } }],
   ['an unknown colour', { ...(prior as object), colour_pairs: { 'Top+Bottom': { Mauve: { Blue: 0.5 } } } }], ['x above 1', { ...(prior as object), type_pairs: { 'Top+Bottom': { 'T-shirt': { Jeans: 1.5 } } } }],
   ['x as text', { ...(prior as object), type_pairs: { 'Top+Bottom': { 'T-shirt': { Jeans: '0.5' } } } }], ['x NaN', { ...(prior as object), type_pairs: { 'Top+Bottom': { 'T-shirt': { Jeans: NaN } } } }],
+  // WO-0014 (Model QC Q1, Q2): the second-level key and a negative number
+  ['an unknown second-level sub-type', { ...(prior as object), type_pairs: { 'Top+Bottom': { 'T-shirt': { Cape: 0.5 } } } }],
+  ['an unknown second-level colour', { ...(prior as object), colour_pairs: { 'Top+Bottom': { White: { Mauve: 0.5 } } } }],
+  ['x below 0', { ...(prior as object), type_pairs: { 'Top+Bottom': { 'T-shirt': { Jeans: -0.1 } } } }],
+  ['x infinite', { ...(prior as object), type_pairs: { 'Top+Bottom': { 'T-shirt': { Jeans: Infinity } } } }],
 ];
 
 describe('prior off: the output is byte-identical to the engine before the learned layer (CC6)', () => {
@@ -64,6 +69,10 @@ describe('the pairing prior (LLD 7.9, 9.5.1)', () => {
     expect(parsePrior(deepFreeze(structuredClone(prior)))).toEqual(prior);
     expect(parsePrior(prior)).not.toBe(prior);
     for (const [name, bad] of BAD) expect(parsePrior(bad), name).toBeNull();
+  });
+  it('x of exactly 0 and exactly 1 are valid, and are kept as written', () => {
+    const edge = { ...(prior as object), type_pairs: { 'Top+Bottom': { 'T-shirt': { Jeans: 0, Shorts: 1 } } } };
+    expect(parsePrior(edge)).toEqual(edge);
   });
   it('a pair scores sigmoid(logit type + logit colour); a missing entry is neutral', () => {
     expect(pairScore(p, 'Top+Bottom', tee, jeans)).toBeCloseTo(sigmoid(logit(0.8) + logit(0.7)), 12);
@@ -134,7 +143,7 @@ describe('timing', () => {
 
 describe('engine_config (LLD 12.3)', () => {
   it.each([
-    [{}, 'gm1;emb0;pair0;ul:fb;w:base'], [{ prior }, 'gm1;emb0;pair1;ul:fb;w:pairing'], [{ prior: BAD[7]![1] }, 'gm1;emb0;pair0;ul:fb;w:base'],
+    [{}, 'gm1;emb0;pair0;ul:fb;w:base'], [{ garmentModel: 1 as const }, 'gm1;emb0;pair0;ul:fb;w:base'], [{ garmentModel: 2 as const }, 'gm2;emb0;pair0;ul:fb;w:base'], [{ prior }, 'gm1;emb0;pair1;ul:fb;w:pairing'], [{ prior: BAD[7]![1] }, 'gm1;emb0;pair0;ul:fb;w:base'],
     [{ unlockList: 'hm' as const, hm: [{ sub_type: 'Chinos', colour_family: 'Navy' }] }, 'gm1;emb0;pair0;ul:hm;w:base'],
     [{ unlockList: 'hm' as const }, 'gm1;emb0;pair0;ul:fb;w:base'], [{ unlockList: 'fallback' as const, hm: [{ sub_type: 'Chinos', colour_family: 'Navy' }] }, 'gm1;emb0;pair0;ul:fb;w:base'],
     [{ garmentModel: 2 as const, embeddingSwap: true, prior, unlockList: 'hm' as const, hm: [{ sub_type: 'Jeans', colour_family: 'Blue' }] }, 'gm2;emb1;pair1;ul:hm;w:pairing'],

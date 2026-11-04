@@ -139,6 +139,15 @@ def fmt(n):
     return f"{n:,}"
 
 
+# Model QC findings on the H&M run (checked after the card was first written). They are plain statements about that run,
+# kept as constants so a test can pin each sentence.
+HONESTY_NOTES = (
+    "The margin over the 0.60 bar is narrow: with other negative-draw seeds the overall AUC ranges from 0.6036 to 0.6110 over 50 seeds.",
+    "The interval above holds the negatives fixed (it resamples customers only); a bootstrap that also redraws the negatives gives about [0.5995, 0.6129], which includes values below the bar.",
+    "The Bottom+Footwear interval [0.485, 0.599] includes 0.5, so that pair should be treated as weak: its table is not evidence that those pairs go together.",
+)
+
+
 def render_card(run, prior_sha, unlock_sha, prior_stats, build_date):
     ev_ = run["evaluation"]
     vocab = run["vocab"]
@@ -198,6 +207,11 @@ def render_card(run, prior_sha, unlock_sha, prior_stats, build_date):
     seeds = ev_.get("seed_aucs") or []
     if seeds:
         add(f"Draw check: the replacement draw uses a fixed seed (the AUC above). With {len(seeds)} other fixed seeds (1 to {len(seeds)}) the overall AUC is {min(seeds):.4f} to {max(seeds):.4f}. This is a check on the draw, not a choice of seed; the seed above was fixed before the first run.")
+    add("")
+    add("## How narrow the margin is, and which pair is weak")
+    add("")
+    for note in HONESTY_NOTES:
+        add(f"- {note}")
     add("")
     add("## Counts")
     add("")

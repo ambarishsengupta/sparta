@@ -35,3 +35,7 @@ coverage/
 # Agent worktrees
 .claude/
 data/recommendation-engine/artifacts/
+
+# Sync-conflict duplicate copies (e.g. "package 2.json") created by cloud sync
+* [0-9].*
+* [0-9]

@@ -43,14 +43,14 @@ export function slotCandidates(eligible: readonly Item[], ctx: Ctx, limit = BEST
   return keepOne ? keepOneOutfit(groups, full, ctx) : groups;
 }
 
-type Pool = Pick<Candidates, 'top' | 'bottom' | 'layer' | 'both' | 'footwear'>;
+export type Pool = Pick<Candidates, 'top' | 'bottom' | 'layer' | 'both' | 'footwear'>;
 type Found = { top: Item; bottom: Item; footwear: Item; layer?: Item };
 
 /**
  * The first allowed outfit in pre-score order: top, footwear, then bottom (or suit) and, if `layered`, a layer to go with
  * it (a Suit or Tuxedo being its own layer). Same pruning as `enumerateOutfits`, so it finds exactly what that would.
  */
-function firstOutfit(g: Pool, ctx: Ctx, layered: boolean): Found | null {
+export function firstOutfit(g: Pool, ctx: Ctx, layered: boolean): Found | null {
   for (const top of g.top) for (const footwear of g.footwear) {
     if (!comboAllowed({ top, footwear }, ctx.occasion)) continue;
     if (!layered) {

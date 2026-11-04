@@ -21,7 +21,9 @@ const J = JSON.stringify;
 /**
  * An independent counter, written from LLD 9.5.2 and nothing else in the engine except the score of an outfit (`evaluate().parts.rule_fit`):
  * add one pretend item, bound each slot to the 20 best existing items by pre-score then id, try every combination that holds the pretend item,
- * count those that pass the independent hard-rule checker and have rule_fit of at least 0.6. Returns the count and how many passed the hard rules.
+ * count those that pass the independent hard-rule checker and have rule_fit of at least 0.6. Decision D-A is mirrored here from its statement alone: where a
+ * layer is wanted (Formal, Autumn or Winter) and some layered outfit exists in those same bounded sets (pretend item included, found by trying every
+ * combination), an outfit without a layer (a Suit or Tuxedo counts as a layer) is not counted. Returns the count and how many passed the hard rules and D-A.
  */
 function brute(items: Item[], ctx: Ctx, cand: Candidate): { n: number; hard: number } {
   const p = mk(cand.sub_type, 'pretend', { rgb: hexToRgb(swatches.find((s) => s.family === cand.colour_family)!.hex), colourFamily: cand.colour_family, seasons: ['All year'] });
@@ -30,9 +32,13 @@ function brute(items: Item[], ctx: Ctx, cand: Candidate): { n: number; hard: num
   const [top, bottom, layer, footwear] = (['top', 'bottom', 'layer', 'footwear'] as const).map((s) => [...bounded((i) => !isSuit(i) && independentFits(i, ctx, s)), ...(!isSuit(p) && independentFits(p, ctx, s) ? [p] : [])]);
   const suits = [...bounded((i) => isSuit(i) && independentFits(i, ctx)), ...(isSuit(p) && independentFits(p, ctx) ? [p] : [])];
   const scorer = createScorer(ctx, false);
+  const month = (ctx.date.getUTCMonth() + (ctx.hemisphere === 'south' ? 6 : 0)) % 12; // 8 to 10 autumn, 11 to 1 winter
+  const wanted = ctx.occasion === 'Formal' || month >= 8 || month <= 1;
+  const valid = (o: Outfit): boolean => independentProblems(o, ctx).length === 0;
+  const layeredExists = wanted && top!.some((t) => footwear!.some((f) => bottom!.some((b) => layer!.some((l) => l !== t && valid({ top: t, bottom: b, layer: l, footwear: f, accessory: null }))) || suits.some((s) => valid({ top: t, bottom: s, layer: s, footwear: f, accessory: null }))));
   let [n, hard] = [0, 0];
   const tally = (o: Outfit): void => {
-    if (![o.top, o.bottom, o.layer, o.footwear].includes(p) || independentProblems(o, ctx).length > 0) return;
+    if (![o.top, o.bottom, o.layer, o.footwear].includes(p) || !valid(o) || (layeredExists && !o.layer)) return;
     hard++;
     if (scorer.evaluate(o).parts.rule_fit >= rules.unlock_min_rule_fit) n++;
   };
@@ -74,6 +80,36 @@ describe('Wardrobe unlock: "exactly N new outfits" (CC8)', () => {
       const hm = [{ sub_type: 'Suit', colour_family: 'Navy' }, { sub_type: 'Sweater', colour_family: 'Grey' }, { sub_type: 'Blazer', colour_family: 'Grey' }, { sub_type: 'Formal shoes', colour_family: 'Black' }] as Candidate[];
       for (const r of unlock(items, at(o, 4), { unlockList: 'hm', hm })) expect(brute(items, at(o, 4), { sub_type: r.subType, colour_family: r.colourFamily }).n).toBe(r.newOutfits);
     }
+  });
+});
+
+describe('Wardrobe unlock: the layer rule D-A (a layer wanted in Formal, Autumn and Winter when a layered outfit exists)', () => {
+  const only = (c: Candidate): { unlockList: 'hm'; hm: Candidate[] } => ({ unlockList: 'hm', hm: [c] });
+  const count = (items: Item[], ctx: Ctx, c: Candidate): number => {
+    const r = unlock(items, ctx, only(c));
+    expect(r.reduce((s, x) => s + x.newOutfits, 0), J(c)).toBe(brute(items, ctx, c).n); // the independent counter agrees
+    return r[0]?.newOutfits ?? 0;
+  };
+  const shoes: Candidate = { sub_type: 'Formal shoes', colour_family: 'Navy' };
+  it('winter Formal with a blazer owned: a pair of shoes counts only the outfit that wears the blazer; with no blazer owned the layer-less outfit counts', () => {
+    const items = [mk('Shirt', 's'), mk('Trousers', 't'), mk('Blazer', 'b'), mk('Formal shoes', 'f')];
+    expect([count(items, at('Formal', 1), shoes), count(items, at('Formal', 4), shoes), count(items.filter((i) => i.id !== 'b'), at('Formal', 1), shoes)]).toEqual([1, 1, 1]); // not 2: Formal wants the blazer all year
+  });
+  it('a layer-less pretend item (a Top) in winter or autumn counts only outfits that include a layer from the wardrobe; in spring, and in a season the coat is out of, it counts the rest', () => {
+    const items = [mk('T-shirt', 't'), mk('Jeans', 'j'), mk('Sneakers', 's'), mk('Coat', 'c')];
+    const shirt: Candidate = { sub_type: 'Shirt', colour_family: 'Navy' };
+    expect([count(items, at('Casual', 1), shirt), count(items, at('Casual', 10), shirt), count(items, at('Casual', 4), shirt), count(items, at('Casual', 1, 'south'), shirt)]).toEqual([1, 1, 2, 1]);
+  });
+  it('winter with no layer owned: the layer-less outfits count as before', () => {
+    const items = [mk('T-shirt', 't'), mk('Jeans', 'j'), mk('Sneakers', 's')];
+    for (const sub_type of ['Shirt', 'Chinos', 'Boots'] as const) expect(count(items, at('Casual', 1), { sub_type, colour_family: 'Navy' }), sub_type).toBe(1);
+    expect(count([mk('T-shirt', 't'), mk('Jeans', 'j'), mk('Sneakers', 's'), mk('Coat', 'c', { seasons: ['Spring'] })], at('Casual', 1), { sub_type: 'Shirt', colour_family: 'Navy' })).toBe(1); // a coat out of season is no layer
+  });
+  it('a pretend item that is itself the layer makes the layered outfit exist, so its layer-less placement is not counted; a Suit is its own layer', () => {
+    const items = [mk('T-shirt', 't'), mk('Jeans', 'j'), mk('Sneakers', 's')];
+    expect(count(items, at('Casual', 1), { sub_type: 'Coat', colour_family: 'Navy' })).toBe(1);
+    expect(count(items, at('Casual', 1), { sub_type: 'Sweater', colour_family: 'Navy' })).toBe(1); // as a layer over the T-shirt; as a top (no layer) it would add a second
+    expect(count([mk('Shirt', 's'), mk('Trousers', 't'), mk('Formal shoes', 'f')], at('Formal', 1), { sub_type: 'Suit', colour_family: 'Navy' })).toBe(1);
   });
 });
 

@@ -2,8 +2,8 @@ import { COLOUR_FAMILIES, OCCASIONS, SUB_TYPES, categoryOfSubType, hexToRgb, ref
 import type { ColourFamily, SubType } from '@sparta/taxonomy';
 import fallbackJson from '../data/unlock-fallback.json';
 import { anchoredOutfits } from './anchor.js';
-import { slotCandidates } from './combinations.js';
-import { RULES, eligibleItems, usablePlacements } from './eligibility.js';
+import { firstOutfit, slotCandidates } from './combinations.js';
+import { RULES, eligibleItems, layerRequiredIfAvailable, usablePlacements } from './eligibility.js';
 import { outfitPairing, parsePrior } from './pairing.js';
 import { MAX_SUGGESTIONS } from './rank.js';
 import { createScorer } from './score.js';
@@ -52,21 +52,24 @@ const cmp = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
  * `unlock_bound_per_slot` per slot, that pass the hard rules (R1, R2, the slots) and have `rule_fit` of at least `unlock_min_rule_fit`
  * (outfits are the top, bottom, footwear and optional layer of step 3, with no belt). One entry per sub-type (its best colour), the three with
  * the largest count, ties by mean rule_fit of the counted outfits, then mean pairing if a valid prior is passed, then names.
+ * Decision D-A applies, so unlock never promises an outfit that `suggest` would not show: where a layer is wanted (`layerRequiredIfAvailable`)
+ * and a layered outfit exists among the wardrobe and the pretend item (same bounded sets), only layered outfits are counted.
  */
 export function unlock(items: readonly Item[], ctx: Ctx, opts: UnlockOpts = {}): UnlockSuggestion[] {
   const prior = parsePrior(opts.prior);
   const base = slotCandidates(eligibleItems(items, ctx), ctx, RULES.unlock_bound_per_slot, false);
   const scorer = createScorer(ctx, false);
+  const wardrobeLayered = layerRequiredIfAvailable(ctx) && firstOutfit(base, ctx, true) !== null; // any outfit without the pretend item sees it
   const rows = candidateList(opts).list.flatMap((c) => {
     const pretend = pretendItem(c);
     if (!pretend || eligibleItems([pretend], ctx).length === 0) return [];
     let [n, fit, pair] = [0, 0, 0];
-    for (const placement of usablePlacements(pretend, ctx.occasion)) {
-      for (const outfit of anchoredOutfits(base, pretend, placement, ctx)) {
-        const f = scorer.ruleFit(outfit);
-        if (f < RULES.unlock_min_rule_fit) continue;
-        [n, fit, pair] = [n + 1, fit + f, pair + (prior ? outfitPairing(prior, outfit) : 0)];
-      }
+    const outfits = usablePlacements(pretend, ctx.occasion).flatMap((placement) => anchoredOutfits(base, pretend, placement, ctx));
+    const layeredOnly = layerRequiredIfAvailable(ctx) && (wardrobeLayered || outfits.some((o) => o.layer !== null)); // D-A
+    for (const outfit of layeredOnly ? outfits.filter((o) => o.layer !== null) : outfits) {
+      const f = scorer.ruleFit(outfit);
+      if (f < RULES.unlock_min_rule_fit) continue;
+      [n, fit, pair] = [n + 1, fit + f, pair + (prior ? outfitPairing(prior, outfit) : 0)];
     }
     return n > 0 ? [{ c, n, fit: fit / n, pair: pair / n }] : [];
   });

@@ -1,0 +1,7 @@
+# Licensed stock media (Pexels, Unsplash) is never committed: the repository is
+# public and Pexels does not allow redistribution on other platforms.
+# Only this file, the manifest and the README are tracked.
+*
+!.gitignore
+!MANIFEST.json
+!README.md

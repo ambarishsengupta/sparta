@@ -29,6 +29,7 @@ run_stage() {
   fi
 }
 
+run_stage "clean_dupes" bash workflow/gates/clean_dupes.sh
 run_stage "typecheck" npm run typecheck
 run_stage "db_tests" bash workflow/gates/db_tests.sh
 run_stage "test" npm test

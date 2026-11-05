@@ -2,7 +2,7 @@
 -- and the sign-up trigger (LLD 4.5).
 begin;
 \ir helpers.inc
-select plan(56);
+select plan(65);
 
 -- ---- ops.check_invitation: the Before User Created hook ------------------------------------------------------------------
 insert into ops.invitations (email, note) values ('invited@example.test', 'pilot'), ('also.invited@example.test', null);
@@ -66,6 +66,8 @@ select alike(pg_temp.val_as('77777777-7777-7777-7777-777777777777', 'authenticat
 -- ---- app.accept_documents ------------------------------------------------------------------------------------------------
 select alike(pg_temp.val_as('66666666-6666-6666-6666-666666666666', 'authenticated', $$ select app.accept_documents('0', '1', true)::text $$), '%stale_version', 'a stale Terms version is refused');
 select alike(pg_temp.val_as('66666666-6666-6666-6666-666666666666', 'authenticated', $$ select app.accept_documents('1', '0', true)::text $$), '%stale_version', 'a stale Privacy version is refused');
+select alike(pg_temp.val_as('66666666-6666-6666-6666-666666666666', 'authenticated', $$ select app.accept_documents('9', '1', true)::text $$), '%stale_version', 'a FUTURE Terms version is refused (9 while 1 is current)');
+select alike(pg_temp.val_as('66666666-6666-6666-6666-666666666666', 'authenticated', $$ select app.accept_documents('1', '9', true)::text $$), '%stale_version', 'a FUTURE Privacy version is refused');
 select alike(pg_temp.val_as('66666666-6666-6666-6666-666666666666', 'authenticated', $$ select app.accept_documents(null, null, true)::text $$), '%stale_version', 'missing versions are refused');
 select alike(pg_temp.val_as('66666666-6666-6666-6666-666666666666', 'authenticated', $$ select app.accept_documents('1', '1', false)::text $$), '%age_not_confirmed', 'without the age tick it raises age_not_confirmed');
 select alike(pg_temp.val_as('66666666-6666-6666-6666-666666666666', 'authenticated', $$ select app.accept_documents('1', '1', null)::text $$), '%age_not_confirmed', 'a null tick is not a tick');
@@ -93,6 +95,20 @@ select pg_temp.run_as('88888888-8888-8888-8888-888888888888', 'authenticated', $
 select is(pg_temp.val_as('88888888-8888-8888-8888-888888888888', 'authenticated', 'select app.has_consent()'), 'false', 'documents and notice are not enough without a country');
 select pg_temp.run_as('88888888-8888-8888-8888-888888888888', 'authenticated', $$ select app.complete_onboarding('IN', 'north', 'INR') $$);
 select is(pg_temp.val_as('88888888-8888-8888-8888-888888888888', 'authenticated', 'select app.has_consent()'), 'true', 'documents, notice and a supported country make a participant eligible');
+
+-- ---- WO-0042 F1: the role never comes from sign-up metadata (raw_user_meta_data is chosen by the person signing up) ---------------
+insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data) values
+  ('99999999-0000-0000-0000-000000000001', 'meta1@example.test', '{"role": "admin"}', '{"role": "admin"}'),
+  ('99999999-0000-0000-0000-000000000002', 'meta2@example.test', '{"role": "vendor", "age_confirmed": true}', '{}');
+select is((select role from app.profiles where id = '99999999-0000-0000-0000-000000000001'), 'consumer', 'sign-up with role admin in the metadata gives a consumer');
+select is((select role || age_confirmed::text from app.profiles where id = '99999999-0000-0000-0000-000000000002'), 'consumerfalse', 'sign-up with role vendor and age_confirmed in the metadata gives an unconfirmed consumer');
+select is(pg_temp.val_as('99999999-0000-0000-0000-000000000001', 'authenticated', 'select app.current_role()'), 'consumer', 'and the policies see a consumer');
+
+-- ---- WO-0042 F10: invitations hold lower-case printable ASCII only ----------------------------------------------------------
+select throws_ok(format('insert into ops.invitations (email) values (%L)', 'caf' || chr(233) || '@example.test'), '23514', null, 'a non-ASCII invitation address is refused');
+select throws_ok($$ insert into ops.invitations (email) values ('two words@example.test') $$, '23514', null, 'an address with a space is refused');
+select throws_ok($$ insert into ops.invitations (email) values ('') $$, '23514', null, 'an empty address is refused');
+select lives_ok($$ insert into ops.invitations (email) values ('plain+tag@example.test') $$, 'a plain lower-case ASCII address is accepted');
 
 select * from finish();
 rollback;

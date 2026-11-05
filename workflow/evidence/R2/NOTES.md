@@ -20,20 +20,19 @@
   the columns exist without the constraint, and the R6 migration adds it (`on delete set null`).
 - Skip aggregation, `pg_cron` jobs (the extension is installed by WO-0040; no job is scheduled).
 
-## The Before User Created hook: wiring through config.toml
-Supported in Supabase CLI 3.0.0. Nothing is missing: the hook function is a plain Postgres function and the CLI accepts a
-`pg-functions://` URI. The block, tested against the running local stack (patch in `hook-config.patch`):
+## The Before User Created hook: wired in supabase/config.toml
+Supported in Supabase CLI 3.0.0. The hook function is a plain Postgres function and the CLI accepts a `pg-functions://` URI. The committed
+`supabase/config.toml` carries the block (commit d056801, together with `minimum_password_length = 10` and `enable_confirmations = true`,
+LLD section 10):
 
     [auth.hook.before_user_created]
     enabled = true
     uri = "pg-functions://postgres/ops/check_invitation"
 
-It is NOT applied in the committed tree because `supabase/config.toml` is not in WO-0041's In scope (it is only in WO-0040's), and the
-scope gate would fail. To apply: `git apply workflow/evidence/R2/hook-config.patch` (or add `supabase/config.toml` to the In scope line
-and edit the file), then `supabase stop && supabase start` (an Auth config change needs a restart; `supabase db reset` alone does not
-reload it). Hosted projects need `supabase config push` (LLD 4.9).
+Applying it to a running local stack needs `supabase stop && supabase start` (an Auth config change is not reloaded by `supabase db reset`);
+hosted projects need `supabase config push` (LLD 4.9). The earlier `hook-config.patch` is gone (WO-0042 F6): the change is committed.
 
-End-to-end evidence (local stack, hook enabled, Auth API called with the publishable key read at run time; no key is stored or printed):
+End-to-end evidence from WO-0041 (local stack, hook enabled, Auth API called with the publishable key read at run time; no key is stored or printed):
 
     sign-up stranger.e2e@example.test      -> HTTP 403 {"code":403,"error_code":"unknown","msg":"Sparta is invitation-only during the pilot."}
     sign-up Invited.E2E@example.test       -> HTTP 200 (invited as invited.e2e@example.test; the match is case-insensitive)
@@ -43,7 +42,16 @@ End-to-end evidence (local stack, hook enabled, Auth API called with the publish
 So the grants chosen for the hook (usage on `ops`, execute on `ops.check_invitation`, select on `ops.invitations`, select policy) are
 sufficient, and the sign-up trigger runs correctly when Auth inserts the user. The pgTAP suite cannot `SET ROLE supabase_auth_admin`
 (the session role is not a member of it), so 006 asserts that role's access from the catalog; the run above is the runtime proof.
-Recommend a vitest integration test for it in R2b, once config.toml carries the hook.
+Recommend a vitest integration test for it in R2b.
+
+## LATER (found in WO-0042, not done)
+- `ops.invitations.accepted_at` is still set when the account row is created, not when the email is confirmed (WO-0042 F10, second half).
+  With `enable_confirmations = true` the right moment is the update of `auth.users.email_confirmed_at`. That needs a second trigger on
+  `auth.users` (after update of email_confirmed_at) and `handle_new_user` to stop setting the field, which contradicts the existing 006
+  assertion "sign-up marks the invitation accepted" (inserted without a confirmation time). Changing the meaning of an existing test
+  is not allowed in a fix loop, so it is left for the release that adds the sign-in screens (R2b), where the test can be rewritten with the flow.
+- `ops.check_invitation` still lower-cases the incoming address with `lower()`; with the stored side now ASCII-only (F10) a non-ASCII
+  sign-up address can only match through characters that lower-case to ASCII (for example the Kelvin sign). Refusing non-ASCII input in the hook is a one-line change for R2b.
 
 ## Deviations from the LLD / WO text (all additive hardening, none weakens a rule)
 1. Composite foreign keys `(parent_id, user_id)` on every link table and on `purchases` (parents get `unique (id, user_id)`), because
@@ -64,12 +72,12 @@ Recommend a vitest integration test for it in R2b, once config.toml carries the 
   `user`; WO-0041 asks for the column now. It is created with the table (`not null default 'user'`, check in `('user','unlock')`), so no later migration is needed.
 - LLD 4.4 lists `model_version` as "version 1 / version 2" in the `item_features` row, but LLD 7.3 and 7.8 store the strings
   `garment-cnn-v1` / `garment-cnn-v2`. The strings are used (they are also what WO-0041 names).
-- LLD section 10 says the minimum password length is 10; `supabase/config.toml` (WO-0040) has `minimum_password_length = 6` and
-  `enable_confirmations = false` (FR-1 wants verified email). Out of scope here; R2b/hosted config must set them.
+- LLD section 10 wants a minimum password length of 10 and verified email (FR-1). Resolved in commit d056801: `supabase/config.toml` has
+  `minimum_password_length = 10` and `enable_confirmations = true` (hosted projects must carry the same settings via `supabase config push`).
 - LLD 4.5 shows `set search_path = app` / `app, ops` on the definer helpers; the stricter empty path with qualified names is used throughout (WO-0041).
 - LLD does not say what a user in the middle of deletion (`deleting = true`) may do. The policies do not special-case it
   (the delete route removes the auth user, which cascades). If the owner wants such a user locked out earlier, add `not deleting` to `ops.is_eligible`.
-- WO-0041's In scope omits `supabase/config.toml` although its Instructions ask to wire the hook (see above).
+- WO-0041's In scope omitted `supabase/config.toml` although its Instructions asked to wire the hook; the hook was wired afterwards (d056801).
 
 ## Counted lines and commit split
 Migrations 4 to 7: 545 lines (60 + 225 + 192 + 68). pgTAP: 003 to 007 about 660 lines plus `helpers.inc` 144. Over the 500-line limit, so the work
@@ -83,4 +91,4 @@ suite is 723 with WO-0040's 93 (`supabase test db`: Files=7, Tests=723).
   update or delete policy (found by mutant M05, see WO-0041-mutation.md).
 - BEFORE triggers run before the row-level-security check on INSERT, so some refused inserts report the trigger's error (23503 for item_features, 23514 for
   outfit_items) instead of 42501. The suite asserts the exact code per table.
-- The stack keeps the committed config: the hook is NOT enabled in the running local stack now (it was enabled only for the end-to-end check, then reverted and restarted).
+- The committed config enables the hook, so a stack started from it (`supabase stop && supabase start`) refuses sign-ups from addresses that are not invited.

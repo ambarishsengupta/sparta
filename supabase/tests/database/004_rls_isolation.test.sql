@@ -5,7 +5,8 @@
 begin;
 \ir helpers.inc
 select count(*) as nt from pg_temp.app_tables \gset
-select plan(:nt * 16 + 20);
+select count(*) as nv from pg_class where relnamespace = 'app'::regnamespace and relkind in ('v', 'm', 'f') \gset
+select plan(:nt * 16 + :nv * 3 + 23);
 
 select pg_temp.mk_user(pg_temp.ua());
 select pg_temp.mk_user(pg_temp.ub());
@@ -106,6 +107,22 @@ select throws_ok(format('insert into app.outfit_logs (user_id, outfit_id) values
   '23503', null, 'A cannot log an outfit of B');
 select throws_ok(format('insert into app.purchases (user_id, item_id, price) values (%L, %L, 5)', pg_temp.ua(), pg_temp.oid('item', pg_temp.ub(), 1)),
   '23503', null, 'A cannot record a purchase of B''s item');
+
+-- WO-0042 F5: the same attack from the other side of each link table (the parent that B owns is the second key)
+select throws_ok(format('insert into app.item_collections (user_id, item_id, collection_id) values (%L, %L, %L)', pg_temp.ua(), pg_temp.oid('item', pg_temp.ua(), 1), pg_temp.oid('coll', pg_temp.ub(), 0)),
+  '23503', null, 'an item of A cannot join a collection of B');
+select throws_ok(format('insert into app.outfit_items (user_id, outfit_id, item_id, slot) values (%L, %L, %L, %L)', pg_temp.ua(), pg_temp.oid('outfit', pg_temp.ub(), 0), pg_temp.oid('item', pg_temp.ua(), 1), 'top'),
+  '23503', null, 'an item of A cannot be put in an outfit of B');
+select throws_ok(format('insert into app.item_tags (user_id, item_id, tag_id) values (%L, %L, %L)', pg_temp.ua(), pg_temp.oid('item', pg_temp.ub(), 1), pg_temp.oid('tag', pg_temp.ua(), 0)),
+  '23503', null, 'a tag of A cannot be put on an item of B');
+
+-- WO-0042 F3: any view in app joins the loop (none exists today; 003 allows only security_invoker views). A sees none of B's rows through it.
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', format('select 1 from app.%I where user_id = %L', relname, pg_temp.ub())), 'rows=0', 'A cannot select B''s rows through app.' || relname)
+  from pg_class where relnamespace = 'app'::regnamespace and relkind in ('v', 'm', 'f') order by relname;
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', format('select 1 from app.%I where user_id <> %L', relname, pg_temp.ua())), 'rows=0', 'an unfiltered select through app.' || relname || ' shows only A''s rows')
+  from pg_class where relnamespace = 'app'::regnamespace and relkind in ('v', 'm', 'f') order by relname;
+select is(pg_temp.run_as(null, 'anon', format('select 1 from app.%I', relname)), 'err=42501', 'anon cannot select through app.' || relname)
+  from pg_class where relnamespace = 'app'::regnamespace and relkind in ('v', 'm', 'f') order by relname;
 
 -- ---- deletion is by cascade: removing B's auth user removes every B row and no A row -----------------------------------
 delete from auth.users where id = pg_temp.ub();

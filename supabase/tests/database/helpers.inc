@@ -44,6 +44,24 @@ begin
   return res;
 end $f$;
 
+-- Same as val_as, with extra claims merged into the JWT (for example a user-editable user_metadata block). WO-0042 F2.
+create function pg_temp.val_claims(p_uid uuid, p_role text, p_extra jsonb, p_sql text) returns text language plpgsql as $f$
+declare res text;
+begin
+  perform set_config('request.jwt.claims', (jsonb_build_object('sub', p_uid, 'role', p_role) || p_extra)::text, true);
+  perform set_config('request.jwt.claim.sub', coalesce(p_uid::text, ''), true);
+  execute 'set local role ' || quote_ident(p_role);
+  begin
+    execute p_sql into res;
+  exception when others then
+    res := 'err=' || sqlstate || ': ' || sqlerrm;
+  end;
+  reset role;
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('request.jwt.claim.sub', '', true);
+  return res;
+end $f$;
+
 -- A user: auth.users row (the sign-up trigger creates the profile). The email is the id, so it is unique and not a real address.
 create function pg_temp.mk_user(p_uid uuid) returns void language sql as
   $f$ insert into auth.users (id, email) values (p_uid, p_uid::text || '@example.test') $f$;

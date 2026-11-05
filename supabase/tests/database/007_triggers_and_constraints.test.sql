@@ -2,7 +2,7 @@
 -- wishlist_entries, the archive trigger, outfit_items and item_features rules, taxonomy arrays, wishlist origin, feedback.
 begin;
 \ir helpers.inc
-select plan(91);
+select plan(100);
 
 select pg_temp.mk_user(pg_temp.ua());
 select pg_temp.make_eligible(pg_temp.ua());
@@ -172,6 +172,18 @@ select lives_ok(pg_temp.tpl('suggestion_feedback', pg_temp.ua(), 5), 'feedback w
 select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config) values (%L, ''Casual'', true, ''my navy shirt'')', pg_temp.ua()), '23514', null, 'free text in engine_config is refused');
 select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config) values (%L, ''Casual'', true, %L)', pg_temp.ua(), repeat('a', 65)), '23514', null, 'an engine_config over 64 characters is refused');
 select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config) values (%L, ''Karaoke'', true, ''gm1'')', pg_temp.ua()), '23503', null, 'feedback needs a known occasion');
+-- WO-0042 F9: rule_ids hold rule IDs only (^[A-Z][A-Z0-9_]{0,15}$), never item IDs or free text
+select lives_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config, rule_ids) values (%L, ''Casual'', true, ''gm1'', %L)', pg_temp.ua(), '{R1,MAX_REPEAT,A,ABCDEFGHIJKLMNOP}'), 'rule IDs are accepted');
+select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config, rule_ids) values (%L, ''Casual'', true, ''gm1'', %L)', pg_temp.ua(), array[pg_temp.oid('item', pg_temp.ua(), 2)::text]),
+  '23514', null, 'an item id is refused as a rule id');
+select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config, rule_ids) values (%L, ''Casual'', true, ''gm1'', ''{rule1}'')', pg_temp.ua()), '23514', null, 'a lower-case rule id is refused');
+select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config, rule_ids) values (%L, ''Casual'', true, ''gm1'', %L)', pg_temp.ua(), '{ABCDEFGHIJKLMNOPQ}'), '23514', null, 'a 17-character rule id is refused');
+select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config, rule_ids) values (%L, ''Casual'', true, ''gm1'', ''{1A}'')', pg_temp.ua()), '23514', null, 'a rule id starting with a digit is refused');
+select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config, rule_ids) values (%L, ''Casual'', true, ''gm1'', ''{""}'')', pg_temp.ua()), '23514', null, 'an empty rule id is refused');
+select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config, rule_ids) values (%L, ''Casual'', true, ''gm1'', ''{R1,NULL}'')', pg_temp.ua()), '23514', null, 'a null element is refused');
+select throws_ok(format('insert into app.suggestion_feedback (user_id, occasion, accepted, engine_config, rule_ids) values (%L, ''Casual'', true, ''gm1'', ''{"AB,CD"}'')', pg_temp.ua()), '23514', null, 'one element that holds a comma is refused');
+select throws_ok(format('update app.suggestion_feedback set rule_ids = %L where user_id = %L', array[pg_temp.oid('item', pg_temp.ua(), 2)::text], pg_temp.ua()), '23514', null, 'an update to an item id is refused');
+
 select throws_ok(format('insert into app.collections (user_id, name) values (%L, ''coll0'')', pg_temp.ua()), '23505', null, 'a collection name is unique per user');
 select lives_ok(format('insert into app.collections (user_id, name) values (%L, ''shared name'')', pg_temp.ua()) || '; ' || format('insert into app.collections (user_id, name) values (%L, ''shared name'')', pg_temp.ub()), 'two users may use the same collection name');
 select throws_ok(format('insert into app.tags (user_id, name) values (%L, ''tag0'')', pg_temp.ua()), '23505', null, 'a tag name is unique per user');

@@ -4,7 +4,7 @@
 begin;
 \ir helpers.inc
 select count(*) as nt from pg_temp.app_tables where tbl not in ('profiles', 'consent_records', 'document_acceptances') \gset
-select plan(:nt * 6 + 53);
+select plan(:nt * 6 + 60);
 
 -- S is the subject. state(S) reports what the gate lets through: 'sel|ins|has_consent|role'.
 create function pg_temp.state(p_uid uuid) returns text language sql as $f$
@@ -23,6 +23,10 @@ create temp table scenario (n serial, label text, brk text, fix text, gated text
 insert into scenario (label, brk, fix) values
   ('no pilot notice consent', $$ delete from app.consent_records where user_id = '11111111-1111-1111-1111-111111111111' $$,
      $$ insert into app.consent_records (user_id, notice_version) values ('11111111-1111-1111-1111-111111111111', '1') $$),
+  ('only a FUTURE notice version is recorded (9 while 1 is current)', $$ update app.consent_records set notice_version = '9' where user_id = '11111111-1111-1111-1111-111111111111' $$,
+     $$ update app.consent_records set notice_version = '1' where user_id = '11111111-1111-1111-1111-111111111111' $$),
+  ('only a FUTURE Terms version is accepted (9 while 1 is current)', $$ update app.document_acceptances set version = '9' where user_id = '11111111-1111-1111-1111-111111111111' and document = 'terms' $$,
+     $$ update app.document_acceptances set version = '1' where user_id = '11111111-1111-1111-1111-111111111111' and document = 'terms' $$),
   ('the notice version changed', $$ update ops.settings set value = '2' where key = 'current_notice_version' $$, $$ update ops.settings set value = '1' where key = 'current_notice_version' $$),
   ('no Terms acceptance', $$ delete from app.document_acceptances where user_id = '11111111-1111-1111-1111-111111111111' and document = 'terms' $$,
      $$ insert into app.document_acceptances (user_id, document, version) values ('11111111-1111-1111-1111-111111111111', 'terms', '1') $$),
@@ -78,6 +82,8 @@ select is(pg_temp.run_as('11111111-1111-1111-1111-111111111111', 'authenticated'
   'err=42501', 'S cannot record consent for someone else');
 select is(pg_temp.run_as('11111111-1111-1111-1111-111111111111', 'authenticated', 'insert into app.consent_records (user_id, notice_version, accepted_at) values (''11111111-1111-1111-1111-111111111111'', ''1'', now() - interval ''1 year'')'),
   'err=42501', 'S cannot choose the acceptance time');
+select is(pg_temp.run_as('11111111-1111-1111-1111-111111111111', 'authenticated', 'insert into app.consent_records (user_id, notice_version) values (''11111111-1111-1111-1111-111111111111'', ''9'')'),
+  'err=42501', 'a FUTURE notice version is refused (the check is equality, not >=)');
 select is(pg_temp.run_as('11111111-1111-1111-1111-111111111111', 'authenticated', 'insert into app.consent_records (user_id, notice_version) values (''11111111-1111-1111-1111-111111111111'', ''1'')'),
   'rows=1', 'S can accept the current notice version');
 select is(pg_temp.state('11111111-1111-1111-1111-111111111111'), 'sel+|ins+|true', 'accepting the notice opens the gate');
@@ -109,6 +115,16 @@ select is(pg_temp.run_as('22222222-2222-2222-2222-222222222222', 'authenticated'
   where tbl not in ('profiles', 'consent_records', 'document_acceptances') order by tbl;
 select is(pg_temp.run_as('22222222-2222-2222-2222-222222222222', 'authenticated', 'select 1 from app.items'), 'rows=0', 'a vendor reads no consumer items');
 select is(pg_temp.run_as('22222222-2222-2222-2222-222222222222', 'authenticated', pg_temp.tpl('wishlist_entries', '22222222-2222-2222-2222-222222222222', 1)), 'err=42501', 'a vendor cannot write a wishlist entry');
+
+-- WO-0042 F2: the role comes from app.profiles, never from a claim the user can edit (user_metadata) or one a client can send
+select is(pg_temp.val_claims('22222222-2222-2222-2222-222222222222', 'authenticated', '{"user_metadata": {"role": "consumer"}, "app_metadata": {"role": "consumer"}, "user_role": "consumer"}', 'select app.current_role()'),
+  'vendor', 'a vendor whose JWT claims user_metadata.role = consumer is still a vendor');
+select is(pg_temp.val_claims('22222222-2222-2222-2222-222222222222', 'authenticated', '{"user_metadata": {"role": "consumer"}}', 'select count(*) from app.items'),
+  '0', 'that vendor reads zero rows from app.items');
+select alike(pg_temp.val_claims('22222222-2222-2222-2222-222222222222', 'authenticated', '{"user_metadata": {"role": "consumer"}}',
+  pg_temp.tpl('wishlist_entries', '22222222-2222-2222-2222-222222222222', 1) || ' returning 1'), 'err=42501%', 'and cannot write a wishlist entry');
+select is(pg_temp.val_claims('11111111-1111-1111-1111-111111111111', 'authenticated', '{"user_metadata": {"role": "admin"}}', 'select app.current_role()'),
+  'consumer', 'a consumer whose JWT claims user_metadata.role = admin is still a consumer');
 
 -- a user with no profile row at all (an auth user whose profile was removed) is not eligible and sees nothing
 select is(pg_temp.val_as('33333333-3333-3333-3333-333333333333', 'authenticated', 'select app.has_consent()'), 'false', 'an unknown user fails the gate');

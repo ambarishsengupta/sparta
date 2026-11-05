@@ -2,7 +2,7 @@
 -- Everything is derived from the catalog, so a new table or function that skips RLS, a grant review or search_path fails here.
 begin;
 \ir helpers.inc
-select count(*) * 2 + 44 as n from pg_temp.app_tables \gset
+select count(*) * 2 + 47 as n from pg_temp.app_tables \gset
 select plan(:n);
 
 -- ---- the tables exist (exactly the consumer tables of R2; jobs, receipts and analytics_events belong to later releases) ----
@@ -96,6 +96,22 @@ select ok(has_function_privilege('supabase_auth_admin', 'ops.check_invitation(js
 select is_empty($$ select name from fn where prosecdef and not (coalesce(proconfig, '{}') @> array['search_path=""']) $$, 'every security definer function pins search_path to the empty path');
 select is_empty($$ select name from fn where name ~ '^(app|ops)\.' and not (coalesce(proconfig, '{}') @> array['search_path=""']) $$, 'every app and ops function pins search_path');
 select ok(not (select prosecdef from fn where name = 'ops.check_invitation'), 'the invitation hook is not security definer (LLD 4.9)');
+
+-- ---- WO-0042 F2: nothing may trust a claim the user can edit (user_metadata, raw_user_meta_data) ------------------------------
+select is_empty($$ select n.nspname || '.' || p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname in ('app', 'ops', 'catalog') and p.prosrc ~* 'user_meta_?data' $$, 'no function in app, ops or catalog reads user_metadata or raw_user_meta_data');
+select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname in ('app', 'ops', 'catalog')
+  and (coalesce(qual, '') || coalesce(with_check, '')) ~* 'user_meta_?data' $$, 'no policy reads user_metadata');
+
+-- ---- WO-0042 F3: a view runs with its owner's rights and ignores RLS unless it is security_invoker; none may be open to anon ---
+select is_empty($$ select n.nspname || '.' || c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname in ('app', 'ops', 'catalog', 'analytics', 'analytics_private') and c.relkind in ('v', 'm', 'f')
+    and not exists (select 1 from pg_depend d where d.objid = c.oid and d.deptype = 'e')
+    and (c.relkind <> 'v'
+      or not exists (select 1 from unnest(coalesce(c.reloptions, '{}')) o where o ~ '^security_invoker=(true|on|1|yes|t)$')
+      or has_table_privilege('anon', c.oid, 'select,insert,update,delete,truncate,references,trigger')
+      or has_any_column_privilege('anon', c.oid, 'select,insert,update,references')) $$,
+  'no view, materialized view or foreign table exists unless it is security_invoker with no grant to anon');
 
 -- ---- triggers present --------------------------------------------------------------------------------------------------
 select is((select count(*) from pg_trigger t where t.tgrelid = 'app.items'::regclass and tgname = 'items_colour' and not tgisinternal), 1::bigint, 'items has the colour trigger');

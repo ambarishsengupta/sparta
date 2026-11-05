@@ -1,7 +1,7 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-05 (R2b built through WO-0053; security re-verification pending)
-Status: running
+Updated: 2026-11-05 (R2b merged)
+Status: waiting-for-owner
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
 Integration branch: none yet (release/R0 is cut from main after the preconditions below are ticked)
@@ -67,3 +67,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-04: OWNER OVERRIDE for this week's weekly usage window only: the 90% weekly stop rule (workflow doc section 9) is waived by the product owner ('Override this rule just for this week's weekly limit'). The 5-hour rule still applies. Work continues now on release/R5 (R5a). The scheduled resume sparta-resume-202611042132 stays as a safety net (it exits if Status is running and fresh).
 - 2026-11-04 (end): R5a merged: garment model v1 (Fashion-MNIST IDX, test accuracy 0.8953) with ONNX, evaluation, card and a hash gate; Spec QC and Model QC PASS. Remaining and blocked here (no Docker, Supabase CLI, Postgres): R2 (accounts, database, RLS), R5b (FastAPI worker, background removal, photo job, item-form pre-fill), R6 (receipt OCR, catalogue, purchases), R7 (aggregation, vendor portal), R8 (hardening). The 21:32 IST resume trigger was deleted: nothing left that this environment can run.
 - 2026-11-05: R2a merged to main (754 pgTAP assertions, security-reviewed twice). R2b on release/R2b: WO-0050 (sign-up/in, gating), WO-0051 (consent screens), WO-0052 (Supabase repository, real-browser evidence), WO-0053 (security fix loop after the first review found an open redirect): gate green, 1233 tests. Second security re-verification (Opus) was interrupted by the 5-hour limit and is being resumed; R2b must not merge until it passes. Not built yet: R2c (export, delete, Leave the pilot, About, Settings, rendered legal pages), R5b worker, R6, R7, R8. The pilot must not open to real participants before R2c (the notice promises 'Leave the pilot').
+- 2026-11-05 (end): R2b merged to main after two security reviews (second PASS). Built: R0, R1, R2a, R2b, R3, R4, R5a. Not built: R2c (export, delete account, Leave the pilot, About, Settings, rendered legal pages), R5b (worker, photo path), R6 (receipts, catalogue, purchases), R7 (aggregation, vendor portal), R8 (hardening). Next in order: R2c, then R5b/R6/R7/R8. Rule 11 (background work hygiene) applies. The local Supabase stack and Colima VM are running: stop with `supabase stop` and `colima stop` if idle.

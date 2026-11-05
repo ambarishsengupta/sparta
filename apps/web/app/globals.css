@@ -1,0 +1,398 @@
+/*
+ * Sparta, a privacy-first menswear wardrobe app.
+ * Copyright (C) 2026 the Sparta team. Licensed under the GNU GPL v3.0; see LICENSE.
+ *
+ * Design tokens. Source of truth: docs/IMPLEMENTATION-PLAN.md section 4.3 (colour),
+ * 4.5 (type, shape), 4.7 (motion). scripts/check-contrast.ts parses the two token
+ * blocks below and fails CI if any pair in plan section 4.4 drops below its threshold,
+ * so keep every colour token as a literal hex value on its own line.
+ */
+
+@import "tailwindcss";
+@import "shadcn/tailwind.css";
+
+/* `dark:` follows the OS setting unless a data-theme attribute on <html> overrides it. */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+}
+
+/* ---------- Light theme (primary) ---------- */
+/* tokens:light:start */
+:root {
+  color-scheme: light;
+
+  --canvas: #f6f7fa;
+  --surface: #fcfcfe;
+  --line: #dadde6;
+  --control-border: #8a8d9c;
+  --ink: #14151c;
+  --ink-soft: #454757;
+  --ink-mute: #5e6070;
+  --focus: #c93c00;
+  --accent-text: #c93c00;
+
+  --tangerine: #ff5a1f;
+  --on-tangerine: #14151c;
+  --tangerine-tint: #ffe7dc;
+  --pink: #ff2e93;
+  --on-pink: #14151c;
+  --pink-tint: #ffe0ef;
+  --lime: #c6f432;
+  --on-lime: #14151c;
+  --lime-tint: #f2fcd2;
+  --cyan: #19d3f3;
+  --on-cyan: #14151c;
+  --cyan-tint: #d9f7fd;
+  --yellow: #ffd60a;
+  --on-yellow: #14151c;
+  --yellow-tint: #fff6cc;
+  --cobalt: #2f5bff;
+  --on-cobalt: #ffffff;
+  --cobalt-tint: #e1e8ff;
+
+  /* Light-mode flash fills under 3:1 against the canvas carry a 1.5 px ink outline
+     (plan 4.3). Every flash fill gets the same edge so shapes stay consistent. */
+  --flash-edge: var(--ink);
+}
+/* tokens:light:end */
+
+/* ---------- Dark theme ---------- */
+/* tokens:dark:start */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --canvas: #101116;
+    --surface: #181922;
+    --line: #2c2e3a;
+    --control-border: #6e7184;
+    --ink: #f2f3f7;
+    --ink-soft: #c3c5d1;
+    --ink-mute: #a2a4b3;
+    --focus: #ff7a45;
+    --accent-text: #ff8a5b;
+
+    --tangerine: #ff7a45;
+    --on-tangerine: #101116;
+    --tangerine-tint: #3a2016;
+    --pink: #ff5fae;
+    --on-pink: #101116;
+    --pink-tint: #3a1a2a;
+    --lime: #d4ff4f;
+    --on-lime: #101116;
+    --lime-tint: #2a3313;
+    --cyan: #4de1f7;
+    --on-cyan: #101116;
+    --cyan-tint: #123139;
+    --yellow: #ffe14d;
+    --on-yellow: #101116;
+    --yellow-tint: #36301a;
+    --cobalt: #7c98ff;
+    --on-cobalt: #101116;
+    --cobalt-tint: #1b2347;
+
+    /* Every dark fill clears 3:1 on its own, so the edge takes the fill colour. */
+    --flash-edge: transparent;
+  }
+}
+/* tokens:dark:end */
+
+/* Same dark values for an explicit data-theme="dark" (theme switch, M6 tests). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #101116;
+  --surface: #181922;
+  --line: #2c2e3a;
+  --control-border: #6e7184;
+  --ink: #f2f3f7;
+  --ink-soft: #c3c5d1;
+  --ink-mute: #a2a4b3;
+  --focus: #ff7a45;
+  --accent-text: #ff8a5b;
+
+  --tangerine: #ff7a45;
+  --on-tangerine: #101116;
+  --tangerine-tint: #3a2016;
+  --pink: #ff5fae;
+  --on-pink: #101116;
+  --pink-tint: #3a1a2a;
+  --lime: #d4ff4f;
+  --on-lime: #101116;
+  --lime-tint: #2a3313;
+  --cyan: #4de1f7;
+  --on-cyan: #101116;
+  --cyan-tint: #123139;
+  --yellow: #ffe14d;
+  --on-yellow: #101116;
+  --yellow-tint: #36301a;
+  --cobalt: #7c98ff;
+  --on-cobalt: #101116;
+  --cobalt-tint: #1b2347;
+
+  --flash-edge: transparent;
+}
+
+/* ---------- shadcn/ui variables, mapped onto the Sparta tokens ---------- */
+/* shadcn components read these names; they never carry their own colours. */
+:root {
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--tangerine);
+  --primary-foreground: var(--on-tangerine);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface);
+  /* ink-soft, not ink-mute: muted text can land on tints, where ink-mute fails (plan 4.4). */
+  --muted-foreground: var(--ink-soft);
+  --accent: var(--tangerine-tint);
+  --accent-foreground: var(--ink);
+  --destructive: var(--accent-text);
+  --border: var(--line);
+  --input: var(--control-border);
+  --ring: var(--focus);
+  --radius: 14px;
+}
+
+@theme inline {
+  /* Fonts (next/font variables set on <html> in app/layout.tsx). */
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-bricolage), var(--font-instrument-sans), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* shadcn names */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Sparta names */
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-control-border: var(--control-border);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-mute: var(--ink-mute);
+  --color-focus: var(--focus);
+  --color-accent-text: var(--accent-text);
+  --color-flash-edge: var(--flash-edge);
+  --color-tangerine: var(--tangerine);
+  --color-on-tangerine: var(--on-tangerine);
+  --color-tangerine-tint: var(--tangerine-tint);
+  --color-pink: var(--pink);
+  --color-on-pink: var(--on-pink);
+  --color-pink-tint: var(--pink-tint);
+  --color-lime: var(--lime);
+  --color-on-lime: var(--on-lime);
+  --color-lime-tint: var(--lime-tint);
+  --color-cyan: var(--cyan);
+  --color-on-cyan: var(--on-cyan);
+  --color-cyan-tint: var(--cyan-tint);
+  --color-yellow: var(--yellow);
+  --color-on-yellow: var(--on-yellow);
+  --color-yellow-tint: var(--yellow-tint);
+  --color-cobalt: var(--cobalt);
+  --color-on-cobalt: var(--on-cobalt);
+  --color-cobalt-tint: var(--cobalt-tint);
+  /* The pop colour of the current tab (set by the pop-* utilities below). */
+  --color-pop: var(--pop);
+  --color-on-pop: var(--on-pop);
+  --color-pop-tint: var(--pop-tint);
+
+  /* Radius rule (plan 4.5) */
+  --radius-input: 8px;
+  --radius-tile: 14px;
+  --radius-sheet: 24px;
+
+  /* Motion (plan 4.7). spring = critically damped, stiffness 100, damping 20. */
+  --ease-snap: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: linear(
+    0,
+    0.122 10%,
+    0.337 20%,
+    0.537 30%,
+    0.692 40%,
+    0.801 50%,
+    0.874 60%,
+    0.922 70%,
+    0.952 80%,
+    0.971 90%,
+    1
+  );
+
+  /* Hover elevation: 3 px ink offset shadow, no soft drop shadows (plan 4.5). */
+  --shadow-offset: 3px 3px 0 0 var(--ink);
+}
+
+/* Type scale is locked to 12 / 14 / 16 / 18 / 22 / 28 / 40 px (plan 4.5). */
+@theme {
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.45;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.15;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.15;
+  --text-3xl: 2.5rem;
+  --text-3xl--line-height: 1.15;
+
+  --animate-tab-tilt: tab-tilt 240ms var(--ease-snap) 1;
+  --animate-hanger-swing: hanger-swing 1.1s var(--ease-snap) 300ms 1 both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-button-progress: button-progress 1.1s var(--ease-snap) infinite;
+
+  @keyframes tab-tilt {
+    0% {
+      transform: rotate(0deg);
+    }
+    45% {
+      transform: rotate(-6deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+  @keyframes hanger-swing {
+    0% {
+      transform: rotate(0deg);
+    }
+    30% {
+      transform: rotate(7deg);
+    }
+    60% {
+      transform: rotate(-4deg);
+    }
+    85% {
+      transform: rotate(1.5deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes button-progress {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+}
+
+/* One pop colour per tab (plan 4.3): Wardrobe tangerine, Outfits cobalt, Wishlist pink,
+   Purchases yellow, Me cyan. Lime is reserved for success. */
+@utility pop-tangerine {
+  --pop: var(--tangerine);
+  --on-pop: var(--on-tangerine);
+  --pop-tint: var(--tangerine-tint);
+}
+@utility pop-cobalt {
+  --pop: var(--cobalt);
+  --on-pop: var(--on-cobalt);
+  --pop-tint: var(--cobalt-tint);
+}
+@utility pop-pink {
+  --pop: var(--pink);
+  --on-pop: var(--on-pink);
+  --pop-tint: var(--pink-tint);
+}
+@utility pop-yellow {
+  --pop: var(--yellow);
+  --on-pop: var(--on-yellow);
+  --pop-tint: var(--yellow-tint);
+}
+@utility pop-cyan {
+  --pop: var(--cyan);
+  --on-pop: var(--on-cyan);
+  --pop-tint: var(--cyan-tint);
+}
+@utility pop-lime {
+  --pop: var(--lime);
+  --on-pop: var(--on-lime);
+  --pop-tint: var(--lime-tint);
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  html {
+    @apply bg-canvas font-sans text-ink;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply min-h-dvh bg-canvas text-base text-ink antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading text-ink;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Focus: 2 px ring, 2 px offset, keyboard focus only (plan 3.5). */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* Reduced motion: every animation becomes instant (plan 4.7). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -4,3 +4,6 @@ next-env.d.ts
 # H&M-derived runtime files (G4: never commit; local-only demo builds copy them here)
 public/pairing-prior-v1.json
 public/unlock-candidates.json
+
+# Local environment (keys): never commit; .env.example is the template
+.env.local

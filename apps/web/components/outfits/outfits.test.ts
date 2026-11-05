@@ -11,8 +11,15 @@ import { OutfitCard } from './OutfitCard';
 import { OutfitsView } from './OutfitsView';
 import { SwapSheet } from './SwapSheet';
 
+// WO-0050: the sign-in and session modules talk to the Supabase Auth service by design and are not on the suggestion path. They are
+// named one by one (never a folder), so a new module under lib/ is still scanned, and lib/supabase/source.test.ts proves that no
+// file scanned here imports any of them.
 const sources = import.meta.glob<string>(
-  ['./*.tsx', '../../app/outfits/**/*.tsx', '../../lib/**/*.ts', '!../../lib/**/*.test.ts', '../use-repository.ts', '../use-learned.ts'],
+  [
+    './*.tsx', '../../app/outfits/**/*.tsx', '../../lib/**/*.ts', '!../../lib/**/*.test.ts', '../use-repository.ts', '../use-learned.ts',
+    '!../../lib/auth-form.ts', '!../../lib/supabase/auth-actions.ts', '!../../lib/supabase/browser.ts', '!../../lib/supabase/gate.ts',
+    '!../../lib/supabase/gate-state.ts', '!../../lib/supabase/proxy-session.ts', '!../../lib/supabase/server.ts',
+  ],
   { query: '?raw', import: 'default', eager: true },
 );
 const NETWORK = /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|axios)\b|https?:\/\//;

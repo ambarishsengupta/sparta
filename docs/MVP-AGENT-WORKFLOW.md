@@ -101,7 +101,7 @@ Plan ─► Consult ─► Design ─► Build ─► Check ─► Demo ─► A
 4. **Build.** One maker per work order, in an isolated worktree on its own branch. Work orders that touch different files can run in parallel; two makers never edit the same files, and no file has two owners (section 3 splits the design files from the pages).
 5. **Check.** Gate scripts first; if red, back to the maker (no judgement is spent on failing work). Then Spec QC against the spec on the base branch, the review gate (code review, security review, and model QC where a model changed; G2b), and the privacy and licence gate. At most **two** fix loops per work order; a third failure goes to the orchestrator, who splits it, re-plans or escalates to the owner.
 6. **Demo.** Once green, the demo agent shows the release running: in the app from R2, and as a recorded test run for R0 and R1.
-7. **Approve.** The release approver reads the evidence. The product owner gives the final yes (the merge to `main` and the release tag are theirs to authorise).
+7. **Approve.** The release approver reads the evidence. The product owner's final yes is already given for the MVP build (section 11a): the orchestrator merges into the local `main` and tags; pushing stays human.
 8. **Retro.** Section 8. Improvements to the workflow wait for the workflow approver's yes before they apply.
 
 ### 4.1 Preconditions before R0 (the product owner's yes; an agent cannot tick these)
@@ -240,6 +240,18 @@ These come from the product owner's instructions and from mistakes already made 
 | Pairing prior passes its AUC bar yet gives unstylish advice | The bar is necessary, not sufficient: the style review of 50 suggestions is gate G9, held in R3 and again in R4 with the prior on |
 | A branch edits files it does not own, or an agent skips an account step | The path-to-owner table (3.1) and the scope and ownership script in G2; accounts and keys are a human checklist (4.2) |
 | An agent edits a gate to get green | Gate scripts live in `workflow/gates/`, written by the Gate engineer outside every maker's scope; Spec QC compares them with the base branch |
+
+## 11a. Standing delegation and the only reasons to stop (product owner's instruction of 2026-11-04, restated 2026-11-05)
+
+The product owner said: everything is approved, and do not ask for approvals or feedback until the MVP is done. This section turns that into rules, so no agent has to guess.
+
+**Already exercised by the owner for the whole MVP build (no agent asks again):** the section 4.1 preconditions; G1 scope approval; the owner's sign-off of BRD, FDD and legal changes made by the build (G3); the owner step of G6, meaning local commits, merges into the local `main` and release tags; dependency additions listed in a spec; sensitive-path routing (migrations, auth) which goes to an Opus security reviewer instead.
+
+**Still human, never done by an agent:** G7 (H&M licence, OI-5); G9 (the human style specialist's review); creating accounts or entering keys (4.2); pushing or force-pushing to any remote; rewriting pushed history; deleting data that is not scratch.
+
+**The orchestrator stops only when one of these is true**, and says which: (1) a usage threshold of section 9 is reached; (2) a human-only item above blocks the next work order; (3) a gate fails twice in a row after fix loops (escalation, section 4.5); (4) nothing is left in the release plan; (5) a tool or environment fault that two attempts cannot fix. In every other case it starts the next work order of the plan.
+
+**The orchestrator never ends a turn with 'say the word', 'shall I continue' or any request for permission to do planned work.** The next release in section 7 is started at once, after the sweep (rule 11) and the STATE.md update. A question to the owner is allowed only for something in the human-only list.
 
 ## 12. Approval of this workflow
 

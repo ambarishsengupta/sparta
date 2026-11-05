@@ -10,7 +10,9 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "lint": "eslint .",
-    "gate": "bash workflow/gates/gate.sh"
+    "gate": "bash workflow/gates/gate.sh",
+    "db:seed": "tsx supabase/scripts/gen-seed.ts",
+    "test:db": "vitest run workflow/gates/db_tests.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

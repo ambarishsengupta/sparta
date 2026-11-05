@@ -2,7 +2,9 @@
 # gate.sh: the deterministic final authority (G2). Every other approval defers to this script.
 # Exit 0 = work may be reported complete. Non-zero = not done, no exceptions.
 #
-# Stages, in order: typecheck, test, lint, manifest check, secret scan (BR-43), release map, goals check.
+# Stages, in order: typecheck, db_tests, test, lint, manifest check, secret scan (BR-43), release map, goals check.
+# db_tests runs before test so the vitest database checks see a freshly built database; it prints SKIPPED when
+# the local Supabase stack is not running.
 # Optional: set GATE_BASE and GATE_WO (and WO_ID if the file holds several work orders) to also
 # run the scope check. A failing stage never stops the later stages: nothing is hidden, and the
 # script exits 1 if ANY stage failed (including a stage that is missing or crashes).
@@ -28,6 +30,7 @@ run_stage() {
 }
 
 run_stage "typecheck" npm run typecheck
+run_stage "db_tests" bash workflow/gates/db_tests.sh
 run_stage "test" npm test
 run_stage "lint" npm run lint
 run_stage "manifest_check" node workflow/gates/manifest_check.mjs

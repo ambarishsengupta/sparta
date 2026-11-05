@@ -40,6 +40,6 @@ button.danger { color: var(--error); } button:disabled { opacity: 0.6; cursor: d
 .grow { flex: 1; min-width: 0; } .title { font-weight: 600; overflow-wrap: anywhere; }
 summary { cursor: pointer; min-height: 32px; color: var(--link); }
 .form { display: grid; gap: 14px; } fieldset { border: 1px solid var(--border); border-radius: var(--radius); }
-.error { color: var(--error); font-weight: 400; }
+.error { color: var(--error); font-weight: 400; } .locked { color: var(--muted); }
 .demo { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 8px; }
 @media (min-width: 40rem) { .filters { grid-template-columns: repeat(5, auto); align-items: end; } }

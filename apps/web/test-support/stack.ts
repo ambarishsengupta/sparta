@@ -1,0 +1,59 @@
+import { execFileSync } from 'node:child_process';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { signUpWithEmail } from '../lib/supabase/auth-actions';
+
+/** Helpers for the integration suites that run against the REAL local stack. Test support only: nothing in the app imports this file.
+ * The URL and publishable key are read from `supabase status` at run time and never written to a file. */
+export type Stack = { url: string; key: string; mailpit: string };
+
+export function discover(): Stack | null {
+  try {
+    const out = execFileSync('supabase', ['status', '-o', 'json'], { stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000 }).toString();
+    const s = JSON.parse(out.slice(out.indexOf('{'))) as Record<string, string>;
+    execFileSync('docker', ['exec', 'supabase_db_sparta', 'psql', '-U', 'postgres', '-tAc', 'select 1'], { stdio: 'ignore', timeout: 20_000 });
+    return s.API_URL && s.PUBLISHABLE_KEY && s.MAILPIT_URL ? { url: s.API_URL, key: s.PUBLISHABLE_KEY, mailpit: s.MAILPIT_URL } : null;
+  } catch { return null; }
+}
+
+/** Runs SQL in the local database container with psql variables (:'name'), so test values are never spliced into the text. */
+export function sql(text: string, vars: Record<string, string> = {}): string {
+  const args = Object.entries(vars).flatMap(([k, v]) => ['-v', `${k}=${v}`]);
+  return execFileSync('docker', ['exec', '-i', 'supabase_db_sparta', 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-tA', ...args, '-f', '-'], { input: text }).toString().trim();
+}
+
+export const newClient = (s: Stack): SupabaseClient => createClient(s.url, s.key, { auth: { persistSession: false, autoRefreshToken: false, flowType: 'pkce' } });
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function confirmationLink(s: Stack, email: string): Promise<{ id: string; link: string }> {
+  for (let i = 0; i < 30; i++) {
+    const found = (await (await fetch(`${s.mailpit}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`)).json()) as { messages: { ID: string }[] };
+    const id = found.messages[0]?.ID;
+    if (id) {
+      const msg = (await (await fetch(`${s.mailpit}/api/v1/message/${id}`)).json()) as { Text: string };
+      const link = /https?:\/\/[^\s)"<>]*\/auth\/v1\/verify[^\s)"<>]*/.exec(msg.Text)?.[0];
+      if (link) return { id, link };
+    }
+    await sleep(500);
+  }
+  throw new Error('no confirmation email arrived in Mailpit');
+}
+
+/** Invites the address, signs it up through the real sign-up call, confirms it through the Mailpit message and returns a client signed in as that user. */
+export async function provisionUser(s: Stack, email: string, password: string, mailIds: string[]): Promise<SupabaseClient> {
+  sql(`insert into ops.invitations (email) values (:'email')`, { email });
+  const client = newClient(s);
+  const up = await signUpWithEmail(client, email, password, 'http://127.0.0.1:3000/auth/callback');
+  if (!up.ok) throw new Error(`sign-up failed: ${up.message}`);
+  const { id, link } = await confirmationLink(s, email);
+  mailIds.push(id);
+  const location = (await fetch(link, { redirect: 'manual' })).headers.get('location') ?? '';
+  const exchanged = await client.auth.exchangeCodeForSession(new URL(location).searchParams.get('code')!);
+  if (exchanged.error) throw new Error('the confirmation code was not accepted');
+  return client;
+}
+
+/** Removes the test users, their invitations and their Mailpit messages. */
+export async function cleanup(s: Stack, emails: string[], mailIds: string[]): Promise<void> {
+  for (const id of mailIds) await fetch(`${s.mailpit}/api/v1/messages`, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ IDs: [id] }) });
+  for (const email of emails) sql(`delete from auth.users where email = :'e'; delete from ops.invitations where email = :'e'`, { e: email });
+}

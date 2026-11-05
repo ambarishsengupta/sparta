@@ -84,7 +84,7 @@ select is_empty($$ select name from fn where has_function_privilege('anon', oid,
   'anon can execute nothing but app.supported_countries');
 select ok(has_function_privilege('anon', 'app.supported_countries()', 'execute'), 'anon can execute app.supported_countries');
 select is((select array_agg(name order by name) from fn where has_function_privilege('authenticated', oid, 'execute')),
-  array['app.accept_documents','app.complete_onboarding','app.current_role','app.has_consent','app.public_setting','app.supported_countries',
+  array['app.accept_documents','app.complete_onboarding','app.current_role','app.delete_my_account','app.export_my_data','app.has_consent','app.public_setting','app.supported_countries',
         'catalog.colour_family','catalog.rgb_hex','catalog.rgb_to_lab','catalog.set_colour_fields','catalog.srgb_lin'],
   'authenticated can execute exactly the documented functions');
 select is_empty($$ select name from fn where is_trigger and name like 'app.%' and (has_function_privilege('authenticated', oid, 'execute') or has_function_privilege('anon', oid, 'execute')) $$,

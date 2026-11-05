@@ -3,6 +3,6 @@ Predicate: `npx vitest run workflow/gates/model_card.test.ts >/dev/null 2>&1 && 
 Completed: 2026-11-04
 Triggered by: release R5a (garment CNN v1, Fashion-MNIST, test accuracy 0.8953)
 Status: holding
-Last pass: 2026-11-05
+Last pass: 2026-11-06
 On violation: check the ONNX SHA-256 against the card; re-run evaluate.py; never switch GARMENT_GUESS_ENABLED on before the 100-photo team evaluation (LOI-9).
 Retire when: garment model v2 or a retrained v1 replaces it and a new goal is written.

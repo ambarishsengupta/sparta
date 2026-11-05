@@ -12,3 +12,4 @@
 11. R4 WO-0012 changed about 683 counted lines (about 402 tests) against the 500 limit; accepted, logged by the orchestrator.
 12. R5a WO-0031 changed about 582 counted lines including 176 of new python tests against the 500 limit; accepted, logged by the orchestrator.
 13. R2 WO-0040 changed about 494 counted lines (limit 500): within limit.
+14. R2 WO-0041 changed about 1,350 counted lines (545 migrations, 659 pgTAP tests, 144 helper) against the 500 limit; accepted as security tests, logged by the orchestrator.

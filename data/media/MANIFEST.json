@@ -1,0 +1,101 @@
+{
+  "description": "Licensed stock media for the Sparta entry pages (docs/IMPLEMENTATION-PLAN.md section 4.6). Files live in raw/ and are git-ignored; this manifest is tracked so anyone can re-fetch and verify them.",
+  "fetched": "2026-11-05",
+  "licences": {
+    "pexels": "https://www.pexels.com/license/ (free use, attribution not required; no redistribution on other stock or wallpaper platforms; no implied endorsement by people or brands)",
+    "unsplash": "https://unsplash.com/license (free use, attribution appreciated; no selling without significant change; no compiling to build a competing service)"
+  },
+  "derived": [
+    {
+      "file": "derived/hero-poster_from-pexels-7764682.jpg",
+      "placement": "Hero poster (replaces the rejected Pexels 581087 photo)",
+      "made_from": "raw/hero-loop_pexels-7764682_cottonbro.mp4, frame at 0 s",
+      "command": "ffmpeg -ss 0 -i raw/hero-loop_pexels-7764682_cottonbro.mp4 -frames:v 1 -q:v 3 derived/hero-poster_from-pexels-7764682.jpg",
+      "creator": "cottonbro studio",
+      "licence": "pexels",
+      "format": "JPEG, 1080x2048",
+      "bytes": 75176,
+      "sha256": "52fa23800b2bc72290fb94d7ddefdf286b4efb0256e777bc010147bf9e21f175",
+      "review": "Approved. First frame of the loop, so playback starts without a jump; no people, labels or logos."
+    },
+    {
+      "file": "derived/hero-poster_from-pexels-7764682.webp",
+      "placement": "Hero poster, WebP version served first",
+      "made_from": "raw/hero-loop_pexels-7764682_cottonbro.mp4, frame at 0 s",
+      "command": "ffmpeg -ss 0 -i raw/hero-loop_pexels-7764682_cottonbro.mp4 -frames:v 1 -c:v libwebp -quality 80 derived/hero-poster_from-pexels-7764682.webp",
+      "creator": "cottonbro studio",
+      "licence": "pexels",
+      "format": "WebP, 1080x2048",
+      "bytes": 35022,
+      "sha256": "ffcafe5d2699031f52dbcb6e988f0659d8cc5d2482db6446e2cf97d86b09e74c",
+      "review": "Approved. Same frame as the JPEG."
+    }
+  ],
+  "files": [
+    {
+      "file": "raw/hero-loop_pexels-7764682_cottonbro.mp4",
+      "placement": "Sign-in hero video loop (trim to 8-12 s, crop to 16:9 for desktop)",
+      "source_page": "https://www.pexels.com/video/clothes-hanging-in-a-rack-7764682/",
+      "download_url": "https://videos.pexels.com/video-files/7764682/7764682-hd_1080_2048_25fps.mp4",
+      "creator": "cottonbro studio",
+      "licence": "pexels",
+      "attribution_required": false,
+      "format": "H.264 MP4, 1080x2048, 25 fps, 21.36 s",
+      "bytes": 6830710,
+      "sha256": "e10e7267d3a6f4d51a7fdf2383c2f4b189fdaf3e83c7d21449fd38197b2e80cf",
+      "review": "Approved. Viewed 7 frames: three plain tees on a green metal rack, grey studio, no people, no logos or labels."
+    },
+    {
+      "file": "raw/hero-poster_pexels-581087_paggiaro.jpg",
+      "placement": "Hero poster (planned)",
+      "source_page": "https://www.pexels.com/photo/folded-assorted-color-shirts-581087/",
+      "download_url": "https://images.pexels.com/photos/581087/pexels-photo-581087.jpeg",
+      "creator": "Francesco Paggiaro",
+      "licence": "pexels",
+      "attribution_required": false,
+      "format": "JPEG, 6000x3376",
+      "bytes": 2715368,
+      "sha256": "b25b31e9e235110d3f29f415b3641466d5f6f706090f845cf49addfa157e196b",
+      "review": "REJECTED for use. Visible 'KU LEUVEN' university lettering, a woven brand-style tag and a care label; no crop removes all three. Replace the poster with a frame from the hero video."
+    },
+    {
+      "file": "raw/onboarding_pexels-3998648_brannigan.jpg",
+      "placement": "Onboarding 'start from popular items' (4:5)",
+      "source_page": "https://www.pexels.com/photo/flat-lay-of-clothes-3998648/",
+      "download_url": "https://images.pexels.com/photos/3998648/pexels-photo-3998648.jpeg",
+      "creator": "Hana Brannigan",
+      "licence": "pexels",
+      "attribution_required": false,
+      "format": "JPEG, 3725x5215",
+      "bytes": 5025576,
+      "sha256": "8f6b6064fd20c872d5b5ee2114464b8d819563daa4c4e21d80c78add08265fba",
+      "review": "Approved. Casual menswear flat lay on wood; one tee has a music-note print (not a brand); neck labels are unreadable at any web size."
+    },
+    {
+      "file": "raw/about_unsplash-JZ7xidLBKck_wang-binghua.jpg",
+      "placement": "About page and empty wardrobe (crop 1:1)",
+      "source_page": "https://unsplash.com/photos/white-t-shirt-in-wooden-closet-JZ7xidLBKck",
+      "download_url": "https://images.unsplash.com/photo-1791357601282-aadb52b7d42c",
+      "creator": "wang binghua",
+      "licence": "unsplash",
+      "attribution_required": false,
+      "format": "JPEG, 7008x4672",
+      "bytes": 2007580,
+      "sha256": "a1f3aa33a7968f12324c6fb59ceda19246606a41800236520cfc524f05421eb5",
+      "review": "Approved. White tee on a wooden hanger in a light wood wardrobe; no people, no logos."
+    },
+    {
+      "file": "raw/vendor-signin_unsplash-IZDEH8Qd7Cg_bennie-bates.jpg",
+      "placement": "Vendor sign-in panel",
+      "source_page": "https://unsplash.com/photos/a-rack-that-has-a-bunch-of-clothes-hanging-on-it-IZDEH8Qd7Cg",
+      "download_url": "https://images.unsplash.com/photo-1729864210127-0c0dc835dd78",
+      "creator": "Bennie Bates",
+      "licence": "unsplash",
+      "attribution_required": false,
+      "format": "JPEG, 5566x3711",
+      "bytes": 1341003,
+      "sha256": "0aea0627fa735a6510f00073fd0fe18a062bb2ae347d73dc7f0fbf9f72f1127d",
+      "review": "Approved. Plain tees in cream, navy, yellow and green on a white rail against orange; no people, no visible labels. Strong match for the flash palette."
+    }
+  ]
+}

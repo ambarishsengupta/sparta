@@ -14,3 +14,4 @@
 13. R2 WO-0040 changed about 494 counted lines (limit 500): within limit.
 14. R2 WO-0041 changed about 1,350 counted lines (545 migrations, 659 pgTAP tests, 144 helper) against the 500 limit; accepted as security tests, logged by the orchestrator.
 15. R2b WO-0050 changed about 958 counted lines (532 tests, 426 code) against the 500 limit; accepted, logged by the orchestrator.
+16. R2b WO-0052 changed about 1,083 counted lines (446 code, 636 tests and support) against the 500 limit; accepted, logged by the orchestrator.

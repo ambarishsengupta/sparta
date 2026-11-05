@@ -8,6 +8,8 @@ import { engineOpts } from '../../lib/engine-config';
 import { EventLog } from '../../lib/events';
 import { browserStorage } from '../../lib/local-repository';
 import type { StoredItem } from '../../lib/repository';
+import { dataBackend } from '../../lib/supabase/config';
+import { attempt, messageOf } from '../../lib/supabase/errors';
 import {
   OCCASIONS, anchorIntro, applySwap, buildCtx, eventDetails, loadHemisphere, markSaved, reject, saveHemisphere, sameAs, seasonOf, startView, swapOptions, thinMessage, toOutfitInput,
 } from '../../lib/suggestions-view-model';
@@ -35,6 +37,7 @@ export function OutfitsView() {
   const [view, setView] = useState<View | null>(null);
   const [swap, setSwap] = useState<{ key: string; slot: Slot } | null>(null);
   const [note, setNote] = useState('');
+  const [error, setError] = useState(''); // a failed load or save: said out loud, and the outfit is not marked saved
   const [today, setToday] = useState<Date | null>(null); // read in the browser only, so the server page never bakes in a season
   const opener = useRef<string | null>(null); // `key:slot` of the Swap button that opened the sheet, so focus can return to it
   const log = useRef<EventLog | null>(null);
@@ -48,8 +51,8 @@ export function OutfitsView() {
   }, []);
   useEffect(() => {
     if (!repo) return;
-    void repo.items.list().then(setItems);
-    void repo.wishlist.list().then((w) => setWished(new Set(w.filter((e) => e.origin === 'unlock').map(unlockKey))));
+    void repo.items.list().then(setItems, (e) => setError(messageOf(e, false)));
+    void repo.wishlist.list().then((w) => setWished(new Set(w.filter((e) => e.origin === 'unlock').map(unlockKey))), (e) => setError(messageOf(e, false)));
   }, [repo]);
   useEffect(() => { // after Cancel, Escape or a pick, focus goes back to the Swap button that opened the sheet (or its replacement)
     if (swap === null && opener.current) {
@@ -78,24 +81,31 @@ export function OutfitsView() {
   const leaveAnchor = () => { setAnchor(null); window.history.replaceState(null, '', '/outfits'); ask(occasion, hemisphere, items, null); };
   const unlockList = useMemo(() => (ctx && items ? unlockFor(items, ctx, undefined, learned) : []), [ctx, items, learned]);
   const addUnlock = async (e: UnlockSuggestion) => {
-    const { added } = await addUnlockToWishlist(repo!, events(), e, ctx!);
+    let added = false;
+    const problem = await attempt(async () => { ({ added } = await addUnlockToWishlist(repo!, events(), e, ctx!)); });
+    if (problem) return setError(problem);
+    setError('');
     setWished((w) => new Set(w).add(unlockKey({ subType: e.subType, colourFamily: e.colourFamily })));
     setNote(`${e.colourFamily} ${e.subType} ${added ? 'added to' : 'is already on'} your wishlist.`);
   };
   const anchorName = anchor ? byId.get(anchor)?.name : undefined;
 
   const accept = async (card: Card, n: number) => {
-    await repo!.outfits.create(toOutfitInput(card, ctx!.occasion));
-    events().record('suggestion_accepted', details(card));
+    const problem = await attempt(() => repo!.outfits.create(toOutfitInput(card, ctx!.occasion)));
+    if (problem) return setError(problem); // not saved: the card stays as it was
+    setError('');
+    const answer = events().record('suggestion_accepted', details(card));
     setView((v) => markSaved(v!, card.key));
     document.getElementById(`outfit-title-${n}`)?.focus(); // Accept is about to become disabled: keep keyboard focus on the card
     setNote(`Outfit ${n} saved.`);
+    void repo!.feedback?.record(answer).then((sent) => { if (!sent) setNote(`Outfit ${n} saved. Your answer could not be sent for rule tuning; the outfit itself is saved.`); });
   };
   const dismiss = (card: Card, n: number) => {
-    events().record('suggestion_rejected', details(card));
+    const answer = events().record('suggestion_rejected', details(card));
     setView((v) => reject(v!, card.key));
     setSwap(null);
     setNote(`Outfit ${n} removed.`);
+    void repo!.feedback?.record(answer).then((sent) => { if (!sent) setNote(`Outfit ${n} removed. Your answer could not be sent for rule tuning.`); });
   };
   const pickSwap = (card: Card, slot: Slot, id: string) => {
     const result = applySwap(view!, card.key, slot, id, items!, ctx!);
@@ -110,8 +120,11 @@ export function OutfitsView() {
     setSwap(null);
   };
   const loadDemo = async () => {
-    const n = await loadDemoWardrobe(repo!, DEMO, events());
-    const list = await repo!.items.list();
+    let n = 0;
+    let list: StoredItem[] = [];
+    const problem = await attempt(async () => { n = await loadDemoWardrobe(repo!, DEMO, events()); list = await repo!.items.list(); });
+    if (problem) return setError(problem);
+    setError('');
     setItems(list);
     ask(occasion, hemisphere, list);
     setNote(`Added ${n} items from the ${DEMO} demo wardrobe.`);
@@ -121,7 +134,9 @@ export function OutfitsView() {
   return (
     <>
       <h1>Outfits</h1>
-      <p className="muted">Everything is worked out in this browser. Nothing is sent anywhere.</p>
+      <p className="muted">{dataBackend() === 'supabase'
+        ? 'Outfits are worked out in this browser. The outfits you save are kept in your account, and each Accept or Reject sends only the occasion and the rules involved (never item names).'
+        : 'Everything is worked out in this browser. Nothing is sent anywhere.'}</p>
       <fieldset className={styles.picker}>
         <legend>Occasion</legend>
         {OCCASIONS.map((o) => (
@@ -134,6 +149,7 @@ export function OutfitsView() {
       </label>
       <p className="muted">{today ? `Season now: ${seasonOf(buildCtx('Casual', hemisphere, today))} (${hemisphere}ern hemisphere)` : ''}</p>
       <p aria-live="polite" className="muted">{note}</p>
+      {error && <p role="alert" className="error">{error}</p>}
 
       {anchor && (
         <section className={styles.anchor} aria-labelledby="anchor-title">

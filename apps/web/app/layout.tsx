@@ -7,7 +7,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Sparta',
-  description: 'Your wardrobe, and what to wear from it. Everything stays in this browser.',
+  description: 'Your wardrobe, and what to wear from it.',
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icon.svg' },
 };

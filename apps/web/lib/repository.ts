@@ -58,8 +58,17 @@ export interface ItemCollection extends Collection<StoredItem, ItemInput> {
   restore(id: string): Promise<StoredItem | undefined>;
 }
 
+/** What a suggestion answer tells the rule-tuning table (FDD 16): the occasion, the rules involved and the engine switches, never an item id or name. */
+export interface FeedbackFacts { type: string; occasion: string | null; engine_config: string; rule_ids: readonly string[] }
+export interface FeedbackSink {
+  /** Sends one accepted or rejected suggestion; any other type is ignored. Never throws: false means it could not be stored. */
+  record(facts: FeedbackFacts): Promise<boolean>;
+}
+
 export interface WardrobeRepository {
   items: ItemCollection;
   outfits: Collection<SavedOutfit, OutfitInput>;
   wishlist: Collection<WishlistEntry, WishlistInput>;
+  /** Only the account-backed repository has one; the local repository keeps just its event log. */
+  feedback?: FeedbackSink;
 }

@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { EventLog, createItemLogged } from '../../lib/events';
 import type { StoredItem } from '../../lib/repository';
+import { attempt, messageOf } from '../../lib/supabase/errors';
 import { FITS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, conditionBandOf } from '@sparta/taxonomy';
 import { categoryChoices, emptyForm, familyOfHex, formFromItem, subTypeChoices, updateForm, validateForm } from '../../lib/item-form';
 import type { FormErrors, ItemFormValues } from '../../lib/item-form';
@@ -45,22 +46,29 @@ export function ItemForm({ itemId }: { itemId?: string }) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [missing, setMissing] = useState(false);
   const [existing, setExisting] = useState<StoredItem>();
+  const [failure, setFailure] = useState(''); // the form keeps what was typed when a save fails
   const change = (patch: Partial<ItemFormValues>) => setValues((v) => updateForm(v, patch));
 
   useEffect(() => {
     if (!repo || !itemId) return;
-    void repo.items.get(itemId).then((item) => (item ? (setExisting(item), setValues(formFromItem(item))) : setMissing(true)));
+    void repo.items.get(itemId).then((item) => (item ? (setExisting(item), setValues(formFromItem(item))) : setMissing(true)), (e) => setFailure(messageOf(e, false)));
   }, [repo, itemId]);
 
   const save = async () => {
     const result = validateForm(values);
     if (!result.ok) return setErrors(result.errors);
-    if (itemId && existing) await repo!.items.update(itemId, { ...result.input, status: existing.status, archiveReason: existing.archiveReason });
-    else if (!itemId) await createItemLogged(repo!, new EventLog(), result.input, 'manual');
+    const problem = await attempt(async () => {
+      if (itemId && existing) await repo!.items.update(itemId, { ...result.input, status: existing.status, archiveReason: existing.archiveReason });
+      else if (!itemId) await createItemLogged(repo!, new EventLog(), result.input, 'manual');
+    });
+    if (problem) return setFailure(problem); // stay on the form: nothing typed is lost
     router.push('/');
   };
   const remove = async () => {
-    if (itemId && window.confirm('Delete this item permanently?')) { await repo!.items.remove(itemId); router.push('/'); }
+    if (!itemId || !window.confirm('Delete this item permanently?')) return;
+    const problem = await attempt(() => repo!.items.remove(itemId));
+    if (problem) return setFailure(problem);
+    router.push('/');
   };
 
   if (missing) return <p role="alert">That item was not found.</p>;
@@ -69,6 +77,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }} noValidate>
       <h1>{itemId ? 'Edit item' : 'Add item'}</h1>
+      {failure && <p role="alert" className="error">{failure}</p>}
       <Choice label="Category" value={values.category} options={categoryChoices()} error={errors.category}
         onChange={(v) => change({ category: v as ItemFormValues['category'] })} />
       <Choice label="Sub-type" value={values.subType} options={subTypeChoices(values.category)} error={errors.subType}

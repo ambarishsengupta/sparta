@@ -41,12 +41,26 @@ describe('no secret or service key anywhere in apps/web (CC4, CC7)', () => {
 });
 
 // The suggestion path (see components/outfits/outfits.test.ts) must stay offline. That test leaves the sign-in modules out of its
-// scan by name, so this one proves that nothing it does scan can reach them.
-describe('the suggestion path does not import the sign-in modules (companion to the no-network test)', () => {
-  const path = all.filter((f) => /\/(lib\/[^/]+\.ts|components\/outfits\/[^/]+\.tsx|app\/outfits\/.*\.tsx|components\/use-(repository|learned)\.ts)$/.test(f) && !f.endsWith('.test.ts'));
-  it('finds the suggestion sources', () => { expect(path.length).toBeGreaterThanOrEqual(15); });
-  it('none imports lib/supabase, lib/auth-form or an Auth package', () => {
-    const bad = path.filter((f) => [...readFileSync(f, 'utf8').matchAll(/from '([^']+)'/g)].some((m) => /supabase|auth-form/.test(m[1]!)));
-    expect(bad.map((f) => f.slice(root.length))).toEqual([]);
+// scan by name, so this one proves that nothing it does scan can reach them, except the repository modules (WO-0052).
+describe('the suggestion path reaches only the repository modules of lib/supabase (companion to the no-network test)', () => {
+  const path = all.filter((f) => /\/(lib\/[^/]+\.ts|lib\/supabase\/(repository|mapping|errors|config)\.ts|components\/outfits\/[^/]+\.tsx|app\/outfits\/.*\.tsx|components\/use-(repository|learned)\.ts)$/.test(f) && !f.endsWith('.test.ts'));
+  const importsOf = (f: string) => [...readFileSync(f, 'utf8').matchAll(/from '([^']+)'/g)].map((m) => m[1]!);
+  const ALLOWED = /(^|\/)supabase\/(config|errors|backend|repository|mapping)$|^\.\/(config|errors|mapping)$/;
+  it('finds the suggestion sources', () => { expect(path.length).toBeGreaterThanOrEqual(19); });
+  it('none imports a sign-in module, lib/auth-form or an Auth package; the only others are the repository modules, config and errors', () => {
+    const bad = path.flatMap((f) => importsOf(f).filter((i) => /supabase|auth-form/.test(i) && !ALLOWED.test(i) && !(f.endsWith('/lib/supabase/repository.ts') && i === '@supabase/supabase-js')).map((i) => `${f.slice(root.length)} -> ${i}`));
+    expect(bad).toEqual([]);
+  });
+  it('the Supabase package is imported by the repository as a type only', () => {
+    const text = readFileSync(join(root, 'lib/supabase/repository.ts'), 'utf8');
+    expect([...text.matchAll(/^import (.*) from '@supabase\/supabase-js';$/gm)].map((m) => m[1])).toEqual(['type { SupabaseClient }']);
+  });
+  it('backend.ts, the one module the network test leaves out by name, imports exactly the session client, the gate state and the repositories', () => {
+    expect(importsOf(join(root, 'lib/supabase/backend.ts')).sort()).toEqual(
+      ['../local-repository', '../repository', './browser', './config', './errors', './errors', './gate', './gate-state', './repository', '@supabase/supabase-js'].sort());
+  });
+  it('only the use-repository hook imports backend.ts', () => {
+    const users = all.filter((f) => /\.tsx?$/.test(f) && !f.endsWith('.test.ts') && importsOf(f).some((i) => /\/backend$/.test(i)));
+    expect(users.map((f) => f.slice(root.length))).toEqual(['components/use-repository.ts']);
   });
 });

@@ -8,6 +8,7 @@ import { DEMO_WARDROBE_NAMES, loadDemoWardrobe } from '../../lib/demo';
 import { NO_FILTER, filterItems } from '../../lib/filters';
 import type { WardrobeFilter } from '../../lib/filters';
 import type { ArchiveReason, StoredItem } from '../../lib/repository';
+import { attempt, messageOf } from '../../lib/supabase/errors';
 import { useRepository } from '../use-repository';
 
 const REASONS: ArchiveReason[] = ['sold', 'donated', 'discarded', 'lost'];
@@ -55,11 +56,18 @@ export function WardrobeList() {
   const [filter, setFilter] = useState<WardrobeFilter>(NO_FILTER);
   const [demo, setDemo] = useState(DEMO_WARDROBE_NAMES[0] ?? '');
   const [note, setNote] = useState('');
-  const refresh = useCallback(async () => { if (repo) setItems(await repo.items.list()); }, [repo]);
+  const [error, setError] = useState(''); // a failed load or change is said out loud; the list is never replaced by an empty one
+  const refresh = useCallback(async () => {
+    if (!repo) return;
+    try { setItems(await repo.items.list()); } catch (e) { setError(messageOf(e, false)); }
+  }, [repo]);
   useEffect(() => { void refresh(); }, [refresh]);
   const set = (patch: Partial<WardrobeFilter>) => setFilter({ ...filter, ...patch });
   const shown = filterItems(items, filter);
-  const act = async (run: () => Promise<unknown>) => { await run(); await refresh(); };
+  const act = async (run: () => Promise<unknown>) => {
+    setError((await attempt(run)) ?? '');
+    await refresh();
+  };
 
   return (
     <>
@@ -85,7 +93,8 @@ export function WardrobeList() {
         <label className="check"><input type="checkbox" checked={filter.neverWorn} onChange={(e) => set({ neverWorn: e.target.checked })} />Never worn</label>
       </form>
       <p aria-live="polite" className="muted">{repo ? `${shown.length} of ${items.length} items` : 'Loading…'}</p>
-      {repo && items.length === 0 && <p>Your wardrobe is empty. Add an item, or load a demo wardrobe below.</p>}
+      {error && <p role="alert" className="error">{error}</p>}
+      {repo && items.length === 0 && !error && <p>Your wardrobe is empty. Add an item, or load a demo wardrobe below.</p>}
       <ul className="list">
         {shown.map((i) => (
           <ItemCard key={i.id} item={i}

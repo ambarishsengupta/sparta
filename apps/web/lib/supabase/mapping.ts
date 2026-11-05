@@ -1,0 +1,149 @@
+import { categoryOfSubType, isCategory, isColourFamily, isFit, isMaterial, isOccasion, isPattern, isSeason, isSubType, referenceSwatch, slotAssignmentOf } from '@sparta/taxonomy';
+import type { Slot } from '@sparta/rules';
+import type { FeedbackFacts, ItemInput, OutfitInput, SavedOutfit, StoredItem, WishlistEntry, WishlistInput } from '../repository';
+import { RepositoryError } from './errors';
+
+// Both ways between the screens' shapes and the rows of app.items, app.outfits, app.outfit_items, app.wishlist_entries and
+// app.suggestion_feedback (supabase/migrations). Pure: no client, no clock except where one is passed in. The database sets
+// colour_hex, colour_family and the secondary colour itself (trigger catalog.set_colour_fields), so no row built here carries them.
+type Row = Record<string, unknown>;
+const bad = (what: string): never => { throw new RepositoryError('unexpected', false, `The stored ${what} could not be read.`); };
+const strings = <T extends string>(v: unknown, ok: (x: unknown) => x is T, what: string): T[] => (Array.isArray(v) && v.every(ok) ? [...v] : bad(what));
+const orNull = <T extends string>(v: unknown, ok: (x: unknown) => x is T, what: string): T | null => (v === null || v === undefined ? null : ok(v) ? v : bad(what));
+
+const ITEM_COLUMNS = {
+  name: 'name', category: 'category', subType: 'sub_type', fit: 'fit', material: 'material', pattern: 'pattern', seasons: 'seasons',
+  occasions: 'occasions', condition: 'condition', favourite: 'favourite', neverWorn: 'never_worn', status: 'status', archiveReason: 'archive_reason',
+} as const;
+/** Everything a read needs from app.items (no image paths, notes or prices). */
+export const ITEM_SELECT = 'id,name,category,sub_type,colour_r,colour_g,colour_b,colour_hex,colour_family,fit,material,pattern,seasons,occasions,condition,never_worn,favourite,status,archive_reason,created_at,updated_at';
+
+/** Changed fields only, as columns. `hex`, `colourFamily` and the ids are never sent: the database derives them from the RGB. */
+export function itemPatch(patch: Partial<ItemInput>): Row {
+  const row: Row = {};
+  for (const [key, column] of Object.entries(ITEM_COLUMNS)) {
+    const v = (patch as Row)[key];
+    if (v !== undefined) row[column] = Array.isArray(v) ? [...v] : v;
+  }
+  if (patch.rgb) [row.colour_r, row.colour_g, row.colour_b] = patch.rgb;
+  if (patch.status === 'active') row.archived_at = null; // archiving sets archived_at in the repository, which has the clock
+  return row;
+}
+
+export const itemRow = (input: ItemInput, userId: string, now: string): Row => ({
+  ...itemPatch(input), user_id: userId, origin: 'manual', archived_at: input.status === 'archived' ? now : null,
+});
+
+export function itemFromRow(r: Row): StoredItem {
+  const { category, sub_type: subType, status } = r;
+  if (!isCategory(category) || !isSubType(category, subType)) bad('item');
+  const rgb = [r.colour_r, r.colour_g, r.colour_b];
+  if (!rgb.every((c) => Number.isInteger(c) && (c as number) >= 0 && (c as number) <= 255)) bad('item colour');
+  const family = r.colour_family;
+  if (!isColourFamily(family) || typeof r.colour_hex !== 'string') bad('item colour');
+  if (status !== 'active' && status !== 'archived') bad('item status');
+  const reason = r.archive_reason;
+  if (reason !== null && reason !== 'sold' && reason !== 'donated' && reason !== 'discarded' && reason !== 'lost') bad('item archive reason');
+  if (typeof r.id !== 'string' || typeof r.name !== 'string' || typeof r.created_at !== 'string' || typeof r.updated_at !== 'string') bad('item');
+  if (r.condition !== null && !Number.isInteger(r.condition)) bad('item condition');
+  return {
+    id: r.id as string, name: r.name as string, category: category as StoredItem['category'], subType: subType as StoredItem['subType'],
+    rgb: rgb as unknown as StoredItem['rgb'], hex: (r.colour_hex as string).toUpperCase(), colourFamily: family as StoredItem['colourFamily'],
+    fit: orNull(r.fit, isFit, 'item fit'), material: orNull(r.material, isMaterial, 'item material'), pattern: orNull(r.pattern, isPattern, 'item pattern'),
+    seasons: strings(r.seasons, isSeason, 'item seasons'), occasions: strings(r.occasions, isOccasion, 'item occasions'),
+    condition: r.condition as number | null, favourite: r.favourite === true, neverWorn: r.never_worn === true,
+    status: status as StoredItem['status'], archiveReason: reason as StoredItem['archiveReason'], createdAt: r.created_at as string, updatedAt: r.updated_at as string,
+  };
+}
+
+// ---- outfits ---------------------------------------------------------------------------------------------------------
+const SLOT_ORDER: readonly Slot[] = ['top', 'bottom', 'layer', 'footwear', 'accessory'];
+/** What is kept beside an outfit that has no column for it: the engine's score and reasons, lossless, in `notes`. */
+const notesOf = (o: Pick<OutfitInput, 'score' | 'reasons'>): string => JSON.stringify({ v: 1, score: o.score, reasons: o.reasons });
+
+/**
+ * The outfit row and its piece rows (the caller adds `outfit_id`, which the database assigns). A piece that fills two slots (a Suit)
+ * is one row, because (outfit_id, item_id) is the key; it is kept under the first slot it is in, and `outfitFromRow` puts it back in
+ * every slot it fills.
+ */
+export function outfitRows(input: OutfitInput, userId: string): { outfit: Row; pieces: Row[] } {
+  const seen = new Set<string>();
+  const pieces: Row[] = [];
+  for (const slot of SLOT_ORDER) {
+    const item = input.items[slot];
+    if (item !== null && item !== undefined && !seen.has(item)) { seen.add(item); pieces.push({ user_id: userId, item_id: item, slot }); }
+  }
+  return { outfit: { user_id: userId, name: `${input.occasion} outfit`, occasions: [input.occasion], seasons: [], notes: notesOf(input) }, pieces };
+}
+
+/** Changed outfit columns only (the pieces are replaced separately by the repository). */
+export function outfitPatch(patch: Partial<OutfitInput>): Row {
+  const row: Row = {};
+  if (patch.occasion !== undefined) Object.assign(row, { occasions: [patch.occasion], name: `${patch.occasion} outfit` });
+  return row;
+}
+
+export const OUTFIT_SELECT = 'id,occasions,notes,created_at,outfit_items(item_id,slot,items(sub_type))';
+
+/** null when the row has no occasion the app knows (an outfit this app did not write). */
+export function outfitFromRow(r: Row): SavedOutfit | null {
+  const occasion = Array.isArray(r.occasions) ? r.occasions.find(isOccasion) : undefined;
+  if (!occasion || typeof r.id !== 'string' || typeof r.created_at !== 'string') return null;
+  const items: SavedOutfit['items'] = { top: null, bottom: null, layer: null, footwear: null, accessory: null };
+  for (const p of (Array.isArray(r.outfit_items) ? r.outfit_items : []) as Row[]) {
+    if (typeof p.item_id !== 'string' || !SLOT_ORDER.includes(p.slot as Slot)) bad('outfit piece');
+    items[p.slot as Slot] = p.item_id as string;
+    const sub = (p.items as Row | null)?.sub_type;
+    const fill = typeof sub === 'string' ? slotAssignmentOf(sub) : undefined;
+    if (fill?.fill === 'both') for (const s of fill.slots) items[s.toLowerCase() as Slot] = p.item_id as string;
+  }
+  let score: number | null = null;
+  let reasons: string[] = [];
+  try {
+    const n = JSON.parse(typeof r.notes === 'string' ? r.notes : 'null') as { score?: unknown; reasons?: unknown } | null;
+    if (typeof n?.score === 'number') score = n.score;
+    if (Array.isArray(n?.reasons) && n.reasons.every((x) => typeof x === 'string')) reasons = n.reasons as string[];
+  } catch { /* notes written by someone else: no score or reasons */ }
+  return { id: r.id, occasion, items, score, reasons, createdAt: r.created_at };
+}
+
+// ---- wishlist --------------------------------------------------------------------------------------------------------
+/** A colour family becomes the RGB of its reference swatch (the database turns it back into the same family); Multi is the flag. */
+function wishColour(family: WishlistInput['colourFamily']): Row {
+  if (family === 'Multi') return { colour_r: null, colour_g: null, colour_b: null, is_multicolour: true };
+  const swatch = family ? referenceSwatch(family) : undefined;
+  const rgb = swatch ? ([1, 3, 5] as const).map((i) => parseInt(swatch.hex.slice(i, i + 2), 16)) : [null, null, null];
+  return { colour_r: rgb[0], colour_g: rgb[1], colour_b: rgb[2], is_multicolour: false };
+}
+
+export function wishlistPatch(patch: Partial<WishlistInput>): Row {
+  const row: Row = {};
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.subType !== undefined) Object.assign(row, { sub_type: patch.subType, category: categoryOfSubType(patch.subType) });
+  if (patch.note !== undefined) row.notes = patch.note;
+  if (patch.origin !== undefined) row.origin = patch.origin;
+  if (patch.colourFamily !== undefined) Object.assign(row, wishColour(patch.colourFamily));
+  return row;
+}
+export const wishlistRow = (input: WishlistInput, userId: string): Row => ({ origin: 'user', ...wishColour(null), ...wishlistPatch(input), user_id: userId });
+
+export const WISHLIST_SELECT = 'id,name,category,sub_type,colour_family,notes,origin,created_at';
+export function wishlistFromRow(r: Row): WishlistEntry {
+  const family = r.colour_family;
+  if (typeof r.id !== 'string' || typeof r.name !== 'string' || typeof r.created_at !== 'string' || !isCategory(r.category) || !isSubType(r.category, r.sub_type)) bad('wishlist entry');
+  if (r.origin !== 'user' && r.origin !== 'unlock') bad('wishlist origin');
+  return {
+    id: r.id as string, name: r.name as string, subType: r.sub_type as WishlistEntry['subType'], colourFamily: orNull(family, isColourFamily, 'wishlist colour'),
+    origin: r.origin as 'user' | 'unlock', note: typeof r.notes === 'string' ? r.notes : null, createdAt: r.created_at as string,
+  };
+}
+
+// ---- suggestion feedback ---------------------------------------------------------------------------------------------
+/** A feedback row is built from the four `FeedbackFacts` fields, listed one by one: no item id, item name or free text can be added by accident. */
+const RULE_ID = /^[A-Z][A-Z0-9_]{0,15}$/;
+
+/** null for anything that is not an accepted or rejected suggestion. */
+export function feedbackRow(e: FeedbackFacts, userId: string): Row | null {
+  if ((e.type !== 'suggestion_accepted' && e.type !== 'suggestion_rejected') || !e.occasion) return null;
+  return { user_id: userId, occasion: e.occasion, rule_ids: e.rule_ids.filter((r) => RULE_ID.test(r)), accepted: e.type === 'suggestion_accepted', engine_config: e.engine_config };
+}

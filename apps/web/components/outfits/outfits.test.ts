@@ -13,12 +13,16 @@ import { SwapSheet } from './SwapSheet';
 
 // WO-0050 and WO-0051: the sign-in, session and consent modules talk to the Supabase Auth service by design and are not on the suggestion path. They are
 // named one by one (never a folder), so a new module under lib/ is still scanned, and lib/supabase/source.test.ts proves that no
-// file scanned here imports any of them.
+// file scanned here imports any of them. WO-0052: the repository modules (repository, mapping, errors) ARE scanned, with the same strict
+// rules (they reach the service only through a client handed to them, so they hold no fetch and no URL). Exactly one module besides the
+// sign-in ones is left out by name: lib/supabase/backend.ts, which makes the session client and reads the sign-in state to choose the
+// repository; source.test.ts pins its imports.
 const sources = import.meta.glob<string>(
   [
     './*.tsx', '../../app/outfits/**/*.tsx', '../../lib/**/*.ts', '!../../lib/**/*.test.ts', '../use-repository.ts', '../use-learned.ts',
     '!../../lib/auth-form.ts', '!../../lib/supabase/auth-actions.ts', '!../../lib/supabase/browser.ts', '!../../lib/supabase/gate.ts',
     '!../../lib/supabase/gate-state.ts', '!../../lib/supabase/proxy-session.ts', '!../../lib/supabase/server.ts', '!../../lib/supabase/consent-actions.ts',
+    '!../../lib/supabase/backend.ts',
   ],
   { query: '?raw', import: 'default', eager: true },
 );
@@ -49,7 +53,8 @@ describe('no request leaves the browser in the suggestion path (FR-59, CC4)', ()
   });
   it('covers every non-test file in lib, the repository hook, the demo loader and the local repository (WO-0022 item 2)', () => {
     const names = Object.keys(sources).map((f) => f.replace(/^.*\/(lib\/)/, '$1').replace(/^.*\/(use-repository\.ts)$/, 'components/$1'));
-    for (const f of ['lib/local-repository.ts', 'lib/demo.ts', 'lib/events.ts', 'lib/repository.ts', 'lib/item-form.ts', 'lib/filters.ts', 'lib/suggestions-view-model.ts', 'lib/engine-config.ts', 'lib/wishlist.ts', 'components/use-repository.ts']) expect(names, f).toContain(f);
+    for (const f of ['lib/local-repository.ts', 'lib/demo.ts', 'lib/events.ts', 'lib/repository.ts', 'lib/item-form.ts', 'lib/filters.ts', 'lib/suggestions-view-model.ts', 'lib/engine-config.ts', 'lib/wishlist.ts', 'components/use-repository.ts',
+      'lib/supabase/repository.ts', 'lib/supabase/mapping.ts', 'lib/supabase/errors.ts', 'lib/supabase/config.ts']) expect(names, f).toContain(f);
     expect(names.some((f) => f.endsWith('.test.ts'))).toBe(false);
   });
   it('none of them calls fetch, XHR, sendBeacon, a socket or names a URL, except the two fixed GETs of lib/engine-config.ts (WO-0012)', () => {
@@ -61,7 +66,9 @@ describe('no request leaves the browser in the suggestion path (FR-59, CC4)', ()
   });
   it('imports only React, Next links, the workspace packages and the app\'s own files', () => {
     for (const [file, text] of Object.entries(sources)) {
-      for (const m of text.matchAll(/from '([^']+)'/g)) expect(m[1], file).toMatch(/^(\.|react|next\/link|@sparta\/(rules|taxonomy))/);
+      // the one package type the repository needs: the Supabase client's type, imported as a type only (no runtime code)
+      const code = file.endsWith('/lib/supabase/repository.ts') ? text.replace("import type { SupabaseClient } from '@supabase/supabase-js';", '') : text;
+      for (const m of code.matchAll(/from '([^']+)'/g)) expect(m[1], file).toMatch(/^(\.|react|next\/link|@sparta\/(rules|taxonomy))/);
     }
   });
   it('asking, swapping and logging make no request when the network globals throw', () => {

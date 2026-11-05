@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { signUpWithEmail } from '../lib/supabase/auth-actions';
+import { acceptDocuments, acceptPilotNotice, completeOnboarding, readVersions } from '../lib/supabase/consent-actions';
 
 /** Helpers for the integration suites that run against the REAL local stack. Test support only: nothing in the app imports this file.
  * The URL and publishable key are read from `supabase status` at run time and never written to a file. */
@@ -56,4 +57,12 @@ export async function provisionUser(s: Stack, email: string, password: string, m
 export async function cleanup(s: Stack, emails: string[], mailIds: string[]): Promise<void> {
   for (const id of mailIds) await fetch(`${s.mailpit}/api/v1/messages`, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ IDs: [id] }) });
   for (const email of emails) sql(`delete from auth.users where email = :'e'; delete from ops.invitations where email = :'e'`, { e: email });
+}
+
+/** Takes a provisioned user through the Terms and Privacy Policy, the pilot notice and onboarding, as the screens do. A country that is not supported ends at not-available. */
+export async function makeReady(client: SupabaseClient, country: string): Promise<void> {
+  const v = await readVersions(client);
+  if (!v) throw new Error('the versions could not be read');
+  for (const step of [await acceptDocuments(client, v, true), await acceptPilotNotice(client, v.notice), await completeOnboarding(client, { country, hemisphere: 'north', currency: 'USD', occasions: [] })])
+    if (!step.ok) throw new Error(`onboarding step failed: ${step.message}`);
 }

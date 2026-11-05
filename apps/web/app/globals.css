@@ -43,3 +43,8 @@ summary { cursor: pointer; min-height: 32px; color: var(--link); }
 .error { color: var(--error); font-weight: 400; } .locked { color: var(--muted); }
 .demo { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 8px; }
 @media (min-width: 40rem) { .filters { grid-template-columns: repeat(5, auto); align-items: end; } }
+
+.foot { max-width: 42rem; margin: 0 auto; padding: 16px var(--gutter) 32px; border-top: 1px solid var(--border); } .foot nav { display: flex; flex-wrap: wrap; gap: 4px 16px; } .foot a { padding: 10px 0; }
+article h2 { font-size: 1.2rem; margin: 28px 0 8px; } article h3 { font-size: 1.05rem; margin: 20px 0 6px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.95rem; } th, td { text-align: left; vertical-align: top; padding: 6px 8px; border: 1px solid var(--border); overflow-wrap: break-word; } th { background: var(--surface); }
+blockquote { margin: 12px 0; padding: 4px 16px; border-left: 4px solid var(--border); background: var(--surface); }

@@ -11,8 +11,13 @@ const SECURITY_HEADERS = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
 ];
 
+// The pages that show legal/*.md read the files from the repository root (outside this app's folder). When the app is built with accounts the pages
+// are rendered on request, so the files are named here to be shipped with the server output.
+const LEGAL_FILES = ['../../legal/PRIVACY-POLICY.md', '../../legal/TERMS-OF-USE.md'];
+
 const config: NextConfig = {
   headers: async () => [{ source: '/:path*', headers: SECURITY_HEADERS }],
+  outputFileTracingIncludes: { '/privacy': LEGAL_FILES, '/terms': LEGAL_FILES, '/about': LEGAL_FILES },
   transpilePackages: ['@sparta/taxonomy', '@sparta/rules'],
   webpack(webpackConfig: { resolve: { extensionAlias?: Record<string, string[]> } }) {
     webpackConfig.resolve.extensionAlias = { ...webpackConfig.resolve.extensionAlias, '.js': ['.ts', '.tsx', '.js'] };

@@ -77,8 +77,9 @@ describe('every redirect sink takes a fixed path or a checked one', () => {
       "app/auth/sign-out/route.ts: seeOther('/sign-in')",
     ].sort());
   });
-  it('window.location.assign(...) is called with the fixed home path, or with the value finishSignIn has checked', () => {
+  it('window.location.assign(...) is called with the fixed home path, the fixed goodbye path (R2c, after Leave the pilot), or with the value finishSignIn has checked', () => {
     expect(calls(/location\.assign\([^)]*\)/g)).toEqual([
+      "components/account/LeaveForm.tsx: location.assign('/goodbye')",
       "components/auth/AuthForm.tsx: location.assign(to)",
       "components/consent/AcceptTermsForm.tsx: location.assign('/')",
       "components/consent/OnboardingForm.tsx: location.assign('/')",

@@ -27,10 +27,12 @@ const HOME: Record<Exclude<GateState, 'unauthenticated'>, string> = {
 };
 const AUTH_PAGES = ['/sign-in', '/sign-up', '/check-your-email', '/reset'];
 const GATE_PAGES = ['/accept-terms', '/pilot-notice', '/onboarding', '/not-available'];
-const PUBLIC_PAGES = ['/about', '/privacy', '/terms', '/notice', '/maintenance'];
+const PUBLIC_PAGES = ['/about', '/privacy', '/terms', '/notice', '/maintenance', '/goodbye'];
 const PUBLIC = [...PUBLIC_PAGES, '/auth/callback', '/auth/sign-out'];
 /** Reachable while held at a gate step (LLD 9.1): export my data and Leave the pilot. */
 const HELD_API = ['/api/account/export', '/api/exports', '/api/account/delete'];
+/** The one account page a held person may open: the confirmation step of Leave the pilot (FR-4, FR-66). Export is a button, not a page. */
+const HELD_PAGES = ['/leave'];
 const INVALID = '/__invalid__';
 
 /** A request path read against a placeholder host that is never contacted (the one URL literal in this file). */
@@ -66,6 +68,6 @@ export function decideRoute(state: GateState, rawPath: string): Decision {
     return redirect(path === '/' ? '/sign-in' : `/sign-in?next=${encodeURIComponent(path + (path === INVALID ? '' : searchOf(rawPath)))}`);
   }
   if (state === 'ready') return AUTH_PAGES.includes(path) || GATE_PAGES.includes(path) ? redirect('/') : ALLOW;
-  const heldApi = state !== 'needs_email_confirmation' && HELD_API.some((p) => path === p || path.startsWith(`${p}/`));
-  return path === HOME[state] || heldApi ? ALLOW : redirect(HOME[state]);
+  const held = state !== 'needs_email_confirmation' && (HELD_PAGES.includes(path) || HELD_API.some((p) => path === p || path.startsWith(`${p}/`)));
+  return path === HOME[state] || held ? ALLOW : redirect(HOME[state]);
 }

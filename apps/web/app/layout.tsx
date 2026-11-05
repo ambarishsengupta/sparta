@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Nav } from '../components/Nav';
 import { dataBackend } from '../lib/supabase/config';
@@ -21,6 +22,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <a className="skip" href="#main">Skip to content</a>
         <Nav signedIn={signedIn} />
         <main id="main">{children}</main>
+        <footer className="foot">
+          <nav aria-label="About and legal">
+            <Link href="/about" prefetch={false}>About the pilot</Link>
+            <Link href="/privacy" prefetch={false}>Privacy Policy</Link>
+            <Link href="/terms" prefetch={false}>Terms of Use</Link>
+          </nav>
+        </footer>
       </body>
     </html>
   );

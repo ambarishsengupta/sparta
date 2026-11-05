@@ -164,13 +164,13 @@ describe('not-available (FR-9)', () => {
 });
 
 describe('the Privacy Policy and Terms of Use pages', () => {
-  it('each has one h1, names the repository file that holds the full text, and the Privacy page also shows the notice', () => {
+  it('each has one h1, names the repository file it shows, and the Privacy page includes the notice of section 13 (R2c: the pages now show the documents)', () => {
     const terms = html(createElement(Terms as never));
     const privacy = html(createElement(Privacy as never));
     expect(h1s(terms)).toBe(1);
     expect(h1s(privacy)).toBe(1);
     expect(terms).toContain('legal/TERMS-OF-USE.md');
     expect(privacy).toContain('legal/PRIVACY-POLICY.md');
-    expect(privacy).toContain('<h2>Welcome to the Sparta pilot</h2>');
+    expect(privacy).toContain('<strong>Welcome to the Sparta pilot</strong>');
   });
 });

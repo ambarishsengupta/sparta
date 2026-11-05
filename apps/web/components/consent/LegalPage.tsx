@@ -1,12 +1,12 @@
-import type { ReactNode } from 'react';
+import { readLegal, LEGAL_FILES, type LegalDocument } from '../legal/files';
+import { Markdown } from '../legal/Markdown';
 
-/** The pilot documents are kept as files in the project repository (legal/); this build links to them and does not render them. */
-export function LegalPage({ title, file, children }: { title: string; file: string; children?: ReactNode }) {
+/** A pilot document shown as a page: the file in legal/ is read when the page is built or served and drawn through the safe Markdown reader. */
+export function LegalPage({ which }: { which: LegalDocument }) {
   return (
-    <>
-      <h1>{title}</h1>
-      {children}
-      <p>The full text of the {title} is the file <code>{file}</code> in the Sparta project repository. Ask the Sparta team for a copy if you cannot open it.</p>
-    </>
+    <article>
+      <Markdown source={readLegal(which)} />
+      <p className="muted">This page shows the file <code>legal/{LEGAL_FILES[which]}</code> of the Sparta project repository.</p>
+    </article>
   );
 }

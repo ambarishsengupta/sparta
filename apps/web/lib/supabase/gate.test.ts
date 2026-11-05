@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { decideRoute, normalisePath, stateFromFacts, type Facts, type GateState } from './gate';
+import { safeNextPath } from '../auth-form';
+import { decideRoute, needsNoSession, normalisePath, stateFromFacts, type Facts, type GateState } from './gate';
 
 const allow = { action: 'allow' } as const;
 const to = (path: string) => ({ action: 'redirect', to: path }) as const;
@@ -100,4 +101,34 @@ describe('stateFromFacts: the first open step wins, in the order of LLD 9.1', ()
     ['a vendor is held, not let through', { role: 'vendor', eligible: true }, 'not_available'],
     ['no profile row is held', { role: 'none' }, 'not_available'],
   ])('%s', (_name, change, expected) => { expect(stateFromFacts({ ...FULL, ...change })).toBe(expected); });
+});
+
+describe('decideRoute: the query string travels in next, encoded as one parameter (m4)', () => {
+  const next = (d: ReturnType<typeof decideRoute>) => (d.action === 'redirect' ? new URL(d.to, 'http://app.example').searchParams.get('next') : null);
+  it.each([
+    ['/outfits?anchor=item-1', '/sign-in?next=%2Foutfits%3Fanchor%3Ditem-1'],
+    ['/items/new?x=1&y=2', '/sign-in?next=%2Fitems%2Fnew%3Fx%3D1%26y%3D2'],
+    ['/outfits?next=%2F%2Fevil.com', '/sign-in?next=%2Foutfits%3Fnext%3D%252F%252Fevil.com'],
+    ['/outfits?q=a%20b#frag', '/sign-in?next=%2Foutfits%3Fq%3Da%2520b'],
+    ['/outfits?', '/sign-in?next=%2Foutfits'],
+  ])('unauthenticated %s goes to %s', (path, to) => { expect(decideRoute('unauthenticated', path)).toEqual({ action: 'redirect', to }); });
+  it('the sign-in page receives exactly the path that was asked for, and safeNextPath keeps it', () => {
+    for (const path of ['/outfits?anchor=item-1', '/items/abc-123?tab=photos&x=%2F', '/outfits']) expect(safeNextPath(next(decideRoute('unauthenticated', path)))).toBe(path);
+  });
+  it('the home page and the account pages carry no next, and a query on a gate step is dropped (the step has one home)', () => {
+    expect(decideRoute('unauthenticated', '/?x=1')).toEqual({ action: 'redirect', to: '/sign-in' });
+    expect(decideRoute('unauthenticated', '/sign-in?next=%2Foutfits')).toEqual({ action: 'allow' });
+    expect(decideRoute('needs_documents', '/outfits?anchor=item-1')).toEqual({ action: 'redirect', to: '/accept-terms' });
+  });
+});
+
+describe('needsNoSession: what the proxy decides before it calls the session updater (m3)', () => {
+  it.each([['GET', '/privacy', true], ['GET', '/terms', true], ['GET', '/privacy/', true], ['GET', '/terms?x=1', true], ['HEAD', '/privacy', true], ['POST', '/auth/sign-out', true], ['POST', '/auth/sign-out/', true],
+    ['GET', '/auth/sign-out', false], ['PUT', '/auth/sign-out', false], ['GET', '/', false], ['GET', '/outfits', false], ['POST', '/outfits', false], ['GET', '/auth/callback', false],
+    ['GET', '/sign-in', false], ['GET', '/accept-terms', false], ['GET', '/privacy/../outfits', false], ['GET', '/privacy%2f..%2foutfits', false], ['GET', '/privacy-x', false], ['GET', '//privacy', false]] as const)(
+    '%s %s: %s', (method, path, expected) => { expect(needsNoSession(method, path)).toBe(expected); });
+  it('everything it lets through is also allowed by decideRoute in every state', () => {
+    for (const state of ['unauthenticated', 'needs_email_confirmation', 'needs_documents', 'needs_pilot_notice', 'needs_onboarding', 'not_available', 'ready'] as const)
+      for (const path of ['/privacy', '/terms', '/auth/sign-out']) expect(decideRoute(state, path)).toEqual({ action: 'allow' });
+  });
 });

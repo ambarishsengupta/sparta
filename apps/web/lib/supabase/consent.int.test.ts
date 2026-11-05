@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { cleanup, discover, newClient, provisionUser, sql } from '../../test-support/stack';
+import { cleanup, discover, lockStack, newClient, provisionUser, sql } from '../../test-support/stack';
 import { validateAcceptance } from '../consent-form';
 import { validateOnboarding } from '../onboarding';
 import { signOut } from './auth-actions';
@@ -29,13 +29,15 @@ describe.skipIf(!stack)('acceptance, pilot notice, onboarding and the unsupporte
   let bobId = '';
   const count = (table: string, user: string, extra = '') => Number(sql(`select count(*) from app.${table} where user_id = :'u' ${extra}`, { u: user }));
 
+  let unlock: (() => void) | undefined;
   beforeAll(async () => {
+    unlock = await lockStack();
     ann = await provisionUser(stack!, email.ann, pw, mailIds);
     bob = await provisionUser(stack!, email.bob, pw, mailIds);
     annId = (await ann.auth.getUser()).data.user!.id;
     bobId = (await bob.auth.getUser()).data.user!.id;
   });
-  afterAll(() => cleanup(stack!, Object.values(email), mailIds));
+  afterAll(async () => { try { await cleanup(stack!, Object.values(email), mailIds); } finally { unlock?.(); } });
 
   it('the versions and the supported countries come from the settings, not from constants', async () => {
     expect(await readVersions(ann)).toEqual({ terms: SETTING('current_terms_version'), privacy: SETTING('current_privacy_version'), notice: SETTING('current_notice_version') });
@@ -127,6 +129,26 @@ describe.skipIf(!stack)('acceptance, pilot notice, onboarding and the unsupporte
     expect((await bob.schema('app').from('items').select('id')).data ?? []).toEqual([]);
     expect((await bob.schema('app').from('items').insert({ ...ITEM, user_id: bobId })).error?.code).toBe('42501');
   });
+
+  // WO-0053 m2: the versions are global settings, so these tests change one for about a second and put it back in a finally block. They run
+  // while `ann` is ready. The other integration suites cannot overlap: every suite holds lockStack() from its first hook to its last.
+  const bump = async (key: string, expected: string) => {
+    const old = SETTING(key);
+    try {
+      sql(`update ops.settings set value = :'v' where key = :'k'`, { v: `${old}-next`, k: key });
+      expect(await loadGateState(ann)).toBe(expected);
+      const d = decideRoute(await loadGateState(ann), '/outfits');
+      expect(d).toEqual({ action: 'redirect', to: expected === 'needs_documents' ? '/accept-terms' : '/pilot-notice' });
+      expect((await ann.schema('app').rpc('has_consent')).data).toBe(false);
+    } finally {
+      sql(`update ops.settings set value = :'v' where key = :'k'`, { v: old, k: key });
+    }
+    expect(SETTING(key)).toBe(old);
+    expect(await loadGateState(ann)).toBe('ready');
+  };
+  it('a new notice version sends a ready person back to the pilot notice, and restoring it lets them in again (m2)', async () => { await bump('current_notice_version', 'needs_pilot_notice'); });
+  it('a new terms version sends a ready person back to accept-terms, and restoring it lets them in again (m2)', async () => { await bump('current_terms_version', 'needs_documents'); });
+  it('a new privacy version also sends a ready person back to accept-terms (m2)', async () => { await bump('current_privacy_version', 'needs_documents'); });
 
   it('sign-out ends both sessions: unauthenticated, no rows', async () => {
     for (const c of [ann, bob]) {

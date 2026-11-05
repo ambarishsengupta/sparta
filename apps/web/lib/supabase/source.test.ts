@@ -64,3 +64,38 @@ describe('the suggestion path reaches only the repository modules of lib/supabas
     expect(users.map((f) => f.slice(root.length))).toEqual(['components/use-repository.ts']);
   });
 });
+
+// WO-0053 (B1): an inventory of every place the app leaves a page or sends a redirect. Each takes a fixed path, a path the gate chose itself,
+// or the one value that comes from a request (`next`), which must pass through safeNextPath first. A new sink makes this list fail.
+describe('every redirect sink takes a fixed path or a checked one', () => {
+  const sources = all.filter((f) => /\.tsx?$/.test(f) && !/\.test\.ts$/.test(f) && !f.includes('/test-support/'));
+  const calls = (pattern: RegExp) => sources.flatMap((f) => [...readFileSync(f, 'utf8').matchAll(pattern)].map((m) => `${f.slice(root.length)}: ${m[0]}`)).sort();
+  it('seeOther(...) is called with a literal path or safeNextPath(...) only', () => {
+    expect(calls(/\bseeOther\((?!path: string)[^\n]*\)/g)).toEqual([
+      "app/auth/callback/route.ts: seeOther(safeNextPath(searchParams.get('next')))",
+      "app/auth/callback/route.ts: seeOther('/sign-in?error=link')",
+      "app/auth/sign-out/route.ts: seeOther('/sign-in')",
+    ].sort());
+  });
+  it('window.location.assign(...) is called with the fixed home path, or with the value finishSignIn has checked', () => {
+    expect(calls(/location\.assign\([^)]*\)/g)).toEqual([
+      "components/auth/AuthForm.tsx: location.assign(to)",
+      "components/consent/AcceptTermsForm.tsx: location.assign('/')",
+      "components/consent/OnboardingForm.tsx: location.assign('/')",
+      "components/consent/PilotNoticeForm.tsx: location.assign('/')",
+    ].sort());
+  });
+  it('router.push / router.replace take fixed paths, and nothing else assigns location or redirects from the request', () => {
+    expect(calls(/router\.(push|replace)\([^)]*\)/g)).toEqual([
+      "components/auth/AuthForm.tsx: router.replace('/check-your-email')",
+      "components/wardrobe/ItemForm.tsx: router.push('/')",
+      "components/wardrobe/ItemForm.tsx: router.push('/')",
+      "components/wardrobe/ItemForm.tsx: router.push('/')",
+    ].sort());
+    expect(calls(/location\.(href|replace)\s*=|location\.replace\(|\bpermanentRedirect\b|import \{[^}]*\bredirect\b[^}]*\} from 'next\/navigation'/g)).toEqual([]);
+  });
+  it('the only NextResponse.redirect is the proxy\'s, and its target is built from the gate decision', () => {
+    expect(calls(/NextResponse\.redirect\([^)]*\)/g)).toEqual(['proxy.ts: NextResponse.redirect(target)']);
+    expect(readFileSync(join(root, 'proxy.ts'), 'utf8')).toContain('const target = new URL(decision.to, request.nextUrl.origin);');
+  });
+});

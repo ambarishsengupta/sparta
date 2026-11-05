@@ -5,7 +5,7 @@ import fc from 'fast-check';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { colourFamily } from '@sparta/taxonomy';
 import { itemInput } from '../../test-support/arbitraries';
-import { cleanup, discover, makeReady, provisionUser, sql } from '../../test-support/stack';
+import { cleanup, discover, lockStack, makeReady, provisionUser, sql } from '../../test-support/stack';
 import { EventLog } from '../events';
 import type { UnlockSuggestion } from '@sparta/rules';
 import type { ItemInput, OutfitInput } from '../repository';
@@ -40,13 +40,15 @@ describe.skipIf(!stack)('SupabaseRepository against the real stack', () => {
   const q = (text: string, vars: Record<string, string>) => sql(text, vars);
   const rowsOf = (table: string, user: string) => Number(q(`select count(*) from app.${table} where user_id = :'u'`, { u: user }));
 
+  let unlock: (() => void) | undefined;
   beforeAll(async () => {
+    unlock = await lockStack();
     [ann, bob, cat] = [await provisionUser(stack!, email.ann, pw, mailIds), await provisionUser(stack!, email.bob, pw, mailIds), await provisionUser(stack!, email.cat, pw, mailIds)];
     [A, B, C] = [new SupabaseRepository(ann), new SupabaseRepository(bob), new SupabaseRepository(cat)];
     annId = (await ann.auth.getUser()).data.user!.id;
     bobId = (await bob.auth.getUser()).data.user!.id;
   });
-  afterAll(() => cleanup(stack!, Object.values(email), mailIds));
+  afterAll(async () => { try { await cleanup(stack!, Object.values(email), mailIds); } finally { unlock?.(); } });
 
   it('before the acceptance steps a signed-in person reads nothing and cannot write, and the switch gives a blocked repository', async () => {
     expect(await A.items.list()).toEqual([]);

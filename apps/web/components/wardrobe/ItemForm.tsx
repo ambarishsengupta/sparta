@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { EventLog, createItemLogged } from '../../lib/events';
 import type { StoredItem } from '../../lib/repository';
+import { canDeleteItems } from '../../lib/supabase/config';
 import { attempt, messageOf } from '../../lib/supabase/errors';
 import { FITS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, conditionBandOf } from '@sparta/taxonomy';
 import { categoryChoices, emptyForm, familyOfHex, formFromItem, subTypeChoices, updateForm, validateForm } from '../../lib/item-form';
@@ -111,7 +112,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
       <div className="row">
         <button type="submit" className="primary" disabled={!repo}>Save item</button>
         <button type="button" onClick={() => router.push('/')}>Cancel</button>
-        {itemId && <button type="button" className="danger" onClick={() => void remove()}>Delete item</button>}
+        {itemId && canDeleteItems() && <button type="button" className="danger" onClick={() => void remove()}>Delete item</button>}
       </div>
     </form>
   );

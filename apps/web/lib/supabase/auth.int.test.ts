@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { INVITE_ONLY_MESSAGE, signInWithEmail, signOut, signUpWithEmail } from './auth-actions';
+import { lockStack } from '../../test-support/stack';
 import { decideRoute } from './gate';
 import { loadGateState } from './gate-state';
 
@@ -53,14 +54,21 @@ describe.skipIf(!stack)('sign-up, confirmation, sign-in, gate state and sign-out
   const rpc = (name: string, args?: object) => client.schema('app').rpc(name, args);
   const setting = async (key: string) => (await rpc('public_setting', { p_key: key })).data as string;
 
-  beforeAll(() => {
+  let unlock: (() => void) | undefined;
+  beforeAll(async () => {
+    unlock = await lockStack();
     client = newClient();
     sql(`insert into ops.invitations (email) values (:'email')`, { email: invited });
   });
   afterAll(async () => {
+    try { await tidy(); } finally { unlock?.(); }
+  });
+  const tidy = async () => {
+    const more = (await (await fetch(`${stack!.mailpit}/api/v1/search?query=${encodeURIComponent(`to:${invited}`)}`)).json()) as { messages: { ID: string }[] };
+    for (const m of more.messages) if (!mailIds.includes(m.ID)) mailIds.push(m.ID); // the messages that a repeated sign-up may have sent
     for (const id of mailIds) await fetch(`${stack!.mailpit}/api/v1/messages`, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ IDs: [id] }) });
     sql(`delete from auth.users where email in (:'a', :'b'); delete from ops.invitations where email in (:'a', :'b')`, { a: invited, b: uninvited });
-  });
+  };
 
   it('refuses an address that is not on the invitation list with the FR-8 message, and creates no account', async () => {
     const out = await signUpWithEmail(newClient(), uninvited, pw, 'http://127.0.0.1:3000/auth/callback');
@@ -97,6 +105,14 @@ describe.skipIf(!stack)('sign-up, confirmation, sign-in, gate state and sign-out
     expect(wrong).toEqual({ ok: false, message: 'That email and password do not match. Check them and try again.' });
     expect(await signInWithEmail(client, invited, pw)).toEqual({ ok: true });
     expect((await client.auth.getSession()).data.session?.user.email).toBe(invited);
+  });
+  it('a sign-up for an address that already has an account gets the same neutral answer as a new one, and creates nothing (m5)', async () => {
+    const before = sql(`select count(*) from auth.users where email = :'email'`, { email: invited });
+    expect(before).toBe('1');
+    expect(await signUpWithEmail(newClient(), invited, pw, 'http://127.0.0.1:3000/auth/callback')).toEqual({ ok: true });
+    expect(await signUpWithEmail(newClient(), invited, `${pw}-other`, 'http://127.0.0.1:3000/auth/callback')).toEqual({ ok: true });
+    expect(sql(`select count(*) from auth.users where email = :'email'`, { email: invited })).toBe(before);
+    expect((await signInWithEmail(newClient(), invited, `${pw}-other`)).ok).toBe(false); // the second password was not set on the account
   });
   it('before acceptance the user sees no wardrobe rows and the app routes to accept-terms', async () => {
     const items = await client.schema('app').from('items').select('id');

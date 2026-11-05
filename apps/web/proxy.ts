@@ -1,14 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { dataBackend } from './lib/supabase/config';
-import { decideRoute } from './lib/supabase/gate';
+import { decideRoute, needsNoSession } from './lib/supabase/gate';
 import { updateSession } from './lib/supabase/proxy-session';
 
 /** Auth, consent and onboarding gating (LLD 9.1; `middleware.ts` before Next 16). With the local backend it does nothing. */
 export async function proxy(request: NextRequest) {
   if (dataBackend() !== 'supabase') return NextResponse.next();
+  // Decided before the session updater is called, so the public pages and signing out still work while the account service is down.
+  if (needsNoSession(request.method, request.nextUrl.pathname)) return NextResponse.next();
   try {
     const { response, state } = await updateSession(request);
-    const decision = decideRoute(state, request.nextUrl.pathname);
+    const decision = decideRoute(state, request.nextUrl.pathname + request.nextUrl.search);
     if (decision.action === 'allow') return response;
     const target = new URL(decision.to, request.nextUrl.origin);
     const redirect = NextResponse.redirect(target);
@@ -22,5 +24,5 @@ export async function proxy(request: NextRequest) {
 
 // Static files are served without a check; every page, route handler and data request goes through the proxy.
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|icon\\.svg|manifest\\.webmanifest|pairing-prior-v1\\.json|unlock-candidates\\.json).*)'],
+  matcher: ['/((?!(?:_next/static|_next/image)(?:/|$)|(?:icon\\.svg|manifest\\.webmanifest|pairing-prior-v1\\.json|unlock-candidates\\.json)$).*)'],
 };

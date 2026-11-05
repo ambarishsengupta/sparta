@@ -2,6 +2,9 @@
 /** `local` keeps the browser-only behaviour with no sign-in; `supabase` turns on sign-in and route gating (WO-0050). */
 export const dataBackend = (): 'local' | 'supabase' => (process.env.NEXT_PUBLIC_DATA_BACKEND === 'supabase' ? 'supabase' : 'local');
 
+/** Deleting an item is refused by design when the data lives in the account (the database grants no delete on items, LLD 4.6), so the button is not shown. */
+export const canDeleteItems = (): boolean => dataBackend() !== 'supabase';
+
 /** Project URL and publishable key from apps/web/.env.local (git-ignored). The app never holds any other Supabase key. */
 export function supabaseEnv(): { url: string; key: string } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

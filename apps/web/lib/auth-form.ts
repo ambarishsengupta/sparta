@@ -17,9 +17,18 @@ export function validateAuth(mode: AuthMode, email: string, pw: string): AuthErr
   return errors;
 }
 
-/** A same-site path to go to after sign-in; anything else (another site, a scheme, a backslash trick) becomes the home page. */
+const unsafeChar = (c: string): boolean => c === '\\' || c.charCodeAt(0) < 0x20 || c.charCodeAt(0) === 0x7f;
+/** A same-site path to go to after sign-in or confirmation; anything else becomes the home page. The answer never starts with two slashes
+ * (a browser reads `//host` as another site), never holds a backslash or a control character, and always keeps the origin of the placeholder. */
 export function safeNextPath(next: string | null | undefined): string {
-  if (!next?.startsWith('/')) return '/';
+  if (!next?.startsWith('/') || [...next].some(unsafeChar)) return '/';
   const base = 'http://sparta.invalid';
-  try { const u = new URL(next, base); return u.origin === base ? u.pathname + u.search : '/'; } catch { return '/'; }
+  try {
+    const u = new URL(next, base);
+    const out = u.pathname + u.search;
+    return u.origin === base && !out.startsWith('//') ? out : '/';
+  } catch { return '/'; }
 }
+
+/** The one place the sign-in form leaves the page: a full navigation to the checked path, so the new cookies are sent with the request. */
+export const finishSignIn = (next: string | null | undefined, assign: (to: string) => void): void => assign(safeNextPath(next));

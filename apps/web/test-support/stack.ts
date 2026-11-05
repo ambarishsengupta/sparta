@@ -1,4 +1,7 @@
 import { execFileSync } from 'node:child_process';
+import { mkdirSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { signUpWithEmail } from '../lib/supabase/auth-actions';
 import { acceptDocuments, acceptPilotNotice, completeOnboarding, readVersions } from '../lib/supabase/consent-actions';
@@ -24,6 +27,21 @@ export function sql(text: string, vars: Record<string, string> = {}): string {
 
 export const newClient = (s: Stack): SupabaseClient => createClient(s.url, s.key, { auth: { persistSession: false, autoRefreshToken: false, flowType: 'pkce' } });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const LOCK = join(tmpdir(), 'sparta-int-suites.lock');
+/** The integration suites share one database, and one of them (consent.int.test.ts) changes the document versions for a moment, which would
+ * stop another suite's user from writing. Each suite therefore holds this lock (a directory, created atomically) from its first hook to its
+ * last, so they run one after the other even though vitest starts the files together. A lock older than 60 seconds (a suite takes about 5) is taken over. Returns the release function. */
+export async function lockStack(): Promise<() => void> {
+  const giveUp = Date.now() + 35_000; // below the 40 s hook timeout, so the message below is the one that is seen
+  for (;;) {
+    try { mkdirSync(LOCK); return () => rmSync(LOCK, { recursive: true, force: true }); } catch {
+      try { if (Date.now() - statSync(LOCK).mtimeMs > 60_000) rmSync(LOCK, { recursive: true, force: true }); } catch { /* released by its owner meanwhile */ }
+      if (Date.now() > giveUp) throw new Error('the integration-suite lock was not released within 35 seconds');
+      await sleep(250);
+    }
+  }
+}
 
 async function confirmationLink(s: Stack, email: string): Promise<{ id: string; link: string }> {
   for (let i = 0; i < 30; i++) {

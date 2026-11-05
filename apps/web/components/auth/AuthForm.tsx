@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
-import { MIN_PW_LENGTH, safeNextPath, validateAuth, type AuthErrors, type AuthMode } from '../../lib/auth-form';
+import { MIN_PW_LENGTH, finishSignIn, validateAuth, type AuthErrors, type AuthMode } from '../../lib/auth-form';
 import { requestPasswordReset, signInWithEmail, signUpWithEmail, type Outcome } from '../../lib/supabase/auth-actions';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 
@@ -43,7 +43,7 @@ export function AuthForm({ mode, next, notice }: { mode: AuthMode; next?: string
     setBusy(false);
     if (!out.ok) return setFailure(out.message);
     if (mode === 'sign-up') router.replace('/check-your-email');
-    else if (mode === 'sign-in') { router.replace(safeNextPath(next)); router.refresh(); }
+    else if (mode === 'sign-in') finishSignIn(next, (to) => window.location.assign(to));
     else setSent(true);
   }
 

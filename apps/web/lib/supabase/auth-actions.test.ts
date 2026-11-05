@@ -61,3 +61,21 @@ describe('the auth actions', () => {
     expect(mock.signOut).toHaveBeenCalledWith({ scope: 'local' });
   });
 });
+
+describe('sign-up of an address that already has an account (m5)', () => {
+  it('gets the same neutral answer as a new sign-up, so the screen does not say who has an account', async () => {
+    const auth = { signUp: async () => ({ error: { message: 'User already registered', status: 422, code: 'user_already_exists' } }) } as never;
+    expect(await signUpWithEmail({ auth }, 'a@b.co', 'x'.repeat(12), 'u')).toEqual({ ok: true });
+  });
+  it('only that one code is neutral: the invitation refusal, a weak password and a rate limit still say what they are', async () => {
+    const fail = (error: object) => signUpWithEmail({ auth: { signUp: async () => ({ error }) } as never }, 'a@b.co', 'x'.repeat(12), 'u');
+    expect(await fail({ message: INVITE_ONLY_MESSAGE, status: 403, code: 'unexpected_failure' })).toEqual({ ok: false, message: INVITE_ONLY_MESSAGE });
+    expect((await fail({ code: 'weak_password', message: 'x', status: 422 })).ok).toBe(false);
+    expect((await fail({ code: 'over_email_send_rate_limit', message: 'x', status: 429 })).ok).toBe(false);
+    expect((await fail({ code: 'email_exists', message: 'x', status: 422 })).ok).toBe(false);
+  });
+  it('the other actions are not affected: a sign-in or reset error with that code is still an error', async () => {
+    const auth = { signInWithPassword: async () => ({ error: { code: 'user_already_exists', message: 'x', status: 422 } }) } as never;
+    expect((await signInWithEmail({ auth }, 'a@b.co', 'x')).ok).toBe(false);
+  });
+});

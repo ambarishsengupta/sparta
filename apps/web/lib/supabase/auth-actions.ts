@@ -21,8 +21,12 @@ const run = async (call: () => Promise<{ error: { message?: string; code?: strin
   try { const { error } = await call(); return error ? { ok: false, message: describeAuthError(error) } : { ok: true }; } catch { return { ok: false, message: GENERIC }; }
 };
 
+/** An address that already has an account gets the same answer as a new one (the "check your email" page), so the screen does not say who has an account. */
 export const signUpWithEmail = (c: AuthClient, email: string, pw: string, redirectTo: string) =>
-  run(() => c.auth.signUp({ email: normaliseEmail(email), password: pw, options: { emailRedirectTo: redirectTo } }));
+  run(async () => {
+    const { error } = await c.auth.signUp({ email: normaliseEmail(email), password: pw, options: { emailRedirectTo: redirectTo } });
+    return { error: error?.code === 'user_already_exists' ? null : error };
+  });
 export const signInWithEmail = (c: AuthClient, email: string, pw: string) =>
   run(() => c.auth.signInWithPassword({ email: normaliseEmail(email), password: pw }));
 /** Always `ok` for an address the service does not know, so the screen cannot be used to find out who has an account. */

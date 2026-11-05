@@ -219,6 +219,13 @@ These come from the product owner's instructions and from mistakes already made 
 8. **Short reports.** Findings first, in plain words; detail only on request.
 9. **No unrequested scope.** A better idea goes into the retro or to the owner, not into the diff.
 10. **Agents never create accounts or enter keys, tokens or passwords** (section 4.2); a missing account stops the work with `waiting-for-owner`.
+11. **Background work is owned, bounded and verified, or it does not run.** (Added on the product owner's instruction of 2026-11-05 after a wait loop with a wrong success text ran for about a day and stalled the build.)
+    - Before starting anything in the background (a watcher, a dev server, a build, a subagent) the starter names what it is waiting for and sets a hard timeout (default 10 minutes; at most 30). A wait with no timeout is not allowed.
+    - **Readiness is checked with the tool's own status command** (`supabase status`, `docker ps`, `curl` to the health URL, an exit code), never by searching for a text line in a log. A check must also cover the failure outcomes (error, crash, timeout), not only success.
+    - If the awaited thing is already ready, or its check cannot match, the wait is cancelled at once; a wait that has produced no event after its timeout is cancelled and reported, not re-armed silently.
+    - **Sweep.** After every work order, before every report to the owner and before stopping, run `bash workflow/gates/sweep.sh` (use `--kill` for strays). It lists dev servers, wait loops, log tails, long sleeps, listening web ports, running containers and scratch clones. Only the local database stack and the Colima VM may stay up, and only while database work is planned; stop them (`supabase stop`, `colima stop`) when the build pauses.
+    - **Makers and checkers stop what they start**: a server or watcher started for a demo or a test is stopped before the report, and the report says so. An agent that leaves a server running has not finished the work order.
+    - The orchestrator checks the agent list (`ListAgents`) and the scheduled tasks at each sweep and stops anything that has no work order behind it; a resume trigger that has fired or is no longer needed is deleted, not left disabled.
 
 ## 11. Risks to the workflow itself
 
@@ -240,4 +247,5 @@ These come from the product owner's instructions and from mistakes already made 
 | --- | --- | --- |
 | Verification (Opus, extra effort): workflow and engine documents | *first report received 2026-11-04; fixes applied, re-check pending* | |
 | Approval (Opus): this workflow | 0.2 rejected 2026-11-04 (1 blocker, 10 conditions). 0.3 approved with conditions on 2026-11-04 by the Opus workflow approver (second review): no blocker; 13 conditions. Condition 3 (LLD 7.8, 7.9 and HLD wording, SA-signed) must be applied before R4 G1. All the others, 1, 2 and 4 to 13, must be applied before R0 G1. Each applied change goes through G8. | 2026-11-04 |
+| Rule 11 (background work, sweep) added on the product owner's instruction of 2026-11-05 | applied by the orchestrator; the workflow approver's G8 check of this addition is pending | 2026-11-05 |
 | Product owner | *pending* | |

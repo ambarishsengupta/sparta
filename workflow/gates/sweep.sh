@@ -2,12 +2,13 @@
 # sweep.sh: list (and optionally stop) background work that has no owner.
 # Usage: bash workflow/gates/sweep.sh            list only, exit 1 if strays are found
 #        bash workflow/gates/sweep.sh --kill     stop strays, then list again
-# Strays: dev/production web servers (next start/dev), wait loops (until grep ...), tail -f on logs,
+# Strays: dev/production web servers (next start/dev), ANY wait loop (until ..., while true, pgrep -f polling: note `pgrep -f X`
+# matches its own shell, so such a loop never ends), tail -f on logs,
 # long sleeps, node/vitest runs older than 30 minutes. The local Supabase containers and the Colima VM
 # are NOT strays (the database work needs them): they are only listed.
 set -uo pipefail
-PAT='next start|next dev|until grep|tail -f|sleep [0-9]{3,}|vitest --watch|inotifywait'
-list() { ps -axo pid,etime,command | grep -E "$PAT" | grep -vE "grep -E|sweep.sh" || true; }
+PAT='next start|next dev|until |while true|while \[|tail -f|sleep [0-9]{3,}|vitest --watch|inotifywait|pgrep -f'
+list() { ps -axo pid,etime,command | grep -E "$PAT" | grep -vE "grep -E|sweep.sh|ps -axo" | cut -c1-160 || true; }
 if [ "${1:-}" = "--kill" ]; then
   list | awk '{print $1}' | while read -r p; do [ -n "$p" ] && kill "$p" 2>/dev/null; done
   sleep 1

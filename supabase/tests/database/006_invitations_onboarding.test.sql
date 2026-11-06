@@ -21,7 +21,7 @@ select throws_ok($$ insert into ops.invitations (email) values ('Mixed@Case.test
 -- workflow/evidence/R2/NOTES.md.
 select ok(exists (select 1 from pg_policies where schemaname = 'ops' and tablename = 'invitations' and cmd = 'SELECT'
   and roles = array['supabase_auth_admin']::name[] and qual = 'true'), 'invitations has a select policy for supabase_auth_admin');
-select is((select count(*) from pg_policies where schemaname = 'ops'), 1::bigint, 'that is the only policy in ops');
+select is((select count(*) from pg_policies where schemaname = 'ops' and tablename = 'invitations'), 1::bigint, 'that is the only policy on ops.invitations (the three on ops.worker_heartbeat are tested in 009)');
 select ok(not (select rolbypassrls from pg_roles where rolname = 'supabase_auth_admin'), 'supabase_auth_admin does not bypass RLS, so the policy is what lets the hook read');
 select is(pg_temp.run_as(null, 'anon', $$ select ops.check_invitation('{}') $$), 'err=42501', 'anon cannot run the hook');
 select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', $$ select ops.check_invitation('{}') $$), 'err=42501', 'a signed-in user cannot run the hook');

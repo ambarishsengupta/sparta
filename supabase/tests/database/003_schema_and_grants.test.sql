@@ -2,14 +2,14 @@
 -- Everything is derived from the catalog, so a new table or function that skips RLS, a grant review or search_path fails here.
 begin;
 \ir helpers.inc
-select count(*) * 2 + 47 as n from pg_temp.app_tables \gset
+select count(*) + 63 as n from pg_temp.app_tables \gset
 select plan(:n);
 
--- ---- the tables exist (exactly the consumer tables of R2; jobs, receipts and analytics_events belong to later releases) ----
+-- ---- the tables exist (the consumer tables of R2 and app.jobs of R5b; receipts and analytics_events belong to later releases) ----
 select is((select array_agg(tbl order by tbl) from pg_temp.app_tables),
-  array['collections','consent_records','document_acceptances','item_collections','item_features','item_tags','items','outfit_items',
+  array['collections','consent_records','document_acceptances','item_collections','item_features','item_tags','items','jobs','outfit_items',
         'outfit_logs','outfit_plans','outfits','profiles','purchases','suggestion_feedback','tags','wishlist_entries'],
-  'the app schema holds exactly the R2 tables');
+  'the app schema holds exactly the R2 tables and app.jobs (R5b)');
 select has_table('ops', t, 'ops.' || t || ' exists') from unnest(array['settings','invitations','daily_counts']) t;
 
 -- ---- deny by default: RLS enabled AND forced everywhere, per table -----------------------------------------------------
@@ -23,12 +23,12 @@ select is_empty($$ select tbl from pg_temp.app_tables where tbl not in (select t
 select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname in ('app', 'ops', 'catalog')
   and (roles && array['public', 'anon']::name[]) $$, 'no policy applies to public or anon');
 select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname = 'app' and permissive <> 'PERMISSIVE' $$, 'app policies are all permissive (no hidden restrictive mix)');
-select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname = 'app'
-  and (coalesce(qual, '') || coalesce(with_check, '') ) !~ 'auth\.uid' $$, 'every app policy is tied to auth.uid()');
-select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname = 'app'
+select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname = 'app' and roles = array['authenticated']::name[]
+  and (coalesce(qual, '') || coalesce(with_check, '') ) !~ 'auth\.uid' $$, 'every app policy for authenticated is tied to auth.uid() (the worker policies are tested in 009)');
+select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname = 'app' and roles = array['authenticated']::name[]
   and tablename not in ('profiles', 'consent_records', 'document_acceptances')
   and (coalesce(qual, '') || coalesce(with_check, '')) !~ 'has_consent' $$, 'every gated app policy calls has_consent');
-select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname = 'app'
+select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname = 'app' and roles = array['authenticated']::name[]
   and tablename not in ('profiles', 'consent_records', 'document_acceptances')
   and (coalesce(qual, '') || coalesce(with_check, '')) !~ 'current_role' $$, 'every gated app policy checks the consumer role');
 select is_empty($$ select tablename || '.' || policyname from pg_policies where schemaname = 'app'
@@ -60,7 +60,7 @@ select is_empty($$ select tbl from pg_temp.app_tables where tbl not in (select t
 -- each privilege has a matching policy, and no policy exists without its privilege
 select is_empty($$ select w.tbl || ' ' || o.op from want w cross join (values ('select', 'SELECT'), ('insert', 'INSERT'), ('update', 'UPDATE'), ('delete', 'DELETE')) o(op, cmd)
   where (case o.op when 'select' then w.sel when 'insert' then w.ins when 'update' then w.upd else w.del end)
-  is distinct from exists (select 1 from pg_policies p where p.schemaname = 'app' and p.tablename = w.tbl and p.cmd = o.cmd) $$,
+  is distinct from exists (select 1 from pg_policies p where p.schemaname = 'app' and p.tablename = w.tbl and p.cmd = o.cmd and p.roles = array['authenticated']::name[]) $$,
   'every granted operation has a policy and every policy has its grant');
 select is_empty($$ select tbl from pg_temp.app_tables where not has_table_privilege('service_role', ('app.' || tbl)::regclass, 'select,insert,update,delete') $$,
   'service_role holds select, insert, update and delete on every app table');
@@ -84,7 +84,7 @@ select is_empty($$ select name from fn where has_function_privilege('anon', oid,
   'anon can execute nothing but app.supported_countries');
 select ok(has_function_privilege('anon', 'app.supported_countries()', 'execute'), 'anon can execute app.supported_countries');
 select is((select array_agg(name order by name) from fn where has_function_privilege('authenticated', oid, 'execute')),
-  array['app.accept_documents','app.complete_onboarding','app.current_role','app.delete_my_account','app.export_my_data','app.has_consent','app.public_setting','app.supported_countries',
+  array['app.accept_documents','app.complete_onboarding','app.current_role','app.delete_my_account','app.export_my_data','app.has_consent','app.job_input_ok','app.public_setting','app.recent_job_count','app.storage_used','app.supported_countries',
         'catalog.colour_family','catalog.rgb_hex','catalog.rgb_to_lab','catalog.set_colour_fields','catalog.srgb_lin'],
   'authenticated can execute exactly the documented functions');
 select is_empty($$ select name from fn where is_trigger and name like 'app.%' and (has_function_privilege('authenticated', oid, 'execute') or has_function_privilege('anon', oid, 'execute')) $$,

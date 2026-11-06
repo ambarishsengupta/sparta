@@ -7,7 +7,8 @@ import { randomBytes } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { colourFamily } from '@sparta/taxonomy';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { lockStack } from '../../apps/web/test-support/stack';
 import taxonomy from '../../packages/taxonomy/src/taxonomy.json';
 import '../../supabase/scripts/seed.test';
 
@@ -140,6 +141,10 @@ function session(input: string, opts: { user?: string; timeoutMs?: number; env?:
 
 const passwordVariable = 'SPARTA_WORKER_DB_PASSWORD';
 describe.skipIf(!running)('worker_role: the local password script and the atomic claim (WO-0070)', () => {
+  // These tests assert an empty job queue and the real-stack photo tests insert jobs: take the same lock as every integration suite (found in the WO-0073 report).
+  let release: () => void = () => {};
+  beforeAll(async () => { release = await lockStack(); }, 120_000);
+  afterAll(() => release());
   const raceUser = '5b5b5b5b-0070-4070-8070-000000000070';
   const cleanup = () => sql(`delete from auth.users where id = '${raceUser}'`);
   const mkJobs = (n: number) => sql(`insert into auth.users (id, email) values ('${raceUser}', 'race@example.test') on conflict do nothing;

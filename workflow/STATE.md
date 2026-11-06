@@ -1,6 +1,6 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-06 (R5b: WO-0072 worker committed, gate PASS verified; WO-0073 next)
+Updated: 2026-11-06 (R5b complete and merged to main; R6 next)
 Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
@@ -74,3 +74,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-06: WO-0071 committed (gate green). The independent security review of its routes: pass 1 static only, pass 2 INCOMPLETE (its output was cut off by a safety classifier while writing attack scripts; I did not reword to evade it). OPEN GAP for the owner: penetration-test /api/worker/signed-urls and /api/account/purge-storage before any hosted deployment. Confirmed finding: limiter counts before token check (worker DoS): fix in WO-0074 with MINOR-1,3,4,5. Then WO-0072 (worker) and WO-0073 (add-by-photo).
 - 2026-11-06: WO-0074 committed (5f6051f). WO-0072 worker service launched (Sonnet maker). Next: WO-0073, then R5b Spec QC, security review, retro, goal, merge.
 - 2026-11-06: WO-0072 committed (worker service, 141 pytest, 30/30 mutants). Next: WO-0073 add-by-photo, then R5b Spec QC + security review (worker route + purge route pen-test still open), retro, goal, merge.
+- 2026-11-06: R5b complete (WO-0070..0075, checker PASS, retro R5b, goal R5b-photo-path). Merged to main. Next: R6 (receipts OCR, catalogue, purchases/wishlist). Open: pen-test of worker + purge routes before hosting.

@@ -15,7 +15,7 @@ if [ "${1:-}" = "--kill" ]; then
 fi
 # Any agent-launched shell command still running after 30 minutes is a stray (a `cat` waiting on stdin, a wait loop, a hung test).
 # Agent shells are the processes whose command starts with "/bin/zsh -c source ...shell-snapshots".
-old_shells() { ps -axo pid,etime,command | awk '$3 == "/bin/zsh" && $4 == "-c" && /shell-snapshots/ && ($2 ~ /^[0-9]+-/ || $2 ~ /^[0-9]+:[0-9]+:[0-9]+$/ || $2 ~ /^([3-9][0-9]|[1-9][0-9][0-9]+):/) {print $1, $2}'; }
+old_shells() { ps -axo pid,etime,command | awk '$3 == "/bin/zsh" && $4 == "-c" && /shell-snapshots/ && ($2 ~ /^[0-9]+-/ || $2 ~ /^(0[1-9]|[1-9][0-9]+):[0-9][0-9]:[0-9][0-9]$/ || $2 ~ /^[3-5][0-9]:[0-9][0-9]$/) {print $1, $2}'; }
 if [ "${1:-}" = "--kill" ]; then
   old_shells | while read -r p e; do pkill -P "$p" 2>/dev/null; kill "$p" 2>/dev/null; done
 fi

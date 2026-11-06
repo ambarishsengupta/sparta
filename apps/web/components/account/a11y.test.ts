@@ -125,7 +125,7 @@ describe('Leave the pilot (FR-63, FR-66)', () => {
   });
   it('the form code: the password is asked again through leaveThePilot, the error is announced and linked to the field, cookies are swept, then only /goodbye is opened', () => {
     const src = read('./LeaveForm.tsx');
-    expect(src).toContain('leaveThePilot(createBrowserSupabase(), pw)');
+    expect(src).toContain('leaveThePilot(createBrowserSupabase(), pw, () => purgeMyStorage())');   // WO-0071: the files are removed first, through the server
     expect(src).toContain('role="alert"');
     expect(src).toContain("aria-describedby={failure ? 'leave-error' : undefined}");
     expect(src).toContain('pwRef.current?.focus()');

@@ -1,12 +1,14 @@
 // WO-0040 / CC4: (1) db_tests.sh behaves (stubbed supabase CLI), (2) the generated-seed test, (3) the live-database checks:
 // SQL colour_family equals the TypeScript one on a grid, and the seeded lookups equal the taxonomy JSON. Part (3) is skipped,
 // with a message, when the local Supabase stack is not running. It talks to the local database container only.
-import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { chmodSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { colourFamily } from '@sparta/taxonomy';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { lockStack } from '../../apps/web/test-support/stack';
 import taxonomy from '../../packages/taxonomy/src/taxonomy.json';
 import '../../supabase/scripts/seed.test';
 
@@ -105,4 +107,121 @@ describe.skipIf(!running)('local database agrees with the TypeScript taxonomy', 
     for (let i = 0; i < 2; i++) sql('', readFileSync('supabase/seed/lookups.sql', 'utf8'));
     expect(sql(fingerprint)).toEqual(before);
   });
+});
+
+// ---- WO-0070 (R5b): no password in a migration; the local password script; the claim race with real worker_role connections ----
+describe('migrations never carry a database password (WO-0070)', () => {
+  const files = readdirSync('supabase/migrations').filter((f) => f.endsWith('.sql'));
+  it.each(files)('%s sets no role password', (f) => {
+    const text = readFileSync(`supabase/migrations/${f}`, 'utf8');
+    expect(/(create|alter)\s+(role|user)[^;]*\bpassword\b/is.test(text)).toBe(false);
+    expect(/\bpassword\s*(=|')\s*'[^']{6,}'/i.test(text.replace(/--.*$/gm, ''))).toBe(false);
+  });
+  it('the worker_role migration says where the password comes from', () => {
+    expect(readFileSync('supabase/migrations/20261106110100_wo0070_worker_role.sql', 'utf8')).toContain('set-worker-password.sh');
+  });
+});
+
+/** Run a script in a real psql session (a separate backend) in the database container; hard time limit, killed on expiry. */
+function session(input: string, opts: { user?: string; timeoutMs?: number; env?: Record<string, string> } = {}): Promise<{ code: number | null; out: string; err: string; ms: number }> {
+  return new Promise((resolve) => {
+    const t0 = Date.now();
+    const envArgs = Object.entries(opts.env ?? {}).flatMap(([k, v]) => ['-e', `${k}=${v}`]);
+    const user = opts.user ?? 'postgres';
+    const args = ['exec', '-i', ...envArgs, container, 'psql', ...(user === 'postgres' ? [] : ['-h', '127.0.0.1']), '-U', user, '-d', 'postgres', '-At', '-q', '-v', 'ON_ERROR_STOP=1'];
+    const child = spawn('docker', args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    let out = ''; let err = '';
+    child.stdout.on('data', (d) => { out += String(d); });
+    child.stderr.on('data', (d) => { err += String(d); });
+    const timer = setTimeout(() => child.kill('SIGKILL'), opts.timeoutMs ?? 40_000);
+    child.on('close', (code) => { clearTimeout(timer); resolve({ code, out, err, ms: Date.now() - t0 }); });
+    child.stdin.end(input);
+  });
+}
+
+const passwordVariable = 'SPARTA_WORKER_DB_PASSWORD';
+describe.skipIf(!running)('worker_role: the local password script and the atomic claim (WO-0070)', () => {
+  // These tests assert an empty job queue and the real-stack photo tests insert jobs: take the same lock as every integration suite (found in the WO-0073 report).
+  let release: () => void = () => {};
+  beforeAll(async () => { release = await lockStack(); }, 120_000);
+  afterAll(() => release());
+  const raceUser = '5b5b5b5b-0070-4070-8070-000000000070';
+  const cleanup = () => sql(`delete from auth.users where id = '${raceUser}'`);
+  const mkJobs = (n: number) => sql(`insert into auth.users (id, email) values ('${raceUser}', 'race@example.test') on conflict do nothing;
+    insert into app.jobs (user_id, type, input) select '${raceUser}', 'photo', jsonb_build_object('path', '${raceUser}/' || g || '.webp') from generate_series(1, ${n}) g`, undefined);
+  const claimScript = (sleepSeconds: number) => `begin;\nselect 'claimed:' || id from app.claim_job();\nselect 'at:' || extract(epoch from clock_timestamp());\nselect pg_sleep(${sleepSeconds});\ncommit;\n`;
+  /** The seconds between the first and the last claim to return: a claim that waits for another session's row lock shows up as the length of that lock. */
+  const claimSpread = (outs: string[]) => { const t = outs.flatMap((o) => o.split('\n').filter((l) => l.startsWith('at:')).map((l) => Number(l.slice(3)))); return Math.max(...t) - Math.min(...t); };
+  const claimedIds = (outs: string[]) => outs.flatMap((o) => o.split('\n').filter((l) => l.startsWith('claimed:')).map((l) => Number(l.slice(8))));
+
+  it('the script refuses a missing or weak password and sets and clears a real one (never printed, never in a file)', () => {
+    const run = (env: Record<string, string>, ...args: string[]) => spawnSync('bash', ['supabase/scripts/set-worker-password.sh', ...args], { encoding: 'utf8', env: { PATH: process.env.PATH ?? '', ...env }, timeout: 60_000 });
+    const withValue = (value: string) => ({ [passwordVariable]: value });   // test values only: a short one, an injection attempt, a random one
+    expect(run({}).status).toBe(2);
+    expect(run(withValue('short')).status).toBe(2);
+    expect(run(withValue("abcdefghijklmnop'; drop table x; --")).status).toBe(2);
+    const generated = randomBytes(16).toString('hex');
+    const ok = run(withValue(generated));
+    try {
+      expect(ok.status).toBe(0);
+      expect(ok.stdout + ok.stderr).not.toContain(generated);
+      expect(sql("select rolpassword is not null and rolpassword like 'SCRAM-SHA-256$%' from pg_authid where rolname = 'worker_role'")).toEqual([['t']]);
+    } finally {
+      expect(run({}, '--clear').status).toBe(0);
+    }
+    expect(sql("select rolpassword is null from pg_authid where rolname = 'worker_role'")).toEqual([['t']]);
+  }, 120_000);
+
+  it('a real worker_role login: reads jobs, cannot read other tables, cannot become another role', async () => {
+    const r = await session("select current_user || '|' || session_user;\nselect 'jobs:' || count(*) from app.jobs;\n", { user: 'worker_role' });
+    expect(r.out).toContain('worker_role|worker_role');
+    expect(r.out).toMatch(/jobs:\d+/);
+    for (const q of ['select 1 from app.items', 'select 1 from app.profiles', 'select 1 from auth.users', 'select 1 from storage.objects', 'set role postgres', 'set role service_role', 'set role authenticated']) {
+      const x = await session(`${q};\n`, { user: 'worker_role' });
+      expect([q, x.code === 0 ? 'allowed' : 'refused', x.err.includes('permission denied')]).toEqual([q, 'refused', true]);
+    }
+  }, 120_000);
+
+  it('two real connections claiming at the same time never get the same job (2 jobs, 2 sessions)', async () => {
+    cleanup();
+    try {
+      expect(sql("select count(*) from app.jobs where status = 'queued'")).toEqual([['0']]);
+      mkJobs(2);
+      const [a, b] = await Promise.all([session(claimScript(4), { user: 'worker_role' }), session(claimScript(4), { user: 'worker_role' })]);
+      expect([a.code, b.code]).toEqual([0, 0]);
+      const ids = claimedIds([a.out, b.out]);
+      expect(ids).toHaveLength(2);
+      expect(new Set(ids).size).toBe(2);
+      expect(claimSpread([a.out, b.out])).toBeLessThan(2);   // skip locked: the second claim does not wait for the first session's lock (4 s)
+      expect(sql(`select status, attempts from app.jobs where user_id = '${raceUser}' order by id`)).toEqual([['running', '1'], ['running', '1']]);
+    } finally { cleanup(); }
+  }, 120_000);
+
+  it('two real connections, one job: exactly one claims it and the other gets nothing and is not made to wait', async () => {
+    cleanup();
+    try {
+      expect(sql("select count(*) from app.jobs where status = 'queued'")).toEqual([['0']]);
+      mkJobs(1);
+      const [a, b] = await Promise.all([session(claimScript(4), { user: 'worker_role' }), session(claimScript(4), { user: 'worker_role' })]);
+      expect([a.code, b.code]).toEqual([0, 0]);
+      expect(claimedIds([a.out, b.out])).toHaveLength(1);
+      expect(claimSpread([a.out, b.out])).toBeLessThan(2);   // the loser is told 'nothing' at once instead of waiting for the winner's lock (4 s)
+      expect(sql(`select status, attempts from app.jobs where user_id = '${raceUser}'`)).toEqual([['running', '1']]);
+    } finally { cleanup(); }
+  }, 120_000);
+
+  it('five real connections (the connection limit of the role), five jobs: five different jobs, each claimed once', async () => {
+    cleanup();
+    try {
+      expect(sql("select count(*) from app.jobs where status = 'queued'")).toEqual([['0']]);
+      mkJobs(5);
+      const results = await Promise.all(Array.from({ length: 5 }, () => session(claimScript(4), { user: 'worker_role' })));
+      expect(results.map((r) => r.code)).toEqual([0, 0, 0, 0, 0]);
+      const ids = claimedIds(results.map((r) => r.out));
+      expect(ids).toHaveLength(5);
+      expect(new Set(ids).size).toBe(5);
+      expect(claimSpread(results.map((r) => r.out))).toBeLessThan(2);
+      expect(sql(`select count(*) filter (where attempts = 1), count(*) from app.jobs where user_id = '${raceUser}' and status = 'running'`)).toEqual([['5', '5']]);
+    } finally { cleanup(); }
+  }, 180_000);
 });

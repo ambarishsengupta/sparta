@@ -121,6 +121,8 @@ create function pg_temp.tpl(p_tbl text, p_uid uuid, p_n int) returns text langua
       pg_temp.oid('plan', p_uid, p_n), p_uid, pg_temp.oid('outfit', p_uid, 0), '2026-12-01')
     when 'outfit_logs' then format('insert into app.outfit_logs (id, user_id, outfit_id) values (%L, %L, %L)',
       pg_temp.oid('log', p_uid, p_n), p_uid, pg_temp.oid('outfit', p_uid, 0))
+    when 'jobs' then format('insert into app.jobs (user_id, type, input) values (%L, %L, jsonb_build_object(%L, %L))',
+      p_uid, 'photo', 'path', p_uid::text || '/' || pg_temp.oid('job', p_uid, p_n)::text || '.webp')
     when 'suggestion_feedback' then format('insert into app.suggestion_feedback (id, user_id, occasion, accepted, engine_config) values (%L, %L, %L, true, %L)',
       pg_temp.oid('fb', p_uid, p_n), p_uid, 'Casual', 'gm1;emb0;pair0;ul:fb;w:base')
   end $f$;
@@ -138,7 +140,7 @@ begin
     values (pg_temp.oid('item', p_uid, n), p_uid, 'Spare ' || n, 'Tops', 'Shirt', 1, 2, 3, 'manual');
   end loop;
   foreach t in array array['items', 'collections', 'tags', 'outfits', 'item_features', 'purchases', 'wishlist_entries',
-                           'item_collections', 'item_tags', 'outfit_items', 'outfit_plans', 'outfit_logs', 'suggestion_feedback'] loop
+                           'item_collections', 'item_tags', 'outfit_items', 'outfit_plans', 'outfit_logs', 'suggestion_feedback', 'jobs'] loop
     execute pg_temp.tpl(t, p_uid, 0);
   end loop;
 end $f$;
@@ -176,4 +178,4 @@ insert into want values
   ('wishlist_entries', true, true, true, true), ('collections', true, true, true, true), ('tags', true, true, true, true),
   ('item_collections', true, true, false, true), ('item_tags', true, true, false, true), ('outfits', true, true, true, true),
   ('outfit_items', true, true, true, true), ('outfit_plans', true, true, true, true), ('outfit_logs', true, true, false, true),
-  ('suggestion_feedback', true, true, false, false);
+  ('suggestion_feedback', true, true, false, false), ('jobs', true, true, false, false);

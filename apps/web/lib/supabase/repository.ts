@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Collection, FeedbackSink, ItemCollection, ItemInput, OutfitInput, SavedOutfit, StoredItem, WardrobeRepository, WishlistEntry, WishlistInput } from '../repository';
 import { RepositoryError, asRepositoryError, classify } from './errors';
 import {
-  ITEM_SELECT, OUTFIT_SELECT, WISHLIST_SELECT, feedbackRow, itemFromRow, itemPatch, itemRow, outfitFromRow, outfitPatch, outfitRows, wishlistFromRow, wishlistPatch, wishlistRow,
+  ITEM_SELECT, OUTFIT_SELECT, WISHLIST_SELECT, featuresRow, feedbackRow, itemFromRow, itemPatch, itemRow, outfitFromRow, outfitPatch, outfitRows, wishlistFromRow, wishlistPatch, wishlistRow,
 } from './mapping';
 
 type Row = Record<string, unknown>;
@@ -31,6 +31,7 @@ export class SupabaseRepository implements WardrobeRepository {
     const base = this.table<StoredItem, ItemInput>('items', ITEM_SELECT, itemFromRow, (n, uid) => itemRow(n, uid, this.now()), itemPatch);
     this.items = {
       ...base,
+      create: (n) => this.createItem(n, base),
       archive: (id, reason) => this.setItem(id, { status: 'archived', archive_reason: reason, archived_at: this.now() }),
       restore: (id) => this.setItem(id, { status: 'active', archive_reason: null, archived_at: null }),
       remove: () => unsupported('Deleting an item is not available yet. Archive it instead: it leaves your wardrobe and your suggestions.'),
@@ -48,6 +49,22 @@ export class SupabaseRepository implements WardrobeRepository {
   }
 
   private app() { return this.client.schema('app'); }
+
+  /**
+   * The item row, then (only for an item added by photo whose result carried features) its `item_features` row. The features only order swap
+   * choices, so a failure to store them never undoes or fails the save: the item exists and is returned (WO-0073; PostgREST has no transaction here).
+   */
+  private async createItem(input: ItemInput, base: Collection<StoredItem, ItemInput>): Promise<StoredItem> {
+    const item = await base.create(input);
+    const features = input.photo?.features;
+    if (features) {
+      try {
+        const row = featuresRow(item.id, await this.uid(), features);
+        if (row) take((await this.app().from('item_features').insert(row)) as Answer, true);
+      } catch { /* the item is saved; only the shape numbers are missing */ }
+    }
+    return item;
+  }
 
   /** The signed-in person's id, from the session the browser already holds. Row-level security checks it again on every write. */
   private async uid(): Promise<string> {

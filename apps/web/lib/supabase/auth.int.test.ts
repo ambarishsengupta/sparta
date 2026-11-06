@@ -43,7 +43,7 @@ async function confirmationLink(email: string): Promise<{ id: string; link: stri
   throw new Error('no confirmation email arrived in Mailpit');
 }
 
-vi.setConfig({ testTimeout: 40_000, hookTimeout: 40_000 });
+vi.setConfig({ testTimeout: 40_000, hookTimeout: 120_000 }); // the hook waits for the shared lock (stack.ts lockStack): six suites queue
 describe.skipIf(!stack)('sign-up, confirmation, sign-in, gate state and sign-out against the real stack', () => {
   const run = randomUUID().slice(0, 8);
   const invited = `it-${run}-in@example.test`;

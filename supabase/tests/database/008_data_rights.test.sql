@@ -4,7 +4,7 @@
 begin;
 \ir helpers.inc
 select count(*) as nt from pg_temp.app_tables \gset
-select plan(:nt * 7 + 207);
+select plan(:nt * 11 + 209);
 
 select pg_temp.mk_user(pg_temp.ua());
 select pg_temp.mk_user(pg_temp.ub());
@@ -32,7 +32,7 @@ select is((select array_agg(conrelid::regclass::text || ':' || confdeltype::text
            where contype = 'f' and (confrelid = 'auth.users'::regclass or confrelid::regclass::text like 'app.%') and confdeltype <> 'c'),
   array['auth.scim_users:n'], 'the only non-cascading key into auth.users or app.* is auth.scim_users (SET NULL; SCIM is not used)');
 select is((select array_agg(c.relname::text order by c.relname) from pg_class c where c.relnamespace = 'ops'::regnamespace and c.relkind in ('r', 'p')),
-  array['daily_counts', 'invitations', 'settings'], 'ops holds exactly the three tables this suite checks for personal data');
+  array['daily_counts', 'invitations', 'settings', 'worker_heartbeat'], 'ops holds exactly the three tables this suite checks for personal data and the worker heartbeat (worker id, times, counts: no personal data)');
 select is((select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'daily_counts'),
   array['day', 'metric', 'n'], 'ops.daily_counts has a day, a metric and a number: no column can hold a person');
 select is_empty($$ select 1 from pg_constraint where contype = 'f' and conrelid::regclass::text in ('ops.settings', 'ops.invitations', 'ops.daily_counts') $$, 'no ops table points at a user');
@@ -129,8 +129,8 @@ select is((select count(*) from exp_spoof s, jsonb_each(s.doc) e, jsonb_array_el
 -- delete_my_account is the one exception here (it has its own tests below: D, who deletes with claims naming B).
 create temp table fn0 as select p.oid::regprocedure::text as sig, n.nspname::text as sch, p.proname::text as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname in ('app', 'ops', 'catalog') and p.pronargs = 0 and p.prorettype <> 'trigger'::regtype and p.proname <> 'delete_my_account';
-select is((select array_agg(sch || '.' || name order by sch, name) from fn0), array['app.current_role', 'app.export_my_data', 'app.has_consent', 'app.supported_countries'],
-  'the functions without arguments are the four known ones (a new one must be added to this check on purpose)');
+select is((select array_agg(sch || '.' || name order by sch, name) from fn0), array['app.claim_job', 'app.current_role', 'app.export_my_data', 'app.has_consent', 'app.is_recent_sign_in', 'app.reap_stuck_jobs', 'app.recent_job_count', 'app.storage_used', 'app.supported_countries'],
+  'the functions without arguments are the nine known ones (a new one must be added to this check on purpose)');
 select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select (' || sig || ')::text'), pg_temp.val_claims(pg_temp.ua(), 'authenticated', (select extra from spoof), 'select (' || sig || ')::text'),
   sig || ' answers the same for A with and without claims that name B') from fn0 order by sig;
 select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.current_role()'), 'consumer', 'and the check is not vacuous: A is a consumer');
@@ -326,6 +326,8 @@ insert into reauth_no values
   ('a fresh amr only under another top-level name', jsonb_build_object('amr_list', jsonb_build_array(pg_temp.amr_entry('password', 0)), 'method', 'password', 'timestamp', floor(extract(epoch from now())))),
   ('a stale top-level amr and a fresh one in user_metadata', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 4000)), 'user_metadata', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 0)))));
 select is(pg_temp.try_del(extra), 'err=42501: reauthentication_required/true', 'refused, nothing deleted: ' || label) from reauth_no order by label;
+-- WO-0071: app.is_recent_sign_in() (used by the storage purge route) says the same for every token the deletion refuses and for every token it accepts
+select is(pg_temp.val_claims(pg_temp.ua(), 'authenticated', extra, 'select app.is_recent_sign_in()'), 'false', 'is_recent_sign_in agrees, refused: ' || label) from reauth_no order by label;
 -- Accepted: each of these deletes the throw-away user.
 create temp table reauth_yes (label text primary key, extra jsonb);
 insert into reauth_yes values
@@ -340,6 +342,7 @@ insert into reauth_yes values
   ('a fresh entry after a malformed one', jsonb_build_object('amr', jsonb_build_array('junk'::text, null::text, jsonb_build_object('method', 'password', 'timestamp', 'x'), pg_temp.amr_entry('password', 0)))),
   ('a fresh entry, and extra claims that name someone else', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 0)), 'user_metadata', jsonb_build_object('amr', '[]'::jsonb)));
 select is(pg_temp.try_del(extra), 'deleted/false', 'accepted: ' || label) from reauth_yes order by label;
+select is(pg_temp.val_claims(pg_temp.ua(), 'authenticated', extra, 'select app.is_recent_sign_in()'), 'true', 'is_recent_sign_in agrees, accepted: ' || label) from reauth_yes order by label;
 -- the window is a setting; a bad value means 300
 update ops.settings set value = '10' where key = 'reauth_window_seconds';
 select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 60)))), 'err=42501: reauthentication_required/true', 'with the window at 10 seconds a sign-in 60 seconds ago is refused');
@@ -353,9 +356,19 @@ select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.am
 select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 200)))), 'deleted/false', 'and 200 seconds ago is accepted');
 update ops.settings set value = '-5' where key = 'reauth_window_seconds';
 select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 600)))), 'err=42501: reauthentication_required/true', 'a negative setting means 300 as well');
+-- WO-0071: the same window settings and ages as the deletion assertions above (no deletion here, so the counts below are unchanged)
+create function pg_temp.fresh_with(p_window text, p_age numeric) returns text language plpgsql as $f$
+begin
+  update ops.settings set value = p_window where key = 'reauth_window_seconds';
+  return pg_temp.val_claims(pg_temp.ua(), 'authenticated', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', p_age))), 'select app.is_recent_sign_in()');
+end $f$;
+select is(pg_temp.fresh_with(w, a), e, 'is_recent_sign_in with the window at ' || w || ' and a sign-in ' || a || ' seconds ago is ' || e)
+from (values ('10', 60, 'false'), ('10', 5, 'true'), ('1', 5, 'false'), ('900', 600, 'true'), ('soon', 600, 'false'), ('soon', 200, 'true'), ('-5', 600, 'false'), ('300', 301, 'false'), ('300', 299, 'true')) v(w, a, e);
 delete from ops.settings where key = 'reauth_window_seconds';
 select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 600)))), 'err=42501: reauthentication_required/true', 'without the setting the window is 300: 600 seconds ago is refused');
 select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 200)))), 'deleted/false', 'and 200 seconds ago is accepted');
+select is(pg_temp.fresh_with('300', 600), 'false', 'without the setting is_recent_sign_in also means 300 (600 seconds ago refused)');
+select is(pg_temp.val_claims(pg_temp.ua(), 'authenticated', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 200))), 'select app.is_recent_sign_in()'), 'true', 'and 200 seconds ago is accepted');
 insert into ops.settings (key, value) values ('reauth_window_seconds', '300');
 select is((select value from ops.settings where key = 'reauth_window_seconds'), '300', 'the window setting is back at 300');
 select ok(exists (select 1 from ops.settings where key = 'reauth_window_seconds'), 'and the migration seeds it');

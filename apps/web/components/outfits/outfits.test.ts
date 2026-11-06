@@ -27,6 +27,8 @@ const sources = import.meta.glob<string>(
     '!../../lib/auth-form.ts', '!../../lib/supabase/auth-actions.ts', '!../../lib/supabase/browser.ts', '!../../lib/supabase/gate.ts',
     '!../../lib/supabase/gate-state.ts', '!../../lib/supabase/proxy-session.ts', '!../../lib/supabase/server.ts', '!../../lib/supabase/consent-actions.ts',
     '!../../lib/supabase/backend.ts',
+    // WO-0071: the server-only modules (secret-key client, worker and purge handlers) are not on the suggestion path; named one by one. source.test.ts proves that only route handlers import them.
+    '!../../lib/server/admin.ts', '!../../lib/server/api.ts', '!../../lib/server/limits.ts', '!../../lib/server/purge.ts', '!../../lib/server/signed-urls.ts',
   ],
   { query: '?raw', import: 'default', eager: true },
 );
@@ -238,9 +240,10 @@ describe('the strict no-network scan runs on every file, with exactly the listed
       for (const part of parts) expect(text.split(part).length - 1, `${file}: ${part}`).toBe(1);
     }
   });
-  it('the allowances are only the two learned-file fetches and the placeholder host in two named files', () => {
+  it('the allowances are only the two learned-file fetches, the one same-origin POST of the Leave flow (WO-0071) and the placeholder host in two named files', () => {
     expect(ALLOWED).toEqual({
       'lib/engine-config.ts': ['fetch(PRIOR_URL, init())', 'fetch(UNLOCK_URL, init())'],
+      'components/account/account-actions.ts': ['fetch(p, i)'],
       'lib/auth-form.ts': ['http://sparta.invalid'], 'lib/supabase/gate.ts': ['http://sparta.invalid'],
     });
   });

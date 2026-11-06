@@ -48,3 +48,13 @@ data/recommendation-engine/team-photos/
 .venv/
 venv*/
 ml/recommendation-engine/garment/.cache/
+
+# Local-only helper that sets the worker database password from an env var
+supabase/scripts/set-worker-password.sh
+
+# Worker service (WO-0072): env files with the database password and token, caches, local model downloads
+services/worker/.env
+services/worker/.env.*
+!services/worker/.env.example
+services/worker/.pytest_cache/
+services/worker/.u2net/

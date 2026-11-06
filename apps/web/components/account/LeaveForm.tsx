@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useRef, useState, type FormEvent } from 'react';
-import { clearSessionCookies, leaveThePilot } from './account-actions';
+import { clearSessionCookies, leaveThePilot, purgeMyStorage } from './account-actions';
 import { clearBrowserUsage } from './browser-data';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 
@@ -16,7 +16,7 @@ export function LeaveForm() {
     e.preventDefault();
     setFailure(null);
     setBusy(true);
-    const out = await leaveThePilot(createBrowserSupabase(), pw);
+    const out = await leaveThePilot(createBrowserSupabase(), pw, () => purgeMyStorage());
     if (out.ok) {
       clearSessionCookies(document);
       clearBrowserUsage(); // the usage log and settings kept in this browser go with the account (WO-0062)

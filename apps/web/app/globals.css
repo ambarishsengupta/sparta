@@ -48,3 +48,8 @@ summary { cursor: pointer; min-height: 32px; color: var(--link); }
 article h2 { font-size: 1.2rem; margin: 28px 0 8px; } article h3 { font-size: 1.05rem; margin: 20px 0 6px; }
 table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.95rem; } th, td { text-align: left; vertical-align: top; padding: 6px 8px; border: 1px solid var(--border); overflow-wrap: break-word; } th { background: var(--surface); }
 blockquote { margin: 12px 0; padding: 4px 16px; border-left: 4px solid var(--border); background: var(--surface); }
+
+.previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 12px; }
+.preview { align-items: center; } .preview .frame { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 160px; padding: 6px; background: repeating-conic-gradient(var(--bg) 0% 25%, var(--surface) 0% 50%) 50% / 16px 16px; border: 1px solid var(--border); border-radius: var(--radius); }
+.preview img, .photo-thumb { max-width: 100%; height: auto; object-fit: contain; } .photo-thumb { display: block; margin: 12px 0 0; border: 1px solid var(--border); border-radius: var(--radius); }
+.button.secondary, a.button.secondary { color: var(--text); background: var(--surface); border-color: var(--border); }

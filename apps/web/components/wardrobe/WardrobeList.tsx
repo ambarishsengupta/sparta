@@ -8,6 +8,7 @@ import { DEMO_WARDROBE_NAMES, loadDemoWardrobe } from '../../lib/demo';
 import { NO_FILTER, filterItems } from '../../lib/filters';
 import type { WardrobeFilter } from '../../lib/filters';
 import type { ArchiveReason, StoredItem } from '../../lib/repository';
+import { dataBackend } from '../../lib/supabase/config';
 import { attempt, messageOf } from '../../lib/supabase/errors';
 import { useRepository } from '../use-repository';
 
@@ -73,7 +74,10 @@ export function WardrobeList() {
     <>
       <div className="row between">
         <h1>Wardrobe</h1>
-        <Link href="/items/new" className="button">Add item</Link>
+        <div className="row">
+          {dataBackend() === 'supabase' && <Link href="/items/new/photo" className="button secondary">Add by photo</Link>}
+          <Link href="/items/new" className="button">Add item</Link>
+        </div>
       </div>
       <form className="filters" aria-label="Filters" onSubmit={(e) => e.preventDefault()}>
         <label>Category

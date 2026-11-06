@@ -14,7 +14,11 @@ export interface StoredItem extends Item {
   createdAt: string;
   updatedAt: string;
 }
-export type ItemInput = Omit<StoredItem, 'id' | 'createdAt' | 'updatedAt'>;
+/** What the garment model returned for a photo (LLD 7.3), kept in `item_features` for swap ordering. Only ever present when the worker's result carried it. */
+export interface PhotoFeatures { modelVersion: string; garmentClass: number | null; p: number | null; embedding: number[] }
+/** The stored picture of an item added by photo (the cut-out or the original, with its thumbnail) and, when the model ran, its features (WO-0073). */
+export interface PhotoAttachment { imagePath: string; imageThumbPath: string | null; features: PhotoFeatures | null }
+export type ItemInput = Omit<StoredItem, 'id' | 'createdAt' | 'updatedAt'> & { photo?: PhotoAttachment };
 
 export interface SavedOutfit {
   id: string;

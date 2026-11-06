@@ -2,7 +2,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { EventLog, createItemLogged } from '../../lib/events';
-import type { StoredItem } from '../../lib/repository';
+import { SUGGESTED_LABEL } from '../../lib/photo-flow';
+import type { PhotoAttachment, StoredItem } from '../../lib/repository';
 import { canDeleteItems } from '../../lib/supabase/config';
 import { attempt, messageOf } from '../../lib/supabase/errors';
 import { FITS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, conditionBandOf } from '@sparta/taxonomy';
@@ -40,10 +41,13 @@ function Multi<T extends string>({ legend, options, value, onChange }: {
   );
 }
 
-export function ItemForm({ itemId }: { itemId?: string }) {
+/** From add-by-photo (WO-0073): the values the photo filled in, which of them are suggestions, and the picture to store with the item. */
+export interface PhotoStart { values: ItemFormValues; garmentSuggested: boolean; colourSuggested: boolean; photo: PhotoAttachment }
+
+export function ItemForm({ itemId, photoStart }: { itemId?: string; photoStart?: PhotoStart }) {
   const repo = useRepository();
   const router = useRouter();
-  const [values, setValues] = useState<ItemFormValues>(emptyForm);
+  const [values, setValues] = useState<ItemFormValues>(photoStart?.values ?? emptyForm());
   const [errors, setErrors] = useState<FormErrors>({});
   const [missing, setMissing] = useState(false);
   const [existing, setExisting] = useState<StoredItem>();
@@ -60,7 +64,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
     if (!result.ok) return setErrors(result.errors);
     const problem = await attempt(async () => {
       if (itemId && existing) await repo!.items.update(itemId, { ...result.input, status: existing.status, archiveReason: existing.archiveReason });
-      else if (!itemId) await createItemLogged(repo!, new EventLog(), result.input, 'manual');
+      else if (!itemId) await (photoStart ? createItemLogged(repo!, new EventLog(), { ...result.input, photo: photoStart.photo }, 'photo') : createItemLogged(repo!, new EventLog(), result.input, 'manual'));
     });
     if (problem) return setFailure(problem); // stay on the form: nothing typed is lost
     router.push('/');
@@ -73,12 +77,17 @@ export function ItemForm({ itemId }: { itemId?: string }) {
   };
 
   if (missing) return <p role="alert">That item was not found.</p>;
+  // A suggestion is labelled only while the value is still the suggested one: once the person changes it, it is theirs.
+  const start = photoStart?.values;
+  const garmentLabel = !!photoStart?.garmentSuggested && values.category === start?.category && values.subType === start?.subType;
+  const colourLabel = !!photoStart?.colourSuggested && values.hex === start?.hex;
   const family = familyOfHex(values.hex);
   const band = values.condition === null ? null : conditionBandOf(values.condition);
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }} noValidate>
       <h1>{itemId ? 'Edit item' : 'Add item'}</h1>
       {failure && <p role="alert" className="error">{failure}</p>}
+      {garmentLabel && <p className="muted" data-suggestion="garment">{SUGGESTED_LABEL}: category and sub-type. Change them if they are not right.</p>}
       <Choice label="Category" value={values.category} options={categoryChoices()} error={errors.category}
         onChange={(v) => change({ category: v as ItemFormValues['category'] })} />
       <Choice label="Sub-type" value={values.subType} options={subTypeChoices(values.category)} error={errors.subType}
@@ -86,6 +95,7 @@ export function ItemForm({ itemId }: { itemId?: string }) {
       <label>Colour
         <input type="color" value={values.hex} onChange={(e) => change({ hex: e.target.value })} />
       </label>
+      {colourLabel && <p className="muted" data-suggestion="colour">{SUGGESTED_LABEL}: colour.</p>}
       <p aria-live="polite">Colour family: <strong>{family ?? 'unknown'}</strong></p>
       {errors.hex && <span role="alert" className="error">{errors.hex}</span>}
       <label>Name

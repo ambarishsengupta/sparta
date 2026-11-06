@@ -57,12 +57,34 @@ export const REENTER = 'Please enter your password again. Nothing was deleted.';
 const NO_CONNECTION = 'Could not reach the server, so nothing was deleted. Check your connection and try again.';
 const leaveFailure = (reason: LeaveFailure, message = LEAVE[reason]): LeaveResult => ({ ok: false, reason, message });
 
+/** A step that runs after the fresh sign-in and before the account is deleted; `purgeMyStorage` is the one the Leave screen passes. */
+export type BeforeDelete = () => Promise<{ ok: true } | { ok: false; reason: LeaveFailure; message: string }>;
+export const PURGE_PATH = '/api/account/purge-storage';
+export const PURGE_FAILED = 'We could not remove all of your files, so your account was not deleted. Some photos may already be gone. Please try again.';
+export const PURGE_NO_CONNECTION = 'Could not reach the server, so your account was not deleted. Check your connection and try again.';
+type Send = (path: string, init: RequestInit) => Promise<Response>;
+const PURGE_INIT: RequestInit = { method: 'POST', credentials: 'same-origin' };
+
+/** Asks the server to remove every file of the signed-in person (same fresh sign-in as the deletion). Never throws; sends nothing but the session cookie. */
+export async function purgeMyStorage(send: Send = (p, i) => fetch(p, i)): Promise<Awaited<ReturnType<BeforeDelete>>> {
+  try {
+    const res = await send(PURGE_PATH, PURGE_INIT);
+    let body: unknown = null;
+    try { body = await res.json(); } catch { /* not JSON: a redirect page or a gateway error */ }
+    const code = (body as { error?: { code?: unknown } } | null)?.error?.code;
+    if (res.ok && (body as { ok?: unknown } | null)?.ok === true) return { ok: true };
+    if (res.status === 403 && code === REAUTH_REQUIRED) return { ok: false, reason: 'credentials', message: REENTER };
+    if (res.status === 401) return { ok: false, reason: 'session', message: LEAVE.session };
+    return { ok: false, reason: 'failed', message: PURGE_FAILED };
+  } catch { return { ok: false, reason: 'failed', message: PURGE_NO_CONNECTION }; }
+}
+
 /**
  * FR-63, FR-66: the person types their password again (a fresh sign-in, so a session left open on a shared screen is not enough), and only
  * then is `app.delete_my_account()` called. The function deletes the signed-in account, which only the caller's own session can name.
  * Every failure before the call says that nothing was deleted; a failure during or after it says the result is unknown, never "not deleted".
  */
-export async function leaveThePilot(client: Client, password: string): Promise<LeaveResult> {
+export async function leaveThePilot(client: Client, password: string, beforeDelete?: BeforeDelete): Promise<LeaveResult> {
   if (password === '') return leaveFailure('credentials', 'Enter your password to confirm.');
   try {
     const { data, error } = await client.auth.getUser();
@@ -76,6 +98,12 @@ export async function leaveThePilot(client: Client, password: string): Promise<L
       return leaveFailure('failed');
     }
   } catch { return leaveFailure('failed', NO_CONNECTION); }
+  // R5b: the person's files go first, through the Storage API (the database function can only remove the rows, not the file bytes). If this
+  // fails the account is NOT deleted and the person can try again; the function below is the row cleanup.
+  if (beforeDelete) {
+    const step = await beforeDelete();
+    if (!step.ok) return leaveFailure(step.reason, step.message);
+  }
   try {
     const r = await client.schema('app').rpc('delete_my_account');
     // The database also checks that the sign-in just made is recent (WO-0062): if it says no, nothing was deleted and the person is asked for the password again.

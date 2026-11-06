@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { SignOutForm } from './account/SignOutForm';
 
 const LINKS = [['/', 'Wardrobe'], ['/outfits', 'Outfits']] as const;
 const ACCOUNT_LINKS = [['/settings', 'Settings']] as const;
@@ -14,7 +15,7 @@ export function Nav({ signedIn = false }: { signedIn?: boolean }) {
       <nav aria-label="Main">
         {[...LINKS, ...(signedIn ? ACCOUNT_LINKS : [])].map(([href, label]) => <Link key={href} href={href} aria-current={path === href ? 'page' : undefined}>{label}</Link>)}
       </nav>
-      {signedIn && <form action="/auth/sign-out" method="post"><button type="submit" className="linklike">Sign out</button></form>}
+      {signedIn && <SignOutForm buttonClassName="linklike" />}
     </header>
   );
 }

@@ -51,6 +51,9 @@ const LEAVE: Record<LeaveFailure, string> = {
   failed: 'Something went wrong before anything was deleted. Please try again in a moment.',
   unsure: 'We could not confirm the result. Try to sign in: if your account is gone, it was deleted.',
 };
+/** What `app.delete_my_account()` says when the token does not prove a sign-in in the last few minutes. */
+export const REAUTH_REQUIRED = 'reauthentication_required';
+export const REENTER = 'Please enter your password again. Nothing was deleted.';
 const NO_CONNECTION = 'Could not reach the server, so nothing was deleted. Check your connection and try again.';
 const leaveFailure = (reason: LeaveFailure, message = LEAVE[reason]): LeaveResult => ({ ok: false, reason, message });
 
@@ -75,6 +78,8 @@ export async function leaveThePilot(client: Client, password: string): Promise<L
   } catch { return leaveFailure('failed', NO_CONNECTION); }
   try {
     const r = await client.schema('app').rpc('delete_my_account');
+    // The database also checks that the sign-in just made is recent (WO-0062): if it says no, nothing was deleted and the person is asked for the password again.
+    if (r.error?.message === REAUTH_REQUIRED) return leaveFailure('credentials', REENTER);
     if (r.error) return r.status >= 400 && r.status < 500 && r.error.code === '42501' ? leaveFailure('failed', 'Your account is not allowed to leave the pilot this way. Write to the privacy contact address.') : leaveFailure('unsure');
     if (r.data !== 'deleted' && r.data !== 'already_deleted') return leaveFailure('unsure');
     await endSession(client);
@@ -90,6 +95,16 @@ async function endSession(client: Client): Promise<void> {
 /** The session cookies in a `document.cookie` string (supabase names them `sb-...`, in numbered pieces when long). */
 export const sessionCookieNames = (cookieString: string): string[] =>
   cookieString.split(';').map((p) => p.split('=')[0]!.trim()).filter((n) => n.startsWith('sb-'));
+
+/** The text that expires one session cookie. Supabase sets its cookies on the whole site (`Path=/`); a cookie is only removed by an expiry with the same path. */
+export const expiredCookie = (name: string): string => `${name}=; Max-Age=0; Path=/; SameSite=Lax`;
+
+/** Expires every `sb-` cookie the page can see (A01); returns the names it expired. */
+export function clearSessionCookies(doc: { cookie: string }): string[] {
+  const names = sessionCookieNames(doc.cookie);
+  names.forEach((name) => { doc.cookie = expiredCookie(name); });
+  return names;
+}
 
 // ---- settings -----------------------------------------------------------------------------------------------------------
 

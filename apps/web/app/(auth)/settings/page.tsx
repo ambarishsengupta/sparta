@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ExportButton } from '../../../components/account/ExportButton';
+import { SignOutForm } from '../../../components/account/SignOutForm';
 import { SettingsForm } from '../../../components/account/SettingsForm';
 import { SHARING_LOCKED_TEXT } from '../../../lib/consent-form';
 import { currencyOptions } from '../../../lib/onboarding';
@@ -34,7 +35,7 @@ export default async function Page() {
       <p>Leaving deletes your account and everything in it. No reason is asked.</p>
       <Link href="/leave" className="button secondary">Leave the pilot</Link>
       <h2>Account</h2>
-      <form action="/auth/sign-out" method="post"><button type="submit">Sign out</button></form>
+      <SignOutForm />
       <p><Link href="/about">About the pilot</Link></p>
     </>
   );

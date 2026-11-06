@@ -170,3 +170,33 @@ describe('settings: reading and saving the caller\'s own profile', () => {
   });
 });
 
+
+// WO-0062 item 1: the database also wants a recent sign-in in the token. The page signs in again just before the call, so this error is rare; when it comes the
+// person is asked for the password, told that nothing was deleted, and the session is not ended.
+describe('leave the pilot when the database asks for a recent sign-in (F1)', () => {
+  const reauth: Answer = { data: null, error: { code: '42501', message: 'reauthentication_required' }, status: 403 };
+  it('maps reauthentication_required to a plain request for the password, says nothing was deleted, and keeps the session', async () => {
+    const f = fake({ rpc: reauth });
+    const out = await leaveThePilot(f.client, 'pw');
+    expect(out).toEqual({ ok: false, reason: 'credentials', message: 'Please enter your password again. Nothing was deleted.' });
+    expect(f.calls).toEqual(['getUser', 'signIn', 'rpc:app.delete_my_account']);
+  });
+  it('the sentence names the error code to no one: no server text, no code, no email', async () => {
+    expect(JSON.stringify(await leaveThePilot(fake({ rpc: reauth }).client, 'pw'))).not.toMatch(/reauthentication_required|42501|asha@|hint/);
+  });
+  it('only that exact message is mapped: a look-alike, or the plain refusal, keeps its own answer', async () => {
+    for (const message of ['reauthentication_required_x', 'xreauthentication_required', 'Reauthentication_Required', 'forbidden']) {
+      const out = await leaveThePilot(fake({ rpc: { data: null, error: { code: '42501', message }, status: 403 } }).client, 'pw');
+      expect(out, message).toEqual({ ok: false, reason: 'failed', message: expect.stringContaining('not allowed to leave') });
+    }
+  });
+  it('the same message with another error code is still the request for the password (the code is not what carries it)', async () => {
+    expect(await leaveThePilot(fake({ rpc: { data: null, error: { code: 'P0001', message: 'reauthentication_required' }, status: 400 } }).client, 'pw'))
+      .toEqual({ ok: false, reason: 'credentials', message: expect.stringContaining('Please enter your password again') });
+  });
+  it('the order is unchanged: the password is checked with a fresh sign-in first, and only then is the delete function called', async () => {
+    const f = fake({ rpc: reauth });
+    await leaveThePilot(f.client, 'pw');
+    expect(f.calls.indexOf('signIn')).toBeLessThan(f.calls.indexOf('rpc:app.delete_my_account'));
+  });
+});

@@ -90,7 +90,8 @@ describe('pilot-notice (FR-3 to FR-5, FR-61)', () => {
     expect(h1s(markup)).toBe(1);
     expect(markup).toContain('<h1>Welcome to the Sparta pilot</h1>');
     expect(markup).toContain('<strong>group figures</strong>');
-    expect([...markup.matchAll(/href="([^"]+)"/g)].map((m) => m[1]).sort()).toEqual(['/privacy', '/terms']);
+    // WO-0062 F3 (FR-4): the notice now also links Leave the pilot, so /leave is added to the pinned list on purpose; the two legal links stay.
+    expect([...markup.matchAll(/href="([^"]+)"/g)].map((m) => m[1]).sort()).toEqual(['/leave', '/privacy', '/terms']);
     expect(problems(markup)).toEqual([]);
   });
   it('shows sharing locked on: a ticked, disabled box with a label, and the FR-61 wording one tap away', async () => {

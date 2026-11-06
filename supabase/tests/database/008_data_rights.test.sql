@@ -4,7 +4,7 @@
 begin;
 \ir helpers.inc
 select count(*) as nt from pg_temp.app_tables \gset
-select plan(:nt * 7 + 94);
+select plan(:nt * 7 + 207);
 
 select pg_temp.mk_user(pg_temp.ua());
 select pg_temp.mk_user(pg_temp.ub());
@@ -112,6 +112,54 @@ select is(pg_temp.val_as(pg_temp.ub(), 'authenticated', 'select app.export_my_da
 update app.profiles set role = 'consumer' where id = pg_temp.ub();
 select alike(pg_temp.val_as(pg_temp.ua(), 'authenticated', format('select app.export_my_data(%L)', pg_temp.ub())), 'err=42883: function app.export_my_data(%) does not exist', 'export takes no user ID: it cannot be pointed at another user');
 
+-- WO-0062 item 5: a claim the person can edit never picks the user. The caller is A; the token's metadata (and extra top-level claims) all name B.
+create temp table spoof as select jsonb_build_object(
+  'user_metadata', jsonb_build_object('sub', pg_temp.ub(), 'id', pg_temp.ub(), 'user_id', pg_temp.ub(), 'uid', pg_temp.ub(), 'email', pg_temp.ub()::text || '@example.test'),
+  'app_metadata', jsonb_build_object('sub', pg_temp.ub(), 'id', pg_temp.ub(), 'user_id', pg_temp.ub(), 'role', 'consumer'),
+  'user_id', pg_temp.ub(), 'uid', pg_temp.ub(), 'email', pg_temp.ub()::text || '@example.test') as extra;
+create temp table exp_spoof as select pg_temp.val_claims(pg_temp.ua(), 'authenticated', (select extra from spoof), 'select app.export_my_data()')::jsonb as doc;
+select is((select doc - 'generated_at' from exp_spoof), (select doc - 'generated_at' from exp_a), 'export with claims that name B in metadata returns exactly A''s document');
+select is((select doc->'account'->>'id' from exp_spoof), pg_temp.ua()::text, 'the account block is A''s, not the one the metadata names');
+select is(position(pg_temp.ub()::text in (select doc::text from exp_spoof)) + position(pg_temp.ub()::text || '@example.test' in (select doc::text from exp_spoof)), 0, 'and nothing of B''s is in it');
+select is((select count(*) from exp_spoof s, jsonb_each(s.doc) e, jsonb_array_elements(case when jsonb_typeof(e.value) = 'array' then e.value else '[]'::jsonb end) r
+           where e.key <> 'profiles' and r->>'user_id' = pg_temp.ub()::text), 0::bigint, 'no exported row has B as its owner');
+
+-- every function with no arguments (callable by a signed-in person with nothing to name a user) gives the same answer for A with and without
+-- claims that name B. This runs the code, so a user id assembled from pieces of text ('user_' || 'metadata') is caught as well as a plain read.
+-- delete_my_account is the one exception here (it has its own tests below: D, who deletes with claims naming B).
+create temp table fn0 as select p.oid::regprocedure::text as sig, n.nspname::text as sch, p.proname::text as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname in ('app', 'ops', 'catalog') and p.pronargs = 0 and p.prorettype <> 'trigger'::regtype and p.proname <> 'delete_my_account';
+select is((select array_agg(sch || '.' || name order by sch, name) from fn0), array['app.current_role', 'app.export_my_data', 'app.has_consent', 'app.supported_countries'],
+  'the functions without arguments are the four known ones (a new one must be added to this check on purpose)');
+select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select (' || sig || ')::text'), pg_temp.val_claims(pg_temp.ua(), 'authenticated', (select extra from spoof), 'select (' || sig || ')::text'),
+  sig || ' answers the same for A with and without claims that name B') from fn0 order by sig;
+select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.current_role()'), 'consumer', 'and the check is not vacuous: A is a consumer');
+-- the same with a caller whose answers differ from B's (a vendor who is not eligible): a function that read B from the claims would answer as B
+select pg_temp.mk_user('99999999-0000-0000-0000-0000000000a3');
+update app.profiles set role = 'vendor' where id = '99999999-0000-0000-0000-0000000000a3';
+select is(pg_temp.val_as('99999999-0000-0000-0000-0000000000a3', 'authenticated', 'select (' || sig || ')::text'), pg_temp.val_claims('99999999-0000-0000-0000-0000000000a3', 'authenticated', (select extra from spoof), 'select (' || sig || ')::text'),
+  sig || ' answers the same for the vendor W with and without claims that name B') from fn0 order by sig;
+select isnt(pg_temp.val_as('99999999-0000-0000-0000-0000000000a3', 'authenticated', 'select app.has_consent()'), pg_temp.val_as(pg_temp.ub(), 'authenticated', 'select app.has_consent()'), 'and the check is not vacuous: W and B get different answers from has_consent');
+select isnt(pg_temp.val_as('99999999-0000-0000-0000-0000000000a3', 'authenticated', 'select app.current_role()'), pg_temp.val_as(pg_temp.ub(), 'authenticated', 'select app.current_role()'), 'and from current_role');
+delete from auth.users where id = '99999999-0000-0000-0000-0000000000a3';
+-- the two functions that write for the caller
+select pg_temp.mk_user('99999999-0000-0000-0000-0000000000a1');
+create temp table sp_b as select md5(string_agg(to_jsonb(p)::text, ',')) as d, (select count(*) from app.document_acceptances where user_id = pg_temp.ub()) as n from app.profiles p where p.id = pg_temp.ub();
+select is(pg_temp.val_claims('99999999-0000-0000-0000-0000000000a1', 'authenticated', (select extra from spoof), 'select app.complete_onboarding(''IN'', ''north'', ''INR'', ''{}'')'), 'ok', 'a caller with claims naming B completes onboarding for the caller');
+select is(pg_temp.val_claims('99999999-0000-0000-0000-0000000000a1', 'authenticated', (select extra from spoof), 'select app.accept_documents(''1'', ''1'', true)'), '', 'and accepts the documents for the caller');
+select is((select count(*) from app.document_acceptances where user_id = '99999999-0000-0000-0000-0000000000a1'), 2::bigint, 'the caller has the two acceptances');
+select is((select md5(string_agg(to_jsonb(p)::text, ',')) from app.profiles p where p.id = pg_temp.ub()), (select d from sp_b), 'B''s profile did not change');
+select is((select count(*) from app.document_acceptances where user_id = pg_temp.ub()), (select n from sp_b), 'and B''s acceptances did not change');
+delete from auth.users where id = '99999999-0000-0000-0000-0000000000a1';
+
+-- item 8: an account whose profile row is gone cannot be shown to be a consumer; neither function acts for it
+select pg_temp.mk_user('99999999-0000-0000-0000-0000000000a2');
+delete from app.profiles where id = '99999999-0000-0000-0000-0000000000a2';
+select is(pg_temp.val_fresh('99999999-0000-0000-0000-0000000000a2', 'authenticated', 'select app.export_my_data()'), 'err=42501: forbidden', 'an account with no profile row cannot export');
+select is(pg_temp.val_fresh('99999999-0000-0000-0000-0000000000a2', 'authenticated', 'select app.delete_my_account()'), 'err=42501: forbidden', 'an account with no profile row cannot use the deletion either (fail closed)');
+select is((select count(*) from auth.users where id = '99999999-0000-0000-0000-0000000000a2'), 1::bigint, 'and nothing was deleted');
+delete from auth.users where id = '99999999-0000-0000-0000-0000000000a2';
+
 -- ---- function properties: definer, empty search_path, owner, grants ------------------------------------------------------------
 create temp table dr_fn as select p.oid, p.proname::text as name from pg_proc p where p.pronamespace = 'app'::regnamespace and p.proname in ('export_my_data', 'delete_my_account');
 select is((select count(*) from dr_fn), 2::bigint, 'both functions exist');
@@ -138,24 +186,27 @@ create temp table su_before as select coalesce(sum(n), 0) as n from ops.daily_co
 
 -- the wrong callers first: nothing is deleted
 select is(pg_temp.run_as(null, 'anon', 'select app.delete_my_account()'), 'err=42501', 'anon cannot delete');
-select is(pg_temp.val_as(null, 'authenticated', 'select app.delete_my_account()'), 'err=42501: forbidden', 'a signed-in role with no user ID deletes nothing');
+select is(pg_temp.val_fresh(null, 'authenticated', 'select app.delete_my_account()'), 'err=42501: forbidden', 'a signed-in role with no user ID deletes nothing');
 select alike(pg_temp.val_as(pg_temp.ua(), 'authenticated', format('select app.delete_my_account(%L)', pg_temp.ub())), 'err=42883: function app.delete_my_account(%) does not exist', 'there is no way to name another user');
 update app.profiles set role = 'vendor' where id = pg_temp.ub();
-select is(pg_temp.val_as(pg_temp.ub(), 'authenticated', 'select app.delete_my_account()'), 'err=42501: forbidden', 'a vendor cannot use the consumer deletion');
+select is(pg_temp.val_fresh(pg_temp.ub(), 'authenticated', 'select app.delete_my_account()'), 'err=42501: forbidden', 'a vendor cannot use the consumer deletion');
 update app.profiles set role = 'admin' where id = pg_temp.ub();
-select is(pg_temp.val_as(pg_temp.ub(), 'authenticated', 'select app.delete_my_account()'), 'err=42501: forbidden', 'an admin cannot use the consumer deletion');
+select is(pg_temp.val_fresh(pg_temp.ub(), 'authenticated', 'select app.delete_my_account()'), 'err=42501: forbidden', 'an admin cannot use the consumer deletion');
 update app.profiles set role = 'consumer' where id = pg_temp.ub();
 select is((select count(*) from auth.users where id = pg_temp.ub()), 1::bigint, 'the refused callers deleted nothing');
 select is((select count(*) from auth.users), 3::bigint, 'still exactly three users (A, B, C)');
-select is(pg_temp.val_as('99999999-9999-9999-9999-999999999999', 'authenticated', 'select app.delete_my_account()'), 'already_deleted', 'a token whose user does not exist deletes nothing and says so');
+select is(pg_temp.val_fresh('99999999-9999-9999-9999-999999999999', 'authenticated', 'select app.delete_my_account()'), 'already_deleted', 'a token whose user does not exist deletes nothing and says so');
 
 -- ---- delete: A leaves -----------------------------------------------------------------------------------------------------------
-select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.delete_my_account()'), 'deleted', 'A deletes the account');
+select is(pg_temp.val_fresh(pg_temp.ua(), 'authenticated', 'select app.delete_my_account()'), 'deleted', 'A deletes the account');
 select is((select count(*) from auth.users where id = pg_temp.ua()), 0::bigint, 'A''s auth user is gone');
 select is(pg_temp.n_rows(tbl, pg_temp.ua()), 0::bigint, 'no row of A remains in app.' || tbl) from pg_temp.app_tables order by tbl;
 select is_empty($$ select t.tbl from pg_temp.app_tables t join b_before b using (tbl) where pg_temp.digest(t.tbl, pg_temp.ub()) <> b.d or pg_temp.n_rows(t.tbl, pg_temp.ub()) <> b.n $$, 'B''s rows are unchanged in every table');
 select cmp_ok((select min(n) from b_before), '>', 0::bigint, 'and B really had rows in every table');
 select is((select count(*) from auth.users where id = pg_temp.ub()), 1::bigint, 'B''s auth user remains');
+select is((select count(*) from auth.users where id = pg_temp.ua()), 0::bigint, 'and A''s does not (A and B checked one against the other)');
+select is((select count(*) from app.profiles where id = pg_temp.ua()), 0::bigint, 'A''s profile is gone');
+select is((select count(*) from app.profiles where id = pg_temp.ub()), 1::bigint, 'B''s profile remains');
 select is((select count(*) from auth.sessions where user_id = pg_temp.ua()) + (select count(*) from auth.refresh_tokens where user_id = pg_temp.ua()::text)
         + (select count(*) from auth.identities where user_id = pg_temp.ua()), 0::bigint, 'A''s sessions, refresh tokens and identities are gone (the session ends)');
 select is((select count(*) from auth.sessions where user_id = pg_temp.ub()) + (select count(*) from auth.refresh_tokens where user_id = pg_temp.ub()::text)
@@ -171,48 +222,187 @@ select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.export_my_da
 select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select 1 from app.profiles where id = ' || quote_literal(pg_temp.ua())), null, 'nor read a profile');
 
 -- idempotent: the same token again
-select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.delete_my_account()'), 'already_deleted', 'a second call is harmless and says already_deleted');
+select is(pg_temp.val_fresh(pg_temp.ua(), 'authenticated', 'select app.delete_my_account()'), 'already_deleted', 'a second call is harmless and says already_deleted');
 select is((select sum(n) from ops.daily_counts where metric = 'deletions' and day = current_date) - (select n from dc_before), 1::bigint, 'and is not counted twice');
 select is_empty($$ select t.tbl from pg_temp.app_tables t join b_before b using (tbl) where pg_temp.digest(t.tbl, pg_temp.ub()) <> b.d $$, 'B is still untouched');
 
 -- ---- delete works for every kind of participant, however the consent gate stands -------------------------------------------------
 -- D: the token carries claims that name B; only the real subject goes
 select pg_temp.mk_user('dddddddd-dddd-dddd-dddd-dddddddddddd');
-select is(pg_temp.val_claims('dddddddd-dddd-dddd-dddd-dddddddddddd', 'authenticated', jsonb_build_object('user_metadata', jsonb_build_object('sub', pg_temp.ub(), 'id', pg_temp.ub()), 'app_metadata', jsonb_build_object('sub', pg_temp.ub())),
+select is(pg_temp.val_claims('dddddddd-dddd-dddd-dddd-dddddddddddd', 'authenticated', jsonb_build_object('user_metadata', jsonb_build_object('sub', pg_temp.ub(), 'id', pg_temp.ub()), 'app_metadata', jsonb_build_object('sub', pg_temp.ub()), 'amr', jsonb_build_array(pg_temp.amr_entry('password', 0))),
   'select app.delete_my_account()'), 'deleted', 'D deletes with claims that name B in the metadata');
 select is((select count(*) from auth.users where id in ('dddddddd-dddd-dddd-dddd-dddddddddddd', pg_temp.ub())), 1::bigint, 'only D went; B remains');
+select is((select count(*) from auth.users where id = pg_temp.ub()), 1::bigint, 'B exists after D''s deletion');
+select is((select count(*) from auth.users where id = 'dddddddd-dddd-dddd-dddd-dddddddddddd'), 0::bigint, 'and D does not');
 -- E: deletion already flagged by a server route that failed (the flag must not block a retry)
 select pg_temp.mk_user('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee');
 select pg_temp.make_eligible('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee');
 update app.profiles set deleting = true, deletion_requested_at = now() where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
 select is(ops.is_eligible('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'), false, 'E, with deleting set, is not an eligible participant');
-select is(pg_temp.val_as('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'E can still complete the deletion (re-entry)');
+select is(pg_temp.val_fresh('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'E can still complete the deletion (re-entry)');
 select is((select count(*) from app.profiles where id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'), 0::bigint, 'E is gone');
 -- F: never accepted anything (the not-available user of FR-4 and FR-9)
 select pg_temp.mk_user('ffffffff-ffff-ffff-ffff-ffffffffffff');
 update app.profiles set country = 'US', hemisphere = 'north' where id = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
 select is(pg_temp.val_as('ffffffff-ffff-ffff-ffff-ffffffffffff', 'authenticated', 'select app.has_consent()'), 'false', 'F fails the consent gate');
 select is(pg_temp.val_as('ffffffff-ffff-ffff-ffff-ffffffffffff', 'authenticated', 'select jsonb_array_length(app.export_my_data()->''profiles'')'), '1', 'F can export');
-select is(pg_temp.val_as('ffffffff-ffff-ffff-ffff-ffffffffffff', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'F can delete');
+select is(pg_temp.val_fresh('ffffffff-ffff-ffff-ffff-ffffffffffff', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'F can delete');
 -- G: eligible with data, then locked out by a new notice version: every row still goes
 select pg_temp.mk_user('99999999-0000-0000-0000-000000000001');
 select pg_temp.make_eligible('99999999-0000-0000-0000-000000000001');
 select pg_temp.seed_user('99999999-0000-0000-0000-000000000001');
 update ops.settings set value = '2' where key = 'current_notice_version';
 select is(pg_temp.run_as('99999999-0000-0000-0000-000000000001', 'authenticated', 'select 1 from app.items'), 'rows=0', 'G sees no items (consent gate closed)');
-select is(pg_temp.val_as('99999999-0000-0000-0000-000000000001', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'G deletes anyway');
+select is(pg_temp.val_fresh('99999999-0000-0000-0000-000000000001', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'G deletes anyway');
 select is(pg_temp.n_rows(tbl, '99999999-0000-0000-0000-000000000001'), 0::bigint, 'no row of G remains in app.' || tbl) from pg_temp.app_tables order by tbl;
 update ops.settings set value = '1' where key = 'current_notice_version';
 -- H: an e-mail address with capitals still loses its (lower-case) invitation entry
 insert into auth.users (id, email) values ('99999999-0000-0000-0000-000000000002', 'Mixed.Case@Example.test');
 insert into ops.invitations (email) values ('mixed.case@example.test');
-select is(pg_temp.val_as('99999999-0000-0000-0000-000000000002', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'H, whose address has capitals, deletes');
+select is(pg_temp.val_fresh('99999999-0000-0000-0000-000000000002', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'H, whose address has capitals, deletes');
 select is((select count(*) from ops.invitations where email = 'mixed.case@example.test'), 0::bigint, 'and the invitation entry goes (matched in lower case)');
 -- W: a user with a session in the middle of use: the delete takes the session
 insert into auth.sessions (id, user_id) values ('c0000000-0000-0000-0000-00000000000c', '33333333-3333-3333-3333-333333333333');
-select is(pg_temp.val_as('33333333-3333-3333-3333-333333333333', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'C, an account with no data, deletes');
+select is(pg_temp.val_fresh('33333333-3333-3333-3333-333333333333', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'C, an account with no data, deletes');
 select is((select count(*) from auth.sessions where user_id = '33333333-3333-3333-3333-333333333333'), 0::bigint, 'and its session ended');
 select is((select sum(n) from ops.daily_counts where metric = 'deletions' and day = current_date) - (select n from dc_before), 7::bigint, 'seven real deletions (A, D, E, F, G, H, C) were counted, no more');
+
+-- ---- WO-0062 item 5: the other way round. Y deletes first and X, the other user, is untouched; then X deletes -----------------------------------------
+select pg_temp.mk_user('99999999-0000-0000-0000-0000000000b1');
+select pg_temp.mk_user('99999999-0000-0000-0000-0000000000b2');
+select pg_temp.make_eligible('99999999-0000-0000-0000-0000000000b1');
+select pg_temp.make_eligible('99999999-0000-0000-0000-0000000000b2');
+select pg_temp.seed_user('99999999-0000-0000-0000-0000000000b1');
+select pg_temp.seed_user('99999999-0000-0000-0000-0000000000b2');
+create temp table x_before as select t.tbl, pg_temp.digest(t.tbl, '99999999-0000-0000-0000-0000000000b1') as d from pg_temp.app_tables t;
+select is(pg_temp.val_fresh('99999999-0000-0000-0000-0000000000b2', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'Y deletes the account');
+select is((select count(*) from auth.users where id = '99999999-0000-0000-0000-0000000000b2'), 0::bigint, 'Y is gone');
+select is((select count(*) from auth.users where id = '99999999-0000-0000-0000-0000000000b1'), 1::bigint, 'X exists');
+select is_empty($$ select tbl from x_before where pg_temp.digest(tbl, '99999999-0000-0000-0000-0000000000b1') <> d $$, 'X''s rows are unchanged in every table');
+select is(pg_temp.val_fresh('99999999-0000-0000-0000-0000000000b1', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'X deletes the account');
+select is((select count(*) from auth.users where id in ('99999999-0000-0000-0000-0000000000b1', '99999999-0000-0000-0000-0000000000b2')), 0::bigint, 'both are gone');
+
+-- ---- WO-0062 item 1 (F1): the database wants a recent sign-in proof in the token ------------------------------------------------------------------
+-- Refused: each leaves the throw-away user in place ('err=42501: reauthentication_required/true').
+create temp table reauth_no (label text primary key, extra jsonb);
+insert into reauth_no values
+  ('no amr claim at all', '{}'),
+  ('an empty amr list', '{"amr": []}'),
+  ('amr null', '{"amr": null}'),
+  ('amr is a string', '{"amr": "password"}'),
+  ('amr is a number', '{"amr": 5}'),
+  ('amr is an object (not a list)', jsonb_build_object('amr', pg_temp.amr_entry('password', 0))),
+  ('amr holds a string', '{"amr": ["password"]}'),
+  ('amr holds null', '{"amr": [null]}'),
+  ('amr holds a list', jsonb_build_object('amr', jsonb_build_array(jsonb_build_array(pg_temp.amr_entry('password', 0))))),
+  ('an entry with no timestamp', '{"amr": [{"method": "password"}]}'),
+  ('an entry with no method', jsonb_build_object('amr', jsonb_build_array(jsonb_build_object('timestamp', floor(extract(epoch from now())))))),
+  ('a method that is a list', jsonb_build_object('amr', jsonb_build_array(jsonb_build_object('method', jsonb_build_array('password'), 'timestamp', floor(extract(epoch from now())))))),
+  ('a method that is a number', jsonb_build_object('amr', jsonb_build_array(jsonb_build_object('method', 1, 'timestamp', floor(extract(epoch from now())))))),
+  ('a timestamp as text', jsonb_build_object('amr', jsonb_build_array(jsonb_build_object('method', 'password', 'timestamp', floor(extract(epoch from now()))::text)))),
+  ('a timestamp that is not a number', '{"amr": [{"method": "password", "timestamp": "yesterday"}]}'),
+  ('a timestamp that is null', '{"amr": [{"method": "password", "timestamp": null}]}'),
+  ('a timestamp that is true', '{"amr": [{"method": "password", "timestamp": true}]}'),
+  ('a timestamp that is a list', jsonb_build_object('amr', jsonb_build_array(jsonb_build_object('method', 'password', 'timestamp', jsonb_build_array(floor(extract(epoch from now()))))))),
+  ('an enormous timestamp', '{"amr": [{"method": "password", "timestamp": 1e300}]}'),
+  ('timestamp zero', '{"amr": [{"method": "password", "timestamp": 0}]}'),
+  ('a negative timestamp', '{"amr": [{"method": "password", "timestamp": -5}]}'),
+  ('a password sign-in 301 seconds ago', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 301)))),
+  ('a password sign-in an hour ago', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 3600)))),
+  ('a sign-in a day ago', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 86400)))),
+  ('a timestamp an hour in the future', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', -3600)))),
+  ('a timestamp two minutes in the future', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', -120)))),
+  ('a fresh entry with a method that is not a primary sign-in (totp)', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('totp', 0)))),
+  ('a fresh entry with the method mfa/totp', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('mfa/totp', 0)))),
+  ('a fresh entry with the method email/signup (the sign-up confirmation link)', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('email/signup', 0)))),
+  ('a fresh entry with the method token_refresh', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('token_refresh', 0)))),
+  ('a fresh entry with the method anonymous', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('anonymous', 0)))),
+  ('a fresh entry with the method recovery', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('recovery', 0)))),
+  ('a fresh entry with an empty method', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('', 0)))),
+  ('the method in capitals (PASSWORD)', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('PASSWORD', 0)))),
+  ('an old password entry next to a fresh totp entry', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 4000), pg_temp.amr_entry('totp', 0)))),
+  ('a fresh amr only inside user_metadata', jsonb_build_object('user_metadata', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 0))))),
+  ('a fresh amr only inside app_metadata', jsonb_build_object('app_metadata', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 0))))),
+  ('a fresh amr only under another top-level name', jsonb_build_object('amr_list', jsonb_build_array(pg_temp.amr_entry('password', 0)), 'method', 'password', 'timestamp', floor(extract(epoch from now())))),
+  ('a stale top-level amr and a fresh one in user_metadata', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 4000)), 'user_metadata', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 0)))));
+select is(pg_temp.try_del(extra), 'err=42501: reauthentication_required/true', 'refused, nothing deleted: ' || label) from reauth_no order by label;
+-- Accepted: each of these deletes the throw-away user.
+create temp table reauth_yes (label text primary key, extra jsonb);
+insert into reauth_yes values
+  ('a password sign-in now', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 0)))),
+  ('a password sign-in 290 seconds ago (inside the 300 second window)', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 290)))),
+  ('an otp sign-in now', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('otp', 0)))),
+  ('an oauth sign-in now', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('oauth', 0)))),
+  ('a magiclink sign-in now', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('magiclink', 0)))),
+  ('an sso/saml sign-in now', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('sso/saml', 0)))),
+  ('a clock 30 seconds ahead (small skew is allowed)', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', -30)))),
+  ('an old password entry and a fresh otp entry (any entry will do)', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 4000), pg_temp.amr_entry('otp', 0)))),
+  ('a fresh entry after a malformed one', jsonb_build_object('amr', jsonb_build_array('junk'::text, null::text, jsonb_build_object('method', 'password', 'timestamp', 'x'), pg_temp.amr_entry('password', 0)))),
+  ('a fresh entry, and extra claims that name someone else', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 0)), 'user_metadata', jsonb_build_object('amr', '[]'::jsonb)));
+select is(pg_temp.try_del(extra), 'deleted/false', 'accepted: ' || label) from reauth_yes order by label;
+-- the window is a setting; a bad value means 300
+update ops.settings set value = '10' where key = 'reauth_window_seconds';
+select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 60)))), 'err=42501: reauthentication_required/true', 'with the window at 10 seconds a sign-in 60 seconds ago is refused');
+select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 5)))), 'deleted/false', 'and one 5 seconds ago is accepted');
+update ops.settings set value = '1' where key = 'reauth_window_seconds';
+select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 5)))), 'err=42501: reauthentication_required/true', 'with the window at 1 second a sign-in 5 seconds ago is refused (the real-stack test uses this)');
+update ops.settings set value = '900' where key = 'reauth_window_seconds';
+select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 600)))), 'deleted/false', 'with the window at 900 seconds a sign-in 600 seconds ago is accepted (the window really is the setting)');
+update ops.settings set value = 'soon' where key = 'reauth_window_seconds';
+select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 600)))), 'err=42501: reauthentication_required/true', 'a setting that is not a number means 300: 600 seconds ago is refused');
+select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 200)))), 'deleted/false', 'and 200 seconds ago is accepted');
+update ops.settings set value = '-5' where key = 'reauth_window_seconds';
+select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 600)))), 'err=42501: reauthentication_required/true', 'a negative setting means 300 as well');
+delete from ops.settings where key = 'reauth_window_seconds';
+select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 600)))), 'err=42501: reauthentication_required/true', 'without the setting the window is 300: 600 seconds ago is refused');
+select is(pg_temp.try_del(jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 200)))), 'deleted/false', 'and 200 seconds ago is accepted');
+insert into ops.settings (key, value) values ('reauth_window_seconds', '300');
+select is((select value from ops.settings where key = 'reauth_window_seconds'), '300', 'the window setting is back at 300');
+select ok(exists (select 1 from ops.settings where key = 'reauth_window_seconds'), 'and the migration seeds it');
+-- what else the guard does not change
+select is(pg_temp.val_claims(pg_temp.ub(), 'authenticated', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 4000))), 'select app.export_my_data() is not null'), 'true', 'export does not ask for a recent sign-in (it only reads)');
+select is(pg_temp.val_claims(null, 'authenticated', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 0))), 'select app.delete_my_account()'), 'err=42501: forbidden', 'a fresh sign-in with no user id is still forbidden');
+select is(pg_temp.run_as(null, 'anon', 'select app.delete_my_account()'), 'err=42501', 'anon is still refused before the claim matters');
+select is((select count(*) from auth.users where id = pg_temp.ub()), 1::bigint, 'after all this B still exists');
+select is((select sum(n) from ops.daily_counts where metric = 'deletions' and day = current_date) - (select n from dc_before), 23::bigint, 'only real deletions were counted: 7 above, X and Y, ten accepted throw-away users and four more under other window settings (the refusals count nothing)');
+
+-- ---- WO-0062 item 2 (F2): the Auth audit log keeps the id and the address; the deletion removes them -----------------------------------------------
+insert into auth.users (id, email) values ('99999999-0000-0000-0000-0000000000c1', 'Gina.Q@Example.test'), ('99999999-0000-0000-0000-0000000000c2', 'other.person@example.test');
+create temp table audit_case (label text primary key, who text, payload json);
+insert into audit_case values
+  ('login: actor id and actor username', 'c1', '{"action":"login","actor_id":"99999999-0000-0000-0000-0000000000c1","actor_username":"gina.q@example.test","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}}'),
+  ('sign-up by the service role: user_email and user_id in traits', 'c1', '{"action":"user_signedup","actor_id":"00000000-0000-0000-0000-000000000000","actor_username":"service_role","log_type":"team","traits":{"provider":"email","user_email":"gina.q@example.test","user_id":"99999999-0000-0000-0000-0000000000c1","user_phone":""}}'),
+  ('the id deep inside the payload and nowhere else', 'c1', '{"action":"x","traits":{"deep":{"deeper":["99999999-0000-0000-0000-0000000000C1"]}}}'),
+  ('the address only, in capitals, inside a sentence', 'c1', '{"action":"x","msg":"message sent to GINA.Q@EXAMPLE.TEST today"}'),
+  ('the address only, as a field value', 'c1', '{"action":"user_recovery_requested","actor_username":"Gina.Q@Example.test"}'),
+  ('another person: their id and address', 'c2', '{"action":"login","actor_id":"99999999-0000-0000-0000-0000000000c2","actor_username":"other.person@example.test","log_type":"account"}'),
+  ('another person: the id alone', 'c2', '{"action":"token_refreshed","actor_id":"99999999-0000-0000-0000-0000000000c2"}'),
+  ('nobody: a log-out', 'none', '{"action":"logout","actor_via_sso":false,"log_type":"account"}');
+insert into auth.audit_log_entries (instance_id, id, payload, created_at, ip_address)
+  select '00000000-0000-0000-0000-000000000000', gen_random_uuid(), payload, now(), '203.0.113.7' from audit_case;
+create function pg_temp.audit_hits(p_text text) returns bigint language sql as $f$ select count(*) from auth.audit_log_entries where position(lower(p_text) in lower(payload::text)) > 0 $f$;
+select is((select count(*) from auth.audit_log_entries where position('99999999-0000-0000-0000-0000000000c1' in lower(payload::text)) > 0 or position('gina.q@example.test' in lower(payload::text)) > 0), 5::bigint,
+  'before: five audit entries name Gina by id or address');
+create temp table audit_before as select count(*) as n_all, count(*) filter (where payload::text ilike '%0000000000c2%') as n_other, count(*) filter (where payload::text like '%logout%') as n_none from auth.audit_log_entries;
+select is(pg_temp.val_fresh('99999999-0000-0000-0000-0000000000c1', 'authenticated', 'select app.delete_my_account()'), 'deleted', 'Gina leaves');
+select is(pg_temp.audit_hits('99999999-0000-0000-0000-0000000000c1'), 0::bigint, 'no audit entry contains her user id (payload::text)');
+select is(pg_temp.audit_hits('gina.q@example.test'), 0::bigint, 'no audit entry contains her address, in any case (payload::text)');
+select is((select n_all from audit_before) - (select count(*) from auth.audit_log_entries), 5::bigint, 'exactly the five entries about her went');
+select is((select count(*) from auth.audit_log_entries where payload::text ilike '%0000000000c2%'), (select n_other from audit_before), 'the other person''s audit entries are all still there');
+select is((select count(*) from auth.audit_log_entries where payload::text like '%logout%'), (select n_none from audit_before), 'and so is an entry that names nobody');
+-- a retry with the same token (account already gone) also clears entries that name the id and writes nothing else
+insert into auth.audit_log_entries (instance_id, id, payload, created_at) values ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), '{"action":"token_revoked","actor_id":"99999999-0000-0000-0000-0000000000c1"}', now());
+select is(pg_temp.val_fresh('99999999-0000-0000-0000-0000000000c1', 'authenticated', 'select app.delete_my_account()'), 'already_deleted', 'the retry says already_deleted');
+select is(pg_temp.audit_hits('99999999-0000-0000-0000-0000000000c1'), 0::bigint, 'and removes an entry written after the deletion that names the id');
+select is((select count(*) from auth.audit_log_entries where payload::text ilike '%0000000000c2%'), (select n_other from audit_before), 'without touching the other person''s entries');
+-- refusals touch nothing: a stale token deletes no audit entry
+insert into auth.audit_log_entries (instance_id, id, payload, created_at) values ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), '{"action":"login","actor_id":"99999999-0000-0000-0000-0000000000c2","actor_username":"other.person@example.test"}', now());
+create temp table audit_c2 as select count(*) as n from auth.audit_log_entries where payload::text ilike '%0000000000c2%';
+select is(pg_temp.val_claims('99999999-0000-0000-0000-0000000000c2', 'authenticated', jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 4000))), 'select app.delete_my_account()'), 'err=42501: reauthentication_required', 'a stale token is refused');
+select is((select count(*) from auth.audit_log_entries where payload::text ilike '%0000000000c2%'), (select n from audit_c2), 'and removes no audit entry');
+select is((select count(*) from auth.users where id = '99999999-0000-0000-0000-0000000000c2'), 1::bigint, 'nor the user');
+delete from auth.users where id = '99999999-0000-0000-0000-0000000000c2';
+delete from auth.audit_log_entries where payload::text ilike '%0000000000c2%' or payload::text like '%logout%';
 
 -- ---- invariants over the whole database after all deletions ---------------------------------------------------------------------
 select is((select count(*) from app.profiles where id not in (select id from auth.users)), 0::bigint, 'no profile is without an auth user');

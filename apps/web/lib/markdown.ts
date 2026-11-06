@@ -3,7 +3,10 @@
  * node into a fixed element, and every piece of text reaches the page as a text child, which React escapes. No HTML is ever read or written, so
  * `<script>`, `onerror=` and entity tricks are plain text. Supported: headings, paragraphs, flat lists, tables, block quotes, rules, `**strong**`,
  * `*emphasis*`, backslash escapes and links to http(s) addresses or to this site. Images become their alt text. Nothing else is interpreted.
- * Every scan is bounded and a shared budget caps the work for a whole document, so hostile or huge input cannot hang a page.
+ * Hostile or huge input cannot hang a page: the source is capped at MAX_SOURCE characters, every look-ahead for a closing mark (`]`, `)`, `*`) is bounded in length and
+ * spends from one budget shared by the whole document, and everything else is a single linear pass. There is no regular expression with a repeated group or with two
+ * quantifiers that can match the same characters (the old heading and list-item patterns had one, and a closing-hash pattern that was quadratic: WO-0062); the
+ * heading, list-item and closing-hash readers below are loops. components/legal/markdown.test.ts times the worst inputs.
  */
 export type Inline =
   | { t: 'text'; text: string }
@@ -122,8 +125,46 @@ function inline(ctx: Ctx, s: string, depth: number, links = true): Inline[] {
 
 /** Heading ids start with `doc-`, so a heading called "Main" can never take the id of the page's own `main`. */
 const slugify = (text: string): string => `doc-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'section'}`;
-const HEADING = /^(#{1,6})\s+(.+)$/;
-const ITEM = /^ {0,3}([-*+]|\d{1,9}[.)])[ \t]+(.*)$/;
+// Line readers written as loops. (As regular expressions the heading and item patterns followed a run of white space with `.+` / `.*`, which cannot match a
+// line separator (U+2028, U+2029): a long run of spaces and then a separator took quadratic time.) Same meaning as before: `.` never matched those two characters.
+const isSpace = (c: string): boolean => /\s/.test(c);
+const hasLineSeparator = (s: string): boolean => s.includes('\u2028') || s.includes('\u2029');
+/** `#` to `######`, white space, then at least one character with no line separator in it. `line` is already trimmed. */
+export function parseHeading(line: string): { level: number; text: string } | null {
+  let level = 0;
+  while (level < 7 && line[level] === '#') level++;
+  if (level < 1 || level > 6 || level >= line.length || !isSpace(line[level]!)) return null;
+  let at = level;
+  while (at < line.length && isSpace(line[at]!)) at++;
+  const text = line.slice(at);
+  return text === '' || hasLineSeparator(text) ? null : { level, text };
+}
+/** Up to three spaces, a bullet (`-`, `*`, `+`) or a number of at most nine digits and `.` or `)`, spaces or tabs, then the item text (no line separator in it). */
+export function parseItem(line: string): { marker: string; text: string } | null {
+  let at = 0;
+  while (at < 3 && line[at] === ' ') at++;
+  let marker: string;
+  if (line[at] === '-' || line[at] === '*' || line[at] === '+') { marker = line[at]!; at++; } else {
+    let digits = 0;
+    while (digits < 10 && at + digits < line.length && line[at + digits]! >= '0' && line[at + digits]! <= '9') digits++;
+    const after = line[at + digits];
+    if (digits < 1 || digits > 9 || (after !== '.' && after !== ')')) return null;
+    marker = line.slice(at, at + digits + 1);
+    at += digits + 1;
+  }
+  if (line[at] !== ' ' && line[at] !== '\t') return null;
+  while (line[at] === ' ' || line[at] === '\t') at++;
+  const text = line.slice(at);
+  return hasLineSeparator(text) ? null : { marker, text };
+}
+/** A heading's text without its closing hashes (`## Title ##` is `Title`); the hashes must follow a space or tab, so `C#` keeps its `#`. A loop, not a pattern. */
+export function stripClosingHashes(text: string): string {
+  let end = text.length;
+  while (end > 0 && text[end - 1] === '#') end--;
+  if (end === text.length || end === 0 || (text[end - 1] !== ' ' && text[end - 1] !== '\t')) return text.trim();
+  while (end > 0 && (text[end - 1] === ' ' || text[end - 1] === '\t')) end--;
+  return text.slice(0, end).trim();
+}
 const RULE = /^ {0,3}(?:-{3,}|_{3,}|\*{3,})[ \t]*$/;
 const QUOTE = /^ {0,3}> ?(.*)$/;
 
@@ -145,7 +186,7 @@ const isSeparator = (line: string): boolean => line.includes('-') && cells(line)
 const startsTable = (lines: string[], i: number): boolean => lines[i]!.includes('|') && i + 1 < lines.length && isSeparator(lines[i + 1]!) && cells(lines[i]!).length === cells(lines[i + 1]!).length;
 const startsBlock = (lines: string[], i: number): boolean => {
   const line = lines[i]!;
-  return HEADING.test(line.trim()) || RULE.test(line) || QUOTE.test(line) || ITEM.test(line) || startsTable(lines, i);
+  return parseHeading(line.trim()) !== null || RULE.test(line) || QUOTE.test(line) || parseItem(line) !== null || startsTable(lines, i);
 };
 
 function blocks(ctx: Ctx, lines: string[], depth: number, ids: Map<string, number>): Block[] {
@@ -154,13 +195,13 @@ function blocks(ctx: Ctx, lines: string[], depth: number, ids: Map<string, numbe
   while (i < lines.length) {
     const line = lines[i]!;
     if (line.trim() === '') { i++; continue; }
-    const heading = HEADING.exec(line.trim());
+    const heading = parseHeading(line.trim());
     if (heading) {
-      const text = heading[2]!.replace(/[ \t]+#+$/, '').trim();
+      const text = stripClosingHashes(heading.text);
       const base = slugify(text);
       const seen = ids.get(base) ?? 0;
       ids.set(base, seen + 1);
-      out.push({ t: 'heading', level: heading[1]!.length as 1, id: seen === 0 ? base : `${base}-${seen + 1}`, children: inline(ctx, text, 0) });
+      out.push({ t: 'heading', level: heading.level as 1, id: seen === 0 ? base : `${base}-${seen + 1}`, children: inline(ctx, text, 0) });
       i++;
     } else if (RULE.test(line)) {
       out.push({ t: 'hr' });
@@ -169,19 +210,18 @@ function blocks(ctx: Ctx, lines: string[], depth: number, ids: Map<string, numbe
       const inner: string[] = [];
       while (i < lines.length && QUOTE.test(lines[i]!)) { inner.push(QUOTE.exec(lines[i]!)![1]!); i++; }
       out.push({ t: 'quote', children: blocks(ctx, inner, depth + 1, ids) });
-    } else if (ITEM.test(line)) {
-      const first = ITEM.exec(line)!;
-      const ordered = /\d/.test(first[1]!);
+    } else if (parseItem(line)) {
+      const ordered = /\d/.test(parseItem(line)!.marker);
       const items: string[] = [];
       while (i < lines.length) {
         const here = lines[i]!;
-        const m = ITEM.exec(here);
-        if (m && /\d/.test(m[1]!) === ordered) { items.push(m[2]!.trim()); i++; continue; }
+        const m = parseItem(here);
+        if (m && /\d/.test(m.marker) === ordered) { items.push(m.text.trim()); i++; continue; }
         if (here.trim() === '') {
           let k = i;
           while (k < lines.length && lines[k]!.trim() === '') k++;
-          const after = k < lines.length ? ITEM.exec(lines[k]!) : null;
-          if (after && /\d/.test(after[1]!) === ordered) { i = k; continue; }
+          const after = k < lines.length ? parseItem(lines[k]!) : null;
+          if (after && /\d/.test(after.marker) === ordered) { i = k; continue; }
           break;
         }
         if (/^[ \t]{2,}\S/.test(here) && items.length > 0) { items[items.length - 1] += ` ${here.trim()}`; i++; continue; }

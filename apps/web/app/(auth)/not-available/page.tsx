@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SignOutForm } from '../../../components/account/SignOutForm';
 import { ExportButton } from '../../../components/account/ExportButton';
 import { NOT_OPEN_MESSAGE } from '../../../lib/consent-form';
 
@@ -11,7 +12,7 @@ export default function Page() {
       <h2>What you can do</h2>
       <ExportButton />
       <p><Link href="/leave" className="button secondary">Leave the pilot</Link></p>
-      <form action="/auth/sign-out" method="post"><button type="submit">Sign out</button></form>
+      <SignOutForm />
       <p><Link href="/about">About the pilot</Link></p>
     </>
   );

@@ -62,6 +62,23 @@ begin
   return res;
 end $f$;
 
+-- WO-0062 F1: the sign-in proof app.delete_my_account() reads from the token. GoTrue puts amr = [{"method": "password", "timestamp": <epoch seconds>}]
+-- in every access token. amr_entry builds one entry that is p_age seconds old; val_fresh is val_claims with a password sign-in that happened now.
+create function pg_temp.amr_entry(p_method text, p_age numeric) returns jsonb language sql as
+  $f$ select jsonb_build_object('method', p_method, 'timestamp', floor(extract(epoch from now()) - p_age)::bigint) $f$;
+create function pg_temp.val_fresh(p_uid uuid, p_role text, p_sql text) returns text language sql as
+  $f$ select pg_temp.val_claims(p_uid, p_role, jsonb_build_object('amr', jsonb_build_array(pg_temp.amr_entry('password', 0))), p_sql) $f$;
+-- Deletes a throw-away user with the given extra claims and says what happened: '<result>/<user still exists>'. The user is always removed afterwards.
+create function pg_temp.try_del(p_extra jsonb) returns text language plpgsql as $f$
+declare u uuid := gen_random_uuid(); res text; still boolean;
+begin
+  insert into auth.users (id, email) values (u, u::text || '@example.test');
+  res := pg_temp.val_claims(u, 'authenticated', p_extra, 'select app.delete_my_account()');
+  still := exists (select 1 from auth.users where id = u);
+  delete from auth.users where id = u;
+  return res || '/' || still;
+end $f$;
+
 -- A user: auth.users row (the sign-up trigger creates the profile). The email is the id, so it is unique and not a real address.
 create function pg_temp.mk_user(p_uid uuid) returns void language sql as
   $f$ insert into auth.users (id, email) values (p_uid, p_uid::text || '@example.test') $f$;

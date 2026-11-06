@@ -1,10 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { useRef, useState, type FormEvent } from 'react';
-import { leaveThePilot, sessionCookieNames } from './account-actions';
+import { clearSessionCookies, leaveThePilot } from './account-actions';
+import { clearBrowserUsage } from './browser-data';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 
-/** FR-63, FR-66: the confirmation step. The password is asked again; nothing is deleted unless it is right. Afterwards the session cookies are removed and the goodbye page opens. */
+/** FR-63, FR-66: the confirmation step. The password is asked again; nothing is deleted unless it is right. Afterwards the session cookies and the browser-only usage log are removed and the goodbye page opens. */
 export function LeaveForm() {
   const [pw, setPw] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
@@ -17,7 +18,8 @@ export function LeaveForm() {
     setBusy(true);
     const out = await leaveThePilot(createBrowserSupabase(), pw);
     if (out.ok) {
-      sessionCookieNames(document.cookie).forEach((name) => { document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`; });
+      clearSessionCookies(document);
+      clearBrowserUsage(); // the usage log and settings kept in this browser go with the account (WO-0062)
       return window.location.assign('/goodbye');
     }
     setBusy(false);

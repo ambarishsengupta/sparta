@@ -178,9 +178,14 @@ describe.skipIf(!stack)('Export my data and Leave the pilot against the real sta
 
   describe('after the first person leaves', () => {
     let token = '';
+    let confirmationToken = '';
     let before = { bob: {} as Record<string, number>, deletions: 0, bobExport: '' };
     let result: LeaveResult;
     beforeAll(async () => {
+      // WO-0062: the token captured here used to be the one from the sign-up confirmation link. The database now wants a password (or other primary) sign-in in the token,
+      // so the retry below uses a token from a fresh password sign-in, which is what a person who just typed the password again holds; the confirmation token is kept to show it is refused.
+      confirmationToken = (await ann.auth.getSession()).data.session!.access_token;
+      expect((await ann.auth.signInWithPassword({ email: email.ann, password: pw })).error).toBeNull();
       token = (await ann.auth.getSession()).data.session!.access_token;
       before = { bob: totals(bobId), deletions: deletions(), bobExport: (await exportOf(bob)).text.replace(/"generated_at": "[^"]+"/, '') };
       result = await leaveThePilot(ann, pw);
@@ -223,6 +228,8 @@ describe.skipIf(!stack)('Export my data and Leave the pilot against the real sta
       const again = await old.schema('app').rpc('delete_my_account');
       expect(again.error).toBeNull();
       expect(again.data).toBe('already_deleted');
+      const viaLink = createClient(stack!.url, stack!.key, { global: { headers: { Authorization: `Bearer ${confirmationToken}` } }, auth: { persistSession: false, autoRefreshToken: false } });
+      expect((await viaLink.schema('app').rpc('delete_my_account')).error?.message).toBe('reauthentication_required');
       expect(deletions()).toBe(before.deletions + 1);
       expect(await leaveThePilot(newClient(stack!), pw)).toMatchObject({ ok: false, reason: 'session' });
     });

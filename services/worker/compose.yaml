@@ -1,0 +1,21 @@
+# Local run of the worker against the local Supabase stack (LLD 7.1: restart always, ~2 GB, no published port).
+# Credentials come from a git-ignored .env next to this file (template: .env.example); nothing secret is in this file.
+#   docker compose up --build        (reads .env; stop with: docker compose down)
+services:
+  worker:
+    build: .
+    image: sparta-worker:local
+    restart: always
+    env_file: .env
+    environment:
+      WORKER_ID: local-1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: 2g
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

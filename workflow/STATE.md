@@ -1,6 +1,6 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-06 (R5b: WO-0071 committed; two dynamic security reviews incomplete; WO-0074 follow-up next)
+Updated: 2026-11-06 (R5b: WO-0074 committed 5f6051f, gate PASS verified independently; WO-0072 worker maker running)
 Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
@@ -72,3 +72,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-06: R2c merged to main after two security reviews (second PASS). Built: R0, R1, R2a, R2b, R2c, R3, R4, R5a. Not built: R5b (worker, photo path, jobs, storage), R6 (receipts, catalogue, purchases), R7 (aggregation, vendor portal), R8 (hardening). Owner decisions open (human-only): MAJOR-1 password-change bypass risk acceptance before any hosted deployment; H&M licence OI-5; the human style specialist; D3 notebook exposure; accounts and keys for hosting; pushing. Rule 11 and section 11a apply: continue with R5b.
 - 2026-11-06: R5b on release/R5b. WO-0070 (jobs, private storage, worker_role, atomic claim) committed and security-reviewed PASS. The review found MAJOR-1 (account deletion leaves file bytes in storage) so WO-0071 was added: server-only admin module (only place with SUPABASE_SECRET_KEY), signed-URL route for the worker, storage purge before account deletion, DB follow-ups. WO-0071 was cut off by the 5-hour limit and is resumed. Then WO-0072 (worker service in Docker) and WO-0073 (add-by-photo flow). R5b must not merge before the reviews pass.
 - 2026-11-06: WO-0071 committed (gate green). The independent security review of its routes: pass 1 static only, pass 2 INCOMPLETE (its output was cut off by a safety classifier while writing attack scripts; I did not reword to evade it). OPEN GAP for the owner: penetration-test /api/worker/signed-urls and /api/account/purge-storage before any hosted deployment. Confirmed finding: limiter counts before token check (worker DoS): fix in WO-0074 with MINOR-1,3,4,5. Then WO-0072 (worker) and WO-0073 (add-by-photo).
+- 2026-11-06: WO-0074 committed (5f6051f). WO-0072 worker service launched (Sonnet maker). Next: WO-0073, then R5b Spec QC, security review, retro, goal, merge.

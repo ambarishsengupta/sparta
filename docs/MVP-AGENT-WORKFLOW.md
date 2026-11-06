@@ -225,6 +225,7 @@ These come from the product owner's instructions and from mistakes already made 
     - If the awaited thing is already ready, or its check cannot match, the wait is cancelled at once; a wait that has produced no event after its timeout is cancelled and reported, not re-armed silently.
     - **Sweep.** After every work order, before every report to the owner and before stopping, run `bash workflow/gates/sweep.sh` (use `--kill` for strays). It lists dev servers, wait loops, log tails, long sleeps, listening web ports, running containers and scratch clones. Only the local database stack and the Colima VM may stay up, and only while database work is planned; stop them (`supabase stop`, `colima stop`) when the build pauses.
     - **Makers and checkers stop what they start**: a server or watcher started for a demo or a test is stopped before the report, and the report says so. An agent that leaves a server running has not finished the work order.
+    - **Every subagent gets a time box in its brief** (default 45 minutes for a maker, 45 minutes for a verifier, 20 minutes for a re-check of a fix); the orchestrator checks elapsed time at each sweep and sends a wrap-up message to any agent past its box, asking it to report what it has and say what it skipped.
     - The orchestrator checks the agent list (`ListAgents`) and the scheduled tasks at each sweep and stops anything that has no work order behind it; a resume trigger that has fired or is no longer needed is deleted, not left disabled.
 
 ## 11. Risks to the workflow itself

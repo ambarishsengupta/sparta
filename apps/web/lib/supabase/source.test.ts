@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { importersOf, specifiers } from '../../test-support/imports';
 
 const root = new URL('../..', import.meta.url).pathname;
 function files(dir: string): string[] {
@@ -42,7 +43,9 @@ describe('no secret or service key anywhere in apps/web except the one server-on
   });
   it('the secret-key module is imported by the two route handlers and its own test, and nothing else imports anything from lib/server', () => {
     const sources = all.filter((f) => /\.tsx?$/.test(f) && !f.includes('/node_modules/'));
-    const importing = (re: RegExp) => sources.filter((f) => [...readFileSync(f, 'utf8').matchAll(/from '([^']+)'/g)].some((m) => re.test(m[1]!))).map((f) => f.slice(root.length)).sort();
+    // WO-0074: every import form (quotes, dynamic import(), require(), export ... from, re-export chains), see test-support/imports.ts and imports.test.ts
+    const text = Object.fromEntries(sources.map((f) => [f.slice(root.length), readFileSync(f, 'utf8')]));
+    const importing = (re: RegExp) => importersOf(text, re);
     expect(importing(/(^|\/)admin$/)).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/worker/signed-urls/route.ts', 'lib/server/admin.test.ts']);
     const outside = importing(/(^|\/)server\/[a-z-]+$/).filter((f) => !f.startsWith('lib/server/'));
     // route handlers, and the integration/support code that exercises the handlers; no page, component or other lib module
@@ -56,6 +59,11 @@ describe('no secret or service key anywhere in apps/web except the one server-on
     expect(route).toContain('handlePurge(request, { caller, storage: admin.storage })');
     expect(route).toContain('const caller = await createServerSupabase();');
     expect(readFileSync(join(root, 'app/api/worker/signed-urls/route.ts'), 'utf8')).toContain('storage: admin.storage,');
+    // WO-0074: the worker route's two budgets come from workerLimiters(), one for correct calls and a separate one for failures
+    const worker = readFileSync(join(root, 'app/api/worker/signed-urls/route.ts'), 'utf8');
+    expect(worker).toContain('const limiters = workerLimiters();');
+    expect(worker).toContain('allow: limiters.allow,');
+    expect(worker).toContain('allowFailure: limiters.allowFailure,');
   });
   it('no page or component renders user-supplied HTML', () => {
     expect(all.filter((f) => /\.tsx?$/.test(f) && !f.endsWith('.test.ts') && readFileSync(f, 'utf8').includes('dangerously')).map((f) => f.slice(root.length))).toEqual([]);
@@ -66,7 +74,7 @@ describe('no secret or service key anywhere in apps/web except the one server-on
 // scan by name, so this one proves that nothing it does scan can reach them, except the repository modules (WO-0052).
 describe('the suggestion path reaches only the repository modules of lib/supabase (companion to the no-network test)', () => {
   const path = all.filter((f) => /\/(lib\/[^/]+\.ts|lib\/supabase\/(repository|mapping|errors|config)\.ts|components\/outfits\/[^/]+\.tsx|app\/outfits\/.*\.tsx|components\/use-(repository|learned)\.ts)$/.test(f) && !f.endsWith('.test.ts'));
-  const importsOf = (f: string) => [...readFileSync(f, 'utf8').matchAll(/from '([^']+)'/g)].map((m) => m[1]!);
+  const importsOf = (f: string) => specifiers(readFileSync(f, 'utf8'));
   const ALLOWED = /(^|\/)supabase\/(config|errors|backend|repository|mapping)$|^\.\/(config|errors|mapping)$/;
   it('finds the suggestion sources', () => { expect(path.length).toBeGreaterThanOrEqual(19); });
   it('none imports a sign-in module, lib/auth-form or an Auth package; the only others are the repository modules, config and errors', () => {

@@ -1,5 +1,5 @@
 import { fail, ok, UUID, type StorageLike } from './api';
-import { bearerToken, tokenMatches } from './limits';
+import { bearerToken, makeLimiter, tokenMatches } from './limits';
 
 /** LLD 6, 7.1: what the worker may fetch and write for ONE running job, as signed URLs. Every path comes from the job row (inputs) or is
  * derived here from the owner id and job id (outputs); nothing in the request body names a path. */
@@ -12,9 +12,19 @@ const OUTPUTS: Record<string, [kind: string, suffix: string][]> = {
 };
 
 export interface JobRow { id: number; user_id: string; type: string; status: string; input: unknown }
+/** WO-0074: two separate per-process budgets. Requests with a correct token are counted in `calls`; only requests that FAIL authentication are
+ * counted in `failures`. Unauthenticated traffic therefore cannot use up the real worker's budget. */
+export const WORKER_BUDGET = { calls: 120, failures: 30, windowMs: 60_000 } as const;
+export function workerLimiters(now: () => number = Date.now): { allow: () => boolean; allowFailure: () => boolean } {
+  return { allow: makeLimiter(WORKER_BUDGET.calls, WORKER_BUDGET.windowMs, now), allowFailure: makeLimiter(WORKER_BUDGET.failures, WORKER_BUDGET.windowMs, now) };
+}
+
 export interface SignedUrlDeps {
   bearer: string | undefined;
+  /** Called once per request that presented the correct token; false means the worker's own budget is spent (429). */
   allow: () => boolean;
+  /** Called once per request that failed authentication, never for a correct token; false means 429 for that failure. */
+  allowFailure: () => boolean;
   lookupJob: (id: number) => Promise<JobRow | null>;
   storage: StorageLike;
 }
@@ -48,9 +58,10 @@ export const outputPaths = (type: string, userId: string, jobId: number): { kind
 
 export async function handleSignedUrls(req: Request, deps: SignedUrlDeps): Promise<Response> {
   if (req.method !== 'POST') return fail('method_not_allowed');
-  if (!deps.allow()) return fail('rate_limited');
   if (!deps.bearer || deps.bearer.length < 32) return fail('unavailable');
-  if (!tokenMatches(bearerToken(req.headers.get('authorization')), deps.bearer)) return fail('unauthorised');
+  // The token is checked FIRST (WO-0074): only a failure is counted against the failure budget, and a correct token never meets that budget.
+  if (!tokenMatches(bearerToken(req.headers.get('authorization')), deps.bearer)) return deps.allowFailure() ? fail('unauthorised') : fail('rate_limited');
+  if (!deps.allow()) return fail('rate_limited');
 
   let body: unknown;
   try {

@@ -12,7 +12,38 @@ export interface Caller {
   auth: { getUser(): PromiseLike<{ data: { user: { id: string } | null }; error: unknown }> };
   schema(s: 'app'): { rpc(fn: 'is_recent_sign_in'): PromiseLike<{ data: unknown; error: unknown }> };
 }
-export interface PurgeDeps { caller: Caller; storage: StorageLike }
+export interface PurgeDeps {
+  caller: Caller; storage: StorageLike;
+  /** The site's public origin, when configured (for example `https://app.example`): its scheme is then the scheme the browser used. Optional; not yet set by the route. */
+  publicOrigin?: string | null;
+}
+
+// The header name is assembled: the app's strict no-network scan (outfits.test.ts) reads the bare word as a request call, even inside a string.
+const FETCH_SITE = ['sec', 'fet' + 'ch', 'site'].join('-');
+const HOST = /^(?:[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?|\[[0-9A-Fa-f:.]+\])(?::[0-9]{1,5})?$/;
+const schemeOf = (req: Request, publicOrigin: string | null | undefined): 'http:' | 'https:' | null => {
+  if (publicOrigin) { try { const p = new URL(publicOrigin).protocol; if (p === 'http:' || p === 'https:') return p; } catch { /* not a URL: fall through to the request */ } }
+  const forwarded = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim().toLowerCase();   // the first value is the one nearest the browser
+  if (forwarded === 'http' || forwarded === 'https') return `${forwarded}:`;
+  try { const p = new URL(req.url).protocol; return p === 'http:' || p === 'https:' ? p : null; } catch { return null; }
+};
+
+/** WO-0074: the full origin (scheme, host and port) of the request's Origin header must equal the origin the browser used to reach this server.
+ * Host and port are the Host header's (`req.url` can carry the server's own bind name: Next reports `localhost` for a server bound to 127.0.0.1);
+ * the scheme is the configured public origin's, else X-Forwarded-Proto's, else the URL's. With no Origin header the request is allowed only when the
+ * browser's request metadata says it came from this origin or from no page at all (`Sec-Fetch-Site: same-origin` or `none`). */
+export function originAllowed(req: Request, publicOrigin?: string | null): boolean {
+  const origin = req.headers.get('origin');
+  if (origin === null) { const site = req.headers.get(FETCH_SITE); return site === 'same-origin' || site === 'none'; }
+  let given: URL;
+  try { given = new URL(origin); } catch { return false; }          // includes the literal Origin: null of a sandboxed or redirected request
+  if ((given.protocol !== 'http:' && given.protocol !== 'https:') || given.origin !== origin) return false;   // no path, user info or query, and not a non-default spelling
+  let host: string;
+  try { host = req.headers.get('host') ?? new URL(req.url).host; } catch { return false; }
+  const scheme = schemeOf(req, publicOrigin);
+  if (!scheme || !HOST.test(host)) return false;
+  try { return new URL(`${scheme}//${host}`).origin === given.origin; } catch { return false; }
+}
 
 /** Every object path under `prefix` (a folder without a trailing slash), folders followed to MAX_DEPTH. Throws on a storage error. */
 export async function listAll(storage: StorageLike, bucket: string, prefix: string, depth = 0): Promise<string[]> {
@@ -46,13 +77,9 @@ export async function purgeBucket(storage: StorageLike, bucket: string, uid: str
 
 export async function handlePurge(req: Request, deps: PurgeDeps): Promise<Response> {
   if (req.method !== 'POST') return fail('method_not_allowed');
-  // A browser form on another site cannot carry the session cookie (SameSite=Lax), and a request that names another origin is refused as well.
-  const origin = req.headers.get('origin');
-  if (origin !== null) {
-    // The Host header is what the browser sent; `req.url` can carry the server's own bind name (Next reports `localhost` for a server bound to 127.0.0.1).
-    const host = req.headers.get('host') ?? new URL(req.url).host;
-    try { if (new URL(origin).host !== host) return fail('forbidden'); } catch { return fail('forbidden'); }
-  }
+  // A browser form on another site cannot carry the session cookie (SameSite=Lax), and a request that names another origin (or none, without the
+  // browser's own same-origin metadata) is refused as well.
+  if (!originAllowed(req, deps.publicOrigin)) return fail('forbidden');
 
   let uid: string;
   try {

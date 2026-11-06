@@ -3,14 +3,15 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 /** The shortest worker token the route accepts (LLD 12.3 asks for random values of at least 32 bytes; 32 characters here is the floor). */
 export const MIN_BEARER_CHARS = 32;
 
-/** Constant-time comparison of a presented bearer token with the configured one. Both are hashed first, so the lengths never differ and the
- * comparison time does not depend on where they differ. A configured token shorter than the floor matches nothing (the route is then misconfigured). */
+/** Constant-time comparison of a presented bearer token with the configured one. Both are ALWAYS hashed and the two digests compared with
+ * `timingSafeEqual`, whatever the presented value is (missing, too short, too long, wrong): the work done and the comparison time do not depend on
+ * the length or on where the values differ (WO-0074: a short token used to skip the hashing). The length floor and the type checks are applied to
+ * the result afterwards, never as an early exit. A configured token shorter than the floor matches nothing (the route is then misconfigured). */
 export function tokenMatches(presented: string | null | undefined, expected: string | null | undefined): boolean {
-  if (typeof presented !== 'string' || typeof expected !== 'string') return false;
-  if (expected.length < MIN_BEARER_CHARS || presented.length < MIN_BEARER_CHARS) return false;
-  const a = createHash('sha256').update(presented).digest();
-  const b = createHash('sha256').update(expected).digest();
-  return timingSafeEqual(a, b);
+  const a = createHash('sha256').update(typeof presented === 'string' ? presented : '').digest();
+  const b = createHash('sha256').update(typeof expected === 'string' ? expected : '').digest();
+  const same = timingSafeEqual(a, b);
+  return same && typeof presented === 'string' && typeof expected === 'string' && expected.length >= MIN_BEARER_CHARS && presented.length >= MIN_BEARER_CHARS;
 }
 
 /** The token of an `Authorization: Bearer <token>` header, or null for anything else (no scheme, other scheme, extra parts). */

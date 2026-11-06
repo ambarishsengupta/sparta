@@ -17,7 +17,7 @@ function world(job: Partial<JobRow> | null, over: Partial<SignedUrlDeps> = {}) {
   const storage: StorageLike = { from: bucket };
   const row: JobRow | null = job === null ? null : { id: 7, user_id: OWNER, type: 'photo', status: 'running', input: { path: file() }, ...job };
   const lookups: number[] = [];
-  const deps: SignedUrlDeps = { bearer: BEARER, allow: () => true, storage, lookupJob: async (id) => { lookups.push(id); return row; }, ...over };
+  const deps: SignedUrlDeps = { bearer: BEARER, allow: () => true, allowFailure: () => true, storage, lookupJob: async (id) => { lookups.push(id); return row; }, ...over };
   return { deps, calls, lookups };
 }
 const post = (body: unknown, headers: Record<string, string> = { authorization: `Bearer ${BEARER}` }, method = 'POST') =>
@@ -43,9 +43,18 @@ describe('authorisation of /api/worker/signed-urls', () => {
     const w = world({}); const r = await handleSignedUrls(post({}, { authorization: `Bearer ${BEARER}` }, method), w.deps);
     expect([r.status, await code(r)]).toEqual([405, 'method_not_allowed']); expect(w.lookups).toEqual([]);
   });
-  it('the rate limit answers 429 before the token is compared', async () => {
+  // WO-0074: the old test here ("429 before the token is compared") pinned the defect (unauthenticated traffic spent the worker's budget); the order is now
+  // token first. The two tests below replace it; the budgets themselves are tested with an injected clock in signed-urls-throttle.test.ts.
+  it('once the worker\'s own budget is spent a correct token is 429 and nothing is looked up', async () => {
     const w = world({}, { allow: () => false }); const r = await handleSignedUrls(post({ job_id: 7 }), w.deps);
     expect([r.status, await code(r)]).toEqual([429, 'rate_limited']); expect(w.lookups).toEqual([]);
+  });
+  it('a wrong token is 401 while the failure budget lasts and 429 after it; the worker\'s budget is neither asked nor spent by a failure', async () => {
+    let asked = 0; const budgetCalls: string[] = [];
+    const w = world({}, { allow: () => { budgetCalls.push('allow'); return true; }, allowFailure: () => { asked += 1; return asked <= 2; } });
+    const wrong = () => handleSignedUrls(post({ job_id: 7 }, { authorization: `Bearer ${'x'.repeat(40)}` }), w.deps);
+    expect([(await wrong()).status, (await wrong()).status, (await wrong()).status]).toEqual([401, 401, 429]);
+    expect(budgetCalls).toEqual([]); expect(w.lookups).toEqual([]);
   });
   it('error bodies are the fixed shape with no input echoed', async () => {
     const w = world({}); const r = await handleSignedUrls(post({ job_id: 7 }, { authorization: 'Bearer secret-guess-0123456789abcdef012345' }), w.deps);

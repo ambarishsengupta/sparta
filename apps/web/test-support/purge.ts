@@ -12,7 +12,8 @@ export const adminFor = (s: Stack): SupabaseClient => {
 /** What the browser does on Leave (`purgeMyStorage`), with the network replaced by an in-process call of the route's own handler: the caller is the
  * test's signed-in client, the storage is the secret-key client. Everything between the two (the client mapping, the handler) is the real code. */
 export const purgeInProcess = (s: Stack, caller: SupabaseClient, storage: SupabaseClient['storage'] = adminFor(s).storage) =>
-  purgeMyStorage((path, init) => handlePurge(new Request(`http://127.0.0.1:3000${path}`, init), { caller, storage }));
+  // A browser adds Origin and Sec-Fetch-Site to a same-origin POST; the in-process request carries them too (WO-0074: the handler refuses a request without either).
+  purgeMyStorage((path, init) => handlePurge(new Request(`http://127.0.0.1:3000${path}`, { ...init, headers: { origin: 'http://127.0.0.1:3000', 'sec-fetch-site': 'same-origin' } }), { caller, storage }));
 
 /** Test clean-up: removes every file of a test user through the Storage API, before the user row is deleted by SQL (which would leave the bytes behind). */
 export async function purgeUserFiles(s: Stack, uid: string): Promise<void> {

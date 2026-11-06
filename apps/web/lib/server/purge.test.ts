@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BucketApi, StorageLike } from './api';
-import { BUCKETS, handlePurge, listAll, purgeBucket, type Caller } from './purge';
+import { BUCKETS, handlePurge, listAll, originAllowed, purgeBucket, type Caller } from './purge';
 
 const ME = '11111111-1111-4111-8111-111111111111';
 const NEIGHBOUR = '11111111-1111-4111-8111-111111111112';   // shares a long prefix with ME
@@ -39,7 +39,8 @@ const caller = (over: { user?: { id: string } | null; getUserError?: unknown; re
     schema: () => ({ rpc: async (fn) => { rpcCalls.push(fn); return { data: 'recent' in over ? over.recent : true, error: over.rpcError ?? null }; } }),
   };
 };
-const post = (headers: Record<string, string> = {}, method = 'POST') => new Request('https://app.test/api/account/purge-storage', { method, headers });
+// WO-0074: a request with no Origin header is allowed only with same-origin fetch metadata, so the default test request carries it (as a browser's own fetch does).
+const post = (headers: Record<string, string> = {}, method = 'POST') => new Request('https://app.test/api/account/purge-storage', { method, headers: { 'sec-fetch-site': 'same-origin', ...headers } });
 const code = async (r: Response) => ((await r.clone().json()) as { error?: { code: string } }).error?.code;
 const mine = (n: number) => Array.from({ length: n }, (_, i) => `item-images/${ME}/f${String(i).padStart(4, '0')}.webp`);
 const others = ['item-images/' + NEIGHBOUR + '/n.webp', 'receipts/' + NEIGHBOUR + '/n.pdf', 'exports/' + NEIGHBOUR + '/e1/part-1.zip', `item-images/${ME}x/y.webp`, 'item-images/orphan.webp'];
@@ -105,7 +106,7 @@ describe('who may purge', () => {
     const f = fakeStorage(mine(2)); const r = await handlePurge(post(), { caller: caller({ rpcError: { message: 'x' } }), storage: f.storage });
     expect(r.status).toBe(503); expect(f.log).toEqual([]);
   });
-  it('a request from another origin is 403 before anything else; the same origin and a missing Origin header are fine', async () => {
+  it('a request from another origin is 403 before anything else; the same origin is fine', async () => {
     const f = fakeStorage(mine(1)); const c = caller();
     expect((await handlePurge(post({ origin: 'https://evil.example' }), { caller: c, storage: f.storage })).status).toBe(403);
     expect((await handlePurge(post({ origin: 'null' }), { caller: c, storage: f.storage })).status).toBe(403);
@@ -147,4 +148,81 @@ describe('failures are reported and never claimed as success', () => {
     await expect(listAll(f.storage, 'exports', ME)).rejects.toThrow('too deep');
   });
   it('the buckets are exactly the three of LLD 4.6', () => { expect([...BUCKETS]).toEqual(['item-images', 'receipts', 'exports']); });
+});
+
+// WO-0074 item 5: the whole origin (scheme, host and port) is compared, not the host alone.
+describe('the Origin check compares scheme, host and port', () => {
+  const req = (headers: Record<string, string>, url = 'https://app.test/api/account/purge-storage') => new Request(url, { method: 'POST', headers });
+  it('a matching origin passes: the URL scheme with the Host header, default ports omitted on either side', () => {
+    expect(originAllowed(req({ origin: 'https://app.test', host: 'app.test' }))).toBe(true);
+    expect(originAllowed(req({ origin: 'https://app.test', host: 'app.test:443' }))).toBe(true);
+    expect(originAllowed(req({ origin: 'http://app.test:8080', host: 'app.test:8080' }, 'http://app.test:8080/x'))).toBe(true);
+    expect(originAllowed(req({ origin: 'http://127.0.0.1:3000', host: '127.0.0.1:3000' }, 'http://localhost:3000/x'))).toBe(true);
+    expect(originAllowed(req({ origin: 'http://[::1]:3000', host: '[::1]:3000' }, 'http://localhost:3000/x'))).toBe(true);
+  });
+  it('http against https is refused, whichever side says which', () => {
+    expect(originAllowed(req({ origin: 'http://app.test', host: 'app.test' }))).toBe(false);                                       // URL says https
+    expect(originAllowed(req({ origin: 'https://app.test', host: 'app.test' }, 'http://app.test/x'))).toBe(false);                 // URL says http
+    expect(originAllowed(req({ origin: 'http://app.test', host: 'app.test', 'x-forwarded-proto': 'https' }, 'http://app.test/x'))).toBe(false);
+    expect(originAllowed(req({ origin: 'https://app.test', host: 'app.test', 'x-forwarded-proto': 'http' }))).toBe(false);
+  });
+  it('a different port is refused, including a default port against a non-default one', () => {
+    expect(originAllowed(req({ origin: 'https://app.test:8443', host: 'app.test' }))).toBe(false);
+    expect(originAllowed(req({ origin: 'https://app.test', host: 'app.test:8443' }))).toBe(false);
+    expect(originAllowed(req({ origin: 'http://127.0.0.1:3001', host: '127.0.0.1:3000' }, 'http://localhost:3000/x'))).toBe(false);
+    expect(originAllowed(req({ origin: 'https://app.test:80', host: 'app.test:443' }))).toBe(false);
+  });
+  it('a different host is refused, also one that only shares a prefix or suffix with the real one', () => {
+    for (const o of ['https://evil.example', 'https://app.test.evil.example', 'https://xapp.test', 'https://app.tes', 'https://sub.app.test']) expect(originAllowed(req({ origin: o, host: 'app.test' }))).toBe(false);
+  });
+  it('the forwarded protocol decides the scheme behind a proxy that terminates TLS: the first value counts, an unknown value is ignored', () => {
+    const behind = (origin: string, forwarded: string) => req({ origin, host: 'app.test', 'x-forwarded-proto': forwarded }, 'http://app.test/x');
+    expect(originAllowed(behind('https://app.test', 'https'))).toBe(true);
+    expect(originAllowed(behind('https://app.test', 'https, http'))).toBe(true);
+    expect(originAllowed(behind('http://app.test', 'https, http'))).toBe(false);
+    expect(originAllowed(behind('http://app.test', 'gopher'))).toBe(true);      // not http or https: the URL's own scheme (http) is used
+    expect(originAllowed(behind('https://app.test', 'gopher'))).toBe(false);
+  });
+  it('a configured public origin sets the scheme (and wins over the forwarded protocol); an unusable one is ignored', () => {
+    const r = (origin: string, extra: Record<string, string> = {}) => req({ origin, host: 'app.test', ...extra }, 'http://app.test/x');
+    expect(originAllowed(r('https://app.test'), 'https://app.test')).toBe(true);
+    expect(originAllowed(r('http://app.test'), 'https://app.test')).toBe(false);
+    expect(originAllowed(r('http://app.test', { 'x-forwarded-proto': 'http' }), 'https://app.test')).toBe(false);
+    expect(originAllowed(r('https://app.test', { 'x-forwarded-proto': 'http' }), 'https://app.test')).toBe(true);
+    expect(originAllowed(r('http://app.test'), 'not a url')).toBe(true);
+    expect(originAllowed(r('http://app.test'), 'ftp://app.test')).toBe(true);
+  });
+  it('the Host header, not the URL, supplies host and port; with no Host header the URL does', () => {
+    expect(originAllowed(req({ origin: 'https://other.test' }, 'https://other.test/x'))).toBe(true);      // no Host header: the URL's host
+    expect(originAllowed(req({ origin: 'https://other.test' }, 'https://app.test/x'))).toBe(false);
+    expect(originAllowed(req({ origin: 'https://app.test', host: 'other.test' }, 'https://app.test/x'))).toBe(false);   // the Host header wins over the URL
+  });
+  it('a null, empty, malformed or non-web Origin is refused', () => {
+    for (const o of ['null', '', ' ', 'https://', 'app.test', '//app.test', 'file:///x', 'ftp://app.test', 'javascript:alert(1)', 'https://app.test/', 'https://app.test/path', 'https://user@app.test', 'https://app.test?x=1', 'HTTPS://APP.TEST'])
+      expect(originAllowed(req({ origin: o, host: 'app.test' }))).toBe(false);
+  });
+  it('a Host header that is not a plain host and port is refused', () => {
+    for (const h of ['', 'app.test/x', 'user@app.test', 'app.test:99999999', 'app test', 'app.test, evil.example', '-app.test'])
+      expect(originAllowed(req({ origin: 'https://app.test', host: h }))).toBe(false);
+  });
+  it('a missing Origin is allowed only with Sec-Fetch-Site same-origin or none', () => {
+    expect(originAllowed(req({ 'sec-fetch-site': 'same-origin' }))).toBe(true);
+    expect(originAllowed(req({ 'sec-fetch-site': 'none' }))).toBe(true);
+    for (const v of ['cross-site', 'same-site', '', 'SAME-ORIGIN', 'same-origin, cross-site', 'null']) expect(originAllowed(req({ 'sec-fetch-site': v }))).toBe(false);
+    expect(originAllowed(req({}))).toBe(false);
+  });
+  it('the handler answers 403 and touches neither the session nor storage for each refused case', async () => {
+    const cases: Record<string, string>[] = [{ origin: 'http://app.test', host: 'app.test' }, { origin: 'https://app.test:8443', host: 'app.test' }, { origin: 'null' }, {}, { 'sec-fetch-site': 'cross-site' }];
+    for (const headers of cases) {
+      const f = fakeStorage(mine(1)); const c = caller();
+      const r = await handlePurge(new Request('https://app.test/api/account/purge-storage', { method: 'POST', headers }), { caller: c, storage: f.storage });
+      expect([r.status, await code(r)]).toEqual([403, 'forbidden']); expect(f.log).toEqual([]); expect(c.rpcCalls).toEqual([]);
+    }
+  });
+  it('the handler passes the configured public origin on', async () => {
+    const f = fakeStorage(mine(1));
+    const mk = () => new Request('http://app.test/api/account/purge-storage', { method: 'POST', headers: { origin: 'https://app.test', host: 'app.test' } });
+    expect((await handlePurge(mk(), { caller: caller(), storage: f.storage })).status).toBe(403);
+    expect((await handlePurge(mk(), { caller: caller(), storage: f.storage, publicOrigin: 'https://app.test' })).status).toBe(200);
+  });
 });

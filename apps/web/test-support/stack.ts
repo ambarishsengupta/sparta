@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync, statSync } from 'node:fs';
+import { mkdirSync, rmSync, statSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
@@ -26,20 +26,43 @@ export function sql(text: string, vars: Record<string, string> = {}): string {
 }
 
 export const newClient = (s: Stack): SupabaseClient => createClient(s.url, s.key, { auth: { persistSession: false, autoRefreshToken: false, flowType: 'pkce' } });
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 const LOCK = join(tmpdir(), 'sparta-int-suites.lock');
+export const LOCK_REFRESH_MS = 10_000;
+export const LOCK_STALE_MS = 60_000;
+export const LOCK_GIVE_UP_MS = 100_000;
+/** Everything `lockStack` takes from the outside, so a test can run it with a fake clock and a fake timer (WO-0074). */
+export interface LockEnv {
+  dir: string;
+  now: () => number;
+  sleep: (ms: number) => Promise<void>;
+  /** Like setInterval; the returned handle may have `unref`. */
+  every: (fn: () => void, ms: number) => { unref?: () => unknown };
+  stop: (handle: { unref?: () => unknown }) => void;
+}
+const realEnv: LockEnv = { dir: LOCK, now: Date.now, sleep, every: (fn, ms) => setInterval(fn, ms), stop: (h) => clearInterval(h as ReturnType<typeof setInterval>) };
+
 /** The integration suites share one database, and one of them (consent.int.test.ts) changes the document versions for a moment, which would
  * stop another suite's user from writing. Each suite therefore holds this lock (a directory, created atomically) from its first hook to its
- * last, so they run one after the other even though vitest starts the files together. A lock older than 60 seconds (a suite takes about 5) is taken over. Returns the release function. */
-export async function lockStack(): Promise<() => void> {
-  const giveUp = Date.now() + 100_000; // below the 120 s hook timeouts, so the message below is the one that is seen (six suites queue here since WO-0071; one took 35 s to reach the front)
+ * last, so they run one after the other even though vitest starts the files together. A lock whose directory has not been touched for 60 seconds
+ * (its holder died) is taken over; a live holder touches it every 10 seconds (an unref'd timer, cleared on release), so a long suite is never
+ * taken over while another waits up to 100 s. Returns the release function. */
+export async function lockStack(env: Partial<LockEnv> = {}): Promise<() => void> {
+  const e: LockEnv = { ...realEnv, ...env };
+  const giveUp = e.now() + LOCK_GIVE_UP_MS; // below the 120 s hook timeouts, so the message below is the one that is seen (six suites queue here since WO-0071; one took 35 s to reach the front)
   for (;;) {
-    try { mkdirSync(LOCK); return () => rmSync(LOCK, { recursive: true, force: true }); } catch {
-      try { if (Date.now() - statSync(LOCK).mtimeMs > 60_000) rmSync(LOCK, { recursive: true, force: true }); } catch { /* released by its owner meanwhile */ }
-      if (Date.now() > giveUp) throw new Error('the integration-suite lock was not released within 100 seconds');
-      await sleep(250);
+    let held = false;
+    try { mkdirSync(e.dir); held = true; } catch {
+      try { if (e.now() - statSync(e.dir).mtimeMs > LOCK_STALE_MS) rmSync(e.dir, { recursive: true, force: true }); } catch { /* released by its owner meanwhile */ }
+      if (e.now() > giveUp) throw new Error('the integration-suite lock was not released within 100 seconds');
     }
+    if (held) {
+      const timer = e.every(() => { try { const t = e.now() / 1000; utimesSync(e.dir, t, t); } catch { /* the lock is gone (released or taken over): nothing to keep alive */ } }, LOCK_REFRESH_MS);
+      timer.unref?.();
+      return () => { e.stop(timer); rmSync(e.dir, { recursive: true, force: true }); };
+    }
+    await e.sleep(250);
   }
 }
 

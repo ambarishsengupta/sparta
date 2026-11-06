@@ -138,7 +138,10 @@ describe('the only network calls, and the H&M files stay out of git (G4)', () =>
     expect([PRIOR_URL, UNLOCK_URL]).toEqual(['/pairing-prior-v1.json', '/unlock-candidates.json']);
   });
   it('no other source file names the two files or calls fetch', () => {
-    for (const [file, text] of Object.entries(sources)) if (!file.endsWith('engine-config.ts')) expect(text, file).not.toMatch(/pairing-prior|unlock-candidates|\bfetch\(/);
+    const LEAVE = 'components/account/account-actions.ts';   // WO-0071: its one same-origin POST, `fetch(p, i)` (exact text, once), is checked below and by the strict scan
+    for (const [file, text] of Object.entries(sources)) if (!file.endsWith('engine-config.ts')) expect(file.endsWith(LEAVE) ? text.replace('(p, i) => fetch(p, i)', '') : text, file).not.toMatch(/pairing-prior|unlock-candidates|\bfetch\(/);
+    const leave = Object.entries(sources).find(([f]) => f.endsWith(LEAVE))?.[1];
+    if (leave) expect(leave.match(/\bfetch\(/g)).toEqual(['fetch(']);
   });
   const root = new URL('../../../', import.meta.url).pathname;
   const git = (...args: string[]) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });

@@ -8,14 +8,14 @@ import { acceptDocuments, acceptPilotNotice, completeOnboarding, readVersions } 
 
 /** Helpers for the integration suites that run against the REAL local stack. Test support only: nothing in the app imports this file.
  * The URL and publishable key are read from `supabase status` at run time and never written to a file. */
-export type Stack = { url: string; key: string; mailpit: string };
+export type Stack = { url: string; key: string; mailpit: string; secret: string };
 
 export function discover(): Stack | null {
   try {
     const out = execFileSync('supabase', ['status', '-o', 'json'], { stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000 }).toString();
     const s = JSON.parse(out.slice(out.indexOf('{'))) as Record<string, string>;
     execFileSync('docker', ['exec', 'supabase_db_sparta', 'psql', '-U', 'postgres', '-tAc', 'select 1'], { stdio: 'ignore', timeout: 20_000 });
-    return s.API_URL && s.PUBLISHABLE_KEY && s.MAILPIT_URL ? { url: s.API_URL, key: s.PUBLISHABLE_KEY, mailpit: s.MAILPIT_URL } : null;
+    return s.API_URL && s.PUBLISHABLE_KEY && s.MAILPIT_URL ? { url: s.API_URL, key: s.PUBLISHABLE_KEY, mailpit: s.MAILPIT_URL, secret: s.SECRET_KEY ?? '' } : null;
   } catch { return null; }
 }
 
@@ -33,11 +33,11 @@ const LOCK = join(tmpdir(), 'sparta-int-suites.lock');
  * stop another suite's user from writing. Each suite therefore holds this lock (a directory, created atomically) from its first hook to its
  * last, so they run one after the other even though vitest starts the files together. A lock older than 60 seconds (a suite takes about 5) is taken over. Returns the release function. */
 export async function lockStack(): Promise<() => void> {
-  const giveUp = Date.now() + 35_000; // below the 40 s hook timeout, so the message below is the one that is seen
+  const giveUp = Date.now() + 100_000; // below the 120 s hook timeouts, so the message below is the one that is seen (six suites queue here since WO-0071; one took 35 s to reach the front)
   for (;;) {
     try { mkdirSync(LOCK); return () => rmSync(LOCK, { recursive: true, force: true }); } catch {
       try { if (Date.now() - statSync(LOCK).mtimeMs > 60_000) rmSync(LOCK, { recursive: true, force: true }); } catch { /* released by its owner meanwhile */ }
-      if (Date.now() > giveUp) throw new Error('the integration-suite lock was not released within 35 seconds');
+      if (Date.now() > giveUp) throw new Error('the integration-suite lock was not released within 100 seconds');
       await sleep(250);
     }
   }

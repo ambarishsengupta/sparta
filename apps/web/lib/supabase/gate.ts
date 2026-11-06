@@ -30,7 +30,7 @@ const GATE_PAGES = ['/accept-terms', '/pilot-notice', '/onboarding', '/not-avail
 const PUBLIC_PAGES = ['/about', '/privacy', '/terms', '/notice', '/maintenance', '/goodbye'];
 const PUBLIC = [...PUBLIC_PAGES, '/auth/callback', '/auth/sign-out'];
 /** Reachable while held at a gate step (LLD 9.1): export my data and Leave the pilot. */
-const HELD_API = ['/api/account/export', '/api/exports', '/api/account/delete'];
+const HELD_API = ['/api/account/export', '/api/exports', '/api/account/delete', '/api/account/purge-storage'];
 /** The one account page a held person may open: the confirmation step of Leave the pilot (FR-4, FR-66). Export is a button, not a page. */
 const HELD_PAGES = ['/leave'];
 const INVALID = '/__invalid__';
@@ -52,11 +52,14 @@ const ALLOW: Decision = { action: 'allow' };
 /** The query string of a request path (with its leading `?`), or an empty string. */
 const searchOf = (raw: string): string => { try { return asUrl(raw).search; } catch { return ''; } };
 
+/** The route the Python worker calls with a bearer token instead of a session cookie (LLD 6, 7.1). It answers 401 itself without the token. */
+const WORKER_API = '/api/worker/signed-urls';
+
 /** Pages and the sign-out post that need no session check. The proxy decides these before it calls the session updater, so they still
  * work while the account service is down (LLD 9.1: privacy and terms are public; signing out must always be possible). */
 export function needsNoSession(method: string, rawPath: string): boolean {
   const path = normalisePath(rawPath);
-  return PUBLIC_PAGES.includes(path) || (method === 'POST' && path === '/auth/sign-out');
+  return PUBLIC_PAGES.includes(path) || (method === 'POST' && path === '/auth/sign-out') || path === WORKER_API;
 }
 
 export function decideRoute(state: GateState, rawPath: string): Decision {

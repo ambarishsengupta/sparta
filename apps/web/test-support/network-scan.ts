@@ -5,6 +5,8 @@ export const NETWORK = /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource
 export const ALLOWED: Record<string, string[]> = {
   // WO-0012: the two fixed same-origin GETs of the learned files
   'lib/engine-config.ts': ['fetch(PRIOR_URL, init())', 'fetch(UNLOCK_URL, init())'],
+  // WO-0071: the one same-origin POST of the Leave flow (a fixed path; the default sender of purgeMyStorage, replaced by a fake in tests)
+  'components/account/account-actions.ts': ['fetch(p, i)'],
   // the placeholder host that is only ever parsed against, never contacted (one literal in each file)
   'lib/auth-form.ts': ['http://sparta.invalid'],
   'lib/supabase/gate.ts': ['http://sparta.invalid'],

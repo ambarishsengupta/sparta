@@ -17,7 +17,7 @@ if (!stack) console.warn('SKIPPED consent.int.test.ts: the local Supabase stack 
 const ITEM = { name: 'Test shirt', category: 'Tops', sub_type: 'Shirt', colour_r: 10, colour_g: 20, colour_b: 30, origin: 'manual' };
 const SETTING = (key: string) => sql(`select value from ops.settings where key = :'k'`, { k: key });
 
-vi.setConfig({ testTimeout: 40_000, hookTimeout: 40_000 });
+vi.setConfig({ testTimeout: 40_000, hookTimeout: 120_000 }); // the hook waits for the shared lock (stack.ts lockStack): six suites queue
 describe.skipIf(!stack)('acceptance, pilot notice, onboarding and the unsupported country, against the real stack', () => {
   const run = randomUUID().slice(0, 8);
   const email = { ann: `it-${run}-ann@example.test`, bob: `it-${run}-bob@example.test` };

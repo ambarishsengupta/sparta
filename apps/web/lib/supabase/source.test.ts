@@ -12,28 +12,50 @@ function files(dir: string): string[] {
 }
 const all = files(root);
 // The forbidden words are assembled here so this file does not contain them itself.
-const FORBIDDEN: [string, RegExp][] = [
-  ['the service-role name', new RegExp(['service', 'role'].join('_'), 'i')],
-  ['a secret-key variable', new RegExp(['SUPABASE', 'SECRET', 'KEY'].join('_'))],
-  ['a secret key value', new RegExp(['sb', 'secret', ''].join('_'))],
-  ['a service-role JWT', new RegExp('eyJ[A-Za-z0-9_-]{30,}\\.eyJ')],
-  ['a publishable key value', new RegExp(['sb', 'publishable', '[A-Za-z0-9_-]{8,}'].join('_'))],
+// WO-0071 (R5b decision): the secret key may be named in exactly one module, lib/server/admin.ts (and its variable in .env.example, empty). Each entry lists the
+// files that must hold the word: no folder wildcard, and the list must match exactly, so a second file (or the module losing the word) fails.
+const ADMIN = 'lib/server/admin.ts';
+const FORBIDDEN: [string, RegExp, string[]][] = [
+  ['the service-role name', new RegExp(['service', 'role'].join('_'), 'i'), [ADMIN]],
+  ['a secret-key variable', new RegExp(['SUPABASE', 'SECRET', 'KEY'].join('_')), ['.env.example', ADMIN]],
+  ['a secret key value', new RegExp(['sb', 'secret', ''].join('_')), [ADMIN]],
+  ['a service-role JWT', new RegExp('eyJ[A-Za-z0-9_-]{30,}\\.eyJ'), []],
+  ['a publishable key value', new RegExp(['sb', 'publishable', '[A-Za-z0-9_-]{8,}'].join('_')), []],
 ];
+const WORKER_VAR = ['WORKER', 'API', 'TOKEN'].join('_');
 
-describe('no secret or service key anywhere in apps/web (CC4, CC7)', () => {
+describe('no secret or service key anywhere in apps/web except the one server-only module (CC4, CC7; WO-0071)', () => {
   it('scans the app, its tests and its config', () => { expect(all.length).toBeGreaterThan(40); });
-  it.each(FORBIDDEN)('%s appears in no file of apps/web', (_name, pattern) => {
-    expect(all.filter((f) => pattern.test(readFileSync(f, 'utf8'))).map((f) => f.slice(root.length))).toEqual([]);
+  it.each(FORBIDDEN)('%s appears only in the files listed for it', (_name, pattern, allowed) => {
+    expect(all.filter((f) => pattern.test(readFileSync(f, 'utf8'))).map((f) => f.slice(root.length)).sort()).toEqual(allowed);
   });
-  it('.env.example lists the three variables with empty values', () => {
+  it('.env.example lists the Supabase variables, the secret key and the worker token with empty values', () => {
     const text = readFileSync(join(root, '.env.example'), 'utf8');
-    for (const name of ['NEXT_PUBLIC_DATA_BACKEND', 'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY']) expect(text).toMatch(new RegExp(`^${name}=$`, 'm'));
+    for (const name of ['NEXT_PUBLIC_DATA_BACKEND', 'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', ['SUPABASE', 'SECRET', 'KEY'].join('_'), WORKER_VAR]) expect(text).toMatch(new RegExp(`^${name}=$`, 'm'));
   });
   it('.env.local is git-ignored', () => { expect(readFileSync(join(root, '.gitignore'), 'utf8').split('\n')).toContain('.env.local'); });
-  it('the app reads only public (NEXT_PUBLIC_) environment variables, and the three Supabase ones among them', () => {
-    const names = new Set(all.filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith('.test.ts')).flatMap((f) => readFileSync(f, 'utf8').split('\n').flatMap((line) => [...(line.split('//')[0] ?? '').matchAll(/process\.env\.(\w+)/g)].map((m) => m[1]))));
-    expect([...names].filter((n) => !n!.startsWith('NEXT_PUBLIC_'))).toEqual([]);
+  it('the app reads only public (NEXT_PUBLIC_) environment variables, and the three Supabase ones among them; the only others are the secret key (admin module) and the worker token (worker route)', () => {
+    const reads = all.filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith('.test.ts')).flatMap((f) => readFileSync(f, 'utf8').split('\n').flatMap((line) => [...(line.split('//')[0] ?? '').matchAll(/process\.env\.(\w+)/g)].map((m) => `${m[1]} <- ${f.slice(root.length)}`)));
+    const names = new Set(reads.map((r) => r.split(' <- ')[0]!));
+    expect([...new Set(reads.filter((r) => !r.startsWith('NEXT_PUBLIC_')))].sort()).toEqual([`${['SUPABASE', 'SECRET', 'KEY'].join('_')} <- ${ADMIN}`, `${WORKER_VAR} <- app/api/worker/signed-urls/route.ts`].sort());
     for (const n of ['NEXT_PUBLIC_DATA_BACKEND', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL']) expect(names.has(n)).toBe(true);
+  });
+  it('the secret-key module is imported by the two route handlers and its own test, and nothing else imports anything from lib/server', () => {
+    const sources = all.filter((f) => /\.tsx?$/.test(f) && !f.includes('/node_modules/'));
+    const importing = (re: RegExp) => sources.filter((f) => [...readFileSync(f, 'utf8').matchAll(/from '([^']+)'/g)].some((m) => re.test(m[1]!))).map((f) => f.slice(root.length)).sort();
+    expect(importing(/(^|\/)admin$/)).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/worker/signed-urls/route.ts', 'lib/server/admin.test.ts']);
+    const outside = importing(/(^|\/)server\/[a-z-]+$/).filter((f) => !f.startsWith('lib/server/'));
+    // route handlers, and the integration/support code that exercises the handlers; no page, component or other lib module
+    expect(outside).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/worker/signed-urls/route.ts', 'test-support/purge.ts']);
+  });
+  it('the Leave screen removes the files through the server before the deletion, and the purge route never takes a user id from the request', () => {
+    expect(readFileSync(join(root, 'components/account/LeaveForm.tsx'), 'utf8')).toContain('leaveThePilot(createBrowserSupabase(), pw, () => purgeMyStorage())');
+    const route = readFileSync(join(root, 'app/api/account/purge-storage/route.ts'), 'utf8');
+    expect(route).not.toMatch(/searchParams|\.json\(\)|\.text\(\)|formData|params/);
+    // the files are removed with the secret-key client's storage and the caller's own session only proves who is asking (the caller's storage client has no delete right)
+    expect(route).toContain('handlePurge(request, { caller, storage: admin.storage })');
+    expect(route).toContain('const caller = await createServerSupabase();');
+    expect(readFileSync(join(root, 'app/api/worker/signed-urls/route.ts'), 'utf8')).toContain('storage: admin.storage,');
   });
   it('no page or component renders user-supplied HTML', () => {
     expect(all.filter((f) => /\.tsx?$/.test(f) && !f.endsWith('.test.ts') && readFileSync(f, 'utf8').includes('dangerously')).map((f) => f.slice(root.length))).toEqual([]);

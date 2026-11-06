@@ -1,0 +1,56 @@
+# WO-0071 mutation proof (R5b)
+
+Method (outside the repo: the scripts `mutate.py` and `dbmut.py` live in the session scratchpad, not in the repository). TypeScript mutants: one edit to one source file in place, `npx vitest run` over the unit suites of the work order (limits, signed-urls, purge, admin, purge-client, account-actions, a11y, both proxy suites, source, gate, outfits no-network scan, engine-config; plus `storage.int.test.ts` against the real stack for the two route-wiring mutants that flag it), then the file is restored from the original text and compared byte for byte. Database mutants: applied to the LOCAL database as SQL (`create or replace function`, a policy or a comment), `supabase test db` runs the whole pgTAP suite, then the migration text is re-applied; the suite is green again afterwards. A mutant counts as killed when at least one assertion fails.
+
+Note: the mutants ran before four identifiers were renamed to get past the repository's secret scan (`token` -> `bearer` in the handler's dependencies, `MIN_TOKEN_LENGTH` -> `MIN_BEARER_CHARS`, test constants); the edits quoted in the table are the same on the renamed code. M08 (token not checked) was re-run by hand on the renamed code before the report: the unit suite fails 9 tests as before.
+
+Result: 39 mutants, 39 killed, 0 survived. Three TypeScript mutants SURVIVED on the first run and led to new tests (below); the table shows their re-run.
+
+| Mutant | Change | Result | Caught by |
+| --- | --- | --- | --- |
+| M01 | limits.ts: a configured token under 32 characters is accepted | KILLED | 1 failing tests in limits.test.ts; first: a configured token under 32 characters matches nothing, not even itself |
+| M02 | limits.ts: only the first 8 characters of the token are compared | KILLED | 5 failing tests in limits.test.ts,signed-urls.test.ts; first: compares characters, not bytes of a prefix: a token that only shares a long prefix fails |
+| M03 | signed-urls: a job that is not running is served | KILLED | 4 failing tests in signed-urls.test.ts; first: a done job is 409 and nothing is signed |
+| M04 | signed-urls: download URLs live an hour, not 60 seconds | KILLED | 2 failing tests in signed-urls.test.ts; first: a receipt job reads from the receipts bucket and gets no upload URL |
+| M05 | signed-urls: input path pattern allows slashes (nested or traversal paths) | KILLED | 2 failing tests in signed-urls.test.ts; first: a nested folder is 422 and nothing is signed |
+| M06 | signed-urls: output name no longer carries the job id | KILLED | 2 failing tests in signed-urls.test.ts; first: a running photo job gets a 60-second GET URL for its input and upload URLs for the three server-derived output |
+| M07 | signed-urls: upload URLs without upsert (a retry cannot overwrite) | KILLED | 1 failing tests in signed-urls.test.ts; first: a running photo job gets a 60-second GET URL for its input and upload URLs for the three server-derived output |
+| M08 | signed-urls: the bearer token is not checked | KILLED | 9 failing tests in signed-urls.test.ts; first: a missing token is 401 and nothing is looked up or signed |
+| M09 | signed-urls: the rate limit is not applied | KILLED | 1 failing tests in signed-urls.test.ts; first: the rate limit answers 429 before the token is compared |
+| M10 | signed-urls: the job owner is not checked as a UUID (any text builds the pattern) | KILLED | 1 failing tests in signed-urls.test.ts; first: a job whose owner id is not a UUID is refused (it cannot be used to build a pattern) |
+| M11 | purge: the recent-sign-in proof is ignored | KILLED | 7 failing tests in purge.test.ts; first: a sign-in that is not recent ("true") is 403 reauthentication_required and nothing is removed |
+| M12 | purge: the user id can come from the query string | KILLED | 1 failing tests in purge.test.ts; first: lists and removes only paths under the session user id; the id never comes from the request |
+| M13 | purge: no check that the folder is empty after removal | KILLED | 1 failing tests in purge.test.ts; first: a removal that reports success but leaves the object is caught by the check that the folder is empty |
+| M14 | purge: the exports bucket is left out | KILLED | 3 failing tests in purge.test.ts; first: an empty account is fine: zero everywhere |
+| M15 | purge: only the first page of a listing is read | KILLED (first run SURVIVED; a test was added, see below; this row is the re-run) | 7 failing tests in outfits.test.ts,engine-config.test.ts,purge.test.ts,source.test.ts; first: imports only React, Next links, the workspace packages and the app's own files |
+| M16 | purge: the cross-origin check is removed | KILLED | 2 failing tests in purge.test.ts; first: a request from another origin is 403 before anything else; the same origin and a missing Origin header are fin |
+| M17 | purge: nested folders are not followed | KILLED | 2 failing tests in purge.test.ts; first: folders nested deeper than the limit are an error, not silently skipped |
+| M18 | purge: removal batches are not sent (nothing is removed) | KILLED | 5 failing tests in purge.test.ts; first: a request from another origin is 403 before anything else; the same origin and a missing Origin header are fin |
+| M19 | Leave: a failed file removal is ignored and the account is deleted anyway | KILLED | 1 failing tests in purge-client.test.ts; first: a failed removal stops everything: the account is not deleted, the person sees the message and can retry |
+| M20 | Leave: purgeMyStorage counts any HTTP 200 as success | KILLED | 2 failing tests in purge-client.test.ts; first: no session says so; any other failure uses the fixed text and does not echo the server |
+| M21 | Leave screen: the removal step is not passed to leaveThePilot | KILLED | 2 failing tests in a11y.test.ts,source.test.ts; first: the Leave screen removes the files through the server before the deletion, and the purge route never takes a u |
+| M22 | gate: the worker route needs a session again | KILLED | 2 failing tests in proxy-worker.test.ts; first: is decided before the session updater, for every method, even when the account service is down |
+| M23 | gate: Leave's purge route is not reachable while held at a gate step | KILLED | 4 failing tests in proxy-worker.test.ts; first: is allowed while the person is at needs_documents (Leave must work at every step) |
+| M24 | admin: usable in a browser context | KILLED | 1 failing tests in admin.test.ts; first: throws in a browser context, even when everything is configured, and says nothing about the key |
+| M25 | admin: any key accepted (a publishable key put here by mistake) | KILLED | 2 failing tests in admin.test.ts,source.test.ts; first: a secret key value appears only in the files listed for it |
+| M26 | a second module reads the secret key variable | KILLED | 2 failing tests in source.test.ts; first: a secret-key variable appears only in the files listed for it |
+| M27 | a component imports the admin module | KILLED | 1 failing tests in source.test.ts; first: the secret-key module is imported by the two route handlers and its own test, and nothing else imports anythin |
+| M28 | worker route: wrong header scheme accepted (token passed without Bearer) | KILLED | 3 failing tests in limits.test.ts,signed-urls.test.ts; first: refuses "Bearer" |
+| M29 | int: worker route always answers with the token missing treated as set | KILLED (first run SURVIVED; a test was added, see below; this row is the re-run) | 5 failing tests in outfits.test.ts,engine-config.test.ts,source.test.ts; first: imports only React, Next links, the workspace packages and the app's own files |
+| M30 | int: purge route hands the handler a storage client without the secret key (publishable) | KILLED (first run SURVIVED; a test was added, see below; this row is the re-run) | 6 failing tests in outfits.test.ts,engine-config.test.ts,source.test.ts; first: imports only React, Next links, the workspace packages and the app's own files |
+| D1 | is_recent_sign_in ignores the age of the sign-in (no window) | KILLED | 17 failed assertions in 008_data_rights.test.sql,010_wo0071_followups.test.sql; first: is_recent_sign_in agrees, refused: a negative timestamp |
+| D2 | is_recent_sign_in answers true for a token with no user id | KILLED | 1 failed assertions in 010_wo0071_followups.test.sql; first: a fresh sign-in with no user id is not (nobody to purge) |
+| D3 | is_recent_sign_in accepts a fresh totp (second factor) entry | KILLED | 2 failed assertions in 008_data_rights.test.sql; first: is_recent_sign_in agrees, refused: a fresh entry with a method that is not a primary sign-in (totp) |
+| D4 | is_recent_sign_in may be executed by anon | KILLED | 3 failed assertions in 003_schema_and_grants.test.sql,010_wo0071_followups.test.sql; first: anon can execute nothing but app.supported_countries |
+| D5 | is_recent_sign_in allows a sign-in 10 minutes in the future (window upper bound removed) | KILLED | 2 failed assertions in 008_data_rights.test.sql; first: is_recent_sign_in agrees, refused: a timestamp an hour in the future |
+| D6 | a policy for {authenticated, worker_role} that is not tied to auth.uid() (the MINOR-4 gap) | KILLED | 37 failed assertions in 003_schema_and_grants.test.sql,004_rls_isolation.test.sql,005_consent_gate.test.sql,007_triggers_and_constraints.test.sql,008_data_rights.test.sql,009_jobs_storage_worker.test.sql,010_wo0071_followups.test.sql; first: every app policy except the exact {worker_role} ones is tied to auth.uid() (the worker policies are  |
+| D7 | a policy for {worker_role, anon} reading app.items | KILLED | 6 failed assertions in 003_schema_and_grants.test.sql,009_jobs_storage_worker.test.sql,010_wo0071_followups.test.sql; first: no policy applies to public or anon |
+| D8 | the worker_role comment says nobody is a member of it again (MINOR-5) | KILLED | 1 failed assertions in 010_wo0071_followups.test.sql; first: the worker_role comment states its creator membership exactly |
+| D9 | the state-machine comment claims it runs for every role in every mode (MINOR-1) | KILLED | 1 failed assertions in 010_wo0071_followups.test.sql; first: the state machine comment names the replica-mode exception |
+
+Survivors of the first run and what was added:
+- M15 (only the first page of a listing is read): the removal loop's next round hid the difference, so the final state was the same. The purge test now requires the second listing page (offset 100) and exactly three removal batches for 250 objects.
+- M29 (the route treats a missing worker token as set): added an integration test that a server with no token refuses even a long made-up token (503) and, with the token set again, lets the same caller through to the job lookup.
+- M30 (the purge route removes files with the caller's own storage client instead of the secret-key client): the route cannot be called in vitest (it reads the session cookie through next/headers), and the caller's client has no delete right, so only the browser run noticed. source.test.ts now pins the route's wiring text (`handlePurge(request, {{ caller, storage: admin.storage }})`).
+
+Not mutated: `storage.int.test.ts` itself (it is a test), the build-output test (it passed on the real build; its power is shown by the server-side check that the name IS in the server build).

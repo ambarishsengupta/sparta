@@ -48,6 +48,7 @@ select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', pg_temp.tpl(tbl, pg_temp
 -- 4. update and delete B's rows: no row is touched (RLS hides it) or the operation is not granted at all
 select is(pg_temp.run_as(pg_temp.ua(), 'authenticated',
   case tbl when 'profiles' then format('update app.profiles set display_name = %L where id = %L', 'hacked', pg_temp.ub())
+           when 'receipts' then format('update app.receipts set store = %L where user_id = %L', 'hacked', pg_temp.ub())   -- WO-0080: column-limited update grant (user_id is not updatable)
            else format('update app.%I set user_id = %L where user_id = %L', tbl, pg_temp.ua(), pg_temp.ub()) end),
   case when w.upd then 'rows=0' else 'err=42501' end, 'A cannot update B''s rows in app.' || tbl)
   from pg_temp.app_tables t join want w using (tbl) order by tbl;
@@ -60,6 +61,7 @@ select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', format('delete from app.
 --     C owns nothing, so with correct policies these touch no row at all; A owns rows, and must not be able to hand them to B.
 select is(pg_temp.run_as('cccccccc-cccc-cccc-cccc-cccccccccccc', 'authenticated',
   case tbl when 'profiles' then 'update app.profiles set display_name = ''hacked'''
+           when 'receipts' then 'update app.receipts set store = ''hacked'''   -- WO-0080: column-limited update grant
            else format('update app.%I set user_id = %L', tbl, 'cccccccc-cccc-cccc-cccc-cccccccccccc') end),
   case when tbl = 'profiles' then 'rows=1' when w.upd then 'rows=0' else 'err=42501' end,   -- C's own profile is the one row C owns
   'an update with no WHERE by a user who owns nothing touches no row of app.' || tbl)

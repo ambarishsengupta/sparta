@@ -105,6 +105,9 @@ create function pg_temp.tpl(p_tbl text, p_uid uuid, p_n int) returns text langua
       pg_temp.oid('item', p_uid, p_n), p_uid, 'garment-cnn-v1')
     when 'purchases' then format('insert into app.purchases (id, user_id, item_id, price, currency) values (%L, %L, %L, 10, %L)',
       pg_temp.oid('purchase', p_uid, p_n), p_uid, pg_temp.oid('item', p_uid, 0), 'INR')
+    when 'receipts' then format('insert into app.receipts (user_id, storage_path) values (%L, %L)', p_uid, p_uid::text || '/' || pg_temp.oid('rcp', p_uid, p_n)::text || '.jpg')
+    when 'purchase_receipts' then format('insert into app.purchase_receipts (user_id, purchase_id, receipt_id) values (%L, %L, %L)',
+      p_uid, pg_temp.oid('purchase', p_uid, 0), pg_temp.oid('receipt', p_uid, case when p_n = 0 then 0 else 200 end))
     when 'wishlist_entries' then format('insert into app.wishlist_entries (id, user_id, name, category, sub_type, colour_r, colour_g, colour_b) values (%L, %L, %L, %L, %L, 0, 0, 128)',
       pg_temp.oid('wish', p_uid, p_n), p_uid, 'Navy chinos', 'Bottoms', 'Chinos')
     when 'collections' then format('insert into app.collections (id, user_id, name) values (%L, %L, %L)', pg_temp.oid('coll', p_uid, p_n), p_uid, 'coll' || p_n)
@@ -139,7 +142,11 @@ begin
     insert into app.items (id, user_id, name, category, sub_type, colour_r, colour_g, colour_b, origin)
     values (pg_temp.oid('item', p_uid, n), p_uid, 'Spare ' || n, 'Tops', 'Shirt', 1, 2, 3, 'manual');
   end loop;
-  foreach t in array array['items', 'collections', 'tags', 'outfits', 'item_features', 'purchases', 'wishlist_entries',
+  -- WO-0080: two receipts with known ids (client inserts cannot choose an id), then the link tables below use them
+  insert into app.receipts (id, user_id, storage_path) values
+    (pg_temp.oid('receipt', p_uid, 0), p_uid, p_uid::text || '/' || pg_temp.oid('rcp', p_uid, 0)::text || '.jpg'),
+    (pg_temp.oid('receipt', p_uid, 200), p_uid, p_uid::text || '/' || pg_temp.oid('rcp', p_uid, 200)::text || '.jpg');
+  foreach t in array array['items', 'collections', 'tags', 'outfits', 'item_features', 'purchases', 'wishlist_entries', 'purchase_receipts',
                            'item_collections', 'item_tags', 'outfit_items', 'outfit_plans', 'outfit_logs', 'suggestion_feedback', 'jobs'] loop
     execute pg_temp.tpl(t, p_uid, 0);
   end loop;
@@ -175,7 +182,7 @@ create temp table want (tbl text primary key, sel bool, ins bool, upd bool, del 
 insert into want values
   ('profiles', true, false, true, false), ('consent_records', true, true, false, false), ('document_acceptances', true, false, false, false),
   ('items', true, true, true, false), ('item_features', true, true, true, true), ('purchases', true, true, true, true),
-  ('wishlist_entries', true, true, true, true), ('collections', true, true, true, true), ('tags', true, true, true, true),
+  ('wishlist_entries', true, true, true, true), ('receipts', true, true, true, false), ('purchase_receipts', true, true, false, true), ('collections', true, true, true, true), ('tags', true, true, true, true),
   ('item_collections', true, true, false, true), ('item_tags', true, true, false, true), ('outfits', true, true, true, true),
   ('outfit_items', true, true, true, true), ('outfit_plans', true, true, true, true), ('outfit_logs', true, true, false, true),
   ('suggestion_feedback', true, true, false, false), ('jobs', true, true, false, false);

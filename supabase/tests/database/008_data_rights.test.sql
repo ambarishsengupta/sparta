@@ -4,7 +4,7 @@
 begin;
 \ir helpers.inc
 select count(*) as nt from pg_temp.app_tables \gset
-select plan(:nt * 11 + 209);
+select plan(:nt * 11 + 205);   -- WO-0080: the two receipt tables add 8 assertions each (not 11), fx_rates and two functions add 2
 
 select pg_temp.mk_user(pg_temp.ua());
 select pg_temp.mk_user(pg_temp.ub());
@@ -32,7 +32,7 @@ select is((select array_agg(conrelid::regclass::text || ':' || confdeltype::text
            where contype = 'f' and (confrelid = 'auth.users'::regclass or confrelid::regclass::text like 'app.%') and confdeltype <> 'c'),
   array['auth.scim_users:n'], 'the only non-cascading key into auth.users or app.* is auth.scim_users (SET NULL; SCIM is not used)');
 select is((select array_agg(c.relname::text order by c.relname) from pg_class c where c.relnamespace = 'ops'::regnamespace and c.relkind in ('r', 'p')),
-  array['daily_counts', 'invitations', 'settings', 'worker_heartbeat'], 'ops holds exactly the three tables this suite checks for personal data and the worker heartbeat (worker id, times, counts: no personal data)');
+  array['daily_counts', 'fx_rates', 'invitations', 'settings', 'worker_heartbeat'], 'ops holds exactly the three tables this suite checks for personal data, the worker heartbeat (worker id, times, counts) and fx_rates (currency, date, rate): no personal data');
 select is((select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'daily_counts'),
   array['day', 'metric', 'n'], 'ops.daily_counts has a day, a metric and a number: no column can hold a person');
 select is_empty($$ select 1 from pg_constraint where contype = 'f' and conrelid::regclass::text in ('ops.settings', 'ops.invitations', 'ops.daily_counts') $$, 'no ops table points at a user');
@@ -129,8 +129,8 @@ select is((select count(*) from exp_spoof s, jsonb_each(s.doc) e, jsonb_array_el
 -- delete_my_account is the one exception here (it has its own tests below: D, who deletes with claims naming B).
 create temp table fn0 as select p.oid::regprocedure::text as sig, n.nspname::text as sch, p.proname::text as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname in ('app', 'ops', 'catalog') and p.pronargs = 0 and p.prorettype <> 'trigger'::regtype and p.proname <> 'delete_my_account';
-select is((select array_agg(sch || '.' || name order by sch, name) from fn0), array['app.claim_job', 'app.current_role', 'app.export_my_data', 'app.has_consent', 'app.is_recent_sign_in', 'app.reap_stuck_jobs', 'app.recent_job_count', 'app.storage_used', 'app.supported_countries'],
-  'the functions without arguments are the nine known ones (a new one must be added to this check on purpose)');
+select is((select array_agg(sch || '.' || name order by sch, name) from fn0), array['app.claim_job', 'app.current_role', 'app.export_my_data', 'app.has_consent', 'app.is_recent_sign_in', 'app.latest_fx_rates', 'app.purge_receipt_jobs', 'app.reap_stuck_jobs', 'app.recent_job_count', 'app.storage_used', 'app.supported_countries'],
+  'the functions without arguments are the eleven known ones (a new one must be added to this check on purpose)');
 select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select (' || sig || ')::text'), pg_temp.val_claims(pg_temp.ua(), 'authenticated', (select extra from spoof), 'select (' || sig || ')::text'),
   sig || ' answers the same for A with and without claims that name B') from fn0 order by sig;
 select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.current_role()'), 'consumer', 'and the check is not vacuous: A is a consumer');

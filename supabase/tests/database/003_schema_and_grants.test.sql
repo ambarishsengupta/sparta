@@ -8,8 +8,8 @@ select plan(:n);
 -- ---- the tables exist (the consumer tables of R2 and app.jobs of R5b; receipts and analytics_events belong to later releases) ----
 select is((select array_agg(tbl order by tbl) from pg_temp.app_tables),
   array['collections','consent_records','document_acceptances','item_collections','item_features','item_tags','items','jobs','outfit_items',
-        'outfit_logs','outfit_plans','outfits','profiles','purchases','suggestion_feedback','tags','wishlist_entries'],
-  'the app schema holds exactly the R2 tables and app.jobs (R5b)');
+        'outfit_logs','outfit_plans','outfits','profiles','purchase_receipts','purchases','receipts','suggestion_feedback','tags','wishlist_entries'],
+  'the app schema holds exactly the R2 tables, app.jobs (R5b) and app.receipts and app.purchase_receipts (R6a)');
 select has_table('ops', t, 'ops.' || t || ' exists') from unnest(array['settings','invitations','daily_counts']) t;
 
 -- ---- deny by default: RLS enabled AND forced everywhere, per table -----------------------------------------------------
@@ -84,7 +84,7 @@ select is_empty($$ select name from fn where has_function_privilege('anon', oid,
   'anon can execute nothing but app.supported_countries');
 select ok(has_function_privilege('anon', 'app.supported_countries()', 'execute'), 'anon can execute app.supported_countries');
 select is((select array_agg(name order by name) from fn where has_function_privilege('authenticated', oid, 'execute')),
-  array['app.accept_documents','app.complete_onboarding','app.current_role','app.delete_my_account','app.export_my_data','app.has_consent','app.is_recent_sign_in','app.job_input_ok','app.public_setting','app.recent_job_count','app.storage_used','app.supported_countries',
+  array['app.accept_documents','app.complete_onboarding','app.confirm_receipt','app.current_role','app.delete_my_account','app.export_my_data','app.has_consent','app.insert_item_from_json','app.insert_purchase_from_json','app.is_recent_sign_in','app.job_input_ok','app.latest_fx_rates','app.public_setting','app.recent_job_count','app.storage_used','app.supported_countries','app.wishlist_bought',
         'catalog.colour_family','catalog.rgb_hex','catalog.rgb_to_lab','catalog.set_colour_fields','catalog.srgb_lin'],
   'authenticated can execute exactly the documented functions');
 select is_empty($$ select name from fn where is_trigger and name like 'app.%' and (has_function_privilege('authenticated', oid, 'execute') or has_function_privilege('anon', oid, 'execute')) $$,

@@ -73,8 +73,8 @@ export class EventLog {
   }
 }
 
-/** Create one item and log one `item_added` event for it (origin 'manual' from the form, 'demo' from the demo loader). */
-export async function createItemLogged(repo: WardrobeRepository, log: EventLog, input: ItemInput, origin: 'manual' | 'demo'): Promise<StoredItem> {
+/** Create one item and log one `item_added` event for it (origin 'manual' from the form, 'photo' from add-by-photo, 'demo' from the demo loader). */
+export async function createItemLogged(repo: WardrobeRepository, log: EventLog, input: ItemInput, origin: 'manual' | 'demo' | 'photo'): Promise<StoredItem> {
   const item = await repo.items.create(input);
   log.record('item_added', { origin });
   return item;

@@ -1,6 +1,6 @@
 import { categoryOfSubType, isCategory, isColourFamily, isFit, isMaterial, isOccasion, isPattern, isSeason, isSubType, referenceSwatch, slotAssignmentOf } from '@sparta/taxonomy';
 import type { Slot } from '@sparta/rules';
-import type { FeedbackFacts, ItemInput, OutfitInput, SavedOutfit, StoredItem, WishlistEntry, WishlistInput } from '../repository';
+import type { FeedbackFacts, ItemInput, OutfitInput, PhotoFeatures, SavedOutfit, StoredItem, WishlistEntry, WishlistInput } from '../repository';
 import { RepositoryError } from './errors';
 
 // Both ways between the screens' shapes and the rows of app.items, app.outfits, app.outfit_items, app.wishlist_entries and
@@ -31,8 +31,19 @@ export function itemPatch(patch: Partial<ItemInput>): Row {
 }
 
 export const itemRow = (input: ItemInput, userId: string, now: string): Row => ({
-  ...itemPatch(input), user_id: userId, origin: 'manual', archived_at: input.status === 'archived' ? now : null,
+  ...itemPatch(input), user_id: userId, origin: input.photo ? 'photo' : 'manual', archived_at: input.status === 'archived' ? now : null,
+  ...(input.photo ? { image_path: input.photo.imagePath, image_thumb_path: input.photo.imageThumbPath } : {}),
 });
+
+const FEATURE_LENGTH: Record<string, { size: number; maxClass: number }> = { 'garment-cnn-v1': { size: 32, maxClass: 9 }, 'garment-cnn-v2': { size: 64, maxClass: 19 } };
+/** The `app.item_features` row for a new item, or null when the features do not fit the table's checks (a known model version, the right count of finite numbers). */
+export function featuresRow(itemId: string, userId: string, f: PhotoFeatures): Row | null {
+  const shape = FEATURE_LENGTH[f.modelVersion];
+  if (!shape || f.embedding.length !== shape.size || !f.embedding.every((n) => typeof n === 'number' && Number.isFinite(n))) return null;
+  if (f.garmentClass !== null && !(Number.isInteger(f.garmentClass) && f.garmentClass >= 0 && f.garmentClass <= shape.maxClass)) return null;
+  if (f.p !== null && !(f.p >= 0 && f.p <= 1)) return null;
+  return { item_id: itemId, user_id: userId, model_version: f.modelVersion, garment_class: f.garmentClass, garment_p: f.p, embedding: [...f.embedding] };
+}
 
 export function itemFromRow(r: Row): StoredItem {
   const { category, sub_type: subType, status } = r;

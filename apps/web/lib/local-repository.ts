@@ -1,6 +1,9 @@
+import { categoryOfSubType, colourFamily, hexToRgb, referenceSwatch } from '@sparta/taxonomy';
+import { PAGE, afterCursor, matches, newestFirst, totalsByCurrency } from './purchases';
+import type { Purchase, PurchaseInput } from './purchases';
 import type {
-  ArchiveReason, Collection, ItemCollection, ItemInput, OutfitInput, SavedOutfit, StoredItem,
-  WardrobeRepository, WishlistEntry, WishlistInput,
+  ArchiveReason, BoughtInput, Collection, ItemCollection, ItemInput, OutfitInput, PriceContext, PurchaseCollection, SavedOutfit, StoredItem,
+  WardrobeRepository, WishlistCollection, WishlistEntry, WishlistInput,
 } from './repository';
 
 /** The part of the browser's Storage the repository uses, so tests can pass a fake. */
@@ -18,8 +21,10 @@ interface Doc {
   items: StoredItem[];
   outfits: SavedOutfit[];
   wishlist: WishlistEntry[];
+  /** Absent in documents saved before R6; read as none. */
+  purchases: (PurchaseInput & { id: string; createdAt: string })[];
 }
-const empty = (): Doc => ({ version: 1, seq: 0, items: [], outfits: [], wishlist: [] });
+const empty = (): Doc => ({ version: 1, seq: 0, items: [], outfits: [], wishlist: [], purchases: [] });
 
 function read(storage: StorageLike | null): Doc {
   try {
@@ -27,7 +32,7 @@ function read(storage: StorageLike | null): Doc {
     if (!raw) return empty();
     const doc = JSON.parse(raw) as Partial<Doc>;
     if (doc.version !== 1 || !Array.isArray(doc.items) || !Array.isArray(doc.outfits) || !Array.isArray(doc.wishlist)) return empty();
-    return { ...empty(), ...doc, seq: typeof doc.seq === 'number' ? doc.seq : 0 } as Doc;
+    return { ...empty(), ...doc, purchases: Array.isArray(doc.purchases) ? doc.purchases : [], seq: typeof doc.seq === 'number' ? doc.seq : 0 } as Doc;
   } catch {
     return empty();
   }
@@ -53,7 +58,10 @@ export class LocalRepository implements WardrobeRepository {
   private doc: Doc;
   items: ItemCollection;
   outfits: Collection<SavedOutfit, OutfitInput>;
-  wishlist: Collection<WishlistEntry, WishlistInput>;
+  wishlist: WishlistCollection;
+  purchases: PurchaseCollection;
+  /** The browser-only demo has no profile and no exchange rates: prices show in their own currency only. */
+  prices: PriceContext = { currency: async () => 'USD', rates: async () => ({}) };
 
   constructor(private storage: StorageLike | null = browserStorage(), private now: () => string = () => new Date().toISOString()) {
     this.persistent = storage !== null;
@@ -63,9 +71,72 @@ export class LocalRepository implements WardrobeRepository {
       ...base,
       archive: (id, reason: ArchiveReason) => base.update(id, { status: 'archived', archiveReason: reason }),
       restore: (id) => base.update(id, { status: 'active', archiveReason: null }),
+      remove: async (id) => {
+        const gone = await base.remove(id);
+        if (gone) { this.doc.purchases = this.doc.purchases.filter((p) => p.itemId !== id); this.save(); } // like the database: an item's purchases go with it
+        return gone;
+      },
     };
     this.outfits = this.collection<'outfits', SavedOutfit, OutfitInput>('outfits', 'outfit');
-    this.wishlist = this.collection<'wishlist', WishlistEntry, WishlistInput>('wishlist', 'wish');
+    const wishlist = this.collection<'wishlist', WishlistEntry, WishlistInput>('wishlist', 'wish');
+    this.wishlist = { ...wishlist, bought: (id, input) => this.bought(id, input, wishlist) };
+    this.purchases = this.purchaseCollection();
+  }
+
+  private view(p: Doc['purchases'][number]): Purchase {
+    const item = this.doc.items.find((i) => i.id === p.itemId);
+    return { ...p, itemName: item?.name ?? '', category: item?.category ?? null, brand: null };
+  }
+
+  private purchaseCollection(): PurchaseCollection {
+    const all = () => this.doc.purchases.map((p) => this.view(p)).sort(newestFirst);
+    return {
+      page: async (f, after = null) => {
+        const rest = all().filter((p) => matches(p, f) && afterCursor(p, after));
+        const rows = rest.slice(0, PAGE);
+        const last = rows[PAGE - 1];
+        return { rows, next: rest.length > PAGE && last ? { date: last.date, id: last.id } : null };
+      },
+      totals: async (f) => totalsByCurrency(all().filter((p) => matches(p, f))),
+      forItem: async (itemId) => all().filter((p) => p.itemId === itemId),
+      create: async (input) => {
+        if (!this.doc.items.some((i) => i.id === input.itemId)) throw new Error('unknown item');
+        const row = { ...JSON.parse(JSON.stringify(input)) as PurchaseInput, id: `buy-${++this.doc.seq}`, createdAt: this.now() };
+        this.doc.purchases.push(row);
+        this.save();
+        return this.view(row);
+      },
+      update: async (id, patch) => {
+        const row = this.doc.purchases.find((p) => p.id === id);
+        if (!row) return undefined;
+        Object.assign(row, JSON.parse(JSON.stringify(patch)) as object);
+        this.save();
+        return this.view(row);
+      },
+      remove: async (id) => {
+        const at = this.doc.purchases.findIndex((p) => p.id === id);
+        if (at < 0) return false;
+        this.doc.purchases.splice(at, 1);
+        this.save();
+        return true;
+      },
+    };
+  }
+
+  /** The entry becomes an item (its attributes, the given colour when it has none) and a purchase, then leaves the wishlist. */
+  private async bought(id: string, input: BoughtInput, wishlist: Collection<WishlistEntry, WishlistInput>): Promise<string> {
+    const entry = await wishlist.get(id);
+    if (!entry) throw new Error('entry not found');
+    const hex = input.colourHex ?? (entry.colourFamily && entry.colourFamily !== 'Multi' ? referenceSwatch(entry.colourFamily)?.hex : undefined);
+    if (!hex) throw new Error('a colour is needed');
+    const rgb = hexToRgb(hex);
+    const item = await this.items.create({
+      name: entry.name, category: categoryOfSubType(entry.subType)!, subType: entry.subType, hex: hex.toUpperCase(), rgb, colourFamily: colourFamily(...rgb) as ItemInput['colourFamily'],
+      fit: null, material: null, pattern: null, seasons: [], occasions: [], condition: null, favourite: false, neverWorn: false, status: 'active', archiveReason: null,
+    });
+    await this.purchases.create({ ...input.purchase, itemId: item.id });
+    await wishlist.remove(id);
+    return item.id;
   }
 
   private save(): void {

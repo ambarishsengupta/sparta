@@ -1,5 +1,7 @@
 import { categoryOfSubType, isCategory, isColourFamily, isFit, isMaterial, isOccasion, isPattern, isSeason, isSubType, referenceSwatch, slotAssignmentOf } from '@sparta/taxonomy';
 import type { Slot } from '@sparta/rules';
+import { isDay } from '../purchases';
+import type { Cursor, Purchase, PurchaseDraft, PurchaseFilter, PurchaseInput } from '../purchases';
 import type { FeedbackFacts, ItemInput, OutfitInput, PhotoFeatures, SavedOutfit, StoredItem, WishlistEntry, WishlistInput } from '../repository';
 import { RepositoryError } from './errors';
 
@@ -158,3 +160,43 @@ export function feedbackRow(e: FeedbackFacts, userId: string): Row | null {
   if ((e.type !== 'suggestion_accepted' && e.type !== 'suggestion_rejected') || !e.occasion) return null;
   return { user_id: userId, occasion: e.occasion, rule_ids: e.rule_ids.filter((r) => RULE_ID.test(r)), accepted: e.type === 'suggestion_accepted', engine_config: e.engine_config };
 }
+
+// ---- purchases (FR-30, WO-0081) --------------------------------------------------------------------------------------
+/** The purchase and, inner-joined, the attributes of its item that the filters use. `price` is the UNIT price; spend is price x quantity. */
+export const PURCHASE_SELECT = 'id,item_id,purchase_date,store,price,currency,quantity,notes,created_at,items!inner(name,category,brand)';
+const num = (v: unknown, what: string): number => { const n = typeof v === 'string' ? Number(v) : v; return typeof n === 'number' && Number.isFinite(n) ? n : bad(what); };
+
+export function purchaseFromRow(r: Row): Purchase | null {
+  const item = (Array.isArray(r.items) ? r.items[0] : r.items) as Row | null | undefined;
+  if (typeof r.id !== 'string' || typeof r.item_id !== 'string' || typeof r.created_at !== 'string' || !item || typeof item.name !== 'string') return bad('purchase');
+  if (r.purchase_date === null || r.price === null || r.currency === null) return null; // a purchase made before R6 without a date, price or currency: not listed
+  return {
+    id: r.id as string, itemId: r.item_id as string, date: String(r.purchase_date), store: typeof r.store === 'string' ? r.store : null, price: num(r.price, 'purchase price'),
+    currency: String(r.currency), quantity: num(r.quantity, 'purchase quantity'), notes: typeof r.notes === 'string' ? r.notes : null, createdAt: r.created_at as string,
+    itemName: item.name as string, category: isCategory(item.category) ? item.category : null, brand: typeof item.brand === 'string' ? item.brand : null,
+  };
+}
+
+const draftColumns = (d: Partial<PurchaseDraft>): Row => {
+  const row: Row = {};
+  if (d.date !== undefined) row.purchase_date = d.date;
+  if (d.store !== undefined) row.store = d.store;
+  if (d.price !== undefined) row.price = d.price;
+  if (d.currency !== undefined) row.currency = d.currency;
+  if (d.quantity !== undefined) row.quantity = d.quantity;
+  if (d.notes !== undefined) row.notes = d.notes;
+  return row;
+};
+export const purchaseRow = (i: PurchaseInput, userId: string): Row => ({ ...draftColumns(i), user_id: userId, item_id: i.itemId });
+export const purchasePatch = draftColumns;
+/** The `p_item` colour and the `p_purchase` document for `app.wishlist_bought` (its keys are the function's own). */
+export function boughtArgs(entry: string, draft: PurchaseDraft, colourHex?: string): Row {
+  const rgb = colourHex ? ([1, 3, 5] as const).map((i) => parseInt(colourHex.slice(i, i + 2), 16)) : [];
+  return { p_entry: entry, p_item: colourHex ? { colour_r: rgb[0], colour_g: rgb[1], colour_b: rgb[2] } : {}, p_purchase: draftColumns(draft) };
+}
+
+/** A filter with only well-formed values: a date that is not a day, or a cursor that is not a day and a uuid, is dropped before it reaches a request. */
+export const cleanFilter = (f: PurchaseFilter): PurchaseFilter => ({ ...f, from: isDay(f.from) ? f.from : '', to: isDay(f.to) ? f.to : '' });
+export const cleanCursor = (c: Cursor | null | undefined): Cursor | null => (c && isDay(c.date) && /^[0-9a-f-]{36}$/i.test(c.id) ? c : null);
+/** Escapes `%`, `_` and `\` so the store filter is a plain "contains". */
+export const likePattern = (s: string): string => `%${s.replace(/[\\%_]/g, '\\$&')}%`;

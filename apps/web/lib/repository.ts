@@ -1,6 +1,8 @@
 import type { ColourFamily, Fit, Material, SubType } from '@sparta/taxonomy';
 import type { Item, ItemId, Slot } from '@sparta/rules';
 import type { Occasion } from '@sparta/taxonomy';
+import type { FxRates } from './money';
+import type { Cursor, CurrencyTotal, Page, Purchase, PurchaseDraft, PurchaseFilter, PurchaseInput } from './purchases';
 
 export type ArchiveReason = 'sold' | 'donated' | 'discarded' | 'lost';
 
@@ -69,10 +71,32 @@ export interface FeedbackSink {
   record(facts: FeedbackFacts): Promise<boolean>;
 }
 
+/** Marking a wishlist entry bought (FR-35): the purchase, plus a colour when the entry has none (an item needs one). */
+export interface BoughtInput { purchase: PurchaseDraft; colourHex?: string }
+export interface WishlistCollection extends Collection<WishlistEntry, WishlistInput> {
+  /** One step: the entry leaves the wishlist, an item and a purchase are made (`app.wishlist_bought`). Returns the new item's id. */
+  bought(id: string, input: BoughtInput): Promise<string>;
+}
+
+/** Purchases (FR-30, FR-31): newest first, keyset pages of 40, spend per currency over the whole filtered set. */
+export interface PurchaseCollection {
+  page(filter: PurchaseFilter, after?: Cursor | null): Promise<Page>;
+  totals(filter: PurchaseFilter): Promise<CurrencyTotal[]>;
+  forItem(itemId: string): Promise<Purchase[]>;
+  create(input: PurchaseInput): Promise<Purchase>;
+  update(id: string, patch: Partial<PurchaseDraft>): Promise<Purchase | undefined>;
+  remove(id: string): Promise<boolean>;
+}
+
+/** What a price is shown against (FR-33): the profile currency and the newest exchange rates (empty until rates exist). */
+export interface PriceContext { currency(): Promise<string>; rates(): Promise<FxRates> }
+
 export interface WardrobeRepository {
   items: ItemCollection;
   outfits: Collection<SavedOutfit, OutfitInput>;
-  wishlist: Collection<WishlistEntry, WishlistInput>;
+  wishlist: WishlistCollection;
+  purchases: PurchaseCollection;
+  prices: PriceContext;
   /** Only the account-backed repository has one; the local repository keeps just its event log. */
   feedback?: FeedbackSink;
 }

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignOutForm } from './account/SignOutForm';
 
-const LINKS = [['/', 'Wardrobe'], ['/outfits', 'Outfits']] as const;
+const LINKS = [['/', 'Wardrobe'], ['/outfits', 'Outfits'], ['/wishlist', 'Wishlist'], ['/purchases', 'Purchases']] as const;
 const ACCOUNT_LINKS = [['/settings', 'Settings']] as const;
 
 /** `signedIn` is set by the page shell when the app runs against Supabase; Sign out is a plain form post, so it works without scripts. */

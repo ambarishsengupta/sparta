@@ -230,7 +230,7 @@ create temp table wr as
     and has_schema_privilege('worker_role', n.oid, 'usage')               -- a table in a schema without usage cannot be reached
     and not exists (select 1 from pg_depend d where d.objid = c.oid and d.deptype = 'e')   -- extension members: listed in the next assertion
     and (has_any_column_privilege('worker_role', c.oid, 'select,insert,update,references') or has_table_privilege('worker_role', c.oid, 'delete,truncate,trigger'));
-select is((select array_agg(rel order by rel) from wr where rel not like 'catalog.lk\_%'), array['app.jobs', 'ops.worker_heartbeat'], 'the worker touches app.jobs, ops.worker_heartbeat and the catalog lookups, and no other table or view that it can reach');
+select is((select array_agg(rel order by rel) from wr where rel not like 'catalog.lk\_%'), array['app.jobs', 'catalog.catalog_items', 'ops.worker_heartbeat'], 'the worker touches app.jobs, catalog.catalog_items (active rows, WO-0083), ops.worker_heartbeat and the catalog lookups, and no other table or view that it can reach');
 -- relations that belong to an extension and are open to every role (PUBLIC): pg_stat_statements views, pgTAP views. They sit in the extensions schema
 -- (LLD 7.1 gives the worker usage on it for extensions.similarity) and hold no application data.
 select is_empty($$ select n.nspname || '.' || c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace

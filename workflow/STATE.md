@@ -1,6 +1,6 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-07 (re-cut: Release 0 = stakeholder demo, Release 1 = MVP; WO-0092 fix loop running)
+Updated: 2026-11-07 (WO-0092 done and re-checked; WO-0093 restyle maker running; next WO-0081)
 Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)

@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { lockStack } from '../../apps/web/test-support/stack';
 import taxonomy from '../../packages/taxonomy/src/taxonomy.json';
 import '../../supabase/scripts/seed.test';
+import '../../supabase/scripts/seed-demo-catalog.test';
 
 // ---- db_tests.sh with a stub `supabase` that logs its calls ----
 function runScript(codes: { status?: number; reset?: number; test?: number }) {

@@ -2,17 +2,19 @@
 // Copyright (C) 2026 the Sparta team. Licensed under the GNU GPL v3.0; see LICENSE.
 
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist_Mono, Instrument_Sans } from "next/font/google";
+import { Geist_Mono, Instrument_Sans, Rozha_One } from "next/font/google";
 
 import { messages } from "@/lib/i18n/messages";
 import "./globals.css";
 
 // next/font downloads these at build time and serves them from this app, so
 // visitors make no request to Google (plan 4.5). All three are SIL OFL 1.1.
-const bricolage = Bricolage_Grotesque({
+// Rozha One (display) is by the Indian Type Foundry and carries Devanagari,
+// ready for a Hindi locale.
+const rozha = Rozha_One({
+  weight: "400",
   subsets: ["latin"],
-  axes: ["opsz"],
-  variable: "--font-bricolage",
+  variable: "--font-rozha",
   display: "swap",
 });
 
@@ -38,8 +40,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f7fa" },
-    { media: "(prefers-color-scheme: dark)", color: "#101116" },
+    { media: "(prefers-color-scheme: light)", color: "#fff5ed" },
+    { media: "(prefers-color-scheme: dark)", color: "#231f36" },
   ],
 };
 
@@ -47,9 +49,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${bricolage.variable} ${instrumentSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+      className={`${rozha.variable} ${instrumentSans.variable} ${geistMono.variable}`}
     >
-      <body>{children}</body>
+      <head>
+        {/* Applies the stored theme before first paint (see theme-toggle.tsx). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{var t=localStorage.getItem("sparta-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}',
+          }}
+        />
+      </head>
+      <body className="artful-ground">{children}</body>
     </html>
   );
 }

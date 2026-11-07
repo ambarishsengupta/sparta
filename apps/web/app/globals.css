@@ -4,8 +4,8 @@
  *
  * Design tokens. Source of truth: docs/IMPLEMENTATION-PLAN.md section 4.3 (colour),
  * 4.5 (type, shape), 4.7 (motion). scripts/check-contrast.ts parses the two token
- * blocks below and fails CI if any pair in plan section 4.4 drops below its threshold,
- * so keep every colour token as a literal hex value on its own line.
+ * blocks below (resolving var() references into the OKLCH scales) and fails CI if any pair in plan section 4.4 drops below its threshold,
+ * so keep every token on its own line as oklch(), a hex value or a single var().
  */
 
 @import "tailwindcss";
@@ -23,39 +23,157 @@
   }
 }
 
+/* ---------- Tonal scales (OKLCH) ---------- */
+/* Every hue runs 25 to 950 on one shared lightness ladder (OKLCH L 99% to 25.5%),
+   so a step means the same perceived lightness in every colour. Chroma peaks near
+   each hue's own anchor and is reduced until the colour fits sRGB. Generated, do
+   not hand-edit: change the ladder or anchors and regenerate. Components should
+   use the semantic tokens below, not raw steps. */
+/* tokens:scales:start */
+:root {
+  /* kora (unbleached cotton): the neutral, warm paper to indigo-black */
+  --kora-25: oklch(99% 0.012 75);
+  --kora-50: oklch(97.5% 0.015 61.8);
+  --kora-100: oklch(94.5% 0.017 48.6);
+  --kora-200: oklch(89.5% 0.02 35.5);
+  --kora-300: oklch(83.5% 0.023 22.3);
+  --kora-400: oklch(76.5% 0.026 9.1);
+  --kora-500: oklch(69.5% 0.028 355.9);
+  --kora-600: oklch(61.5% 0.031 342.7);
+  --kora-700: oklch(53% 0.034 329.5);
+  --kora-800: oklch(44% 0.037 316.4);
+  --kora-900: oklch(35% 0.039 303.2);
+  --kora-950: oklch(25.5% 0.042 290);
+
+  /* kesari (saffron, marigold) */
+  --kesari-25: oklch(99% 0.003 48.9);
+  --kesari-50: oklch(97.5% 0.013 48.9);
+  --kesari-100: oklch(94.5% 0.03 48.9);
+  --kesari-200: oklch(89.5% 0.06 48.9);
+  --kesari-300: oklch(83.5% 0.099 48.9);
+  --kesari-400: oklch(76.5% 0.152 48.9);
+  --kesari-500: oklch(69.5% 0.185 48.9);
+  --kesari-600: oklch(61.5% 0.164 48.9);
+  --kesari-700: oklch(53% 0.129 48.9);
+  --kesari-800: oklch(44% 0.085 48.9);
+  --kesari-900: oklch(35% 0.048 48.9);
+  --kesari-950: oklch(25.5% 0.022 48.9);
+
+  /* rani (rani pink) */
+  --rani-25: oklch(99% 0.005 359.9);
+  --rani-50: oklch(97.5% 0.012 359.9);
+  --rani-100: oklch(94.5% 0.028 359.9);
+  --rani-200: oklch(89.5% 0.058 359.9);
+  --rani-300: oklch(83.5% 0.098 359.9);
+  --rani-400: oklch(76.5% 0.152 359.9);
+  --rani-500: oklch(69.5% 0.197 359.9);
+  --rani-600: oklch(61.5% 0.223 359.9);
+  --rani-700: oklch(53% 0.213 359.9);
+  --rani-800: oklch(44% 0.178 359.9);
+  --rani-900: oklch(35% 0.137 359.9);
+  --rani-950: oklch(25.5% 0.082 359.9);
+
+  /* haldi (turmeric) */
+  --haldi-25: oklch(99% 0.01 84.9);
+  --haldi-50: oklch(97.5% 0.026 84.9);
+  --haldi-100: oklch(94.5% 0.058 84.9);
+  --haldi-200: oklch(89.5% 0.111 84.9);
+  --haldi-300: oklch(83.5% 0.169 84.9);
+  --haldi-400: oklch(76.5% 0.157 84.9);
+  --haldi-500: oklch(69.5% 0.135 84.9);
+  --haldi-600: oklch(61.5% 0.1 84.9);
+  --haldi-700: oklch(53% 0.064 84.9);
+  --haldi-800: oklch(44% 0.034 84.9);
+  --haldi-900: oklch(35% 0.02 84.9);
+  --haldi-950: oklch(25.5% 0.02 84.9);
+
+  /* neel (indigo) */
+  --neel-25: oklch(99% 0.004 274);
+  --neel-50: oklch(97.5% 0.01 274);
+  --neel-100: oklch(94.5% 0.022 274);
+  --neel-200: oklch(89.5% 0.026 274);
+  --neel-300: oklch(83.5% 0.042 274);
+  --neel-400: oklch(76.5% 0.068 274);
+  --neel-500: oklch(69.5% 0.101 274);
+  --neel-600: oklch(61.5% 0.14 274);
+  --neel-700: oklch(53% 0.174 274);
+  --neel-800: oklch(44% 0.186 274);
+  --neel-900: oklch(35% 0.171 274);
+  --neel-950: oklch(25.5% 0.131 274);
+
+  /* mor (peacock) */
+  --mor-25: oklch(99% 0.009 205.7);
+  --mor-50: oklch(97.5% 0.025 205.7);
+  --mor-100: oklch(94.5% 0.051 205.7);
+  --mor-200: oklch(89.5% 0.066 205.7);
+  --mor-300: oklch(83.5% 0.083 205.7);
+  --mor-400: oklch(76.5% 0.1 205.7);
+  --mor-500: oklch(69.5% 0.11 205.7);
+  --mor-600: oklch(61.5% 0.104 205.7);
+  --mor-700: oklch(53% 0.089 205.7);
+  --mor-800: oklch(44% 0.068 205.7);
+  --mor-900: oklch(35% 0.043 205.7);
+  --mor-950: oklch(25.5% 0.022 205.7);
+
+  /* tota (parrot green) */
+  --tota-25: oklch(99% 0.018 133.6);
+  --tota-50: oklch(97.5% 0.051 133.6);
+  --tota-100: oklch(94.5% 0.117 133.6);
+  --tota-200: oklch(89.5% 0.139 133.6);
+  --tota-300: oklch(83.5% 0.161 133.6);
+  --tota-400: oklch(76.5% 0.174 133.6);
+  --tota-500: oklch(69.5% 0.171 133.6);
+  --tota-600: oklch(61.5% 0.15 133.6);
+  --tota-700: oklch(53% 0.113 133.6);
+  --tota-800: oklch(44% 0.072 133.6);
+  --tota-900: oklch(35% 0.039 133.6);
+  --tota-950: oklch(25.5% 0.021 133.6);
+}
+/* tokens:scales:end */
+
 /* ---------- Light theme (primary) ---------- */
 /* tokens:light:start */
 :root {
   color-scheme: light;
 
-  --canvas: #f6f7fa;
-  --surface: #fcfcfe;
-  --line: #dadde6;
-  --control-border: #8a8d9c;
-  --ink: #14151c;
-  --ink-soft: #454757;
-  --ink-mute: #5e6070;
-  --focus: #c93c00;
-  --accent-text: #c93c00;
+  --canvas: var(--kora-50);
+  --surface: var(--kora-25);
+  --line: var(--kora-200);
+  --control-border: var(--kora-600);
+  --ink: var(--kora-950);
+  --ink-soft: var(--kora-800);
+  --ink-mute: var(--kora-700);
+  --focus: var(--rani-700);
+  --accent-text: var(--rani-700);
 
-  --tangerine: #ff5a1f;
-  --on-tangerine: #14151c;
-  --tangerine-tint: #ffe7dc;
-  --pink: #ff2e93;
-  --on-pink: #14151c;
-  --pink-tint: #ffe0ef;
-  --lime: #c6f432;
-  --on-lime: #14151c;
-  --lime-tint: #f2fcd2;
-  --cyan: #19d3f3;
-  --on-cyan: #14151c;
-  --cyan-tint: #d9f7fd;
-  --yellow: #ffd60a;
-  --on-yellow: #14151c;
-  --yellow-tint: #fff6cc;
-  --cobalt: #2f5bff;
+  /* Token names are kept from M1 so components, tests and the contrast gate
+     still apply: tangerine = kesari, pink = rani, lime = tota, cyan = mor,
+     yellow = haldi, cobalt = neel. -motif is the step a textile motif is
+     drawn in, chosen so ink-soft text still passes 4.5:1 over it. */
+  --tangerine: var(--kesari-500);
+  --on-tangerine: var(--kora-950);
+  --tangerine-tint: var(--kesari-100);
+  --tangerine-motif: var(--kesari-300);
+  --pink: var(--rani-700);
+  --on-pink: #ffffff;
+  --pink-tint: var(--rani-100);
+  --pink-motif: var(--rani-300);
+  --lime: var(--tota-400);
+  --on-lime: var(--kora-950);
+  --lime-tint: var(--tota-100);
+  --lime-motif: var(--tota-300);
+  --cyan: var(--mor-500);
+  --on-cyan: var(--kora-950);
+  --cyan-tint: var(--mor-100);
+  --cyan-motif: var(--mor-300);
+  --yellow: var(--haldi-300);
+  --on-yellow: var(--kora-950);
+  --yellow-tint: var(--haldi-100);
+  --yellow-motif: var(--haldi-200);
+  --cobalt: var(--neel-800);
   --on-cobalt: #ffffff;
-  --cobalt-tint: #e1e8ff;
+  --cobalt-tint: var(--neel-100);
+  --cobalt-motif: var(--neel-300);
 
   /* Light-mode flash fills under 3:1 against the canvas carry a 1.5 px ink outline
      (plan 4.3). Every flash fill gets the same edge so shapes stay consistent. */
@@ -69,34 +187,40 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --canvas: #101116;
-    --surface: #181922;
-    --line: #2c2e3a;
-    --control-border: #6e7184;
-    --ink: #f2f3f7;
-    --ink-soft: #c3c5d1;
-    --ink-mute: #a2a4b3;
-    --focus: #ff7a45;
-    --accent-text: #ff8a5b;
+    --canvas: var(--kora-950);
+    --surface: var(--kora-900);
+    --line: var(--kora-800);
+    --control-border: var(--kora-500);
+    --ink: var(--kora-50);
+    --ink-soft: var(--kora-200);
+    --ink-mute: var(--kora-400);
+    --focus: var(--kesari-400);
+    --accent-text: var(--kesari-300);
 
-    --tangerine: #ff7a45;
-    --on-tangerine: #101116;
-    --tangerine-tint: #3a2016;
-    --pink: #ff5fae;
-    --on-pink: #101116;
-    --pink-tint: #3a1a2a;
-    --lime: #d4ff4f;
-    --on-lime: #101116;
-    --lime-tint: #2a3313;
-    --cyan: #4de1f7;
-    --on-cyan: #101116;
-    --cyan-tint: #123139;
-    --yellow: #ffe14d;
-    --on-yellow: #101116;
-    --yellow-tint: #36301a;
-    --cobalt: #7c98ff;
-    --on-cobalt: #101116;
-    --cobalt-tint: #1b2347;
+    --tangerine: var(--kesari-400);
+    --on-tangerine: var(--kora-950);
+    --tangerine-tint: var(--kesari-900);
+    --tangerine-motif: var(--kesari-800);
+    --pink: var(--rani-400);
+    --on-pink: var(--kora-950);
+    --pink-tint: var(--rani-900);
+    --pink-motif: var(--rani-800);
+    --lime: var(--tota-300);
+    --on-lime: var(--kora-950);
+    --lime-tint: var(--tota-900);
+    --lime-motif: var(--tota-800);
+    --cyan: var(--mor-400);
+    --on-cyan: var(--kora-950);
+    --cyan-tint: var(--mor-900);
+    --cyan-motif: var(--mor-800);
+    --yellow: var(--haldi-300);
+    --on-yellow: var(--kora-950);
+    --yellow-tint: var(--haldi-900);
+    --yellow-motif: var(--haldi-800);
+    --cobalt: var(--neel-500);
+    --on-cobalt: var(--kora-950);
+    --cobalt-tint: var(--neel-900);
+    --cobalt-motif: var(--neel-800);
 
     /* Every dark fill clears 3:1 on its own, so the edge takes the fill colour. */
     --flash-edge: transparent;
@@ -108,34 +232,40 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --canvas: #101116;
-  --surface: #181922;
-  --line: #2c2e3a;
-  --control-border: #6e7184;
-  --ink: #f2f3f7;
-  --ink-soft: #c3c5d1;
-  --ink-mute: #a2a4b3;
-  --focus: #ff7a45;
-  --accent-text: #ff8a5b;
+  --canvas: var(--kora-950);
+  --surface: var(--kora-900);
+  --line: var(--kora-800);
+  --control-border: var(--kora-500);
+  --ink: var(--kora-50);
+  --ink-soft: var(--kora-200);
+  --ink-mute: var(--kora-400);
+  --focus: var(--kesari-400);
+  --accent-text: var(--kesari-300);
 
-  --tangerine: #ff7a45;
-  --on-tangerine: #101116;
-  --tangerine-tint: #3a2016;
-  --pink: #ff5fae;
-  --on-pink: #101116;
-  --pink-tint: #3a1a2a;
-  --lime: #d4ff4f;
-  --on-lime: #101116;
-  --lime-tint: #2a3313;
-  --cyan: #4de1f7;
-  --on-cyan: #101116;
-  --cyan-tint: #123139;
-  --yellow: #ffe14d;
-  --on-yellow: #101116;
-  --yellow-tint: #36301a;
-  --cobalt: #7c98ff;
-  --on-cobalt: #101116;
-  --cobalt-tint: #1b2347;
+  --tangerine: var(--kesari-400);
+  --on-tangerine: var(--kora-950);
+  --tangerine-tint: var(--kesari-900);
+  --tangerine-motif: var(--kesari-800);
+  --pink: var(--rani-400);
+  --on-pink: var(--kora-950);
+  --pink-tint: var(--rani-900);
+  --pink-motif: var(--rani-800);
+  --lime: var(--tota-300);
+  --on-lime: var(--kora-950);
+  --lime-tint: var(--tota-900);
+  --lime-motif: var(--tota-800);
+  --cyan: var(--mor-400);
+  --on-cyan: var(--kora-950);
+  --cyan-tint: var(--mor-900);
+  --cyan-motif: var(--mor-800);
+  --yellow: var(--haldi-300);
+  --on-yellow: var(--kora-950);
+  --yellow-tint: var(--haldi-900);
+  --yellow-motif: var(--haldi-800);
+  --cobalt: var(--neel-500);
+  --on-cobalt: var(--kora-950);
+  --cobalt-tint: var(--neel-900);
+  --cobalt-motif: var(--neel-800);
 
   --flash-edge: transparent;
 }
@@ -168,7 +298,10 @@
 @theme inline {
   /* Fonts (next/font variables set on <html> in app/layout.tsx). */
   --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-bricolage), var(--font-instrument-sans), ui-sans-serif, sans-serif;
+  /* Rozha One: high-contrast display face from the Indian Type Foundry, the
+     voice of Indian print mastheads and film posters. Headings only. */
+  --font-heading: var(--font-rozha), Georgia, serif;
+  --font-display: var(--font-rozha), Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   /* shadcn names */
@@ -225,6 +358,99 @@
   --color-on-pop: var(--on-pop);
   --color-pop-tint: var(--pop-tint);
 
+  /* Tonal scale steps, for one-off decoration; prefer the semantic names. */
+  --color-kora-25: var(--kora-25);
+  --color-kora-50: var(--kora-50);
+  --color-kora-100: var(--kora-100);
+  --color-kora-200: var(--kora-200);
+  --color-kora-300: var(--kora-300);
+  --color-kora-400: var(--kora-400);
+  --color-kora-500: var(--kora-500);
+  --color-kora-600: var(--kora-600);
+  --color-kora-700: var(--kora-700);
+  --color-kora-800: var(--kora-800);
+  --color-kora-900: var(--kora-900);
+  --color-kora-950: var(--kora-950);
+  --color-kesari-25: var(--kesari-25);
+  --color-kesari-50: var(--kesari-50);
+  --color-kesari-100: var(--kesari-100);
+  --color-kesari-200: var(--kesari-200);
+  --color-kesari-300: var(--kesari-300);
+  --color-kesari-400: var(--kesari-400);
+  --color-kesari-500: var(--kesari-500);
+  --color-kesari-600: var(--kesari-600);
+  --color-kesari-700: var(--kesari-700);
+  --color-kesari-800: var(--kesari-800);
+  --color-kesari-900: var(--kesari-900);
+  --color-kesari-950: var(--kesari-950);
+  --color-rani-25: var(--rani-25);
+  --color-rani-50: var(--rani-50);
+  --color-rani-100: var(--rani-100);
+  --color-rani-200: var(--rani-200);
+  --color-rani-300: var(--rani-300);
+  --color-rani-400: var(--rani-400);
+  --color-rani-500: var(--rani-500);
+  --color-rani-600: var(--rani-600);
+  --color-rani-700: var(--rani-700);
+  --color-rani-800: var(--rani-800);
+  --color-rani-900: var(--rani-900);
+  --color-rani-950: var(--rani-950);
+  --color-haldi-25: var(--haldi-25);
+  --color-haldi-50: var(--haldi-50);
+  --color-haldi-100: var(--haldi-100);
+  --color-haldi-200: var(--haldi-200);
+  --color-haldi-300: var(--haldi-300);
+  --color-haldi-400: var(--haldi-400);
+  --color-haldi-500: var(--haldi-500);
+  --color-haldi-600: var(--haldi-600);
+  --color-haldi-700: var(--haldi-700);
+  --color-haldi-800: var(--haldi-800);
+  --color-haldi-900: var(--haldi-900);
+  --color-haldi-950: var(--haldi-950);
+  --color-neel-25: var(--neel-25);
+  --color-neel-50: var(--neel-50);
+  --color-neel-100: var(--neel-100);
+  --color-neel-200: var(--neel-200);
+  --color-neel-300: var(--neel-300);
+  --color-neel-400: var(--neel-400);
+  --color-neel-500: var(--neel-500);
+  --color-neel-600: var(--neel-600);
+  --color-neel-700: var(--neel-700);
+  --color-neel-800: var(--neel-800);
+  --color-neel-900: var(--neel-900);
+  --color-neel-950: var(--neel-950);
+  --color-mor-25: var(--mor-25);
+  --color-mor-50: var(--mor-50);
+  --color-mor-100: var(--mor-100);
+  --color-mor-200: var(--mor-200);
+  --color-mor-300: var(--mor-300);
+  --color-mor-400: var(--mor-400);
+  --color-mor-500: var(--mor-500);
+  --color-mor-600: var(--mor-600);
+  --color-mor-700: var(--mor-700);
+  --color-mor-800: var(--mor-800);
+  --color-mor-900: var(--mor-900);
+  --color-mor-950: var(--mor-950);
+  --color-tota-25: var(--tota-25);
+  --color-tota-50: var(--tota-50);
+  --color-tota-100: var(--tota-100);
+  --color-tota-200: var(--tota-200);
+  --color-tota-300: var(--tota-300);
+  --color-tota-400: var(--tota-400);
+  --color-tota-500: var(--tota-500);
+  --color-tota-600: var(--tota-600);
+  --color-tota-700: var(--tota-700);
+  --color-tota-800: var(--tota-800);
+  --color-tota-900: var(--tota-900);
+  --color-tota-950: var(--tota-950);
+  --color-tangerine-motif: var(--tangerine-motif);
+  --color-pink-motif: var(--pink-motif);
+  --color-lime-motif: var(--lime-motif);
+  --color-cyan-motif: var(--cyan-motif);
+  --color-yellow-motif: var(--yellow-motif);
+  --color-cobalt-motif: var(--cobalt-motif);
+  --color-pop-motif: var(--pop-motif);
+
   /* Radius rule (plan 4.5) */
   --radius-input: 8px;
   --radius-tile: 14px;
@@ -267,21 +493,25 @@
   --text-2xl--line-height: 1.15;
   --text-3xl: 2.5rem;
   --text-3xl--line-height: 1.15;
+  /* Display size, page titles only (overhaul: Rozha One needs size to sing). */
+  --text-4xl: 3.5rem;
+  --text-4xl--line-height: 1.05;
 
-  --animate-tab-tilt: tab-tilt 240ms var(--ease-snap) 1;
+  --animate-tab-tilt: tab-stamp 420ms var(--ease-spring) 1;
   --animate-hanger-swing: hanger-swing 1.1s var(--ease-snap) 300ms 1 both;
   --animate-shimmer: shimmer 1.6s linear infinite;
   --animate-button-progress: button-progress 1.1s var(--ease-snap) infinite;
 
-  @keyframes tab-tilt {
+  /* Thappa: the tab icon lands like a block-print stamp. */
+  @keyframes tab-stamp {
     0% {
-      transform: rotate(0deg);
+      transform: scale(1.3) rotate(-8deg);
     }
-    45% {
-      transform: rotate(-6deg);
+    55% {
+      transform: scale(0.92) rotate(2deg);
     }
     100% {
-      transform: rotate(0deg);
+      transform: scale(1) rotate(0deg);
     }
   }
   @keyframes hanger-swing {
@@ -325,31 +555,37 @@
   --pop: var(--tangerine);
   --on-pop: var(--on-tangerine);
   --pop-tint: var(--tangerine-tint);
+  --pop-motif: var(--tangerine-motif);
 }
 @utility pop-cobalt {
   --pop: var(--cobalt);
   --on-pop: var(--on-cobalt);
   --pop-tint: var(--cobalt-tint);
+  --pop-motif: var(--cobalt-motif);
 }
 @utility pop-pink {
   --pop: var(--pink);
   --on-pop: var(--on-pink);
   --pop-tint: var(--pink-tint);
+  --pop-motif: var(--pink-motif);
 }
 @utility pop-yellow {
   --pop: var(--yellow);
   --on-pop: var(--on-yellow);
   --pop-tint: var(--yellow-tint);
+  --pop-motif: var(--yellow-motif);
 }
 @utility pop-cyan {
   --pop: var(--cyan);
   --on-pop: var(--on-cyan);
   --pop-tint: var(--cyan-tint);
+  --pop-motif: var(--cyan-motif);
 }
 @utility pop-lime {
   --pop: var(--lime);
   --on-pop: var(--on-lime);
   --pop-tint: var(--lime-tint);
+  --pop-motif: var(--lime-motif);
 }
 
 @layer base {
@@ -367,6 +603,9 @@
   h2,
   h3 {
     @apply font-heading text-ink;
+    font-weight: 400;
+    font-synthesis-weight: none;
+    letter-spacing: 0.005em;
     text-wrap: balance;
   }
   p {
@@ -380,6 +619,446 @@
   }
   :focus:not(:focus-visible) {
     outline: none;
+  }
+}
+
+/* ---------- Indian motif layer (design overhaul, 2026-11-07) ----------
+ * Textile and floor-art motifs drawn as single-colour SVG masks, so every motif
+ * takes its colour from a token and follows the theme. Simple geometry only:
+ * block-print buta (Wardrobe), ikat chevron (Outfits), bandhani dots (Wishlist),
+ * jaali lattice (Purchases), kolam loop (Me), plus a toran (mango-leaf festoon),
+ * a bel border and a rangoli mandala. Decorative: never carries meaning or text.
+ */
+:root {
+  --motif-buta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cg fill='black'%3E%3Cg transform='translate(12 12)'%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(0)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(60)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(120)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(180)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(240)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(300)'/%3E%3Ccircle r='2.2'/%3E%3C/g%3E%3Cg transform='translate(36 36)'%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(0)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(60)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(120)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(180)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(240)'/%3E%3Cellipse cx='0' cy='-6' rx='2.6' ry='4.2' transform='rotate(300)'/%3E%3Ccircle r='2.2'/%3E%3C/g%3E%3Ccircle cx='36' cy='12' r='1.6'/%3E%3Ccircle cx='12' cy='36' r='1.6'/%3E%3C/g%3E%3C/svg%3E");
+  --motif-ikat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='32'%3E%3Cg fill='none' stroke='black' stroke-width='3.2' stroke-linejoin='miter'%3E%3Cpath d='M0 10 12 2 24 10 36 2 48 10'/%3E%3Cpath d='M0 26 12 18 24 26 36 18 48 26' stroke-width='1.6'/%3E%3C/g%3E%3C/svg%3E");
+  --motif-bandhani: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='black'%3E%3Ccircle cx='9' cy='12' r='1.5'/%3E%3Ccircle cx='15' cy='12' r='1.5'/%3E%3Ccircle cx='12' cy='9' r='1.5'/%3E%3Ccircle cx='12' cy='15' r='1.5'/%3E%3Ccircle cx='0' cy='0' r='1.8'/%3E%3Ccircle cx='24' cy='0' r='1.8'/%3E%3Ccircle cx='0' cy='24' r='1.8'/%3E%3Ccircle cx='24' cy='24' r='1.8'/%3E%3C/g%3E%3C/svg%3E");
+  --motif-jaali: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cg fill='none' stroke='black' stroke-width='1.6'%3E%3Ccircle cx='16' cy='16' r='16'/%3E%3Ccircle cx='0' cy='0' r='16'/%3E%3Ccircle cx='32' cy='0' r='16'/%3E%3Ccircle cx='0' cy='32' r='16'/%3E%3Ccircle cx='32' cy='32' r='16'/%3E%3C/g%3E%3C/svg%3E");
+  --motif-kolam: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M20 6Q34 6 34 20Q34 34 20 34Q6 34 6 20Q6 6 20 6Z' fill='none' stroke='black' stroke-width='1.6'/%3E%3Cg fill='black'%3E%3Ccircle cx='20' cy='20' r='2.2'/%3E%3Ccircle cx='0' cy='0' r='2.2'/%3E%3Ccircle cx='40' cy='0' r='2.2'/%3E%3Ccircle cx='0' cy='40' r='2.2'/%3E%3Ccircle cx='40' cy='40' r='2.2'/%3E%3C/g%3E%3C/svg%3E");
+  --motif-dots: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Ccircle cx='14' cy='14' r='1.3' fill='black'/%3E%3C/svg%3E");
+  --motif-leaf: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='22'%3E%3Cpath d='M18 2C27 7 25 15 18 21 11 15 9 7 18 2Z' fill='black'/%3E%3Crect x='0' y='0' width='36' height='2.4' fill='black'/%3E%3C/svg%3E");
+  --motif-marigold: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='22'%3E%3Ccircle cx='0' cy='5' r='4.2' fill='black'/%3E%3Ccircle cx='36' cy='5' r='4.2' fill='black'/%3E%3C/svg%3E");
+  --motif-bel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='16'%3E%3Cpath d='M5 1 9 8 5 15 1 8Z' fill='black'/%3E%3Crect x='0' y='0' width='1.2' height='16' fill='black'/%3E%3Crect x='8.8' y='0' width='1.2' height='16' fill='black'/%3E%3C/svg%3E");
+  --motif-bel-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10'%3E%3Cpath d='M1 5 8 1 15 5 8 9Z' fill='black'/%3E%3Crect x='0' y='0' width='16' height='1.2' fill='black'/%3E%3Crect x='0' y='8.8' width='16' height='1.2' fill='black'/%3E%3C/svg%3E");
+  --motif-mandala: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-100 -100 200 200'%3E%3Cg fill='none' stroke='black' stroke-width='1.4'%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(0.0)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(22.5)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(45.0)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(67.5)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(90.0)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(112.5)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(135.0)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(157.5)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(180.0)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(202.5)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(225.0)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(247.5)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(270.0)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(292.5)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(315.0)'/%3E%3Cellipse cx='0' cy='-68' rx='7' ry='20' transform='rotate(337.5)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(0.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(30.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(60.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(90.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(120.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(150.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(180.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(210.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(240.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(270.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(300.0)'/%3E%3Cellipse cx='0' cy='-44' rx='8' ry='15' transform='rotate(330.0)'/%3E%3Cellipse cx='0' cy='-22' rx='6' ry='11' transform='rotate(0.0)'/%3E%3Cellipse cx='0' cy='-22' rx='6' ry='11' transform='rotate(45.0)'/%3E%3Cellipse cx='0' cy='-22' rx='6' ry='11' transform='rotate(90.0)'/%3E%3Cellipse cx='0' cy='-22' rx='6' ry='11' transform='rotate(135.0)'/%3E%3Cellipse cx='0' cy='-22' rx='6' ry='11' transform='rotate(180.0)'/%3E%3Cellipse cx='0' cy='-22' rx='6' ry='11' transform='rotate(225.0)'/%3E%3Cellipse cx='0' cy='-22' rx='6' ry='11' transform='rotate(270.0)'/%3E%3Cellipse cx='0' cy='-22' rx='6' ry='11' transform='rotate(315.0)'/%3E%3Ccircle r='8'/%3E%3Ccircle r='82'/%3E%3Ccircle cx='0.0' cy='-92.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='12.0' cy='-91.2' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='23.8' cy='-88.9' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='35.2' cy='-85.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='46.0' cy='-79.7' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='56.0' cy='-73.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='65.1' cy='-65.1' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='73.0' cy='-56.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='79.7' cy='-46.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='85.0' cy='-35.2' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='88.9' cy='-23.8' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='91.2' cy='-12.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='92.0' cy='-0.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='91.2' cy='12.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='88.9' cy='23.8' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='85.0' cy='35.2' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='79.7' cy='46.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='73.0' cy='56.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='65.1' cy='65.1' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='56.0' cy='73.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='46.0' cy='79.7' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='35.2' cy='85.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='23.8' cy='88.9' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='12.0' cy='91.2' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='0.0' cy='92.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-12.0' cy='91.2' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-23.8' cy='88.9' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-35.2' cy='85.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-46.0' cy='79.7' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-56.0' cy='73.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-65.1' cy='65.1' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-73.0' cy='56.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-79.7' cy='46.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-85.0' cy='35.2' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-88.9' cy='23.8' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-91.2' cy='12.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-92.0' cy='0.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-91.2' cy='-12.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-88.9' cy='-23.8' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-85.0' cy='-35.2' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-79.7' cy='-46.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-73.0' cy='-56.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-65.1' cy='-65.1' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-56.0' cy='-73.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-46.0' cy='-79.7' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-35.2' cy='-85.0' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-23.8' cy='-88.9' r='2.4' fill='black' stroke='none'/%3E%3Ccircle cx='-12.0' cy='-91.2' r='2.4' fill='black' stroke='none'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Motif per tab. A tab frame sets --motif; the header and scene read it. */
+.motif-wardrobe {
+  --motif: var(--motif-buta);
+  --motif-size: 48px 48px;
+  --motif-shift: 48px;
+}
+.motif-outfits {
+  --motif: var(--motif-ikat);
+  --motif-size: 48px 32px;
+  --motif-shift: 48px;
+}
+.motif-wishlist {
+  --motif: var(--motif-bandhani);
+  --motif-size: 24px 24px;
+  --motif-shift: 24px;
+}
+.motif-purchases {
+  --motif: var(--motif-jaali);
+  --motif-size: 32px 32px;
+  --motif-shift: 32px;
+}
+.motif-me {
+  --motif: var(--motif-kolam);
+  --motif-size: 40px 40px;
+  --motif-shift: 40px;
+}
+
+@layer components {
+  .artful-ground {
+    position: relative;
+    isolation: isolate;
+  }
+
+  /* ---- Live ground (components/shared/ambient.tsx) ----
+     Fixed, pointer-events-none layers behind everything, moved with transform
+     only. --px and --py (-1 to 1) come from the pointer or the last touch, and
+     each layer drifts against them by its own --depth for a soft parallax. */
+  .ambient {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .ambient-layer {
+    position: absolute;
+    transform: translate3d(
+      calc(var(--px, 0) * var(--depth, 0) * -1px),
+      calc(var(--py, 0) * var(--depth, 0) * -1px),
+      0
+    );
+    transition: transform 900ms var(--ease-snap);
+  }
+  /* Kolam dot grid, oversized by one tile and drifting diagonally forever. */
+  .ambient-dots {
+    inset: -56px;
+    --depth: 8;
+  }
+  .ambient-dots::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    opacity: 0.09;
+    mask: var(--motif-dots) 0 0 / 28px 28px repeat;
+    animation: dots-drift 22s linear infinite;
+  }
+  /* Two rangoli mandalas turning in opposite directions. */
+  .ambient-mandala {
+    --depth: 22;
+  }
+  .ambient-mandala::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--mandala-colour, var(--tangerine));
+    opacity: 0.14;
+    mask: var(--motif-mandala) center / contain no-repeat;
+    animation: mandala-turn var(--turn, 140s) linear infinite;
+  }
+  .ambient-mandala.is-large {
+    right: -200px;
+    bottom: -200px;
+    width: min(620px, 120vw);
+    aspect-ratio: 1;
+  }
+  .ambient-mandala.is-small {
+    top: 52%;
+    left: -150px;
+    width: 300px;
+    aspect-ratio: 1;
+    --depth: 34;
+    --turn: 90s;
+    --mandala-colour: var(--cobalt);
+  }
+  @media (width >= 64rem) {
+    .ambient-mandala.is-small {
+      left: -40px;
+    }
+  }
+  .ambient-mandala.is-small::before {
+    opacity: 0.08;
+    animation-direction: reverse;
+  }
+  /* Marigold petals rising slowly through the page, each on its own path. */
+  .ambient-petal {
+    left: var(--x);
+    bottom: -40px;
+    --depth: 14;
+  }
+  .ambient-petal > span {
+    display: block;
+    width: var(--size, 12px);
+    height: calc(var(--size, 12px) * 1.6);
+    border-radius: 50% 0;
+    background: var(--petal, var(--tangerine));
+    opacity: 0.55;
+    animation:
+      petal-rise var(--dur, 24s) linear var(--delay, 0s) infinite,
+      petal-sway calc(var(--dur, 24s) / 5) ease-in-out var(--delay, 0s) infinite alternate;
+  }
+
+  /* Header motif: the tab's textile, in its pop colour, fading out to the left
+     so the title always sits on plain tint. It slides by one tile forever, so
+     the cloth seems to move under the title without ever jumping. */ /* Header motif: the tab's textile, in its pop colour, fading out to the left
+     so the title always sits on plain tint. */
+  .motif-field {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* -motif step, full strength: the contrast gate checks ink-soft over it. */
+    background: var(--pop-motif);
+    mask:
+      var(--motif) 0 0 / var(--motif-size) repeat,
+      linear-gradient(to left, #000 0%, #000 22%, transparent 78%);
+    mask-composite: intersect;
+    right: calc(var(--motif-shift, 40px) * -1);
+    animation:
+      motif-stamp 900ms var(--ease-snap) 120ms both,
+      motif-drift 14s linear infinite;
+  }
+
+  /* Toran: a festoon of mango leaves with marigolds, hung along the header edge. */
+  .toran {
+    position: absolute;
+    inset-inline: 0;
+    bottom: -1px;
+    height: 22px;
+    pointer-events: none;
+    animation: toran-unfurl 1100ms var(--ease-snap) 200ms both;
+  }
+  .toran::before,
+  .toran::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .toran::before {
+    background: var(--pop);
+    transform-origin: top;
+    animation: toran-breeze 5s ease-in-out infinite alternate;
+    mask: var(--motif-leaf) 0 0 / 36px 22px repeat-x;
+  }
+  .toran::after {
+    background: var(--yellow);
+    mask: var(--motif-marigold) 0 0 / 36px 22px repeat-x;
+  }
+  :where(.pop-yellow) .toran::after {
+    background: var(--tangerine);
+  }
+
+  /* Bel: a woven diamond border, the edge of the nav (like a sari border). */
+  .bel-edge-y {
+    background: var(--tangerine);
+    mask: var(--motif-bel) 0 0 / 10px 16px repeat-y;
+  }
+  .bel-edge-x {
+    background: var(--tangerine);
+    mask: var(--motif-bel-h) 0 0 / 16px 10px repeat-x;
+  }
+
+  /* ---- Tab change: curtain wipe (app/(consumer)/template.tsx) ----
+     The new tab's cloth sweeps across the page in the direction of travel
+     and pulls away to reveal it; content slides in from the same side. */
+  .tab-curtain {
+    position: fixed;
+    inset: 0 0 calc(4.75rem + env(safe-area-inset-bottom)) 0;
+    z-index: 30;
+    pointer-events: none;
+    display: none;
+    background: var(--pop-tint);
+  }
+  .is-entering > .tab-curtain {
+    display: block;
+    animation: curtain-forward 620ms var(--ease-snap) both;
+  }
+  .tab-curtain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--pop-motif);
+    mask: var(--motif) 0 0 / var(--motif-size) repeat;
+  }
+  .tab-curtain::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 10px;
+    background: var(--pop);
+  }
+  .is-entering[data-dir="back"] > .tab-curtain {
+    animation-name: curtain-back;
+  }
+  [data-dir="back"] > .tab-curtain::after {
+    left: auto;
+    right: 0;
+  }
+  @media (width >= 64rem) {
+    .tab-curtain {
+      inset: 0 0 0 6rem;
+    }
+  }
+  .is-entering > .tab-content {
+    animation: tab-enter-forward 460ms var(--ease-snap) 140ms both;
+  }
+  .is-entering[data-dir="back"] > .tab-content {
+    animation-name: tab-enter-back;
+  }
+
+  /* ---- Pointer and touch feedback ---- */
+  /* Press: everything tappable sinks a little under a finger or a click. */
+  .press-feedback {
+    transition: transform 160ms var(--ease-snap);
+  }
+  .press-feedback:active {
+    transform: scale(0.94);
+    transition-duration: 60ms;
+  }
+  /* Lift: cards rise toward a mouse pointer; touch screens skip hover. */
+  .lift {
+    transition:
+      transform 280ms var(--ease-snap),
+      box-shadow 280ms var(--ease-snap);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .lift:hover {
+      transform: translateY(-3px);
+      box-shadow: 10px 10px 0 0 var(--pop-motif);
+    }
+  }
+  /* Tilt: the jharokha leans toward the pointer (--tx, --ty set on pointermove). */
+  .tilt {
+    transform: perspective(700px) rotateX(calc(var(--ty, 0) * -9deg))
+      rotateY(calc(var(--tx, 0) * 11deg)) scale(var(--press, 1));
+    transition: transform 420ms var(--ease-snap);
+  }
+  /* Kolam ring that blooms where a finger or the mouse presses. */
+  .tap-ring {
+    position: fixed;
+    z-index: 60;
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+    border-radius: 9999px;
+    border: 2.5px dotted var(--ring-colour, var(--tangerine));
+    pointer-events: none;
+  }
+
+  /* Jharokha: an ogee window arch that frames each empty-state scene. */
+  .jharokha {
+    clip-path: path("M0 208V86C0 46 54 34 80 0C106 34 160 46 160 86V208Z");
+  }
+  .jharokha-lattice {
+    background: var(--pop-motif);
+    opacity: 0.7;
+    mask: var(--motif) 0 0 / var(--motif-size) repeat;
+  }
+
+  .rise {
+    animation: rise 520ms var(--ease-snap) both;
+  }
+
+  /* Rangoli: rings draw themselves once, petals bloom outward. */
+  .rangoli-line {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: rangoli-draw 1400ms var(--ease-snap) calc(300ms + var(--i, 0) * 140ms) forwards;
+  }
+  .rangoli-petal {
+    transform-box: view-box;
+    transform-origin: 80px 128px;
+    animation: petal-bloom 700ms var(--ease-spring) calc(500ms + var(--i, 0) * 45ms) both;
+  }
+}
+
+@keyframes dots-drift {
+  to {
+    transform: translate3d(28px, 28px, 0);
+  }
+}
+@keyframes petal-rise {
+  from {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  to {
+    transform: translate3d(0, calc(-100dvh - 80px), 0) rotate(540deg);
+  }
+}
+@keyframes petal-sway {
+  from {
+    translate: -18px 0;
+  }
+  to {
+    translate: 18px 0;
+  }
+}
+@keyframes motif-drift {
+  to {
+    transform: translate3d(calc(var(--motif-shift, 40px) * -1), 0, 0);
+  }
+}
+@keyframes toran-breeze {
+  from {
+    transform: skewX(-1.5deg) scaleY(0.96);
+  }
+  to {
+    transform: skewX(1.5deg) scaleY(1.04);
+  }
+}
+@keyframes curtain-forward {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  45% {
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+@keyframes curtain-back {
+  0% {
+    clip-path: inset(0 0 0 100%);
+  }
+  45% {
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+@keyframes tab-enter-forward {
+  from {
+    opacity: 0;
+    transform: translate3d(40px, 0, 0);
+  }
+}
+@keyframes tab-enter-back {
+  from {
+    opacity: 0;
+    transform: translate3d(-40px, 0, 0);
+  }
+}
+@keyframes mandala-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes motif-stamp {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes toran-unfurl {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes rangoli-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes petal-bloom {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-20deg);
+  }
+}
+
+/* Theme switch: the new theme ripples out from the pointer (theme-toggle.tsx).
+   Both snapshots are shown as-is; only the new one is clipped by a growing circle. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: theme-ripple 650ms var(--ease-snap) both;
+}
+@keyframes theme-ripple {
+  from {
+    clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--vt-r, 150vmax) at var(--vt-x, 50%) var(--vt-y, 50%));
   }
 }
 

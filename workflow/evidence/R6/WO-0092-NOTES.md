@@ -14,3 +14,5 @@ The update policy `receipts_update` requires `job_id is null or the job exists a
 
 ## Not done / not verified
 - No app, worker or package code. Hosted-project behaviour not tested (local stack only). The validated state of the price CHECK on a hosted database with old rows depends on those rows.
+
+Orchestrator: gate re-run independently (GATE_BASE=HEAD after the re-cut commit swept the maker's files in): GATE PASS. Release 1 backlog: `receipts_update` policy requires the job to exist, so after the 7-day job purge owners cannot update a confirmed receipt; move the job-ownership check into the write-once trigger (changes WO-0080's M26 test).

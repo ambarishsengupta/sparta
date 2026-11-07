@@ -4,7 +4,7 @@
 begin;
 \ir helpers.inc
 select count(*) as nt from pg_temp.app_tables \gset
-select plan(:nt * 11 + 205);   -- WO-0080: the two receipt tables add 8 assertions each (not 11), fx_rates and two functions add 2
+select plan(:nt * 11 + 205);   -- WO-0080: +18 = 7 per-table loops x 2 new tables + 2 per zero-argument function x 2 new functions
 
 select pg_temp.mk_user(pg_temp.ua());
 select pg_temp.mk_user(pg_temp.ub());

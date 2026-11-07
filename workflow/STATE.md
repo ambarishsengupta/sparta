@@ -1,6 +1,6 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-06 (R6a started: spec workflow/work-orders/R6.md; WO-0080 database maker running)
+Updated: 2026-11-07 (re-cut: Release 0 = stakeholder demo, Release 1 = MVP; WO-0092 fix loop running)
 Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
@@ -76,3 +76,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-06: WO-0072 committed (worker service, 141 pytest, 30/30 mutants). Next: WO-0073 add-by-photo, then R5b Spec QC + security review (worker route + purge route pen-test still open), retro, goal, merge.
 - 2026-11-06: R5b complete (WO-0070..0075, checker PASS, retro R5b, goal R5b-photo-path). Merged to main. Next: R6 (receipts OCR, catalogue, purchases/wishlist). Open: pen-test of worker + purge routes before hosting.
 - 2026-11-06: R6 spec written (Opus). Sub-releases R6a (WO-0080..82), R6b (83..85), R6c (86..88), R6d (89..91), each merged on its own. Owner-only O1..O6 in R6.md (real sources, collection legality, fx provider, OCR licences, pen test, collect.yml/admin account).
+- 2026-11-07 OWNER RE-CUT: Release 0 = pre-MVP stakeholder demo with all features; Release 1 = the MVP. Receipts (R6d + receipt parts of WO-0082), ALL pen testing, dedicated Opus security reviews and R8 hardening move to Release 1 (docs/MVP-AGENT-WORKFLOW.md 2a). UI to be styled off off---white.com (style only; spec in workflow/work-orders/Demo.md, WO-0093; no brand marks). Release 0 order: WO-0092 (fix loop, running) -> WO-0093 restyle -> WO-0081 -> WO-0082 (plan purchases only) -> R6b (+ flagged synthetic demo catalogue) -> R6c -> R7 -> WO-0097 demo pack + script -> Release 0 demo checkpoint. Spec QC, gate and mutation proof are NOT deferred.

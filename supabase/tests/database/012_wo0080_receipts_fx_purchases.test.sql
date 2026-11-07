@@ -2,7 +2,7 @@
 -- and deletion coverage. Users: A and B are eligible consumers, C has no consent. fx_role is exercised inside this rolled-back transaction.
 begin;
 \ir helpers.inc
-select plan(173);
+select plan(216);
 
 grant fx_role to postgres with set true, inherit false;
 grant worker_role to postgres with set true, inherit false;
@@ -302,6 +302,77 @@ select ok(not has_function_privilege('authenticated', 'app.purge_receipt_jobs()'
   and not has_function_privilege('worker_role', 'app.purge_receipt_jobs()', 'execute') and (select prosecdef from pg_proc where oid = 'app.purge_receipt_jobs()'::regprocedure), 'only the owner can run the purge; it is a definer function');
 alter table app.jobs enable trigger jobs_state_machine;
 
+-- ======== 7b. WO-0092 (fix loop 1): purge ignores unfinished jobs, permission errors pass through, write-once, finite prices, skip keys =======
+-- K08: only `finished_at` counts. A queued and a running receipt job created 30 days ago are not "finished", so the purge leaves both.
+create temp table pk as select
+  pg_temp.mkjob(pg_temp.ub(), 'receipt', pg_temp.ub() || '/q1.jpg', 'queued', null) as q,
+  pg_temp.mkjob(pg_temp.ub(), 'receipt', pg_temp.ub() || '/q2.jpg', 'queued', null) as r,
+  pg_temp.mkjob(pg_temp.ub(), 'receipt', pg_temp.ub() || '/q3.jpg', 'done', '{"lines":[]}') as d;
+alter table app.jobs disable trigger jobs_state_machine;   -- (rolled back) the machine forbids these edits; the test needs old creation times
+update app.jobs set status = 'running', attempts = 1, started_at = now() - interval '29 days' where id = (select r from pk);
+update app.jobs set created_at = now() - interval '30 days' where id in ((select q from pk), (select r from pk), (select d from pk));
+update app.jobs set finished_at = now() - interval '8 days' where id = (select d from pk);
+select is((select status from app.jobs where id = (select r from pk)) || '/' || (select status from app.jobs where id = (select q from pk)), 'running/queued', 'fixture: one running and one queued receipt job, both created 30 days ago');
+select is(app.purge_receipt_jobs(), 1, 'the purge deletes exactly the one job that finished more than 7 days ago');
+select is((select count(*) from app.jobs where id in ((select q from pk), (select r from pk))), 2::bigint, 'a queued and a running job older than 7 days (by created_at) are left alone: only finished_at counts');
+select is((select count(*) from app.jobs where id = (select d from pk)), 0::bigint, 'and the old finished one is gone');
+alter table app.jobs enable trigger jobs_state_machine;
+
+-- K10: a permission error from deeper down (no insert on purchase_receipts) passes through as 42501; it is not turned into invalid_lines
+select pg_temp.mkrc(pg_temp.ua(), 16);
+create temp table kj as select pg_temp.mkjob(pg_temp.ua(), 'receipt', pg_temp.ua() || '/r16.jpg', 'done', '{"store":"Shopwell","date":"2026-09-30","currency":"INR","lines":[]}') as j;
+create temp table kc0 as select pg_temp.cnt(pg_temp.ua()) as c;
+revoke insert on app.purchase_receipts from authenticated;   -- (restored right after) the call below must hit this as a permission error
+select is(pg_temp.conf(pg_temp.ua(), (select j from kj), (select l from good)), 'err=42501: permission denied for table purchase_receipts', 'a permission error passes through: 42501, not invalid_lines');
+grant insert on app.purchase_receipts to authenticated;
+select is(pg_temp.cnt(pg_temp.ua()), (select c from kc0), 'and that refused call left no item, purchase or link behind');
+select is((select count(*) from app.receipts where id = pg_temp.oid('receipt', pg_temp.ua(), 16) and confirmed_at is null), 1::bigint, 'the receipt stays unconfirmed');
+select ok(has_table_privilege('authenticated', 'app.purchase_receipts', 'select,insert,delete'), 'the grant is back (the revoke was only for that call)');
+
+-- skip lines are checked for unknown keys like every other line (the line keys, the item keys and the draft's `text` are allowed)
+create temp table sk0 as select pg_temp.cnt(pg_temp.ua()) as c;
+select is(pg_temp.conf(pg_temp.ua(), (select atomic from cj), '[{"action":"skip","bogus":"secret-6"}]'), 'err=22023: invalid_lines', 'a skip line with an unknown key is refused');
+select is(pg_temp.conf(pg_temp.ua(), (select atomic from cj), '[{"action":"skip","user_id":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"}]'), 'err=22023: invalid_lines', 'a skip line cannot carry user_id');
+select is(pg_temp.conf(pg_temp.ua(), (select atomic from cj), '[{"action":"skip","text":"ok"},{"action":"skip","text":"x","job_id":1}]'), 'err=22023: invalid_lines', 'a good skip line followed by a bad one is refused');
+select is(pg_temp.cnt(pg_temp.ua()), (select c from sk0), 'and nothing was created');
+select is((select count(*) from app.receipts where id = pg_temp.oid('receipt', pg_temp.ua(), 13) and confirmed_at is null), 1::bigint, 'the receipt of those refused calls is still unconfirmed');
+
+-- confirmed_at and job_id are write-once. Receipt 10 is confirmed (job cj.done); cj.queued is another receipt job of A; receipt 13 is unconfirmed.
+create function pg_temp.rc_upd(p_n int, p_set text) returns text language sql as
+  $f$ select format('update app.receipts set %s where id = %L', p_set, pg_temp.oid('receipt', pg_temp.ua(), p_n)) $f$;
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', pg_temp.rc_upd(10, 'confirmed_at = null')), 'err=55000', 'the owner cannot clear confirmed_at');
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', pg_temp.rc_upd(10, 'confirmed_at = now() + interval ''1 day''')), 'err=55000', 'nor move it');
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', pg_temp.rc_upd(10, format('job_id = %s', (select queued from cj)))), 'err=55000', 'nor point job_id at another of their own receipt jobs');
+select is(pg_temp.try(pg_temp.rc_upd(10, 'confirmed_at = null')), 'err=55000', 'nobody else can clear confirmed_at either (the table owner session)');
+select is(pg_temp.try(pg_temp.rc_upd(10, 'job_id = null')), 'err=55000', 'nor clear job_id (the table owner session)');
+select is(pg_temp.try(pg_temp.rc_upd(10, 'job_id = 1')), 'err=55000', 'nor change job_id (the table owner session)');
+-- (receipt 14, confirmed with a job that still exists: for receipt 10 the job was purged above, and the update policy then refuses ANY update, see WO-0092-NOTES)
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', pg_temp.rc_upd(14, 'store = ''Renamed'', confirmed_at = confirmed_at, job_id = job_id')), 'rows=1', 'writing the same values, or other columns, on a confirmed receipt is still allowed');
+select is((select store || '|' || (job_id = (select skipped from cj)) || '|' || (confirmed_at is not null) from app.receipts where id = pg_temp.oid('receipt', pg_temp.ua(), 14)), 'Renamed|true|true', 'and confirmed_at and job_id are as they were');
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', pg_temp.rc_upd(13, format('job_id = %s, confirmed_at = now()', (select atomic from cj)))), 'rows=1', 'the first write of both on an unconfirmed receipt works');
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', pg_temp.rc_upd(13, 'confirmed_at = null')), 'err=55000', 'and then it cannot be cleared');
+select is(pg_temp.conf(pg_temp.ua(), (select atomic from cj), '[{"action":"skip"}]'), 'err=P0001: already_confirmed', 'a second confirm_receipt is still refused');
+select ok(not has_function_privilege('authenticated', 'app.receipts_write_once()', 'execute') and (select tgenabled = 'O' and (tgtype & 2) = 2 and (tgtype & 16) = 16 and (tgtype & 1) = 1 from pg_trigger where tgrelid = 'app.receipts'::regclass and tgname = 'receipts_write_once'),
+  'the write-once trigger is enabled, BEFORE UPDATE, per row, and its function is not callable by authenticated');
+
+-- price must be finite and not negative: the CHECK (direct inserts) and the builders
+select ok((select convalidated from pg_constraint where conrelid = 'app.purchases'::regclass and conname = 'purchases_price_finite_chk'), 'the price check exists and is validated');
+create function pg_temp.ins_price(p_price text) returns text language sql as
+  $f$ select pg_temp.run_as(pg_temp.ua(), 'authenticated', format('insert into app.purchases (user_id, item_id, price, currency) values (%L, %L, %L::numeric, ''INR'')', pg_temp.ua(), pg_temp.oid('item', pg_temp.ua(), 1), p_price)) $f$;
+select is(pg_temp.ins_price('-1'), 'err=23514', 'a direct insert with a negative price is refused');
+select is(pg_temp.ins_price('NaN'), 'err=23514', 'a direct insert with a NaN price is refused');
+select isnt(pg_temp.ins_price('Infinity'), 'rows=1', 'and an infinite price is refused too');
+select is(pg_temp.ins_price('0'), 'rows=1', 'a price of 0 is fine');
+select is(pg_temp.ins_price('1299.50'), 'rows=1', 'and so is an ordinary price');
+create function pg_temp.pur_bad(p_price text) returns text language sql as
+  $f$ select pg_temp.val_as(pg_temp.ua(), 'authenticated', format('select app.insert_purchase_from_json(%L, %L::jsonb)', pg_temp.oid('item', pg_temp.ua(), 1), jsonb_build_object('price', p_price, 'currency', 'INR'))) $f$;
+select is(pg_temp.pur_bad('NaN'), 'err=22023: invalid_input', 'the purchase builder refuses a NaN price with the fixed code');
+select is(pg_temp.pur_bad('Infinity'), 'err=22023: invalid_input', 'and an infinite one');
+select is(pg_temp.pur_bad('-Infinity'), 'err=22023: invalid_input', 'and a negative infinite one');
+select is(pg_temp.pur_bad('-0.01'), 'err=22023: invalid_input', 'and a negative one');
+select is((select count(*) from app.purchases where user_id = pg_temp.ua() and (price = 'NaN'::numeric or price < 0)), 0::bigint, 'no NaN or negative price is stored');
+select is(pg_temp.conf(pg_temp.ua(), (select j from kj), '[{"action":"new","name":"x","category":"Tops","sub_type":"Shirt","colour_r":1,"colour_g":1,"colour_b":1,"amount":"NaN"}]'), 'err=22023: invalid_lines', 'a receipt line whose amount is the text NaN is refused with the fixed code (a JSON number cannot be NaN)');
+
 -- ======== 8. export and deletion ============================================================================================================
 create temp table ex as select pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.export_my_data()')::jsonb as doc;
 select is((select jsonb_typeof(doc -> 'receipts') || '/' || jsonb_typeof(doc -> 'purchase_receipts') from ex), 'array/array', 'the export holds receipts and purchase_receipts without raising export_uncovered_table');
@@ -313,6 +384,18 @@ select is(pg_temp.val_fresh(pg_temp.ua(), 'authenticated', 'select app.delete_my
 select is((select count(*) from app.receipts where user_id = pg_temp.ua()) + (select count(*) from app.purchase_receipts where user_id = pg_temp.ua()), 0::bigint, 'no receipt or link row of A remains');
 select is((select count(*) from storage.objects where bucket_id = 'receipts' and name like pg_temp.ua()::text || '/%'), 0::bigint, 'A''s receipt object rows are gone');
 select is((select count(*) from app.receipts where user_id = pg_temp.ub()) + (select count(*) from storage.objects where bucket_id = 'receipts' and name like pg_temp.ub()::text || '/%'), 3::bigint, 'B''s two receipt rows and object are untouched');
+
+-- ======== 9. WO-0092: the builder's own finite check, with the table CHECK out of the way ===============================================
+-- (the CHECK would also refuse NaN, with the same fixed code, so it is dropped here, at the end of the rolled-back file, to test the function alone)
+create function pg_temp.wb_price(p_price text) returns text language sql as
+  $f$ select pg_temp.wb(pg_temp.ub(), pg_temp.oid('wish', pg_temp.ub(), 1), '{"colour_r":1,"colour_g":2,"colour_b":3}', jsonb_build_object('price', p_price, 'currency', 'INR')::text::jsonb) $f$;
+select is(pg_temp.wb_price('NaN'), 'err=22023: invalid_input', 'wishlist_bought refuses a NaN price with the fixed code');
+alter table app.purchases drop constraint purchases_price_finite_chk;
+select is(pg_temp.wb_price('NaN'), 'err=22023: invalid_input', 'and does so by its own check, without the table constraint');
+select is(pg_temp.wb_price('Infinity'), 'err=22023: invalid_input', 'an infinite price likewise');
+select is(pg_temp.wb_price('-Infinity'), 'err=22023: invalid_input', 'a negative infinite price likewise');
+select is((select status from app.wishlist_entries where id = pg_temp.oid('wish', pg_temp.ub(), 1)), 'open', 'the entry is still open after those refusals');
+select is((select count(*) from app.purchases where user_id = pg_temp.ub() and price = 'NaN'::numeric), 0::bigint, 'and no NaN purchase was stored');
 
 select * from finish();
 rollback;

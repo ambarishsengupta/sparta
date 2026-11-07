@@ -2,7 +2,7 @@
 -- and deletion coverage. Users: A and B are eligible consumers, C has no consent. fx_role is exercised inside this rolled-back transaction.
 begin;
 \ir helpers.inc
-select plan(216);
+select plan(217);
 
 grant fx_role to postgres with set true, inherit false;
 grant worker_role to postgres with set true, inherit false;
@@ -372,6 +372,7 @@ select is(pg_temp.pur_bad('-Infinity'), 'err=22023: invalid_input', 'and a negat
 select is(pg_temp.pur_bad('-0.01'), 'err=22023: invalid_input', 'and a negative one');
 select is((select count(*) from app.purchases where user_id = pg_temp.ua() and (price = 'NaN'::numeric or price < 0)), 0::bigint, 'no NaN or negative price is stored');
 select is(pg_temp.conf(pg_temp.ua(), (select j from kj), '[{"action":"new","name":"x","category":"Tops","sub_type":"Shirt","colour_r":1,"colour_g":1,"colour_b":1,"amount":"NaN"}]'), 'err=22023: invalid_lines', 'a receipt line whose amount is the text NaN is refused with the fixed code (a JSON number cannot be NaN)');
+select is(pg_temp.conf(pg_temp.ua(), (select j from kj), '[{"action":"new","name":"x","category":"Tops","sub_type":"Shirt","colour_r":1,"colour_g":1,"colour_b":1,"amount":-0.004}]'), 'err=22023: invalid_lines', 'a tiny negative amount (it would round to a zero price) is refused: the line check itself, not the rounding (WO-0092 re-check, mutant C13)');
 
 -- ======== 8. export and deletion ============================================================================================================
 create temp table ex as select pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.export_my_data()')::jsonb as doc;

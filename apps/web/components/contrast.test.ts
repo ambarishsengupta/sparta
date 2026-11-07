@@ -28,6 +28,8 @@ const TEXT: [string, string][] = [
   ['error', 'bg'], ['error', 'surface'], ['on-accent', 'accent'],
   // WO-0093 token pairs: the accent as text and fill, the black button fill, the boxed button over a tile, the disabled text, grey hairline-row text, the focus ring
   ['accent', 'bg'], ['accent', 'surface'], ['on-ink', 'ink'], ['black', 'paper'], ['disabled', 'bg'], ['muted', 'hairline'], ['text', 'hairline'], ['link', 'hairline'], ['focus', 'bg'],
+  // WO-0094: the focus ring inside the white box of a tile (blue on the box, white on the black box when hovered)
+  ['focus-box', 'paper'], ['paper', 'black'],
 ];
 describe.each(Object.entries(themes))('colour contrast, %s theme', (_name, t) => {
   it.each(TEXT)('%s on %s is at least 4.5:1', (fg, bg) => {

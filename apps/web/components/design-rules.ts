@@ -128,6 +128,23 @@ export function cssProblems(css: string): string[] {
   lacks('touch-target-inputs', target(body.find((r) => r.selector.startsWith('select, input'))));
   lacks('touch-target-nav', target(rule('.bar nav a')));
   lacks('touch-target-summary', target(rule('summary')));
+  // WO-0094: focus offsets stay bounded and inside the white box on a tile, standalone links reach the 44px target, the wordmark, measure and invalid border
+  for (const { p, v } of all) if (p === 'outline-offset') { const n = px(v, tokens); if (n === null || n < -8 || n > 4) bad.push(`focus-offset-out-of-bounds:${v}`); }
+  const focusRules = body.filter((r) => r.selector.includes(':focus-visible'));
+  lacks('focus-offset-declared', focusRules.length > 0 && focusRules.every((r) => has(r, 'outline-offset', (v) => px(v, tokens) !== null) || r.selector !== ':focus-visible'));
+  lacks('focus-on-tile-inside-box', has(rule('.item a.button.secondary:focus-visible'), 'outline-offset', (v) => { const n = px(v, tokens); return n !== null && n <= -3 && n >= -8; }));
+  lacks('focus-tile-colours', has(rule('.item a.button.secondary:focus-visible'), 'outline-color', (v) => v === 'var(--focus-box)') && has(rule('.item a.button.secondary:hover:focus-visible'), 'outline-color', (v) => v === 'var(--paper)'));
+  lacks('touch-target-linklike', target(rule('button.linklike')));
+  lacks('touch-target-foot', target(rule('.foot a')));
+  lacks('touch-target-item-title', target(rule('.item .title')) && has(rule('.item .title'), 'display', (v) => /^(block|flex|inline-flex|inline-block|grid)$/.test(v)));
+  lacks('touch-target-auth-links', target(rule('.auth-links a')) && has(rule('.auth-links a'), 'font-size', (v) => v === 'var(--fs-label)') && has(rule('.auth-links a'), 'text-transform', (v) => v === 'uppercase'));
+  lacks('signout-like-nav-item', has(rule('.bar button.linklike'), 'color', (v) => v === 'var(--text)') && has(rule('.bar button.linklike'), 'text-decoration', (v) => v === 'none'));
+  lacks('wordmark-18px', tokens['fs-brand'] === '18px' && has(rule('.brand'), 'font-size', (v) => v === 'var(--fs-brand)'));
+  lacks('tile-meta-min-height', has(rule('.item .muted'), 'min-height', (v) => (px(v, tokens) ?? 0) >= 36));
+  lacks('invalid-border-2px', has(rule("input[aria-invalid='true'], select[aria-invalid='true']"), 'border-width', (v) => (px(v, tokens) ?? 0) >= 2));
+  const measure = /^(\d+)ch$/.exec(tokens['measure'] ?? '')?.[1];
+  lacks('line-length-under-70', !!measure && Number(measure) < 70 && has(rule('main > *'), 'max-width', (v) => v === 'var(--measure)') && has(rule('article'), 'max-width', (v) => v === 'var(--measure)'));
+  lacks('nav-row-without-orphan', has(rule('.bar nav'), 'justify-content', (v) => v === 'space-between'));
   lacks('body-type', has(rule('body'), 'font', (v) => v.includes('var(--fs-body)/var(--lh-body)') && v.includes('var(--font)')));
   lacks('page-ground', has(rule('body'), 'background', (v) => v === 'var(--bg)') && has(rule('body'), 'color', (v) => v === 'var(--text)'));
   lacks('hairline-header', has(rule('.bar'), 'border-bottom', (v) => v.includes('var(--hairline-w) solid')));

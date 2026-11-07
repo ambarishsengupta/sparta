@@ -68,8 +68,8 @@ export function AuthForm({ mode, next, notice }: { mode: AuthMode; next?: string
       {failure && <p className="error" role="alert">{failure}</p>}
       {sent && <p role="status">If that address has an account, a reset link is on its way. It may take a minute.</p>}
       <button type="submit" className="primary" disabled={busy}>{busy ? 'Please wait' : COPY[mode].button}</button>
-      <p>
-        {mode === 'sign-in' && <><Link href="/sign-up">Create an account</Link> · <Link href="/reset">Forgot your password?</Link></>}
+      <p className="auth-links">
+        {mode === 'sign-in' && <><Link href="/sign-up">Create an account</Link><Link href="/reset">Forgot your password?</Link></>}
         {mode !== 'sign-in' && <Link href="/sign-in">Back to sign in</Link>}
       </p>
     </form>

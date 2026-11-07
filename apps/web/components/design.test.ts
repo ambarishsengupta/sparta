@@ -74,34 +74,62 @@ describe('the header carries the wordmark and the DEMO label (Release 0)', () =>
   it('the Nav source in this tree carries the label (the scratch-copy harness reads it from DESIGN_ROOT)', () => {
     expect(read('components/Nav.tsx')).toContain('<span className="demo-tag">Demo</span>');
   });
+  it('the sign-in link row carries the label style (the stylesheet rule is .auth-links a)', () => {
+    expect(read('components/auth/AuthForm.tsx')).toContain('<p className="auth-links">');
+    expect(read('components/Nav.tsx')).toContain('buttonClassName="linklike"');
+  });
   it('the icon is not a brand mark and the wordmark is plain text in the page font', () => { expect(rule('.brand', 'font-weight')).toBe('500'); });
 });
 function rule(selector: string, prop: string): string | undefined {
   return parseRules(css).find((r) => r.selector === selector)?.decls.find(([p]) => p === prop)?.[1];
 }
 
-describe('each mutant of the design rules is caught (in memory; the scratch-copy run is in workflow/evidence/Demo/WO-0093-mutation.md)', () => {
+/** WO-0094: a mutant anchors on a selector, not on an exact line. `inRule` swaps `from` for `to` inside the one rule `sel` (found wherever it sits on its line) and fails loudly when the rule or the text is missing. */
+const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function inRule(c: string, sel: string, from: string | RegExp, to: string): string {
+  const m = new RegExp(`(^|[}{;/\\n])(\\s*)(${esc(sel)})(\\s*\\{)([^}]*)(\\})`).exec(c);
+  if (!m) throw new Error(`mutant anchor: no rule ${sel}`);
+  const body = m[5]!.replace(from, to);
+  if (body === m[5]) throw new Error(`mutant anchor: rule ${sel} has no ${String(from)}`);
+  return c.slice(0, m.index) + m[1] + m[2] + m[3] + m[4] + body + m[6] + c.slice(m.index + m[0].length);
+}
+describe('each mutant of the design rules is caught (in memory; the scratch-copy run is in workflow/evidence/Demo/WO-0093-mutation.md and WO-0094-mutation.md)', () => {
   const mutants: [string, (c: string) => string, RegExp][] = [
-    ['accent too light (not blue enough)', (c) => c.replace('--accent: #1b2bff', '--accent: #cccccc'), /accent-is-blue/],
-    ['focus ring removed', (c) => c.replace(':focus-visible { outline: var(--ring) solid var(--focus); outline-offset: 2px; }', ':focus-visible { outline: none; }'), /outline-removed|focus-ring-visible/],
-    ['focus ring 1px', (c) => c.replace('--ring: 2px', '--ring: 1px'), /token-focus-ring|focus-ring-visible/],
-    ['label text 11px', (c) => c.replace('--fs-label: 12px', '--fs-label: 11px'), /font-size-below-12|token-label-size/],
-    ['rem text below 12px', (c) => c.replace('.muted { color', '.muted { font-size: 0.7rem; color'), /font-size-below-12/],
-    ['radius token not zero', (c) => c.replace('--radius: 0;', '--radius: 6px;'), /token-radius-zero/],
-    ['radius set in a component', (c) => c.replace('.card { display: flex;', '.card { border-radius: 8px; display: flex;'), /radius:8px/],
-    ['forbidden font family', (c) => c.replace("--font: 'IBM Plex Mono', Helvetica, Arial, sans-serif", "--font: 'Gotham', Georgia, serif"), /font-family:/],
-    ['family inside a font shorthand', (c) => c.replace('.skip {', ".skip { font: 12px Futura;"), /font-family-in-shorthand/],
-    ['gradient background', (c) => c.replace('.demo { margin-top', '.demo { background: repeating-linear-gradient(45deg, var(--bg), var(--surface) 4px); margin-top'), /gradient/],
-    ['box shadow', (c) => c.replace('.card { display: flex;', '.card { box-shadow: 0 1px 4px var(--text); display: flex;'), /shadow/],
-    ['raw hex colour in a rule', (c) => c.replace('.locked { color: var(--muted); }', '.locked { color: #777777; }'), /colour-outside-tokens/],
-    ['justified text', (c) => c.replace('text-align: left; overflow-wrap', 'text-align: justify; overflow-wrap'), /justified-text/],
-    ['touch target 40px on buttons', (c) => c.replace('--target: 44px', '--target: 40px'), /token-touch-target|touch-target-buttons/],
-    ['body type 16px', (c) => c.replace('--fs-body: 14px', '--fs-body: 16px'), /token-body-size/],
-    ['headings not uppercase', (c) => c.replace('h1, h2, h3 { font-weight: 500; text-transform: uppercase;', 'h1, h2, h3 { font-weight: 500; text-transform: none;'), /headings-uppercase/],
+    ['accent too light (not blue enough)', (c) => inRule(c, ':root', '--accent: #1b2bff', '--accent: #cccccc'), /accent-is-blue/],
+    ['focus ring removed', (c) => inRule(c, ':focus-visible', /outline:[^;]*;/, 'outline: none;'), /outline-removed|focus-ring-visible/],
+    ['focus ring 1px', (c) => inRule(c, ':root', '--ring: 2px', '--ring: 1px'), /token-focus-ring|focus-ring-visible/],
+    ['label text 11px', (c) => inRule(c, ':root', '--fs-label: 12px', '--fs-label: 11px'), /font-size-below-12|token-label-size/],
+    ['rem text below 12px', (c) => inRule(c, '.muted', 'color:', 'font-size: 0.7rem; color:'), /font-size-below-12/],
+    ['radius token not zero', (c) => inRule(c, ':root', '--radius: 0;', '--radius: 6px;'), /token-radius-zero/],
+    ['radius set in a component', (c) => inRule(c, '.card', 'display: flex;', 'border-radius: 8px; display: flex;'), /radius:8px/],
+    ['forbidden font family', (c) => inRule(c, ':root', /--font:[^;]*;/, "--font: 'Gotham', Georgia, serif;"), /font-family:/],
+    ['family inside a font shorthand', (c) => inRule(c, '.skip', 'position: absolute;', 'position: absolute; font: 12px Futura;'), /font-family-in-shorthand/],
+    ['gradient background', (c) => inRule(c, '.demo', 'margin-top', 'background: repeating-linear-gradient(45deg, var(--bg), var(--surface) 4px); margin-top'), /gradient/],
+    ['box shadow', (c) => inRule(c, '.card', 'display: flex;', 'box-shadow: 0 1px 4px var(--text); display: flex;'), /shadow/],
+    ['raw hex colour in a rule', (c) => inRule(c, '.locked', 'color: var(--muted)', 'color: #777777'), /colour-outside-tokens/],
+    ['justified text', (c) => inRule(c, 'body', 'text-align: left', 'text-align: justify'), /justified-text/],
+    ['touch target 40px on buttons', (c) => inRule(c, ':root', '--target: 44px', '--target: 40px'), /token-touch-target|touch-target-buttons/],
+    ['body type 16px', (c) => inRule(c, ':root', '--fs-body: 14px', '--fs-body: 16px'), /token-body-size/],
+    ['headings not uppercase', (c) => inRule(c, 'h1, h2, h3', 'text-transform: uppercase', 'text-transform: none'), /headings-uppercase/],
     ['motion without a reduced-motion rule', (c) => c.replace(/@media \(prefers-reduced-motion: reduce\)[^\n]*/, ''), /reduced-motion/],
-    ['quotation-mark styling', (c) => c.replace('.locked { color: var(--muted); }', ".locked::before { content: '\"'; }"), /quote-styling/],
-    ['remote font file', (c) => c.replace("url('../components/fonts/ibm-plex-mono-latin-400-normal.woff2')", "url('https://fonts.example.com/x.woff2')"), /font-face-remote/],
-    ['wrong @font-face family', (c) => c.replace("font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500", "font-family: 'Futura'; font-style: normal; font-weight: 500"), /font-face-family/],
+    ['quotation-mark styling', (c) => inRule(c, '.locked', 'color: var(--muted);', "content: '\"';"), /quote-styling/],
+    ['remote font file', (c) => inRule(c, '@font-face', /url\('[^']+'\)/, "url('https://fonts.example.com/x.woff2')"), /font-face-remote/],
+    ['wrong @font-face family', (c) => inRule(c, '@font-face', "font-family: 'IBM Plex Mono'", "font-family: 'Futura'"), /font-face-family/],
+    // WO-0094
+    ['X09 button.linklike min-height 30px', (c) => inRule(c, 'button.linklike', 'min-height: 44px', 'min-height: 30px'), /touch-target-linklike/],
+    ['X10 .foot a min-height 20px', (c) => inRule(c, '.foot a', 'min-height: var(--target)', 'min-height: 20px'), /touch-target-foot/],
+    ['X11 tile focus ring outside the white box (outline-offset 2px)', (c) => inRule(c, '.item a.button.secondary:focus-visible', 'outline-offset: -5px', 'outline-offset: 2px'), /focus-on-tile-inside-box/],
+    ['X12 outline-offset 40px on the base focus rule', (c) => inRule(c, ':focus-visible', 'outline-offset: 2px', 'outline-offset: 40px'), /focus-offset-out-of-bounds/],
+    ['X13 tile focus rule removed', (c) => inRule(c, '.item a.button.secondary:focus-visible', 'outline-offset: -5px;', 'color: var(--text);'), /focus-on-tile-inside-box/],
+    ['X14 .item .title min-height 20px', (c) => inRule(c, '.item .title', 'min-height: var(--target)', 'min-height: 20px'), /touch-target-item-title/],
+    ['X15 invalid border 1px', (c) => inRule(c, "input[aria-invalid='true'], select[aria-invalid='true']", 'border-width: 2px', 'border-width: 1px'), /invalid-border-2px/],
+    ['X16 wordmark 14px', (c) => inRule(c, ':root', '--fs-brand: 18px', '--fs-brand: 14px'), /wordmark-18px/],
+    ['X17 line length 90ch', (c) => inRule(c, ':root', '--measure: 66ch', '--measure: 90ch'), /line-length-under-70/],
+    ['X18 Sign out blue again', (c) => inRule(c, '.bar button.linklike', 'color: var(--text)', 'color: var(--link)'), /signout-like-nav-item/],
+    ['X19 auth link 14px sentence case', (c) => inRule(c, '.auth-links a', 'text-transform: uppercase', 'text-transform: none'), /touch-target-auth-links/],
+    ['X21 tile focus ring in the theme colour (fails on the white box in the dark theme)', (c) => inRule(c, '.item a.button.secondary:focus-visible', 'outline-color: var(--focus-box)', 'outline-color: var(--focus)'), /focus-tile-colours/],
+    ['X22 hovered tile button keeps a black ring on black', (c) => inRule(c, '.item a.button.secondary:hover:focus-visible', 'outline-color: var(--paper)', 'outline-color: var(--black)'), /focus-tile-colours/],
+    ['X20 nav can leave an orphan row', (c) => inRule(c, '.bar nav', 'justify-content: space-between', 'justify-content: flex-start'), /nav-row-without-orphan/],
   ];
   it.each(mutants)('%s', (_name, mutate, expected) => {
     const mutated = mutate(css);
@@ -116,5 +144,30 @@ describe('each mutant of the design rules is caught (in memory; the scratch-copy
   it('an inline radius or shadow in a component is caught', () => {
     expect(inlineStyleProblems({ 'a.tsx': '<span style={{ borderRadius: 4 }} />' })).toHaveLength(1);
     expect(inlineStyleProblems({ 'a.tsx': "<span style={{ background: item.hex }} />" })).toEqual([]);
+  });
+});
+
+describe('the tab icon and the web manifest follow the design (WO-0094)', () => {
+  const icon = read('public/icon.svg');
+  const manifest = JSON.parse(read('public/manifest.webmanifest')) as Record<string, unknown>;
+  const OLD_GREEN = /#2f4f4f|#faf8f5/i;
+  it('icon.svg is a black square with a white S: no corner radius, no old green, no gradient', () => {
+    expect(icon).toMatch(/<rect[^>]*width="64"[^>]*height="64"[^>]*fill="#000000"/);
+    expect(icon).toMatch(/stroke="#ffffff"/);
+    expect(icon).not.toMatch(/\brx=|\bry=|gradient|filter|<text/i);
+    expect(icon).not.toMatch(OLD_GREEN);
+  });
+  it('the manifest is black on white and names the icon', () => {
+    expect([manifest.theme_color, manifest.background_color]).toEqual(['#000000', '#ffffff']);
+    expect(manifest.icons).toEqual([{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }]);
+  });
+  it('no file in public/ or the layout brings back the old green', () => {
+    for (const [path, text] of Object.entries(sources)) if (path.startsWith('public/') || path === 'app/layout.tsx') expect(text, path).not.toMatch(OLD_GREEN);
+  });
+  it('mutants: a rounded icon, the old green and the old manifest colour are each caught', () => {
+    const bad = (t: string) => /\brx=|#2f4f4f/i.test(t);
+    expect(bad(icon.replace('<rect ', '<rect rx="14" '))).toBe(true);
+    expect(bad(icon.replace('#000000', '#2f4f4f'))).toBe(true);
+    expect(OLD_GREEN.test(JSON.stringify({ ...manifest, theme_color: '#2f4f4f' }))).toBe(true);
   });
 });

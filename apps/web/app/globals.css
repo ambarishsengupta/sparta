@@ -82,7 +82,7 @@ main > .form { max-width: 32rem; }
 label { display: flex; flex-direction: column; gap: var(--s1); font-size: var(--fs-label); line-height: var(--lh-label); text-transform: uppercase; font-weight: 400; }
 label.check { flex-direction: row; align-items: center; gap: var(--s3); min-height: var(--target); }
 legend { padding: 0 var(--s2); font-size: var(--fs-label); text-transform: uppercase; }
-select, input[type='text'], input[type='email'], input[type='password'], input[type='date'] { min-height: var(--target); padding: var(--s2) var(--s3); font: inherit; font-size: var(--fs-body); color: var(--text); background: var(--surface); border: var(--hairline-w) solid var(--border); border-radius: var(--radius); text-transform: none; }
+select, input[type='text'], input[type='email'], input[type='password'], input[type='date'], input[type='month'] { min-height: var(--target); padding: var(--s2) var(--s3); font: inherit; font-size: var(--fs-body); color: var(--text); background: var(--surface); border: var(--hairline-w) solid var(--border); border-radius: var(--radius); text-transform: none; }
 select { width: 100%; }
 input[aria-invalid='true'], select[aria-invalid='true'] { border-width: 2px; padding: calc(var(--s2) - 1px) calc(var(--s3) - 1px); }
 input[type='checkbox'] { appearance: none; flex: none; display: inline-grid; place-content: center; width: 20px; height: 20px; margin: 0; background: var(--surface); border: var(--hairline-w) solid var(--border); accent-color: var(--accent); }

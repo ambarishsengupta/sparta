@@ -166,11 +166,10 @@ export class SupabaseRepository implements WardrobeRepository {
       list: () => guard(false, async () => ((take((await t().select(select).order('created_at', { ascending: false })) as Answer, false) as Row[] | null) ?? []).flatMap((r) => from(r) ?? [])),
       get,
       create: (n) => guard(true, async () => one(take((await t().insert(insert(n, await this.uid())).select(select).single()) as Answer, true)) ?? Promise.reject(new RepositoryError('unexpected', true))),
-      update: (id, p) => {
-        const row = patch(p);
+      update: (id, p) => guard(true, async () => patch(p)).then((row) => {
         if (!UUID.test(id) || Object.keys(row).length === 0) return get(id);
         return guard(true, async () => one(take((await t().update(row).eq('id', id).select(select).maybeSingle()) as Answer, true)));
-      },
+      }),
       remove: (id) => (UUID.test(id) ? guard(true, async () => ((take((await t().delete().eq('id', id).select('id')) as Answer, true) as Row[] | null) ?? []).length > 0) : Promise.resolve(false)),
     };
   }

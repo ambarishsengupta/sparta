@@ -44,6 +44,10 @@ export interface WishlistEntry {
   origin?: WishlistOrigin;
   note: string | null;
   createdAt: string;
+  /** The plan (FR-36), all optional so older entries still read: `YYYY-MM`, a budget (finite, not negative) and its currency. Null or absent: not planned. */
+  plannedMonth?: string | null;
+  budget?: number | null;
+  currency?: string | null;
 }
 export type WishlistInput = Omit<WishlistEntry, 'id' | 'createdAt'>;
 

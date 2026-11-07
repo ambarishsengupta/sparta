@@ -1,6 +1,7 @@
 import { categoryOfSubType, isCategory, isColourFamily, isFit, isMaterial, isOccasion, isPattern, isSeason, isSubType, referenceSwatch, slotAssignmentOf } from '@sparta/taxonomy';
 import type { Slot } from '@sparta/rules';
 import { isDay } from '../purchases';
+import { isMonth } from '../wishlist-plan';
 import type { Cursor, Purchase, PurchaseDraft, PurchaseFilter, PurchaseInput } from '../purchases';
 import type { FeedbackFacts, ItemInput, OutfitInput, PhotoFeatures, SavedOutfit, StoredItem, WishlistEntry, WishlistInput } from '../repository';
 import { RepositoryError } from './errors';
@@ -136,11 +137,16 @@ export function wishlistPatch(patch: Partial<WishlistInput>): Row {
   if (patch.note !== undefined) row.notes = patch.note;
   if (patch.origin !== undefined) row.origin = patch.origin;
   if (patch.colourFamily !== undefined) Object.assign(row, wishColour(patch.colourFamily));
+  // the plan (FR-36): `YYYY-MM` becomes the first day of the month; anything else never reaches a request
+  if (patch.plannedMonth !== undefined) row.planned_month = patch.plannedMonth === null ? null : isMonth(patch.plannedMonth) ? `${patch.plannedMonth}-01` : badPlan();
+  if (patch.budget !== undefined) row.budget = patch.budget === null ? null : Number.isFinite(patch.budget) && patch.budget >= 0 ? patch.budget : badPlan();
+  if (patch.currency !== undefined) row.currency = patch.currency === null ? null : /^[A-Z]{3}$/.test(patch.currency) ? patch.currency : badPlan();
   return row;
 }
+const badPlan = (): never => { throw new RepositoryError('rejected', true); };
 export const wishlistRow = (input: WishlistInput, userId: string): Row => ({ origin: 'user', ...wishColour(null), ...wishlistPatch(input), user_id: userId });
 
-export const WISHLIST_SELECT = 'id,name,category,sub_type,colour_family,notes,origin,created_at';
+export const WISHLIST_SELECT = 'id,name,category,sub_type,colour_family,notes,origin,created_at,planned_month,budget,currency';
 export function wishlistFromRow(r: Row): WishlistEntry {
   const family = r.colour_family;
   if (typeof r.id !== 'string' || typeof r.name !== 'string' || typeof r.created_at !== 'string' || !isCategory(r.category) || !isSubType(r.category, r.sub_type)) bad('wishlist entry');
@@ -148,7 +154,16 @@ export function wishlistFromRow(r: Row): WishlistEntry {
   return {
     id: r.id as string, name: r.name as string, subType: r.sub_type as WishlistEntry['subType'], colourFamily: orNull(family, isColourFamily, 'wishlist colour'),
     origin: r.origin as 'user' | 'unlock', note: typeof r.notes === 'string' ? r.notes : null, createdAt: r.created_at as string,
+    ...planFromRow(r),
   };
+}
+
+/** The stored plan: a first-of-month date, a finite non-negative budget (numeric comes as a number or a string) and a currency; a malformed one is refused, never shown. */
+function planFromRow(r: Row): Pick<WishlistEntry, 'plannedMonth' | 'budget' | 'currency'> {
+  const month = r.planned_month === null || r.planned_month === undefined ? null : typeof r.planned_month === 'string' && /^\d{4}-(0[1-9]|1[0-2])-01$/.test(r.planned_month) ? r.planned_month.slice(0, 7) : bad('planned month');
+  const budget = r.budget === null || r.budget === undefined ? null : Number.isFinite(Number(r.budget)) && Number(r.budget) >= 0 && r.budget !== '' ? Number(r.budget) : bad('budget');
+  const currency = r.currency === null || r.currency === undefined ? null : typeof r.currency === 'string' && /^[A-Z]{3}$/.test(r.currency) ? r.currency : bad('currency');
+  return { ...(month ? { plannedMonth: month } : {}), ...(budget !== null ? { budget } : {}), ...(currency ? { currency } : {}) }; // only what is set, like the other optional fields
 }
 
 // ---- suggestion feedback ---------------------------------------------------------------------------------------------

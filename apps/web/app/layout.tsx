@@ -12,7 +12,10 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icon.svg' },
 };
-export const viewport: Viewport = { themeColor: '#2f4f4f', colorScheme: 'light dark' };
+export const viewport: Viewport = {
+  themeColor: [{ media: '(prefers-color-scheme: light)', color: '#ffffff' }, { media: '(prefers-color-scheme: dark)', color: '#000000' }],
+  colorScheme: 'light dark',
+};
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const signedIn = dataBackend() === 'supabase' && (await isSignedIn());

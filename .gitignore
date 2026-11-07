@@ -58,3 +58,4 @@ services/worker/.env.*
 !services/worker/.env.example
 services/worker/.pytest_cache/
 services/worker/.u2net/
+.vitest/

@@ -62,7 +62,7 @@ select is(pg_temp.run_as('11111111-1111-1111-1111-111111111111', 'authenticated'
   case tbl when 'item_features' then 'err=23503' when 'outfit_items' then 'err=23514' else 'err=42501' end,
   'without consent, S cannot write to app.' || tbl) from pg_temp.app_tables
   where tbl not in ('profiles', 'consent_records', 'document_acceptances') order by tbl;
-select is(pg_temp.run_as('11111111-1111-1111-1111-111111111111', 'authenticated', format('update app.%I set user_id = %L', tbl, '11111111-1111-1111-1111-111111111111'::uuid)),
+select is(pg_temp.run_as('11111111-1111-1111-1111-111111111111', 'authenticated', case tbl when 'receipts' then 'update app.receipts set store = ''x''' else format('update app.%I set user_id = %L', tbl, '11111111-1111-1111-1111-111111111111'::uuid) end),   -- WO-0080: receipts has a column-limited update grant
   case when w.upd then 'rows=0' else 'err=42501' end, 'without consent, an update with no WHERE touches no row of app.' || tbl)
   from pg_temp.app_tables t join want w using (tbl) where tbl not in ('profiles', 'consent_records', 'document_acceptances') order by tbl;
 select is(pg_temp.run_as('11111111-1111-1111-1111-111111111111', 'authenticated', format('delete from app.%I', tbl)),

@@ -3,7 +3,7 @@
 -- jobs part of app.delete_my_account(). The two-connection claim race is in workflow/gates/db_tests.test.ts (pgTAP is one session).
 begin;
 \ir helpers.inc
-select plan(295);
+select plan(297);   -- WO-0080: two more app tables, each with one "the worker cannot read" assertion
 
 -- the session role (postgres) may become worker_role only inside this rolled-back transaction, to exercise its rights
 grant worker_role to postgres with set true, inherit false;

@@ -1,8 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Collection, FeedbackSink, ItemCollection, ItemInput, OutfitInput, SavedOutfit, StoredItem, WardrobeRepository, WishlistEntry, WishlistInput } from '../repository';
+import type { FxRates } from '../money';
+import { PAGE, totalsByCurrency } from '../purchases';
+import type { Cursor, Page, Purchase, PurchaseFilter } from '../purchases';
+import type { Collection, FeedbackSink, ItemCollection, ItemInput, OutfitInput, PriceContext, PurchaseCollection, SavedOutfit, StoredItem, WardrobeRepository, WishlistCollection, WishlistEntry, WishlistInput } from '../repository';
 import { RepositoryError, asRepositoryError, classify } from './errors';
 import {
-  ITEM_SELECT, OUTFIT_SELECT, WISHLIST_SELECT, featuresRow, feedbackRow, itemFromRow, itemPatch, itemRow, outfitFromRow, outfitPatch, outfitRows, wishlistFromRow, wishlistPatch, wishlistRow,
+  ITEM_SELECT, OUTFIT_SELECT, PURCHASE_SELECT, WISHLIST_SELECT, boughtArgs, cleanCursor, cleanFilter, featuresRow, likePattern, purchaseFromRow, purchasePatch, purchaseRow, feedbackRow, itemFromRow, itemPatch, itemRow, outfitFromRow, outfitPatch, outfitRows, wishlistFromRow, wishlistPatch, wishlistRow,
 } from './mapping';
 
 type Row = Record<string, unknown>;
@@ -24,7 +27,9 @@ const unsupported = (message: string): Promise<never> => Promise.reject(new Repo
 export class SupabaseRepository implements WardrobeRepository {
   items: ItemCollection;
   outfits: Collection<SavedOutfit, OutfitInput>;
-  wishlist: Collection<WishlistEntry, WishlistInput>;
+  wishlist: WishlistCollection;
+  purchases: PurchaseCollection;
+  prices: PriceContext;
   feedback: FeedbackSink;
 
   constructor(private client: Client, private now: () => string = () => new Date().toISOString()) {
@@ -38,7 +43,30 @@ export class SupabaseRepository implements WardrobeRepository {
     };
     const outfits = this.table<SavedOutfit, OutfitInput>('outfits', OUTFIT_SELECT, outfitFromRow, () => ({}), outfitPatch);
     this.outfits = { ...outfits, create: (n) => this.createOutfit(n, outfits), update: (id, p) => this.updateOutfit(id, p, outfits) };
-    this.wishlist = this.table<WishlistEntry, WishlistInput>('wishlist_entries', WISHLIST_SELECT, wishlistFromRow, wishlistRow, wishlistPatch);
+    const wish = this.table<WishlistEntry, WishlistInput>('wishlist_entries', WISHLIST_SELECT, wishlistFromRow, wishlistRow, wishlistPatch);
+    this.wishlist = {
+      ...wish,
+      // an entry already marked bought has left the wishlist: only open ones are listed
+      list: () => guard(false, async () => ((take((await this.app().from('wishlist_entries').select(WISHLIST_SELECT).eq('status', 'open').order('created_at', { ascending: false })) as Answer, false) as Row[] | null) ?? []).flatMap((r) => wishlistFromRow(r))),
+      bought: (id, input) => guard(true, async () => {
+        if (!UUID.test(id)) throw new RepositoryError('rejected', true);
+        const id2 = take((await this.app().rpc('wishlist_bought', boughtArgs(id, input.purchase, input.colourHex))) as Answer, true);
+        return typeof id2 === 'string' ? id2 : Promise.reject(new RepositoryError('unexpected', true));
+      }),
+    };
+    this.purchases = this.purchaseCollection();
+    this.prices = {
+      currency: () => guard(false, async () => {
+        const row = take((await this.app().from('profiles').select('currency').eq('id', await this.uid()).maybeSingle()) as Answer, false) as Row | null;
+        return typeof row?.currency === 'string' ? row.currency : 'USD';
+      }),
+      rates: () => guard(false, async () => {
+        const rows = (take((await this.app().rpc('latest_fx_rates')) as Answer, false) as Row[] | null) ?? [];
+        const out: FxRates = {};
+        for (const r of rows) if (typeof r.currency === 'string' && typeof r.rate_date === 'string' && Number(r.per_usd) > 0) out[r.currency] = { rateDate: r.rate_date, perUsd: Number(r.per_usd) };
+        return out;
+      }),
+    };
     this.feedback = { record: async (facts) => {
       try {
         const row = feedbackRow(facts, await this.uid());
@@ -49,6 +77,56 @@ export class SupabaseRepository implements WardrobeRepository {
   }
 
   private app() { return this.client.schema('app'); }
+
+  /** The purchases that match the filter (a dated row of the signed-in person; row-level security does the rest), inner-joined to their item for brand and category. */
+  private purchaseQuery(filter: PurchaseFilter, select: string) {
+    const f = cleanFilter(filter);
+    let q = this.app().from('purchases').select(select).not('purchase_date', 'is', null);
+    if (f.store) q = q.ilike('store', likePattern(f.store));
+    if (f.brand) q = q.ilike('items.brand', likePattern(f.brand));
+    if (f.category) q = q.eq('items.category', f.category);
+    if (f.from) q = q.gte('purchase_date', f.from);
+    if (f.to) q = q.lte('purchase_date', f.to);
+    return q;
+  }
+
+  private purchaseCollection(): PurchaseCollection {
+    const read = (rows: unknown) => ((rows as Row[] | null) ?? []).flatMap((r) => purchaseFromRow(r) ?? []);
+    const byId = async (id: string): Promise<Purchase | undefined> => {
+      const r = UUID.test(id) ? take((await this.app().from('purchases').select(PURCHASE_SELECT).eq('id', id).maybeSingle()) as Answer, false) : null;
+      return r ? read([r])[0] : undefined;
+    };
+    return {
+      page: (filter, after) => guard(false, async (): Promise<Page> => {
+        const c: Cursor | null = cleanCursor(after);
+        let q = this.purchaseQuery(filter, PURCHASE_SELECT);
+        if (c) q = q.or(`purchase_date.lt.${c.date},and(purchase_date.eq.${c.date},id.lt.${c.id})`);
+        const rows = (take((await q.order('purchase_date', { ascending: false }).order('id', { ascending: false }).limit(PAGE + 1)) as Answer, false) as Row[] | null) ?? [];
+        const last = rows[PAGE - 1];
+        return { rows: read(rows.slice(0, PAGE)), next: rows.length > PAGE && last ? { date: String(last.purchase_date), id: String(last.id) } : null };
+      }),
+      totals: (filter) => guard(false, async () => {
+        const all: Purchase[] = [];
+        for (let from = 0; from < 20_000; from += 1000) { // PostgREST answers at most 1000 rows at a time
+          const rows = (take((await this.purchaseQuery(filter, PURCHASE_SELECT).order('id').range(from, from + 999)) as Answer, false) as Row[] | null) ?? [];
+          all.push(...read(rows));
+          if (rows.length < 1000) break;
+        }
+        return totalsByCurrency(all);
+      }),
+      forItem: (itemId) => (UUID.test(itemId) ? guard(false, async () => read(take((await this.app().from('purchases').select(PURCHASE_SELECT).eq('item_id', itemId).order('purchase_date', { ascending: false, nullsFirst: false }).order('id', { ascending: false })) as Answer, false))) : Promise.resolve([])),
+      create: (input) => guard(true, async () => {
+        const made = take((await this.app().from('purchases').insert(purchaseRow(input, await this.uid())).select('id').single()) as Answer, true) as { id: string };
+        return (await byId(made.id)) ?? Promise.reject(new RepositoryError('unexpected', true));
+      }),
+      update: (id, patch) => {
+        const row = purchasePatch(patch);
+        if (!UUID.test(id) || Object.keys(row).length === 0) return byId(id);
+        return guard(true, async () => { take((await this.app().from('purchases').update(row).eq('id', id)) as Answer, true); return byId(id); });
+      },
+      remove: (id) => (UUID.test(id) ? guard(true, async () => ((take((await this.app().from('purchases').delete().eq('id', id).select('id')) as Answer, true) as Row[] | null) ?? []).length > 0) : Promise.resolve(false)),
+    };
+  }
 
   /**
    * The item row, then (only for an item added by photo whose result carried features) its `item_features` row. The features only order swap
@@ -88,11 +166,10 @@ export class SupabaseRepository implements WardrobeRepository {
       list: () => guard(false, async () => ((take((await t().select(select).order('created_at', { ascending: false })) as Answer, false) as Row[] | null) ?? []).flatMap((r) => from(r) ?? [])),
       get,
       create: (n) => guard(true, async () => one(take((await t().insert(insert(n, await this.uid())).select(select).single()) as Answer, true)) ?? Promise.reject(new RepositoryError('unexpected', true))),
-      update: (id, p) => {
-        const row = patch(p);
+      update: (id, p) => guard(true, async () => patch(p)).then((row) => {
         if (!UUID.test(id) || Object.keys(row).length === 0) return get(id);
         return guard(true, async () => one(take((await t().update(row).eq('id', id).select(select).maybeSingle()) as Answer, true)));
-      },
+      }),
       remove: (id) => (UUID.test(id) ? guard(true, async () => ((take((await t().delete().eq('id', id).select('id')) as Answer, true) as Row[] | null) ?? []).length > 0) : Promise.resolve(false)),
     };
   }

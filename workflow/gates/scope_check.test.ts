@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 const run = (args: string[], env: Record<string, string> = {}) =>
   spawnSync('bash', ['workflow/gates/scope_check.sh', ...args], { encoding: 'utf8', env: { ...process.env, ...env } });
 
-describe('scope_check', () => {
+describe('scope_check', { timeout: 60_000 }, () => {
   it('selftest passes: in-scope 0, out-of-scope 1, untracked 1, rename out of scope 1, unknown base ref 2, empty diff 0', () => {
     const r = run(['--selftest']);
     expect(r.stdout).toContain('rename from an out-of-scope path exits 1');

@@ -5,3 +5,6 @@ submissions/**/raw/
 
 # Fashion-MNIST CSVs for the recommendation engine (size and licence)
 data/recommendation-engine/mnist/
+
+# Licensed catalogue photos and manifest (H&M Kaggle data: academic use, no redistribution)
+apps/web/public/catalogue/

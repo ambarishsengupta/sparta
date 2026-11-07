@@ -12,6 +12,7 @@ const TAGS = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
 
 const PAGES = [
   ...TABS.flatMap((t) => [t.href, `${t.href}?state=loading`, `${t.href}?state=error`]),
+  "/wardrobe/popular",
   "/specimen",
 ];
 

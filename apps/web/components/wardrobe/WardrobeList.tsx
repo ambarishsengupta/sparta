@@ -20,7 +20,7 @@ export function ItemCard({ item, onArchive, onRestore }: {
   const [reason, setReason] = useState<ArchiveReason>('sold');
   const band = item.condition === null ? null : conditionBandOf(item.condition);
   return (
-    <li className="card">
+    <li className="card item">
       <span className="swatch" style={{ background: item.hex }} aria-hidden="true" />
       <div className="grow">
         <Link href={`/items/${item.id}`} prefetch={false} className="title">{item.name}</Link>
@@ -99,7 +99,7 @@ export function WardrobeList() {
       <p aria-live="polite" className="muted">{repo ? `${shown.length} of ${items.length} items` : 'Loading…'}</p>
       {error && <p role="alert" className="error">{error}</p>}
       {repo && items.length === 0 && !error && <p>Your wardrobe is empty. Add an item, or load a demo wardrobe below.</p>}
-      <ul className="list">
+      <ul className="list tiles">
         {shown.map((i) => (
           <ItemCard key={i.id} item={i}
             onArchive={(r) => void act(() => repo!.items.archive(i.id, r))}

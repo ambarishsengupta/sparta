@@ -184,9 +184,9 @@ export function OutfitsView() {
         </div>
       )}
       {view?.kind === 'cards' && (
-        <ul className="list">
+        <ul className="list cards">
           {view.cards.map((card, i) => (
-            <li key={card.key} className={`card ${styles.outfit}`}>
+            <li key={card.key} className={styles.outfit}>
               <OutfitCard card={card} index={i} items={byId}
                 onAccept={() => void accept(card, i + 1)} onReject={() => dismiss(card, i + 1)}
                 sameAs={sameAs(view.cards, card)} anchorId={view.anchor}

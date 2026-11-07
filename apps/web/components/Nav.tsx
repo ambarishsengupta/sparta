@@ -12,6 +12,7 @@ export function Nav({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <header className="bar">
       <Link href="/" className="brand">Sparta</Link>
+      <span className="demo-tag">Demo</span>
       <nav aria-label="Main">
         {[...LINKS, ...(signedIn ? ACCOUNT_LINKS : [])].map(([href, label]) => <Link key={href} href={href} aria-current={path === href ? 'page' : undefined}>{label}</Link>)}
       </nav>

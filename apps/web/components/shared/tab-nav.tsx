@@ -12,11 +12,13 @@ import { usePathname } from "next/navigation";
 
 import { TAB_ICONS } from "@/components/shared/icons";
 import { messages } from "@/lib/i18n/messages";
+import { usePicks } from "@/lib/picks";
 import { POP_CLASS, TAB_KEYS, TABS } from "@/lib/tabs";
 import { cn } from "@/lib/utils";
 
 export function TabNav() {
   const pathname = usePathname();
+  const picked = usePicks().length;
 
   return (
     <nav
@@ -56,7 +58,10 @@ export function TabNav() {
                   "focus-visible:-outline-offset-2",
                 )}
               >
-                <span className="relative flex h-8 w-14 items-center justify-center">
+                <span
+                  className="relative flex h-8 w-14 items-center justify-center"
+                  data-fly-target={key}
+                >
                   <span
                     aria-hidden="true"
                     className={cn(
@@ -70,6 +75,12 @@ export function TabNav() {
                     strokeWidth={1.75}
                     className="relative size-6 group-aria-[current=page]:animate-tab-tilt group-aria-[current=page]:text-on-pop"
                   />
+                  {/* Picks this visit (lib/picks.ts). Decorative: the grid announces each add. */}
+                  {key === "wardrobe" && picked > 0 ? (
+                    <span key={picked} aria-hidden="true" className="tab-badge">
+                      {picked}
+                    </span>
+                  ) : null}
                 </span>
                 <span>{messages.tabs[key].label}</span>
               </Link>

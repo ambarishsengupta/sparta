@@ -11,13 +11,19 @@ export const TABS = [
   { key: "me", label: "Me", href: "/me", pop: "cyan" },
 ] as const;
 
-/** Wait for fonts and for every finite animation and transition to finish. */
+/** Wait for fonts and for every finite, time-based animation and transition to finish. */
 export async function settle(page: Page) {
   await page.evaluate(async () => {
     await document.fonts.ready;
+    // Time-based animations only: scroll-driven ones (animation-timeline: view())
+    // finish when the page scrolls, not with time, so waiting on them would hang.
     const finite = document
       .getAnimations()
-      .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity);
+      .filter(
+        (a) =>
+          a.timeline instanceof DocumentTimeline &&
+          a.effect?.getComputedTiming().iterations !== Infinity,
+      );
     await Promise.all(finite.map((a) => a.finished.catch(() => undefined)));
   });
 }

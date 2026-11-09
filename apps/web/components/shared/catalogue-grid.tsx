@@ -8,15 +8,21 @@
 // rating, colour swatches. Responsive: 2 columns on phones, up to 6 on wide screens.
 // Add toggles locally (no wardrobe store until M2) and announces politely.
 // Category chips above the grid filter it; the count on each chip says what you get.
+// Adding an item: marigold petals scatter from the button, its colour dot flies to
+// the Wardrobe tab (whose badge then pops) and Android phones give a short buzz.
+// Picks are shared with the tab bar through lib/picks.ts. Rows below the first two
+// reveal as they scroll into view, where the browser supports scroll timelines.
 import Image from "next/image";
 import { useState } from "react";
 
 import { AddedIcon, AddIcon, RatingIcon } from "@/components/shared/icons";
 import { type CatalogueItem, discount, rupees } from "@/lib/catalogue";
+import { flyToTab, petalBurst, tap } from "@/lib/delight";
+import { togglePick, usePicks } from "@/lib/picks";
 import { cn } from "@/lib/utils";
 
 export function CatalogueGrid({ items }: { items: CatalogueItem[] }) {
-  const [added, setAdded] = useState<Set<string>>(new Set());
+  const picks = usePicks();
   const [announce, setAnnounce] = useState("");
   const [group, setGroup] = useState<string | null>(null);
 
@@ -27,14 +33,17 @@ export function CatalogueGrid({ items }: { items: CatalogueItem[] }) {
     ...groups.map((g) => ({ key: g, label: g, count: items.filter((i) => i.group === g).length })),
   ];
 
-  const toggle = (item: CatalogueItem) => {
-    const on = !added.has(item.id);
-    setAdded((prev) => {
-      const next = new Set(prev);
-      if (on) next.add(item.id);
-      else next.delete(item.id);
-      return next;
-    });
+  const toggle = (item: CatalogueItem, button: HTMLElement) => {
+    const on = togglePick(item.id);
+    if (on) {
+      const css = getComputedStyle(document.documentElement);
+      petalBurst(
+        button,
+        ["--tangerine", "--yellow", "--pink"].map((v) => css.getPropertyValue(v)),
+      );
+      void flyToTab(button, '[data-fly-target="wardrobe"]', item.colour);
+      tap();
+    }
     setAnnounce(on ? `${item.name} added to your wardrobe.` : `${item.name} removed.`);
   };
 
@@ -67,12 +76,14 @@ export function CatalogueGrid({ items }: { items: CatalogueItem[] }) {
       </div>
       <ul className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {shown.map((item, i) => {
-          const on = added.has(item.id);
+          const on = picks.includes(item.id);
+          // The first two rows enter on load; later rows reveal on scroll.
+          const early = i < 8;
           return (
             <li
               key={`${group ?? "all"}-${item.id}`}
-              className="rise"
-              style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
+              className={early ? "rise" : "reveal-on-scroll"}
+              style={early ? { animationDelay: `${i * 40}ms` } : undefined}
             >
               <article className="flex h-full flex-col gap-2">
                 <div
@@ -98,7 +109,7 @@ export function CatalogueGrid({ items }: { items: CatalogueItem[] }) {
                     type="button"
                     aria-pressed={on}
                     aria-label={`${on ? "Remove" : "Add"} ${item.name}`}
-                    onClick={() => toggle(item)}
+                    onClick={(e) => toggle(item, e.currentTarget)}
                     className={cn(
                       "press-feedback absolute right-2 bottom-2 flex size-11 items-center justify-center rounded-full border-[1.5px] border-ink",
                       "transition-colors duration-200 ease-snap",

@@ -912,6 +912,51 @@
     pointer-events: none;
   }
 
+  /* ---- Delight (lib/delight.ts): one-off feedback, created and removed by script ---- */
+  .delight-dot,
+  .delight-petal {
+    position: fixed;
+    z-index: 60;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+  .delight-dot {
+    border-radius: 9999px;
+    box-shadow:
+      0 0 0 2px var(--surface),
+      0 0 0 3.5px var(--ink);
+  }
+  .delight-petal {
+    border-radius: 50% 0;
+  }
+  /* Count of picks on the Wardrobe tab; pops as the flying dot lands. */
+  .tab-badge {
+    position: absolute;
+    top: -6px;
+    right: 2px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 9999px;
+    border: 1.5px solid var(--ink);
+    background: var(--yellow);
+    color: var(--on-yellow);
+    font: 700 11px/17px var(--font-mono);
+    text-align: center;
+    animation: badge-pop 420ms var(--ease-spring) 560ms both;
+  }
+  /* Grid rows below the fold rise as they scroll into view (no script, no timer). */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal-on-scroll {
+        /* Movement only, never opacity: text stays at full contrast wherever scrolling stops. */
+        animation: reveal-rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 30%;
+      }
+    }
+  }
+
   /* Jharokha: an ogee window arch that frames each empty-state scene. */
   .jharokha {
     clip-path: path("M0 208V86C0 46 54 34 80 0C106 34 160 46 160 86V208Z");
@@ -1005,6 +1050,22 @@
   from {
     opacity: 0;
     transform: translate3d(-40px, 0, 0);
+  }
+}
+@keyframes reveal-rise {
+  from {
+    transform: translate3d(0, 32px, 0) scale(0.96);
+  }
+}
+@keyframes badge-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.45) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 @keyframes mandala-turn {

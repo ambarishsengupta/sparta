@@ -20,6 +20,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useLayoutEffect, useRef } from "react";
 
+import { tap } from "@/lib/delight";
 import { POP_CLASS, TAB_KEYS, TABS, type TabKey } from "@/lib/tabs";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +72,7 @@ export default function ConsumerTemplate({ children }: { children: React.ReactNo
     if (Math.abs(dx) < SWIPE_MIN_X || Math.abs(dy) > SWIPE_MAX_Y) return;
     const next = index + (dx < 0 ? 1 : -1);
     if (next < 0 || next >= TAB_KEYS.length) return;
+    tap(8);
     router.push(TABS[TAB_KEYS[next]].href);
   };
 

@@ -5,10 +5,12 @@
   },
   "shell": {
     "skipLink": "Skip to content",
-    "navLabel": "Main"
+    "navLabel": "Main",
+    "pauseMotion": "Pause background animation",
+    "darkMode": "Dark mode"
   },
   "preview": {
-    "unavailable": "Not available in this preview yet."
+    "comingSoon": "coming soon"
   },
   "tabs": {
     "wardrobe": {
@@ -119,5 +121,30 @@
     "loadingDemo": "Save with a delay",
     "saved": "Item saved.",
     "tokens": "Colour tokens"
+  },
+  "sample": {
+    "note": "Sample data for the demo. Your own items will replace it.",
+    "showEmpty": "See the empty screen",
+    "wardrobe": {
+      "count": "{n} items",
+      "add": "Add from popular items",
+      "worn": "Worn {n} times",
+      "new": "New"
+    },
+    "outfits": {
+      "for": "For {when}",
+      "swap": "Swap an item"
+    },
+    "wishlist": {
+      "target": "Target {price}",
+      "now": "Now {price}",
+      "plan": "Plan: {plan}",
+      "below": "At or below target"
+    },
+    "purchases": {
+      "total": "Spent in these {n} purchases",
+      "receipt": "Receipt saved",
+      "noReceipt": "No receipt"
+    }
   }
 }

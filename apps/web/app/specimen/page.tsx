@@ -62,6 +62,9 @@ export default function SpecimenPage() {
           <Button disabled data-testid="btn-disabled">
             {copy.disabled}
           </Button>
+          <Button aria-disabled="true" data-testid="btn-aria-disabled">
+            {copy.disabled}
+          </Button>
           <Button loading data-testid="btn-loading">
             {copy.loading}
           </Button>

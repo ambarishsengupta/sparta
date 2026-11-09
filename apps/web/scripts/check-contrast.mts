@@ -44,6 +44,10 @@ const FLASH_PAIRS: Pair[] = FLASHES.flatMap((f) => [
   { fg: "ink", bg: `${f}-tint`, min: TEXT, note: "ink on tint" },
   // Plan rule: all text on tinted tiles is ink or ink-soft, never ink-mute.
   { fg: "ink-soft", bg: `${f}-tint`, min: TEXT, note: "ink-soft on tint" },
+  // Textile motifs sit under header text. Checked at full strength (worst case),
+  // so a motif can never push the title or intro below 4.5:1.
+  { fg: "ink", bg: `${f}-motif`, min: TEXT, note: "ink over motif" },
+  { fg: "ink-soft", bg: `${f}-motif`, min: TEXT, note: "ink-soft over motif" },
 ]);
 
 function blockText(css: string, name: string): string {
@@ -57,12 +61,61 @@ function extractBlock(css: string, name: string): Tokens {
   return parseDecls(blockText(css, name));
 }
 
+/** Raw declarations: values may be #rrggbb, oklch(L% C H) or a single var(--name). */
 function parseDecls(block: string): Tokens {
   const tokens: Tokens = {};
-  for (const m of block.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)) {
-    tokens[m[1]] = m[2].toLowerCase();
+  for (const m of block.matchAll(/--([a-z0-9-]+):\s*([^;]+?)\s*;/g)) {
+    tokens[m[1]] = m[2].trim().toLowerCase();
   }
   return tokens;
+}
+
+/** OKLCH to sRGB hex (CSS Color 4 matrices), clipped to the sRGB gamut. */
+function oklchToHex(value: string): string {
+  const m = /^oklch\(\s*([\d.]+)%\s+([\d.]+)\s+([\d.]+)\s*\)$/.exec(value);
+  if (!m) throw new Error(`cannot parse colour "${value}"`);
+  const L = Number(m[1]) / 100;
+  const C = Number(m[2]);
+  const H = (Number(m[3]) * Math.PI) / 180;
+  const a = C * Math.cos(H);
+  const b = C * Math.sin(H);
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const mm = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const lin = [
+    4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s,
+  ];
+  return (
+    "#" +
+    lin
+      .map((c) => {
+        const v = Math.min(1, Math.max(0, c));
+        const srgb = v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055;
+        return Math.round(srgb * 255)
+          .toString(16)
+          .padStart(2, "0");
+      })
+      .join("")
+  );
+}
+
+/** Resolve every token to #rrggbb, following var() into the theme block, then the scales. */
+function resolveAll(tokens: Tokens, scales: Tokens): Tokens {
+  const resolve = (value: string, depth = 0): string => {
+    if (depth > 8) throw new Error(`var() cycle at "${value}"`);
+    if (/^#[0-9a-f]{6}$/.test(value)) return value;
+    if (value.startsWith("oklch(")) return oklchToHex(value);
+    const ref = /^var\(--([a-z0-9-]+)\)$/.exec(value);
+    if (ref) {
+      const next = tokens[ref[1]] ?? scales[ref[1]];
+      if (next === undefined) throw new Error(`undefined token --${ref[1]}`);
+      return resolve(next, depth + 1);
+    }
+    return value; // not a colour (e.g. transparent); never used in a pair
+  };
+  return Object.fromEntries(Object.entries(tokens).map(([k, v]) => [k, resolve(v)]));
 }
 
 function extractSelectorBlock(css: string, selector: string): Tokens {
@@ -132,15 +185,17 @@ function checkFillBoundaries(theme: string, tokens: Tokens, edgeIsInk: boolean) 
 
 function main() {
   const css = readFileSync(CSS_PATH, "utf8");
-  const light = extractBlock(css, "light");
-  const dark = extractBlock(css, "dark");
+  const scales = extractBlock(css, "scales");
+  const darkRaw = extractBlock(css, "dark");
+  const light = resolveAll(extractBlock(css, "light"), scales);
+  const dark = resolveAll(darkRaw, scales);
   const darkOverride = extractSelectorBlock(css, ':root[data-theme="dark"]');
 
   let failures = 0;
 
   // The explicit data-theme="dark" block must repeat the media-query values exactly.
-  const drift = Object.keys({ ...dark, ...darkOverride }).filter(
-    (k) => dark[k] !== darkOverride[k],
+  const drift = Object.keys({ ...darkRaw, ...darkOverride }).filter(
+    (k) => darkRaw[k] !== darkOverride[k],
   );
   if (drift.length) {
     failures += drift.length;

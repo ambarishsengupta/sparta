@@ -120,7 +120,7 @@ test.describe("reduced motion", () => {
   test.use({ reducedMotion: "reduce" });
 
   test("tab pill and empty-state scene do not animate", async ({ page }) => {
-    await page.goto("/wardrobe");
+    await page.goto("/wardrobe?state=empty");
     const pill = page
       .getByRole("link", { name: "Wardrobe", exact: true })
       .locator("span[aria-hidden]")

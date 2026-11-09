@@ -1043,6 +1043,20 @@
   }
 }
 
+/* Calm mode (motion-toggle.tsx): every ever-running loop holds still. One-off
+   entrances and feedback still play; reduced motion stops those too. Loops freeze
+   where they are, so switching calm on never makes anything jump. */
+:root[data-motion="calm"] .ambient-dots::before,
+:root[data-motion="calm"] .ambient-mandala::before,
+:root[data-motion="calm"] .ambient-petal > span,
+:root[data-motion="calm"] .toran::before {
+  animation-play-state: paused !important;
+}
+/* The header motif keeps its one-off entrance and drops only the endless drift. */
+:root[data-motion="calm"] .motif-field {
+  animation: motif-stamp 900ms var(--ease-snap) 120ms both !important;
+}
+
 /* Theme switch: the new theme ripples out from the pointer (theme-toggle.tsx).
    Both snapshots are shown as-is; only the new one is clipped by a growing circle. */
 ::view-transition-old(root),

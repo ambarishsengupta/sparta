@@ -6,7 +6,7 @@
 // boundary can supply a client button and the preview can supply a link.
 import Link from "next/link";
 
-import { ErrorIcon, TAB_ICONS } from "@/components/shared/icons";
+import { ComingSoonIcon, ErrorIcon, TAB_ICONS } from "@/components/shared/icons";
 import { Tilt } from "@/components/shared/tilt";
 import { Button } from "@/components/ui/button";
 import { messages } from "@/lib/i18n/messages";
@@ -51,7 +51,6 @@ type EmptyTab = Exclude<TabKey, "me">;
 
 export function EmptyState({ tab }: { tab: EmptyTab }) {
   const copy = messages.tabs[tab].empty;
-  const noteId = `${tab}-empty-note`;
   const secondary = "secondaryAction" in copy ? copy.secondaryAction : null;
   return (
     <section
@@ -66,36 +65,33 @@ export function EmptyState({ tab }: { tab: EmptyTab }) {
           </h2>
           <p className="mt-2 text-ink-soft">{copy.body}</p>
         </div>
-        {/* Actions arrive with their milestones (M2 to M4); they are shown but
-            marked unavailable so the layout and focus order can be reviewed now. */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <Button aria-disabled="true" aria-describedby={noteId} className="w-full sm:w-auto">
-            {copy.action}
-          </Button>
-          {secondary ? (
-            <Button
-              variant="secondary"
-              aria-disabled="true"
-              aria-describedby={noteId}
-              className="w-full sm:w-auto"
-            >
-              {secondary}
+        {/* Wardrobe's main action works now (popular items). Everything else arrives
+            with its milestone (M2 to M4): shown as a calm "Coming soon" label, not as
+            a faded button, so nothing on screen looks broken. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          {tab === "wardrobe" ? (
+            <Button asChild className="w-full sm:w-auto">
+              <Link href="/wardrobe/popular">{copy.action}</Link>
             </Button>
-          ) : null}
+          ) : (
+            <ComingSoon label={copy.action} />
+          )}
+          {secondary ? <ComingSoon label={secondary} /> : null}
         </div>
-        <p id={noteId} className="text-sm text-ink-mute">
-          {messages.preview.unavailable}
-        </p>
-        {tab === "wardrobe" ? (
-          <Link
-            href="/wardrobe/popular"
-            className="text-sm font-semibold text-accent-text underline underline-offset-4"
-          >
-            Browse popular items
-          </Link>
-        ) : null}
       </div>
     </section>
+  );
+}
+
+/** A not-yet-available action: a dashed label, not a control, so it is never mistaken for a broken button. */
+function ComingSoon({ label }: { label: string }) {
+  return (
+    <p className="inline-flex min-h-11 items-center gap-2 rounded-full border-[1.5px] border-dashed border-control-border px-4 text-sm text-ink-soft">
+      <ComingSoonIcon aria-hidden="true" className="size-4 shrink-0" strokeWidth={2} />
+      <span>
+        <span className="font-semibold text-ink">{label}</span>, {messages.preview.comingSoon}
+      </span>
+    </p>
   );
 }
 

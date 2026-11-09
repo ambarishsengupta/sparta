@@ -7,7 +7,22 @@
 // approved, swap the imports here (CoatHanger, Stack, Heart, Receipt, UserCircle)
 // and nothing else changes.
 import type { LucideIcon } from "lucide-react";
-import { CircleAlert, CircleUserRound, Heart, Layers, ReceiptText, Shirt } from "lucide-react";
+import {
+  Check,
+  CircleAlert,
+  CircleUserRound,
+  Heart,
+  Hourglass,
+  Layers,
+  Moon,
+  Pause,
+  Play,
+  Plus,
+  ReceiptText,
+  Shirt,
+  Star,
+  Sun,
+} from "lucide-react";
 
 import type { TabKey } from "@/lib/tabs";
 
@@ -22,3 +37,11 @@ export const TAB_ICONS: Record<TabKey, Icon> = {
 };
 
 export const ErrorIcon: Icon = CircleAlert;
+export const ComingSoonIcon: Icon = Hourglass;
+export const AddIcon: Icon = Plus;
+export const AddedIcon: Icon = Check;
+export const RatingIcon: Icon = Star;
+export const LightIcon: Icon = Sun;
+export const DarkIcon: Icon = Moon;
+export const PauseIcon: Icon = Pause;
+export const PlayIcon: Icon = Play;

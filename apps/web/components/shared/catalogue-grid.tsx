@@ -7,16 +7,25 @@
 // a round add button, discount badge, price and struck-through MRP, two-line name,
 // rating, colour swatches. Responsive: 2 columns on phones, up to 6 on wide screens.
 // Add toggles locally (no wardrobe store until M2) and announces politely.
-import { Check, Plus, Star } from "lucide-react";
+// Category chips above the grid filter it; the count on each chip says what you get.
 import Image from "next/image";
 import { useState } from "react";
 
+import { AddedIcon, AddIcon, RatingIcon } from "@/components/shared/icons";
 import { type CatalogueItem, discount, rupees } from "@/lib/catalogue";
 import { cn } from "@/lib/utils";
 
 export function CatalogueGrid({ items }: { items: CatalogueItem[] }) {
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [announce, setAnnounce] = useState("");
+  const [group, setGroup] = useState<string | null>(null);
+
+  const groups = [...new Set(items.map((i) => i.group))].sort();
+  const shown = group ? items.filter((i) => i.group === group) : items;
+  const chips: { key: string | null; label: string; count: number }[] = [
+    { key: null, label: "All", count: items.length },
+    ...groups.map((g) => ({ key: g, label: g, count: items.filter((i) => i.group === g).length })),
+  ];
 
   const toggle = (item: CatalogueItem) => {
     const on = !added.has(item.id);
@@ -34,12 +43,34 @@ export function CatalogueGrid({ items }: { items: CatalogueItem[] }) {
       <p role="status" aria-live="polite" className="sr-only">
         {announce}
       </p>
+      <div
+        role="group"
+        aria-label="Filter by category"
+        className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+      >
+        {chips.map((c) => (
+          <button
+            key={c.label}
+            type="button"
+            aria-pressed={group === c.key}
+            onClick={() => setGroup(c.key)}
+            className={cn(
+              "press-feedback inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full border-[1.5px] px-4 text-sm font-semibold",
+              "border-control-border bg-surface text-ink",
+              "aria-pressed:border-ink aria-pressed:bg-pop aria-pressed:text-on-pop",
+            )}
+          >
+            {c.label}
+            <span className="font-mono text-xs">{c.count}</span>
+          </button>
+        ))}
+      </div>
       <ul className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-        {items.map((item, i) => {
+        {shown.map((item, i) => {
           const on = added.has(item.id);
           return (
             <li
-              key={item.id}
+              key={`${group ?? "all"}-${item.id}`}
               className="rise"
               style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
             >
@@ -75,9 +106,9 @@ export function CatalogueGrid({ items }: { items: CatalogueItem[] }) {
                     )}
                   >
                     {on ? (
-                      <Check aria-hidden="true" className="size-5" strokeWidth={2.5} />
+                      <AddedIcon aria-hidden="true" className="size-5" strokeWidth={2.5} />
                     ) : (
-                      <Plus aria-hidden="true" className="size-5" strokeWidth={2.5} />
+                      <AddIcon aria-hidden="true" className="size-5" strokeWidth={2.5} />
                     )}
                   </button>
                 </div>
@@ -105,7 +136,7 @@ export function CatalogueGrid({ items }: { items: CatalogueItem[] }) {
                     <span>{item.rating.toFixed(1)}</span>
                     <span aria-hidden="true" className="flex">
                       {Array.from({ length: 5 }, (_, s) => (
-                        <Star
+                        <RatingIcon
                           key={s}
                           className={cn(
                             "size-3.5",

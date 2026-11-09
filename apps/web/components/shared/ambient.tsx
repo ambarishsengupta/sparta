@@ -39,6 +39,7 @@ export function Ambient() {
     const root = ref.current;
     if (!root) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const calm = () => document.documentElement.dataset.motion === "calm";
 
     let frame = 0;
     let px = 0;
@@ -55,14 +56,14 @@ export function Ambient() {
     };
 
     const onMove = (e: PointerEvent) => {
-      if (reduce.matches || e.pointerType !== "mouse") return;
+      if (reduce.matches || calm() || e.pointerType !== "mouse") return;
       aim(e.clientX, e.clientY);
     };
 
     const onDown = (e: PointerEvent) => {
       if (reduce.matches) return;
       // Touch has no hover, so the ground leans toward the last touch instead.
-      if (e.pointerType !== "mouse") aim(e.clientX, e.clientY);
+      if (e.pointerType !== "mouse" && !calm()) aim(e.clientX, e.clientY);
 
       const target = (e.target as Element | null)?.closest(TAPPABLE);
       if (!target || target.matches("[aria-disabled='true'], :disabled")) return;

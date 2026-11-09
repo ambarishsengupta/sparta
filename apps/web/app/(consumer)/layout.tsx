@@ -2,6 +2,7 @@
 // Copyright (C) 2026 the Sparta team. Licensed under the GNU GPL v3.0; see LICENSE.
 
 import { Ambient } from "@/components/shared/ambient";
+import { MotionToggle } from "@/components/shared/motion-toggle";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { TabNav } from "@/components/shared/tab-nav";
 import { messages } from "@/lib/i18n/messages";
@@ -18,7 +19,10 @@ export default function ConsumerLayout({ children }: { children: React.ReactNode
       </a>
       <TabNav />
       {/* Top right on every screen size; above the tab curtain (z-30) and below the skip link. */}
-      <ThemeToggle className="fixed top-3 right-3 z-40 lg:top-4 lg:right-5" />
+      <div className="fixed top-3 right-3 z-40 flex items-center gap-2 lg:top-4 lg:right-5">
+        <MotionToggle />
+        <ThemeToggle />
+      </div>
       {/* Bottom padding clears the tab bar; the rail offsets content at 1024 px and over. */}
       <main
         id="main"

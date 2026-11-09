@@ -5,10 +5,12 @@
   },
   "shell": {
     "skipLink": "Skip to content",
-    "navLabel": "Main"
+    "navLabel": "Main",
+    "pauseMotion": "Pause background animation",
+    "darkMode": "Dark mode"
   },
   "preview": {
-    "unavailable": "Not available in this preview yet."
+    "comingSoon": "coming soon"
   },
   "tabs": {
     "wardrobe": {

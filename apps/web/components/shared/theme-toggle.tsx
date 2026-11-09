@@ -10,9 +10,10 @@
 //
 // Switching ripples the new theme out from the pointer with the View Transitions
 // API where supported. Reduced motion, or no support, swaps instantly.
-import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
 
+import { DarkIcon, LightIcon } from "@/components/shared/icons";
+import { messages } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 
 export const THEME_KEY = "sparta-theme";
@@ -69,7 +70,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       type="button"
       role="switch"
       aria-checked={dark}
-      aria-label="Dark mode"
+      aria-label={messages.shell.darkMode}
       onClick={flip}
       className={cn(
         "press-feedback relative flex h-11 w-[5.25rem] cursor-pointer items-center rounded-full border-[1.5px] border-ink bg-surface",
@@ -85,7 +86,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           dark && "translate-x-[2.375rem]",
         )}
       />
-      <Sun
+      <LightIcon
         aria-hidden="true"
         strokeWidth={2}
         className={cn(
@@ -93,7 +94,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           dark ? "text-ink-soft" : "text-on-yellow",
         )}
       />
-      <Moon
+      <DarkIcon
         aria-hidden="true"
         strokeWidth={2}
         className={cn(

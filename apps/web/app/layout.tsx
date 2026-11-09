@@ -53,11 +53,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${rozha.variable} ${instrumentSans.variable} ${geistMono.variable}`}
     >
       <head>
-        {/* Applies the stored theme before first paint (see theme-toggle.tsx). */}
+        {/* Applies the stored theme and motion choice before first paint (theme-toggle.tsx, motion-toggle.tsx). */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{var t=localStorage.getItem("sparta-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}',
+              'try{var d=document.documentElement,t=localStorage.getItem("sparta-theme"),m=localStorage.getItem("sparta-motion");if(t==="light"||t==="dark")d.dataset.theme=t;if(m==="calm")d.dataset.motion="calm"}catch(e){}',
           }}
         />
       </head>

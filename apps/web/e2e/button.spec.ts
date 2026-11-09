@@ -111,8 +111,7 @@ test("loading round trip announces the result politely", async ({ page }) => {
 });
 
 test("aria-disabled without loading looks disabled too", async ({ page }) => {
-  await page.goto("/wardrobe");
-  const btn = page.getByRole("button", { name: "Start from popular items" });
+  const btn = page.getByTestId("btn-aria-disabled");
   await expect(btn).toHaveAttribute("aria-disabled", "true");
   expect((await style(btn)).opacity).toBe("0.45");
   expect((await style(btn)).cursor).toBe("not-allowed");

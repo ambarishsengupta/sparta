@@ -6,7 +6,8 @@
 // boundary can supply a client button and the preview can supply a link.
 import Link from "next/link";
 
-import { ComingSoonIcon, ErrorIcon, TAB_ICONS } from "@/components/shared/icons";
+import { ComingSoon } from "@/components/shared/coming-soon";
+import { ErrorIcon, TAB_ICONS } from "@/components/shared/icons";
 import { Tilt } from "@/components/shared/tilt";
 import { Button } from "@/components/ui/button";
 import { messages } from "@/lib/i18n/messages";
@@ -80,18 +81,6 @@ export function EmptyState({ tab }: { tab: EmptyTab }) {
         </div>
       </div>
     </section>
-  );
-}
-
-/** A not-yet-available action: a dashed label, not a control, so it is never mistaken for a broken button. */
-function ComingSoon({ label }: { label: string }) {
-  return (
-    <p className="inline-flex min-h-11 items-center gap-2 rounded-full border-[1.5px] border-dashed border-control-border px-4 text-sm text-ink-soft">
-      <ComingSoonIcon aria-hidden="true" className="size-4 shrink-0" strokeWidth={2} />
-      <span>
-        <span className="font-semibold text-ink">{label}</span>, {messages.preview.comingSoon}
-      </span>
-    </p>
   );
 }
 

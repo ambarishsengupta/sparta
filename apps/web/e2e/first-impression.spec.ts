@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
 import { settle } from "./helpers";
 
 test("Wardrobe main action opens popular items", async ({ page }) => {
-  await page.goto("/wardrobe");
+  await page.goto("/wardrobe?state=empty");
   const cta = page.getByRole("link", { name: "Start from popular items" });
   await expect(cta).toBeVisible();
   await cta.click();
@@ -18,9 +18,9 @@ test("Wardrobe main action opens popular items", async ({ page }) => {
 
 test("not-yet-available actions are labels, not faded buttons", async ({ page }) => {
   for (const [path, label] of [
-    ["/outfits", "Suggest an outfit"],
-    ["/wishlist", "Add to wishlist"],
-    ["/purchases", "Scan a receipt"],
+    ["/outfits?state=empty", "Suggest an outfit"],
+    ["/wishlist?state=empty", "Add to wishlist"],
+    ["/purchases?state=empty", "Scan a receipt"],
   ] as const) {
     await page.goto(path);
     await expect(page.getByRole("button", { name: label })).toHaveCount(0);

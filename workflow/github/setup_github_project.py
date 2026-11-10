@@ -23,7 +23,7 @@ MEMBERS = [
 ]
 ROLES = ['Product owner', 'Solution architect', 'Style specialist', 'Delivery agents']
 RELEASES = ['Release 0 (stakeholder demo)', 'Release 1 (MVP)']
-NOT_DONE = {'WO-0084': 'In progress', 'WO-0085': 'Todo', 'WO-0086': 'Todo', 'WO-0087': 'Todo', 'WO-0088': 'Todo',
+NOT_DONE = {'WO-0084': 'In Progress', 'WO-0085': 'Todo', 'WO-0086': 'Todo', 'WO-0087': 'Todo', 'WO-0088': 'Todo',
             'WO-0089': 'Todo', 'WO-0090': 'Todo', 'WO-0091': 'Todo', 'WO-0097': 'Todo'}
 RELEASE1_WOS = {'WO-0089', 'WO-0090', 'WO-0091'}  # receipt reading moved to Release 1 on 2026-11-07
 SLICE_OF_FILE = {'R0': 'R0', 'R1': 'R1', 'R2': 'R2a', 'R2b': 'R2b', 'R2c': 'R2c', 'R3': 'R3', 'R4': 'R4', 'R5': 'R5a', 'R5b': 'R5b', 'Demo': 'Demo'}
@@ -38,6 +38,7 @@ def items():
             else:
                 slice_ = SLICE_OF_FILE.get(f.stem, f.stem)
             rel = RELEASES[1] if wid in RELEASE1_WOS else RELEASES[0]
+            if wid == 'WO-0082': title = 'plan purchases (Release 0 slice; the receipt parts are a separate Release 1 item)'
             out.append(dict(id=wid, title=f'{wid}: {title}', slice=slice_, release=rel, role='Delivery agents', status=NOT_DONE.get(wid, 'Done'),
                             body=f'Work order {wid} in `workflow/work-orders/{f.name}`. Evidence in `workflow/evidence/`.'))
     extra = [  # (id, title, slice, release, role, status, body)

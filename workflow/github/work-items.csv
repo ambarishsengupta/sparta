@@ -1,0 +1,66 @@
+id,title,slice,release,role,status
+WO-0093,"WO-0093: restyle the whole app (design system, existing screens)",Demo,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0097,WO-0097: demo data pack and demo script,Demo,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0094,WO-0094: design fixes from the WO-0093 critic and the WO-0081 nav,Demo,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0001,"WO-0001: workspace, gates and goals",R0,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0002,WO-0002: taxonomy package and colour family function,R0,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0003,"WO-0003: types, rules data and hard-rule enumeration",R1,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0004,"WO-0004: scoring, variety, reasons, ranking and swap choices",R1,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0005,"WO-0005: synthetic wardrobes, review pack and property tests",R1,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0006,"WO-0006: engine defects, thin wardrobe, test pins",R1,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0007,"WO-0007: style data, reasons and review pack (adopts the AI style review's problems)",R1,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0008,"WO-0008: layer lost to best-eight trimming (fix loop 2, last)",R1,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0040,"WO-0040: schemas, lookups, colour function and the generated seed",R2a,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0041,"WO-0041: core tables, RLS, consent gate, invitations, onboarding",R2a,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0042,"WO-0042: R2a fix loop 1 (Spec QC and Security review failed R2a: the code held, the tests had gaps)",R2a,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0050,"WO-0050: Supabase client, sign-up, sign-in, session and route gating",R2b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0051,"WO-0051: acceptance, pilot notice and onboarding screens",R2b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0052,"WO-0052: Supabase repository, backend switch and demo evidence",R2b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0053,"WO-0053: R2b fix loop 1 (Spec QC and Security review failed R2b: open redirect, loosened no-network scan, untested proxy)",R2b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0060,WO-0060: export and delete functions (database),R2c,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0061,"WO-0061: pages, export download, leave-the-pilot flow",R2c,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0062,WO-0062: R2c fix loop 1 (Spec QC and Security review failed R2c),R2c,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0020,"WO-0020: app scaffold, repository and wardrobe screens",R3,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0021,WO-0021: outfits screen,R3,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0022,WO-0022: R3 fix loop 1 (Spec QC failed R3 on 2026-11-04),R3,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0010,"WO-0010: pairing prior pipeline (Python, offline)",R4,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0011,"WO-0011: engine learned layer, Complete the look, Wardrobe unlock (TypeScript)",R4,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0012,WO-0012: app features and switches,R4,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0013,WO-0013: apply the layer rule (D-A) in Wardrobe unlock,R4,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0014,WO-0014: R4 follow-ups from Spec QC and Model QC (small),R4,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0030,"WO-0030: IDX reader, preprocessing, class map and their tests",R5a,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0031,"WO-0031: training, evaluation, export, model card, card check",R5a,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0070,"WO-0070: jobs, storage and the worker role (database)",R5b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0071,"WO-0071: server-only admin module, signed-URL route for the worker, storage purge on account deletion, DB follow-ups",R5b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0072,WO-0072: the worker service,R5b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0073,WO-0073: add-by-photo flow in the app,R5b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0074,WO-0074: WO-0071 review follow-ups (limiter order and test hardening),R5b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0075,WO-0075: item image paths must belong to the item's owner,R5b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0080,"WO-0080: receipts, purchase links, exchange rates, wishlist bought and receipt confirmation (database)",R6a,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0081,"WO-0081: purchases, prices with conversion, wishlist bought",R6a,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0082,"WO-0082: plan purchases, receipt files, receipt deletion route, export with files",R6a,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0083,"WO-0083: catalogue tables, take-down, audit log, collector and worker grants (database)",R6b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0084,WO-0084: category illustrations,R6b,Release 0 (stakeholder demo),Delivery agents,In progress
+WO-0085,"WO-0085: catalogue picker, popular-items onboarding choice, illustrated tiles, source link",R6b,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0086,"WO-0086: collector fetch, robots, rate limit, extraction and mapping",R6c,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0087,WO-0087: collector storage run as collector_role,R6c,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0088,"WO-0088: catalogue admin routes and page, barcode lookup",R6c,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0089,"WO-0089: synthetic 30-receipt fixture, parser and redaction",R6d,Release 1 (MVP),Delivery agents,Todo
+WO-0090,"WO-0090: receipt job handler, OCR adapter, catalogue match, Docker image",R6d,Release 1 (MVP),Delivery agents,Todo
+WO-0091,"WO-0091: receipt flow in the app, signed URLs for receipt jobs, end to end",R6d,Release 1 (MVP),Delivery agents,Todo
+WO-0092,WO-0092: WO-0080 fix loop 1 (checker findings),R6a,Release 0 (stakeholder demo),Delivery agents,Done
+X-R7,R7 Aggregation and vendor portal (to be specced),R7,Release 0 (stakeholder demo),Delivery agents,Todo
+X-CHECK0,Release 0 checkpoint: stakeholder demo walk-through,Demo,Release 0 (stakeholder demo),Product owner,Todo
+X-WO82B,"WO-0082 receipt parts: attach files, DELETE /api/receipts/[id], export with files",R6a,Release 1 (MVP),Delivery agents,Todo
+X-R8,R8 Hardening and pilot open,R8,Release 1 (MVP),Delivery agents,Todo
+X-PEN,"Penetration test of secret-key routes (/api/worker/signed-urls, /api/account/purge-storage, /api/receipts, /api/admin) (O5)",R8,Release 1 (MVP),Solution architect,Todo
+X-SEC,"Dedicated security review of sensitive work orders (WO-0070 to WO-0083, 0086 to 0091)",R8,Release 1 (MVP),Delivery agents,Todo
+X-OI5,Decision OI-5: may H&M-trained models be used in the pilot and published?,R4,Release 1 (MVP),Product owner,Todo
+X-G9,"Style review G9: 50 suggestions from 5 wardrobes, about 80% acceptable",R3,Release 1 (MVP),Style specialist,Todo
+X-LOI9,100-photo team evaluation of the garment guess (LOI-9),R5b,Release 1 (MVP),Delivery agents,Todo
+X-O1,"Decide real catalogue sources and whether page collection is acceptable (O1, O2)",R6c,Release 1 (MVP),Product owner,Todo
+X-O3,Choose the exchange-rate provider and give fx_role a login (O3),R6a,Release 1 (MVP),Product owner,Todo
+X-O4,Review OCR engine and model licences (PaddleOCR) against GPL-3.0 (O4),R6d,Release 1 (MVP),Solution architect,Todo
+X-O6,Create the first admin account and collect.yml secret (O6),R6c,Release 1 (MVP),Product owner,Todo
+X-PWD,Decide the password-change-with-stolen-session residual risk before hosting (MAJOR-1),R2c,Release 1 (MVP),Solution architect,Todo
+X-DOCS,"Review doc-sync updates to HLD/LLD (WebP vs JPEG, polling vs Realtime, Python 3.13, HMAC vs bearer token, GTIN length, export format)",R6a,Release 1 (MVP),Solution architect,Todo

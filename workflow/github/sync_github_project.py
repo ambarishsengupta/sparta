@@ -32,7 +32,11 @@ def main():
         proj = next(p for p in json.loads(gh('project', 'list', '--owner', OWNER, '--format', 'json'))['projects'] if p['title'] == 'Sparta')
         num, pid = str(proj['number']), proj['id']
         fields = {f['name']: f for f in json.loads(gh('project', 'field-list', num, '--owner', OWNER, '--format', 'json'))['fields']}
-        opt = lambda f, v: next(o['id'] for o in fields[f]['options'] if o['name'] == v)
+        def opt(f, v):  # the board option for a value; a sub-release slice with no option of its own (R7a) falls back to its slice (R7)
+            names = {o['name']: o['id'] for o in fields[f]['options']}
+            if v in names: return names[v]
+            if f == 'Slice' and v[:-1] in names: return names[v[:-1]]
+            sys.exit(f'no {f} option {v!r}')
         issues = {i['title']: i for i in json.loads(gh('issue', 'list', '--repo', REPO, '--state', 'all', '--limit', '500', '--json', 'title,number,url,state'))}
         items = {i['content'].get('url'): i['id'] for i in json.loads(gh('project', 'item-list', num, '--owner', OWNER, '--limit', '500', '--format', 'json'))['items'] if i.get('content')}
     for wid, status in sets.items():

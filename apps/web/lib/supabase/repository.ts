@@ -103,6 +103,11 @@ export class SupabaseRepository implements WardrobeRepository {
         const last = rows[CATALOGUE_PAGE - 1];
         return { rows: rows.slice(0, CATALOGUE_PAGE).flatMap((r) => catalogueFromRow(r) ?? []), next: rows.length > CATALOGUE_PAGE && last ? { name: String(last.name), id: String(last.id) } : null };
       }),
+      byGtin: (gtin) => guard(false, async () => {
+        if (!/^[0-9]{14}$/.test(gtin)) return [];
+        const rows = (take((await table().select(CATALOGUE_SELECT).eq('status', 'active').eq('gtin', gtin).order('name', { ascending: true }).order('id', { ascending: true }).limit(20)) as Answer, false) as Row[] | null) ?? [];
+        return rows.flatMap((r) => catalogueFromRow(r) ?? []);
+      }),
       brands: () => guard(false, async () => {
         const rows = (take((await table().select('brand').eq('status', 'active').not('brand', 'is', null).order('brand').limit(1000)) as Answer, false) as Row[] | null) ?? [];
         return [...new Set(rows.flatMap((r) => (typeof r.brand === 'string' && r.brand !== '' ? r.brand : [])))];

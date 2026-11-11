@@ -7,6 +7,8 @@ export const ALLOWED: Record<string, string[]> = {
   'lib/engine-config.ts': ['fetch(PRIOR_URL, init())', 'fetch(UNLOCK_URL, init())'],
   // WO-0071: the one same-origin POST of the Leave flow (a fixed path; the default sender of purgeMyStorage, replaced by a fake in tests)
   'components/account/account-actions.ts': ['fetch(p, i)'],
+  // WO-0088: the same-origin calls of the admin catalogue page to its three fixed routes (the default sender of adminCall, replaced by a fake in tests)
+  'components/admin/admin-actions.ts': ['fetch(p, i)'],
   // the placeholder host that is only ever parsed against, never contacted (one literal in each file)
   'lib/auth-form.ts': ['http://sparta.invalid'],
   'lib/supabase/gate.ts': ['http://sparta.invalid'],

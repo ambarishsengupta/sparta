@@ -4,7 +4,7 @@
 begin;
 \ir helpers.inc
 select count(*) as nt from pg_temp.app_tables \gset
-select plan(:nt * 11 + 205);   -- WO-0080: +18 = 7 per-table loops x 2 new tables + 2 per zero-argument function x 2 new functions
+select plan(:nt * 11 + 206);   -- WO-0080: +18 = 7 per-table loops x 2 new tables + 2 per zero-argument function x 2 new functions
 
 select pg_temp.mk_user(pg_temp.ua());
 select pg_temp.mk_user(pg_temp.ub());
@@ -131,6 +131,7 @@ create temp table fn0 as select p.oid::regprocedure::text as sig, n.nspname::tex
   where n.nspname in ('app', 'ops', 'catalog') and p.pronargs = 0 and p.prorettype <> 'trigger'::regtype and p.proname <> 'delete_my_account';
 select is((select array_agg(sch || '.' || name order by sch, name) from fn0), array['app.claim_job', 'app.current_role', 'app.export_my_data', 'app.has_consent', 'app.is_recent_sign_in', 'app.latest_fx_rates', 'app.purge_receipt_jobs', 'app.reap_stuck_jobs', 'app.recent_job_count', 'app.storage_used', 'app.supported_countries'],
   'the functions without arguments are the eleven known ones (a new one must be added to this check on purpose)');
+select is_empty($$ select sig from fn0 where has_function_privilege('service_role', sig::regprocedure, 'execute') $$, 'the secret-key role can execute none of the argument-free functions (its one function, the WO-0088 audit writer, takes an explicit admin id and checks it)');
 select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select (' || sig || ')::text'), pg_temp.val_claims(pg_temp.ua(), 'authenticated', (select extra from spoof), 'select (' || sig || ')::text'),
   sig || ' answers the same for A with and without claims that name B') from fn0 order by sig;
 select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.current_role()'), 'consumer', 'and the check is not vacuous: A is a consumer');

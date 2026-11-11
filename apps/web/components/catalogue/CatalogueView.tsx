@@ -7,9 +7,12 @@ import type { CatalogueCursor, CatalogueFilter, CatalogueItem } from '../../lib/
 import { formatPrice } from '../../lib/money';
 import { dataBackend } from '../../lib/supabase/config';
 import { messageOf } from '../../lib/supabase/errors';
+import { addOwnWithBarcode, noMatch, severalMatches } from '../../lib/barcode-lookup';
+import type { BarcodeResult } from '../../lib/barcode-lookup';
 import { ItemForm } from '../wardrobe/ItemForm';
 import { CategoryIllustration } from '../ui/illustrations';
 import { useRepository } from '../use-repository';
+import { BarcodeLookup } from './BarcodeLookup';
 import { SourceLink } from './SourceLink';
 
 export function CatalogueTile({ item, onChoose }: { item: CatalogueItem; onChoose: () => void }) {
@@ -38,6 +41,8 @@ export function CatalogueView() {
   const [brands, setBrands] = useState<string[]>([]);
   const [chosen, setChosen] = useState<CatalogueItem | null>(null);
   const [error, setError] = useState('');
+  const [barcode, setBarcode] = useState<Exclude<BarcodeResult, { kind: 'invalid' | 'one' }> | null>(null); // a lookup that found none or several
+  const [chosenCode, setChosenCode] = useState<string | undefined>(); // the padded code a single match was found with
   const run = useRef(0); // only the newest request may change the screen
   const load = useCallback(async (after: CatalogueCursor | null) => {
     if (!repo) return;
@@ -53,7 +58,7 @@ export function CatalogueView() {
   useEffect(() => { void load(null); }, [load]);
   useEffect(() => { if (repo) void repo.catalogue.brands().then(setBrands, () => setBrands([])); }, [repo]);
 
-  if (chosen) return <ItemForm catalogueStart={{ item: chosen, onCancel: () => setChosen(null) }} />;
+  if (chosen) return <ItemForm catalogueStart={{ item: chosen, onCancel: () => setChosen(null) }} barcode={chosenCode} />;
   const pick = (patch: Partial<CatalogueFilter>) => { const n = { ...draft, ...patch }; setDraft(n); setApplied(n); };
   const filtered = JSON.stringify(applied) !== JSON.stringify(NO_CATALOGUE_FILTER);
   return (
@@ -63,6 +68,21 @@ export function CatalogueView() {
         <Link href="/items/new" className="button secondary">Add my own</Link>
       </div>
       {dataBackend() === 'local' && <p className="muted" data-demo="catalogue">Demo catalogue: invented items and brands for trying the app. None of it is a real product.</p>}
+      {repo && (
+        <BarcodeLookup catalogue={repo.catalogue} onResult={(r) => {
+          if (r.kind === 'one') { setBarcode(null); setChosenCode(r.gtin); setChosen(r.item); } else { setChosenCode(undefined); setBarcode(r); }
+        }} />
+      )}
+      {barcode && (
+        <div role="status">
+          <p>{barcode.kind === 'none' ? noMatch(barcode.gtin) : severalMatches(barcode.items.length, barcode.gtin)}</p>
+          <div className="row">
+            {barcode.kind === 'many' && <ul className="list tiles">{barcode.items.map((i) => <CatalogueTile key={i.id} item={i} onChoose={() => { setChosenCode(barcode.gtin); setChosen(i); }} />)}</ul>}
+            <Link href={addOwnWithBarcode(barcode.gtin)} className="button secondary">Add my own with this barcode</Link>
+            <button type="button" onClick={() => setBarcode(null)}>Back to the catalogue</button>
+          </div>
+        </div>
+      )}
       <form className="filters six" role="search" aria-label="Search the catalogue" onSubmit={(e) => { e.preventDefault(); setApplied(draft); }}>
         <label>Search by name or brand
           <input type="text" value={draft.q} maxLength={80} onChange={(e) => setDraft({ ...draft, q: e.target.value })} />

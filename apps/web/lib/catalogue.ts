@@ -24,6 +24,8 @@ export interface CatalogueCollection {
   page(filter: CatalogueFilter, after?: CatalogueCursor | null): Promise<CataloguePage>;
   /** The brands in the active catalogue, sorted, for the brand filter. */
   brands(): Promise<string[]>;
+  /** Barcode lookup (FR-26): the active items whose GTIN is this padded 14-digit code, name then id, at most 20. The code is the only thing sent. */
+  byGtin(gtin: string): Promise<CatalogueItem[]>;
 }
 
 export const STYLES: readonly string[] = [...FITS.map((f) => `fit:${f}`), ...PATTERNS.map((p) => `pattern:${p}`), ...OCCASIONS.map((o) => `occasion:${o}`)];

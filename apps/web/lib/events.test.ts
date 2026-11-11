@@ -112,7 +112,7 @@ describe('item_added events (WO-0022 item 4)', () => {
   it('the form and the demo loader both create items through the logging helper', () => {
     const form = readFileSync(new URL('../components/wardrobe/ItemForm.tsx', import.meta.url), 'utf8');
     const demo = readFileSync(new URL('./demo.ts', import.meta.url), 'utf8');
-    expect(form).toContain("createItemLogged(repo!, new EventLog(), result.input, 'manual')");
+    expect(form).toContain("createItemLogged(repo!, new EventLog(), { ...result.input, barcode }, 'manual')");   // WO-0088: a looked-up barcode travels with the new item
     expect(demo).toContain("createItemLogged(repo, log, input, 'demo')");
     expect(demo).not.toMatch(/items\.create\(/);
     expect(form).not.toMatch(/items\.create\(/);

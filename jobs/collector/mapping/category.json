@@ -1,0 +1,371 @@
+{
+ "comment": "Rules are tried in order (specific before general, clothing before footwear before accessories); the first rule with a keyword as a whole word or phrase in the product name, then in the category hint, wins.",
+ "rules": [
+  {
+   "category": "Activewear",
+   "sub_type": "Sports T-shirt",
+   "words": [
+    "sports t-shirt",
+    "sport t-shirt",
+    "running t-shirt",
+    "training t-shirt",
+    "gym t-shirt",
+    "performance tee",
+    "sports tee"
+   ]
+  },
+  {
+   "category": "Activewear",
+   "sub_type": "Track pants",
+   "words": [
+    "track pants",
+    "track pant",
+    "track trousers",
+    "training pants",
+    "running tights"
+   ]
+  },
+  {
+   "category": "Activewear",
+   "sub_type": "Sports shorts",
+   "words": [
+    "sports shorts",
+    "running shorts",
+    "training shorts",
+    "gym shorts"
+   ]
+  },
+  {
+   "category": "Activewear",
+   "sub_type": "Track jacket",
+   "words": [
+    "track jacket",
+    "training jacket",
+    "running jacket",
+    "windcheater"
+   ]
+  },
+  {
+   "category": "Ethnic wear",
+   "sub_type": "Nehru jacket",
+   "words": [
+    "nehru jacket",
+    "bandhgala",
+    "modi jacket"
+   ]
+  },
+  {
+   "category": "Ethnic wear",
+   "sub_type": "Kurta",
+   "words": [
+    "kurta",
+    "kurti"
+   ]
+  },
+  {
+   "category": "Ethnic wear",
+   "sub_type": "Sherwani",
+   "words": [
+    "sherwani"
+   ]
+  },
+  {
+   "category": "Ethnic wear",
+   "sub_type": "Pyjama",
+   "words": [
+    "pyjama",
+    "pajama",
+    "churidar"
+   ]
+  },
+  {
+   "category": "Ethnic wear",
+   "sub_type": "Dhoti",
+   "words": [
+    "dhoti",
+    "mundu"
+   ]
+  },
+  {
+   "category": "Occasion wear",
+   "sub_type": "Tuxedo",
+   "words": [
+    "tuxedo",
+    "dinner jacket"
+   ]
+  },
+  {
+   "category": "Occasion wear",
+   "sub_type": "Waistcoat",
+   "words": [
+    "waistcoat"
+   ]
+  },
+  {
+   "category": "Occasion wear",
+   "sub_type": "Suit",
+   "words": [
+    "suit",
+    "two-piece",
+    "three-piece"
+   ]
+  },
+  {
+   "category": "Underwear and socks",
+   "sub_type": "Briefs",
+   "words": [
+    "briefs",
+    "brief",
+    "trunks"
+   ]
+  },
+  {
+   "category": "Underwear and socks",
+   "sub_type": "Boxers",
+   "words": [
+    "boxers",
+    "boxer shorts",
+    "boxer"
+   ]
+  },
+  {
+   "category": "Underwear and socks",
+   "sub_type": "Socks",
+   "words": [
+    "socks",
+    "sock"
+   ]
+  },
+  {
+   "category": "Underwear and socks",
+   "sub_type": "Vest",
+   "words": [
+    "vest",
+    "undershirt",
+    "singlet"
+   ]
+  },
+  {
+   "category": "Outerwear",
+   "sub_type": "Blazer",
+   "words": [
+    "blazer",
+    "sport coat"
+   ]
+  },
+  {
+   "category": "Outerwear",
+   "sub_type": "Coat",
+   "words": [
+    "coat",
+    "overcoat",
+    "trench",
+    "parka",
+    "peacoat"
+   ]
+  },
+  {
+   "category": "Outerwear",
+   "sub_type": "Jacket",
+   "words": [
+    "jacket",
+    "bomber",
+    "windbreaker",
+    "gilet",
+    "puffer"
+   ]
+  },
+  {
+   "category": "Tops",
+   "sub_type": "Hoodie",
+   "words": [
+    "hoodie",
+    "hooded sweatshirt",
+    "sweatshirt"
+   ]
+  },
+  {
+   "category": "Tops",
+   "sub_type": "Cardigan",
+   "words": [
+    "cardigan"
+   ]
+  },
+  {
+   "category": "Tops",
+   "sub_type": "Sweater",
+   "words": [
+    "sweater",
+    "jumper",
+    "pullover",
+    "knitwear"
+   ]
+  },
+  {
+   "category": "Tops",
+   "sub_type": "Polo",
+   "words": [
+    "polo",
+    "polo shirt"
+   ]
+  },
+  {
+   "category": "Tops",
+   "sub_type": "T-shirt",
+   "words": [
+    "t-shirt",
+    "tshirt",
+    "tee",
+    "t shirt"
+   ]
+  },
+  {
+   "category": "Tops",
+   "sub_type": "Shirt",
+   "words": [
+    "shirt",
+    "button-down"
+   ]
+  },
+  {
+   "category": "Bottoms",
+   "sub_type": "Jeans",
+   "words": [
+    "jeans",
+    "denims"
+   ]
+  },
+  {
+   "category": "Bottoms",
+   "sub_type": "Chinos",
+   "words": [
+    "chinos",
+    "chino"
+   ]
+  },
+  {
+   "category": "Bottoms",
+   "sub_type": "Joggers",
+   "words": [
+    "joggers",
+    "jogger",
+    "sweatpants"
+   ]
+  },
+  {
+   "category": "Bottoms",
+   "sub_type": "Shorts",
+   "words": [
+    "shorts",
+    "bermuda"
+   ]
+  },
+  {
+   "category": "Bottoms",
+   "sub_type": "Trousers",
+   "words": [
+    "trousers",
+    "trouser",
+    "pants",
+    "slacks",
+    "cargo"
+   ]
+  },
+  {
+   "category": "Footwear",
+   "sub_type": "Sneakers",
+   "words": [
+    "sneakers",
+    "sneaker",
+    "trainers",
+    "running shoes"
+   ]
+  },
+  {
+   "category": "Footwear",
+   "sub_type": "Formal shoes",
+   "words": [
+    "formal shoes",
+    "oxford shoes",
+    "derby shoes",
+    "loafers",
+    "loafer",
+    "brogues",
+    "dress shoes"
+   ]
+  },
+  {
+   "category": "Footwear",
+   "sub_type": "Boots",
+   "words": [
+    "boots",
+    "boot",
+    "chelsea boots"
+   ]
+  },
+  {
+   "category": "Footwear",
+   "sub_type": "Sandals",
+   "words": [
+    "sandals",
+    "sandal",
+    "flip flops",
+    "slides"
+   ]
+  },
+  {
+   "category": "Accessories",
+   "sub_type": "Watch",
+   "words": [
+    "watch",
+    "wristwatch"
+   ]
+  },
+  {
+   "category": "Accessories",
+   "sub_type": "Belt",
+   "words": [
+    "belt"
+   ]
+  },
+  {
+   "category": "Accessories",
+   "sub_type": "Tie",
+   "words": [
+    "tie",
+    "necktie",
+    "bow tie"
+   ]
+  },
+  {
+   "category": "Accessories",
+   "sub_type": "Cap",
+   "words": [
+    "cap",
+    "beanie",
+    "hat"
+   ]
+  },
+  {
+   "category": "Accessories",
+   "sub_type": "Scarf",
+   "words": [
+    "scarf",
+    "muffler",
+    "stole"
+   ]
+  },
+  {
+   "category": "Accessories",
+   "sub_type": "Bag",
+   "words": [
+    "bag",
+    "backpack",
+    "wallet",
+    "satchel",
+    "duffel",
+    "tote"
+   ]
+  }
+ ]
+}

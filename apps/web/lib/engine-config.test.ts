@@ -139,9 +139,12 @@ describe('the only network calls, and the H&M files stay out of git (G4)', () =>
   });
   it('no other source file names the two files or calls fetch', () => {
     const LEAVE = 'components/account/account-actions.ts';   // WO-0071: its one same-origin POST, `fetch(p, i)` (exact text, once), is checked below and by the strict scan
-    for (const [file, text] of Object.entries(sources)) if (!file.endsWith('engine-config.ts')) expect(file.endsWith(LEAVE) ? text.replace('(p, i) => fetch(p, i)', '') : text, file).not.toMatch(/pairing-prior|unlock-candidates|\bfetch\(/);
-    const leave = Object.entries(sources).find(([f]) => f.endsWith(LEAVE))?.[1];
-    if (leave) expect(leave.match(/\bfetch\(/g)).toEqual(['fetch(']);
+    const ADMIN = 'components/admin/admin-actions.ts';       // WO-0088: the admin page's one sender, the same exact text, once
+    for (const [file, text] of Object.entries(sources)) if (!file.endsWith('engine-config.ts')) expect(file.endsWith(LEAVE) || file.endsWith(ADMIN) ? text.replace('(p, i) => fetch(p, i)', '') : text, file).not.toMatch(/pairing-prior|unlock-candidates|\bfetch\(/);
+    for (const one of [LEAVE, ADMIN]) {
+      const text = Object.entries(sources).find(([f]) => f.endsWith(one))?.[1];
+      if (text) expect(text.match(/\bfetch\(/g)).toEqual(['fetch(']);
+    }
   });
   const root = new URL('../../../', import.meta.url).pathname;
   const git = (...args: string[]) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });

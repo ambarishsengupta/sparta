@@ -2,7 +2,7 @@
 -- Everything is derived from the catalog, so a new table or function that skips RLS, a grant review or search_path fails here.
 begin;
 \ir helpers.inc
-select count(*) + 63 as n from pg_temp.app_tables \gset
+select count(*) + 64 as n from pg_temp.app_tables \gset
 select plan(:n);
 
 -- ---- the tables exist (the consumer tables of R2 and app.jobs of R5b; receipts and analytics_events belong to later releases) ----
@@ -87,6 +87,8 @@ select is((select array_agg(name order by name) from fn where has_function_privi
   array['app.accept_documents','app.complete_onboarding','app.confirm_receipt','app.current_role','app.delete_my_account','app.export_my_data','app.has_consent','app.insert_item_from_json','app.insert_purchase_from_json','app.is_recent_sign_in','app.job_input_ok','app.latest_fx_rates','app.public_setting','app.recent_job_count','app.storage_used','app.supported_countries','app.wishlist_bought',
         'catalog.colour_family','catalog.rgb_hex','catalog.rgb_to_lab','catalog.set_colour_fields','catalog.srgb_lin','catalog.take_down_source'],
   'authenticated can execute exactly the documented functions');
+select is((select array_agg(name order by name) from fn where has_function_privilege('service_role', oid, 'execute')), array['app.write_admin_audit','catalog.colour_family','catalog.rgb_hex','catalog.rgb_to_lab','catalog.set_colour_fields','catalog.srgb_lin'],
+  'service_role can execute exactly the colour functions its catalogue writes run (WO-0083) and the audit-log writer of WO-0088 (the secret-key routes reach ops only through it)');
 select is_empty($$ select name from fn where is_trigger and name like 'app.%' and (has_function_privilege('authenticated', oid, 'execute') or has_function_privilege('anon', oid, 'execute')) $$,
   'no client role can execute an app trigger function');
 select ok(not has_function_privilege('authenticated', 'ops.is_eligible(uuid)', 'execute') and not has_function_privilege('anon', 'ops.is_eligible(uuid)', 'execute'), 'ops.is_eligible is not callable by clients');

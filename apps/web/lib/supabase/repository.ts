@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { FxRates } from '../money';
+import { CATALOGUE_PAGE, CATALOGUE_SELECT, catalogueFromRow, cleanCatalogueFilter, parseStyle } from '../catalogue';
+import type { CatalogueCollection, CatalogueCursor, CataloguePage } from '../catalogue';
 import { PAGE, totalsByCurrency } from '../purchases';
 import type { Cursor, Page, Purchase, PurchaseFilter } from '../purchases';
 import type { Collection, FeedbackSink, ItemCollection, ItemInput, OutfitInput, PriceContext, PurchaseCollection, SavedOutfit, StoredItem, WardrobeRepository, WishlistCollection, WishlistEntry, WishlistInput } from '../repository';
@@ -16,6 +18,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** The data of an answer, or the classified failure. `write` picks the wording ("your change was not saved" only for changes). */
 const take = (a: Answer, write: boolean): unknown => { if (a.error) throw classify({ status: a.status ?? 500, error: a.error }, write); return a.data; };
 const guard = async <T>(write: boolean, f: () => PromiseLike<T>): Promise<T> => { try { return await f(); } catch (e) { throw asRepositoryError(e, write); } };
+/** A value inside a PostgREST `or(...)` list: double-quoted, so commas, brackets and dots in a name cannot change the filter. */
+const quoted = (s: string): string => `"${s.replace(/[\\"]/g, '\\$&')}"`;
 const unsupported = (message: string): Promise<never> => Promise.reject(new RepositoryError('unsupported', true, message));
 
 /**
@@ -30,6 +34,7 @@ export class SupabaseRepository implements WardrobeRepository {
   wishlist: WishlistCollection;
   purchases: PurchaseCollection;
   prices: PriceContext;
+  catalogue: CatalogueCollection;
   feedback: FeedbackSink;
 
   constructor(private client: Client, private now: () => string = () => new Date().toISOString()) {
@@ -67,6 +72,7 @@ export class SupabaseRepository implements WardrobeRepository {
         return out;
       }),
     };
+    this.catalogue = this.catalogueCollection();
     this.feedback = { record: async (facts) => {
       try {
         const row = feedbackRow(facts, await this.uid());
@@ -77,6 +83,32 @@ export class SupabaseRepository implements WardrobeRepository {
   }
 
   private app() { return this.client.schema('app'); }
+
+  /** The active catalogue rows, read with the person's own session (row-level security shows consumers active rows only; `status = 'active'` is asked for as well). Name then id, 40 per page. */
+  private catalogueCollection(): CatalogueCollection {
+    const table = () => this.client.schema('catalog').from('catalog_items');
+    return {
+      page: (filter, after) => guard(false, async (): Promise<CataloguePage> => {
+        const f = cleanCatalogueFilter(filter);
+        const c: CatalogueCursor | null = after && typeof after.name === 'string' && UUID.test(after.id) ? after : null;
+        let q = table().select(CATALOGUE_SELECT).eq('status', 'active');
+        if (f.q) q = q.or(`name.ilike.${quoted(likePattern(f.q))},brand.ilike.${quoted(likePattern(f.q))}`);
+        if (f.category) q = q.eq('category', f.category);
+        if (f.brand) q = q.eq('brand', f.brand);
+        if (f.colourFamily) q = q.eq('colour_family', f.colourFamily);
+        const style = parseStyle(f.style);
+        if (style) q = style.kind === 'occasion' ? q.contains('occasions', [style.value]) : q.eq(style.kind, style.value);
+        if (c) q = q.or(`name.gt.${quoted(c.name)},and(name.eq.${quoted(c.name)},id.gt.${c.id})`);
+        const rows = (take((await q.order('name', { ascending: true }).order('id', { ascending: true }).limit(CATALOGUE_PAGE + 1)) as Answer, false) as Row[] | null) ?? [];
+        const last = rows[CATALOGUE_PAGE - 1];
+        return { rows: rows.slice(0, CATALOGUE_PAGE).flatMap((r) => catalogueFromRow(r) ?? []), next: rows.length > CATALOGUE_PAGE && last ? { name: String(last.name), id: String(last.id) } : null };
+      }),
+      brands: () => guard(false, async () => {
+        const rows = (take((await table().select('brand').eq('status', 'active').not('brand', 'is', null).order('brand').limit(1000)) as Answer, false) as Row[] | null) ?? [];
+        return [...new Set(rows.flatMap((r) => (typeof r.brand === 'string' && r.brand !== '' ? r.brand : [])))];
+      }),
+    };
+  }
 
   /** The purchases that match the filter (a dated row of the signed-in person; row-level security does the rest), inner-joined to their item for brand and category. */
   private purchaseQuery(filter: PurchaseFilter, select: string) {

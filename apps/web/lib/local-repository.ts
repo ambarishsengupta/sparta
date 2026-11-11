@@ -1,6 +1,10 @@
 import { categoryOfSubType, colourFamily, hexToRgb, referenceSwatch } from '@sparta/taxonomy';
+import { filterCatalogue } from './catalogue';
+import { DEMO_CATALOGUE } from './demo-catalogue';
+import type { CatalogueItem } from './catalogue';
 import { PAGE, afterCursor, matches, newestFirst, totalsByCurrency } from './purchases';
 import type { Purchase, PurchaseInput } from './purchases';
+import type { CatalogueCollection } from './catalogue';
 import type {
   ArchiveReason, BoughtInput, Collection, ItemCollection, ItemInput, OutfitInput, PriceContext, PurchaseCollection, SavedOutfit, StoredItem,
   WardrobeRepository, WishlistCollection, WishlistEntry, WishlistInput,
@@ -62,8 +66,11 @@ export class LocalRepository implements WardrobeRepository {
   purchases: PurchaseCollection;
   /** The browser-only demo has no profile and no exchange rates: prices show in their own currency only. */
   prices: PriceContext = { currency: async () => 'USD', rates: async () => ({}) };
+  /** The bundled SYNTHETIC demo catalogue (lib/demo-catalogue.ts) unless a test passes another list; an empty list gives the picker its empty state. */
+  catalogue: CatalogueCollection;
 
-  constructor(private storage: StorageLike | null = browserStorage(), private now: () => string = () => new Date().toISOString()) {
+  constructor(private storage: StorageLike | null = browserStorage(), private now: () => string = () => new Date().toISOString(), catalogue: readonly CatalogueItem[] = DEMO_CATALOGUE) {
+    this.catalogue = { page: async (f, after = null) => filterCatalogue(catalogue, f, after), brands: async () => [...new Set(catalogue.flatMap((i) => i.brand ?? []))].sort() };
     this.persistent = storage !== null;
     this.doc = read(storage);
     const base = this.collection<'items', StoredItem, ItemInput>('items', 'item');

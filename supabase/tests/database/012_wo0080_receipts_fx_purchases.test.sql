@@ -162,6 +162,10 @@ insert into app.wishlist_entries (id, user_id, name, category, sub_type, colour_
   (pg_temp.oid('wish', pg_temp.ua(), 3), pg_temp.ua(), 'Third', 'Tops', 'Shirt', 1, 1, 1, null, null, null, '{}', null),
   (pg_temp.oid('wish', pg_temp.ua(), 4), pg_temp.ua(), 'No colour', 'Tops', 'Shirt', null, null, null, null, null, null, '{}', null),
   (pg_temp.oid('wish', pg_temp.ub(), 1), pg_temp.ub(), 'B''s entry', 'Tops', 'Shirt', 1, 1, 1, null, null, null, '{}', null);
+-- WO-0083: catalog_item_id is a real key now (items and wishlist_entries point at catalog.catalog_items), so the two catalogue ids used below must exist
+insert into catalog.sources (name, site_url, robots_allowed, terms_note, checked_on) values ('WO-0080 fixture', 'https://fixture.example.test/', true, 'fixture', current_date);
+insert into catalog.catalog_items (id, source_id, sku, name, category, sub_type, colour_r, colour_g, colour_b, product_url) select v.id::uuid, (select max(id) from catalog.sources where name = 'WO-0080 fixture'), v.sku, 'Fixture ' || v.sku, 'Tops', 'Shirt', 0, 0, 128, 'https://fixture.example.test/' || v.sku
+  from (values ('dddddddd-0000-4000-8000-000000000001', 'f1'), ('dddddddd-0000-4000-8000-000000000002', 'f2')) v(id, sku);
 update app.wishlist_entries set catalog_item_id = 'dddddddd-0000-4000-8000-000000000001' where id = pg_temp.oid('wish', pg_temp.ua(), 2);
 create temp table wb0 as select pg_temp.cnt(pg_temp.ua()) as c;
 create temp table wb1 as select pg_temp.wb(pg_temp.ua(), pg_temp.oid('wish', pg_temp.ua(), 1), '{}', '{"purchase_date":"2026-10-05","store":"Mall","price":"1299.50","currency":"INR","quantity":2}') as r;

@@ -2,6 +2,10 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { EventLog, createItemLogged } from '../../lib/events';
+import { attachmentOf, checkPaid, emptyPaid, formFromCatalogue } from '../../lib/catalogue';
+import type { CatalogueItem, PaidValues } from '../../lib/catalogue';
+import type { PurchaseErrors } from '../../lib/purchase-form';
+import { logPurchase, ymd } from '../../lib/purchases';
 import { SUGGESTED_LABEL } from '../../lib/photo-flow';
 import type { PhotoAttachment, StoredItem } from '../../lib/repository';
 import { canDeleteItems } from '../../lib/supabase/config';
@@ -9,6 +13,8 @@ import { attempt, messageOf } from '../../lib/supabase/errors';
 import { FITS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, conditionBandOf } from '@sparta/taxonomy';
 import { categoryChoices, emptyForm, familyOfHex, formFromItem, subTypeChoices, updateForm, validateForm } from '../../lib/item-form';
 import type { FormErrors, ItemFormValues } from '../../lib/item-form';
+import { CatalogueDetails, CatalogueIntro } from '../catalogue/CatalogueFields';
+import { CategoryIllustration } from '../ui/illustrations';
 import { useRepository } from '../use-repository';
 
 function Choice({ label, value, options, onChange, error }: {
@@ -44,10 +50,17 @@ function Multi<T extends string>({ legend, options, value, onChange }: {
 /** From add-by-photo (WO-0073): the values the photo filled in, which of them are suggestions, and the picture to store with the item. */
 export interface PhotoStart { values: ItemFormValues; garmentSuggested: boolean; colourSuggested: boolean; photo: PhotoAttachment }
 
-export function ItemForm({ itemId, photoStart }: { itemId?: string; photoStart?: PhotoStart }) {
+/** From the catalogue picker (WO-0085): the chosen item and where Cancel goes (back to the picker). */
+export interface CatalogueStart { item: CatalogueItem; onCancel: () => void }
+
+export function ItemForm({ itemId, photoStart, catalogueStart }: { itemId?: string; photoStart?: PhotoStart; catalogueStart?: CatalogueStart }) {
   const repo = useRepository();
   const router = useRouter();
-  const [values, setValues] = useState<ItemFormValues>(photoStart?.values ?? emptyForm());
+  const [values, setValues] = useState<ItemFormValues>(photoStart?.values ?? (catalogueStart ? formFromCatalogue(catalogueStart.item) : emptyForm()));
+  const [size, setSize] = useState('');
+  const [paid, setPaid] = useState<PaidValues>(emptyPaid(catalogueStart?.item.currency ?? 'USD'));
+  const [paidErrors, setPaidErrors] = useState<PurchaseErrors>({});
+  const [made, setMade] = useState<string | null>(null); // the item a catalogue save already made, so a retry after a failed purchase never adds it twice
   const [errors, setErrors] = useState<FormErrors>({});
   const [missing, setMissing] = useState(false);
   const [existing, setExisting] = useState<StoredItem>();
@@ -61,9 +74,17 @@ export function ItemForm({ itemId, photoStart }: { itemId?: string; photoStart?:
 
   const save = async () => {
     const result = validateForm(values);
+    const bought = catalogueStart ? checkPaid(paid, ymd(new Date())) : null;
+    setPaidErrors(bought && !bought.ok ? bought.errors : {});
     if (!result.ok) return setErrors(result.errors);
+    if (bought && !bought.ok) return setErrors({});
     const problem = await attempt(async () => {
-      if (itemId && existing) await repo!.items.update(itemId, { ...result.input, status: existing.status, archiveReason: existing.archiveReason });
+      if (catalogueStart) {
+        const log = new EventLog();
+        const id = made ?? (await createItemLogged(repo!, log, { ...result.input, catalogue: attachmentOf(catalogueStart.item, size) }, 'catalogue')).id;
+        setMade(id);
+        if (bought?.ok && bought.draft) { await repo!.purchases.create({ ...bought.draft, itemId: id }); logPurchase(log, 'catalogue'); setMade(null); }
+      } else if (itemId && existing) await repo!.items.update(itemId, { ...result.input, status: existing.status, archiveReason: existing.archiveReason });
       else if (!itemId) await (photoStart ? createItemLogged(repo!, new EventLog(), { ...result.input, photo: photoStart.photo }, 'photo') : createItemLogged(repo!, new EventLog(), result.input, 'manual'));
     });
     if (problem) return setFailure(problem); // stay on the form: nothing typed is lost
@@ -86,6 +107,8 @@ export function ItemForm({ itemId, photoStart }: { itemId?: string; photoStart?:
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }} noValidate>
       <h1>{itemId ? 'Edit item' : 'Add item'}</h1>
+      {existing && <div className="art"><div className="swatch"><CategoryIllustration category={existing.category} hex={existing.hex} label={`${existing.subType} illustration`} /></div></div>}
+      {catalogueStart && <CatalogueIntro item={catalogueStart.item} />}
       {failure && <p role="alert" className="error">{failure}</p>}
       {garmentLabel && <p className="muted" data-suggestion="garment">{SUGGESTED_LABEL}: category and sub-type. Change them if they are not right.</p>}
       <Choice label="Category" value={values.category} options={categoryChoices()} error={errors.category}
@@ -119,9 +142,10 @@ export function ItemForm({ itemId, photoStart }: { itemId?: string; photoStart?:
       )}
       <label className="check"><input type="checkbox" checked={values.favourite} onChange={(e) => change({ favourite: e.target.checked })} />Favourite</label>
       <label className="check"><input type="checkbox" checked={values.neverWorn} onChange={(e) => change({ neverWorn: e.target.checked })} />Never worn</label>
+      {catalogueStart && <CatalogueDetails item={catalogueStart.item} size={size} onSize={setSize} paid={paid} onPaid={setPaid} errors={paidErrors} />}
       <div className="row">
         <button type="submit" className="primary" disabled={!repo}>Save item</button>
-        <button type="button" onClick={() => router.push('/')}>Cancel</button>
+        <button type="button" onClick={() => (catalogueStart ? catalogueStart.onCancel() : router.push('/'))}>Cancel</button>
         {itemId && canDeleteItems() && <button type="button" className="danger" onClick={() => void remove()}>Delete item</button>}
       </div>
     </form>

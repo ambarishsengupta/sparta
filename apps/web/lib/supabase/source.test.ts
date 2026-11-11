@@ -112,7 +112,7 @@ describe('every redirect sink takes a fixed path or a checked one', () => {
       "components/account/LeaveForm.tsx: location.assign('/goodbye')",
       "components/auth/AuthForm.tsx: location.assign(to)",
       "components/consent/AcceptTermsForm.tsx: location.assign('/')",
-      "components/consent/OnboardingForm.tsx: location.assign('/')",
+      "components/consent/OnboardingForm.tsx: location.assign(startPage(start.current)", // WO-0085: one of three fixed pages (lib/onboarding.ts startPage, whose table is checked in lib/catalogue.test.ts)
       "components/consent/PilotNoticeForm.tsx: location.assign('/')",
     ].sort());
   });

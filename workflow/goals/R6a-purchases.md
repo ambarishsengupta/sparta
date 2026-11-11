@@ -3,6 +3,6 @@ Predicate: `npx vitest run apps/web/lib/money.test.ts apps/web/lib/purchases.tes
 Completed: 2026-11-07
 Triggered by: release R6a (purchases, wishlist bought, plan purchases)
 Status: holding
-Last pass: 2026-11-07
+Last pass: 2026-11-11
 On violation: do not ship; check prices stay finite and non-negative, totals are never summed across currencies, and confirmed receipts stay write-once.
 Retire when: R8 or Release 1 hardening replaces it.

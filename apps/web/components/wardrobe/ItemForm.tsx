@@ -53,7 +53,8 @@ export interface PhotoStart { values: ItemFormValues; garmentSuggested: boolean;
 /** From the catalogue picker (WO-0085): the chosen item and where Cancel goes (back to the picker). */
 export interface CatalogueStart { item: CatalogueItem; onCancel: () => void }
 
-export function ItemForm({ itemId, photoStart, catalogueStart }: { itemId?: string; photoStart?: PhotoStart; catalogueStart?: CatalogueStart }) {
+/** `barcode`: a padded GTIN (14 digits) the person looked up; it is saved with the item (FR-26). */
+export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { itemId?: string; photoStart?: PhotoStart; catalogueStart?: CatalogueStart; barcode?: string }) {
   const repo = useRepository();
   const router = useRouter();
   const [values, setValues] = useState<ItemFormValues>(photoStart?.values ?? (catalogueStart ? formFromCatalogue(catalogueStart.item) : emptyForm()));
@@ -81,11 +82,11 @@ export function ItemForm({ itemId, photoStart, catalogueStart }: { itemId?: stri
     const problem = await attempt(async () => {
       if (catalogueStart) {
         const log = new EventLog();
-        const id = made ?? (await createItemLogged(repo!, log, { ...result.input, catalogue: attachmentOf(catalogueStart.item, size) }, 'catalogue')).id;
+        const id = made ?? (await createItemLogged(repo!, log, { ...result.input, catalogue: attachmentOf(catalogueStart.item, size), barcode }, 'catalogue')).id;
         setMade(id);
         if (bought?.ok && bought.draft) { await repo!.purchases.create({ ...bought.draft, itemId: id }); logPurchase(log, 'catalogue'); setMade(null); }
       } else if (itemId && existing) await repo!.items.update(itemId, { ...result.input, status: existing.status, archiveReason: existing.archiveReason });
-      else if (!itemId) await (photoStart ? createItemLogged(repo!, new EventLog(), { ...result.input, photo: photoStart.photo }, 'photo') : createItemLogged(repo!, new EventLog(), result.input, 'manual'));
+      else if (!itemId) await (photoStart ? createItemLogged(repo!, new EventLog(), { ...result.input, photo: photoStart.photo }, 'photo') : createItemLogged(repo!, new EventLog(), { ...result.input, barcode }, 'manual'));
     });
     if (problem) return setFailure(problem); // stay on the form: nothing typed is lost
     router.push('/');
@@ -107,6 +108,7 @@ export function ItemForm({ itemId, photoStart, catalogueStart }: { itemId?: stri
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }} noValidate>
       <h1>{itemId ? 'Edit item' : 'Add item'}</h1>
+      {barcode && !itemId && <p className="muted" data-barcode={barcode}>Barcode {barcode} will be saved with this item.</p>}
       {existing && <div className="art"><div className="swatch"><CategoryIllustration category={existing.category} hex={existing.hex} label={`${existing.subType} illustration`} /></div></div>}
       {catalogueStart && <CatalogueIntro item={catalogueStart.item} />}
       {failure && <p role="alert" className="error">{failure}</p>}

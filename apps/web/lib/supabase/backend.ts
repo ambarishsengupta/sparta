@@ -25,7 +25,7 @@ export function blockedRepository(kind: FailureKind): WardrobeRepository {
   const fail = () => Promise.reject(new RepositoryError(kind, false));
   const collection = { list: fail, get: fail, create: fail, update: fail, remove: fail };
   const purchases = { page: fail, totals: fail, forItem: fail, create: fail, update: fail, remove: fail };
-  return { items: { ...collection, archive: fail, restore: fail }, outfits: collection, wishlist: { ...collection, bought: fail }, purchases, prices: { currency: fail, rates: fail }, catalogue: { page: fail, brands: fail } };
+  return { items: { ...collection, archive: fail, restore: fail }, outfits: collection, wishlist: { ...collection, bought: fail }, purchases, prices: { currency: fail, rates: fail }, catalogue: { page: fail, brands: fail, byGtin: fail } };
 }
 
 export async function selectRepository(backend: 'local' | 'supabase', makeClient: () => SupabaseClient, local: () => WardrobeRepository): Promise<WardrobeRepository> {

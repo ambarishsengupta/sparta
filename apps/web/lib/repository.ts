@@ -22,7 +22,8 @@ export interface PhotoFeatures { modelVersion: string; garmentClass: number | nu
 /** The stored picture of an item added by photo (the cut-out or the original, with its thumbnail) and, when the model ran, its features (WO-0073). */
 export interface PhotoAttachment { imagePath: string; imageThumbPath: string | null; features: PhotoFeatures | null }
 /** `catalogue`: the item was picked from the catalogue (origin `catalogue`, the link `catalog_item_id`, the brand and the size, WO-0085). */
-export type ItemInput = Omit<StoredItem, 'id' | 'createdAt' | 'updatedAt'> & { photo?: PhotoAttachment; catalogue?: CatalogueAttachment };
+/** `barcode`: the 14-digit padded GTIN a lookup was made with (FR-26), kept in `items.barcode` (WO-0088). */
+export type ItemInput = Omit<StoredItem, 'id' | 'createdAt' | 'updatedAt'> & { photo?: PhotoAttachment; catalogue?: CatalogueAttachment; barcode?: string };
 
 export interface SavedOutfit {
   id: string;

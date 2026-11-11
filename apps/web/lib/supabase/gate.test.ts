@@ -53,13 +53,32 @@ const CASES: [GateState, string, ReturnType<typeof to> | typeof allow][] = [
   ['ready', '/accept-terms', to('/')],
   ['ready', '/not-available', to('/')],
   ['ready', '/auth/sign-out', allow],
+  // 6. WO-0088: the admin page belongs to the admin state; the admin routes answer 401 or 403 themselves, so no state redirects them
+  ['admin', '/', to('/admin/catalog')],
+  ['admin', '/admin/catalog', allow],
+  ['admin', '/outfits', to('/admin/catalog')],
+  ['admin', '/sign-in', to('/admin/catalog')],
+  ['admin', '/auth/sign-out', allow],
+  ['admin', '/api/admin/sources', allow],
+  ['ready', '/admin/catalog', to('/')],
+  ['not_available', '/admin/catalog', to('/not-available')],
+  ['needs_onboarding', '/admin/catalog', to('/onboarding')],
+  ['unauthenticated', '/admin/catalog', to('/sign-in?next=%2Fadmin%2Fcatalog')],
+  ['unauthenticated', '/api/admin/sources', allow],
+  ['unauthenticated', '/api/admin/sources/3/takedown', allow],
+  ['needs_email_confirmation', '/api/admin/catalog/review', allow],
+  ['ready', '/api/admin/catalog/review', allow],
+  ['not_available', '/api/admin/sources', allow],
+  ['unauthenticated', '/api/adminx', to('/sign-in?next=%2Fapi%2Fadminx')],
+  ['unauthenticated', '/api/admin/../account/export', to('/sign-in?next=%2Fapi%2Faccount%2Fexport')],   // dot segments are resolved first: the admin prefix is not a way round the gate
+  ['admin', '/admin/catalogx', to('/admin/catalog')],
 ];
 
 describe('decideRoute (LLD 9.1)', () => {
   it.each(CASES)('%s on %s', (state, path, expected) => { expect(decideRoute(state, path)).toEqual(expected); });
   it('has at least 20 cases and covers every state', () => {
     expect(CASES.length).toBeGreaterThanOrEqual(20);
-    expect(new Set(CASES.map((c) => c[0])).size).toBe(7);
+    expect(new Set(CASES.map((c) => c[0])).size).toBe(8);
   });
 });
 
@@ -99,6 +118,8 @@ describe('stateFromFacts: the first open step wins, in the order of LLD 9.1', ()
     ['no country yet', { country: null }, 'needs_onboarding'],
     ['country given but not eligible (off the list)', {}, 'not_available'],
     ['a vendor is held, not let through', { role: 'vendor', eligible: true }, 'not_available'],
+    ['an admin with a confirmed email is in the admin state', { role: 'admin', eligible: false, country: null }, 'admin'],
+    ['an admin with an unconfirmed email still confirms first', { role: 'admin', emailConfirmed: false }, 'needs_email_confirmation'],
     ['no profile row is held', { role: 'none' }, 'not_available'],
   ])('%s', (_name, change, expected) => { expect(stateFromFacts({ ...FULL, ...change })).toBe(expected); });
 });
@@ -128,7 +149,7 @@ describe('needsNoSession: what the proxy decides before it calls the session upd
     ['GET', '/sign-in', false], ['GET', '/accept-terms', false], ['GET', '/privacy/../outfits', false], ['GET', '/privacy%2f..%2foutfits', false], ['GET', '/privacy-x', false], ['GET', '//privacy', false]] as const)(
     '%s %s: %s', (method, path, expected) => { expect(needsNoSession(method, path)).toBe(expected); });
   it('everything it lets through is also allowed by decideRoute in every state', () => {
-    for (const state of ['unauthenticated', 'needs_email_confirmation', 'needs_documents', 'needs_pilot_notice', 'needs_onboarding', 'not_available', 'ready'] as const)
+    for (const state of ['unauthenticated', 'needs_email_confirmation', 'needs_documents', 'needs_pilot_notice', 'needs_onboarding', 'not_available', 'admin', 'ready'] as const)
       for (const path of ['/privacy', '/terms', '/auth/sign-out']) expect(decideRoute(state, path)).toEqual({ action: 'allow' });
   });
 });

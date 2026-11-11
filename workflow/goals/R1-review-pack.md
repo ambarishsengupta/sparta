@@ -3,6 +3,6 @@ Predicate: `grep -E "^review pack:|suggestions from [5-9] wardrobes" workflow/ev
 Completed: 2026-11-04
 Triggered by: release R1 (CC8)
 Status: holding
-Last pass: 2026-11-11
+Last pass: 2026-11-12
 On violation: regenerate with `npm run review-pack -w @sparta/rules` and check the header count; a wardrobe producing no suggestions is a defect.
 Retire when: the human style specialist's review pack replaces it.

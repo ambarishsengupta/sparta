@@ -36,6 +36,7 @@ export function itemPatch(patch: Partial<ItemInput>): Row {
 export const itemRow = (input: ItemInput, userId: string, now: string): Row => ({
   ...itemPatch(input), user_id: userId, origin: input.photo ? 'photo' : input.catalogue ? 'catalogue' : 'manual', archived_at: input.status === 'archived' ? now : null,
   ...(input.photo ? { image_path: input.photo.imagePath, image_thumb_path: input.photo.imageThumbPath } : {}),
+  ...(input.barcode !== undefined && /^[0-9]{14}$/.test(input.barcode) ? { barcode: input.barcode } : {}),
   ...(input.catalogue ? { catalog_item_id: input.catalogue.id, brand: input.catalogue.brand, size_value: input.catalogue.sizeValue } : {}),
 });
 

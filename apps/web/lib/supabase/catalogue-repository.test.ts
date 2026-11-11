@@ -29,6 +29,30 @@ const dbRow = (n: number, over: Record<string, unknown> = {}) => ({
   seasons: [], occasions: [], sizes_available: null, price: '10.00', currency: 'INR', product_url: 'https://example.test/p', ...over,
 });
 
+describe('barcode lookup request (FR-26)', () => {
+  it('asks for active rows with exactly this padded code, name then id, at most 20, and reads them like the picker does', async () => {
+    const { repo, calls } = fake({ data: [dbRow(1), dbRow(2, { category: 'Hats' })], error: null });
+    const rows = await repo.catalogue.byGtin('04006381333931');
+    const c = calls[0]!;
+    expect([c.schema, c.table]).toEqual(['catalog', 'catalog_items']);
+    expect(steps(c, 'eq')).toEqual([['status', 'active'], ['gtin', '04006381333931']]);
+    expect(steps(c, 'order')).toEqual([['name', { ascending: true }], ['id', { ascending: true }]]);
+    expect(steps(c, 'limit')).toEqual([[20]]);
+    expect(rows.map((r) => r.id)).toEqual([ID(1)]);   // the row the taxonomy cannot read is skipped
+  });
+  it('sends nothing for a value that is not 14 digits', async () => {
+    const { repo, calls } = fake({ data: [dbRow(1)], error: null });
+    for (const bad of ['', '4006381333931', 'abcdefghijklmn', '0400638133393x', '040063813339311', "04006381333931' or '1'='1"]) expect(await repo.catalogue.byGtin(bad)).toEqual([]);
+    expect(calls).toEqual([]);
+  });
+  it('a failed read throws (never an empty list) and the blocked and local repositories answer without a barcode', async () => {
+    const { repo } = fake({ data: null, error: { code: '500', message: 'secret detail' } });
+    await expect(repo.catalogue.byGtin('04006381333931')).rejects.toThrow();
+    await expect(blockedRepository('session').catalogue.byGtin('04006381333931')).rejects.toThrow();
+    expect(await new LocalRepository(null, () => 'NOW').catalogue.byGtin('04006381333931')).toEqual([]);
+  });
+});
+
 describe('catalogue page request', () => {
   it('reads catalog.catalog_items for active rows only, name then id, 41 rows to see whether there is a next page', async () => {
     const { repo, calls } = fake({ data: [], error: null });

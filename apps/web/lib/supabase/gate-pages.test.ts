@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { decideRoute, type GateState } from './gate';
 
-const STATES: GateState[] = ['unauthenticated', 'needs_email_confirmation', 'needs_documents', 'needs_pilot_notice', 'needs_onboarding', 'not_available', 'ready'];
+const STATES: GateState[] = ['unauthenticated', 'needs_email_confirmation', 'needs_documents', 'needs_pilot_notice', 'needs_onboarding', 'not_available', 'admin', 'ready'];
 const PAGE_OF: Record<string, GateState> = { '/accept-terms': 'needs_documents', '/pilot-notice': 'needs_pilot_notice', '/onboarding': 'needs_onboarding', '/not-available': 'not_available' };
 const file = (rel: string) => new URL(`../../${rel}`, import.meta.url);
 

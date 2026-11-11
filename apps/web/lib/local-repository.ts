@@ -70,7 +70,7 @@ export class LocalRepository implements WardrobeRepository {
   catalogue: CatalogueCollection;
 
   constructor(private storage: StorageLike | null = browserStorage(), private now: () => string = () => new Date().toISOString(), catalogue: readonly CatalogueItem[] = DEMO_CATALOGUE) {
-    this.catalogue = { page: async (f, after = null) => filterCatalogue(catalogue, f, after), brands: async () => [...new Set(catalogue.flatMap((i) => i.brand ?? []))].sort() };
+    this.catalogue = { page: async (f, after = null) => filterCatalogue(catalogue, f, after), brands: async () => [...new Set(catalogue.flatMap((i) => i.brand ?? []))].sort(), byGtin: async () => [] /* the bundled demo items carry no barcode number */ };
     this.persistent = storage !== null;
     this.doc = read(storage);
     const base = this.collection<'items', StoredItem, ItemInput>('items', 'item');

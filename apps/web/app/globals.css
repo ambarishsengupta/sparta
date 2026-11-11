@@ -125,7 +125,9 @@ button.linklike:hover { color: var(--text); background: none; }
 .item { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; align-items: start; align-content: stretch; gap: 0; padding: 0; border: 0; }
 .list > .item:last-child { border-bottom: 0; }
 .item > .grow { display: contents; }
-.swatch { display: block; grid-row: 1; grid-column: 1; width: 100%; aspect-ratio: 1; margin-bottom: var(--s3); border: var(--hairline-w) solid var(--rule); }
+.swatch { display: block; grid-row: 1; grid-column: 1; width: 100%; aspect-ratio: 1; margin-bottom: var(--s3); background: var(--paper); border: var(--hairline-w) solid var(--rule); }
+.swatch svg { display: block; }
+.art { width: 10rem; max-width: 100%; } .art .swatch { margin: 0; }
 .item a.button.secondary { grid-row: 1; grid-column: 1; align-self: end; justify-self: start; z-index: 1; margin: var(--s2) var(--s2) calc(var(--s2) + var(--s3)); max-width: calc(100% - 16px); min-height: var(--target); padding: var(--s1) var(--s3); font-size: var(--fs-label); line-height: var(--lh-label); background: var(--paper); color: var(--black); border-color: var(--black); }
 .item a.button.secondary:hover { background: var(--black); color: var(--paper); }
 .item a.button.secondary:focus-visible { outline-color: var(--focus-box); outline-offset: -5px; }

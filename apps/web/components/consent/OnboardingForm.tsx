@@ -1,7 +1,7 @@
 'use client';
 import { OCCASIONS } from '@sparta/taxonomy';
 import { useRef, useState, type FormEvent } from 'react';
-import { countryCode, currencyFor, hemisphereFor, OTHER_COUNTRY, validateOnboarding, type OnboardingErrors, type Option } from '../../lib/onboarding';
+import { countryCode, currencyFor, hemisphereFor, OTHER_COUNTRY, startPage, validateOnboarding, type OnboardingErrors, type Option, type StartChoice } from '../../lib/onboarding';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 import { completeOnboarding } from '../../lib/supabase/consent-actions';
 
@@ -17,6 +17,7 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
   const [errors, setErrors] = useState<OnboardingErrors>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const start = useRef<StartChoice>('skip'); // which of the three buttons sent the form
   const refs = { country: useRef<HTMLSelectElement>(null), typed: useRef<HTMLInputElement>(null), hemisphere: useRef<HTMLSelectElement>(null), currency: useRef<HTMLSelectElement>(null) };
   const country = countryCode(choice, typed);
   const outside = choice === OTHER_COUNTRY;
@@ -37,7 +38,7 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
     if (first) return first.current?.focus();
     setBusy(true);
     const out = await completeOnboarding(createBrowserSupabase(), { country, hemisphere, currency, occasions });
-    if (out.ok) return window.location.assign('/'); // the proxy sends the person to the app, or to the not-available page
+    if (out.ok) return window.location.assign(startPage(start.current)); // the proxy sends the person to the page, or to the not-available page
     setBusy(false);
     setFailure(out.message);
   }
@@ -88,7 +89,15 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
       </fieldset>
       <p className="muted">You can change all of these later.</p>
       {failure && <p className="error" role="alert">{failure}</p>}
-      <button type="submit" className="primary" disabled={busy}>{busy ? 'Please wait' : 'Continue'}</button>
+      <fieldset>
+        <legend>Where do you want to start?</legend>
+        <p className="muted">Optional. Your country, hemisphere and currency above are needed whichever you pick.</p>
+        <div className="row">
+          <button type="submit" className="primary" disabled={busy} onClick={() => { start.current = 'popular'; }}>{busy ? 'Please wait' : 'Start from popular items'}</button>
+          <button type="submit" disabled={busy} onClick={() => { start.current = 'own'; }}>Add my own</button>
+          <button type="submit" disabled={busy} onClick={() => { start.current = 'skip'; }}>Skip</button>
+        </div>
+      </fieldset>
     </form>
   );
 }

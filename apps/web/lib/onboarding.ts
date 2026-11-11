@@ -30,3 +30,8 @@ export function countryOptions(codes: readonly string[], nameOf: (code: string) 
 export function currencyOptions(codes: readonly string[], nameOf: (code: string) => string | undefined): Option[] {
   return [...codes].sort().map((c) => ({ value: c, label: `${c} - ${nameOf(c) ?? c}` }));
 }
+
+/** What the person chose at the end of onboarding (FR-7): the catalogue picker, their own item, or nothing yet. Skipping is allowed; the country question is not. */
+export type StartChoice = 'popular' | 'own' | 'skip';
+const START_PAGE: Record<StartChoice, string> = { popular: '/catalogue', own: '/items/new', skip: '/' };
+export const startPage = (choice: StartChoice): string => START_PAGE[choice];

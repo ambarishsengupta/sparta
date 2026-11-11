@@ -35,10 +35,10 @@ describe('the consent screens reach the service only through the user session', 
       expect(text, rel).not.toMatch(/\b(fetch|XMLHttpRequest|sendBeacon|createClient|createServerClient|createBrowserClient)\b|process\.env/);
     }
   });
-  it('the three forms use the browser client and the consent-actions module, and move on only to the fixed path "/"', () => {
+  it('the three forms use the browser client and the consent-actions module, and move on only to the fixed path "/" (onboarding: the fixed page of the start choice, lib/onboarding.ts startPage, WO-0085)', () => {
     for (const [rel, text] of sources.slice(0, 3)) {
       expect(text, rel).toContain('createBrowserSupabase()');
-      expect(text.match(/window\.location\.assign\(([^)]*)\)/g), rel).toEqual(["window.location.assign('/')"]);
+      expect(text.match(/window\.location\.assign\(([^)]*)\)/g), rel).toEqual(rel.endsWith('OnboardingForm.tsx') ? ['window.location.assign(startPage(start.current)'] : ["window.location.assign('/')"]);
     }
   });
   it('each form sends exactly the versions its page gave it: no version value is written into any form or action', () => {

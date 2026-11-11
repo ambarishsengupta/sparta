@@ -34,8 +34,9 @@ export function itemPatch(patch: Partial<ItemInput>): Row {
 }
 
 export const itemRow = (input: ItemInput, userId: string, now: string): Row => ({
-  ...itemPatch(input), user_id: userId, origin: input.photo ? 'photo' : 'manual', archived_at: input.status === 'archived' ? now : null,
+  ...itemPatch(input), user_id: userId, origin: input.photo ? 'photo' : input.catalogue ? 'catalogue' : 'manual', archived_at: input.status === 'archived' ? now : null,
   ...(input.photo ? { image_path: input.photo.imagePath, image_thumb_path: input.photo.imageThumbPath } : {}),
+  ...(input.catalogue ? { catalog_item_id: input.catalogue.id, brand: input.catalogue.brand, size_value: input.catalogue.sizeValue } : {}),
 });
 
 const FEATURE_LENGTH: Record<string, { size: number; maxClass: number }> = { 'garment-cnn-v1': { size: 32, maxClass: 9 }, 'garment-cnn-v2': { size: 64, maxClass: 19 } };

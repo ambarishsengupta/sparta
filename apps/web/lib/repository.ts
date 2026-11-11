@@ -1,6 +1,7 @@
 import type { ColourFamily, Fit, Material, SubType } from '@sparta/taxonomy';
 import type { Item, ItemId, Slot } from '@sparta/rules';
 import type { Occasion } from '@sparta/taxonomy';
+import type { CatalogueAttachment, CatalogueCollection } from './catalogue';
 import type { FxRates } from './money';
 import type { Cursor, CurrencyTotal, Page, Purchase, PurchaseDraft, PurchaseFilter, PurchaseInput } from './purchases';
 
@@ -20,7 +21,8 @@ export interface StoredItem extends Item {
 export interface PhotoFeatures { modelVersion: string; garmentClass: number | null; p: number | null; embedding: number[] }
 /** The stored picture of an item added by photo (the cut-out or the original, with its thumbnail) and, when the model ran, its features (WO-0073). */
 export interface PhotoAttachment { imagePath: string; imageThumbPath: string | null; features: PhotoFeatures | null }
-export type ItemInput = Omit<StoredItem, 'id' | 'createdAt' | 'updatedAt'> & { photo?: PhotoAttachment };
+/** `catalogue`: the item was picked from the catalogue (origin `catalogue`, the link `catalog_item_id`, the brand and the size, WO-0085). */
+export type ItemInput = Omit<StoredItem, 'id' | 'createdAt' | 'updatedAt'> & { photo?: PhotoAttachment; catalogue?: CatalogueAttachment };
 
 export interface SavedOutfit {
   id: string;
@@ -101,6 +103,8 @@ export interface WardrobeRepository {
   wishlist: WishlistCollection;
   purchases: PurchaseCollection;
   prices: PriceContext;
+  /** The seed catalogue for the picker (FR-21); empty where there is none. */
+  catalogue: CatalogueCollection;
   /** Only the account-backed repository has one; the local repository keeps just its event log. */
   feedback?: FeedbackSink;
 }

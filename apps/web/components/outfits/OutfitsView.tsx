@@ -174,7 +174,10 @@ export function OutfitsView() {
       {view?.kind === 'missing' && (
         <div className={styles.notice} role="status">
           <p><strong>{view.message}.</strong></p>
-          <Link href="/">Go to your wardrobe to add items</Link>
+          <div className="row">
+            <Link href="/catalogue" className="button secondary">Pick from the catalogue</Link>
+            <Link href="/">Go to your wardrobe to add items</Link>
+          </div>
         </div>
       )}
       {view?.kind === 'cards' && view.cards.length === 0 && (

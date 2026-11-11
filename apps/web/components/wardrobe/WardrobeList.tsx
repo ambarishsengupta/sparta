@@ -10,6 +10,7 @@ import type { WardrobeFilter } from '../../lib/filters';
 import type { ArchiveReason, StoredItem } from '../../lib/repository';
 import { dataBackend } from '../../lib/supabase/config';
 import { attempt, messageOf } from '../../lib/supabase/errors';
+import { CategoryIllustration } from '../ui/illustrations';
 import { useRepository } from '../use-repository';
 
 const REASONS: ArchiveReason[] = ['sold', 'donated', 'discarded', 'lost'];
@@ -21,7 +22,7 @@ export function ItemCard({ item, onArchive, onRestore }: {
   const band = item.condition === null ? null : conditionBandOf(item.condition);
   return (
     <li className="card item">
-      <span className="swatch" style={{ background: item.hex }} aria-hidden="true" />
+      <div className="swatch"><CategoryIllustration category={item.category} hex={item.hex} label={`${item.subType} illustration`} /></div>
       <div className="grow">
         <Link href={`/items/${item.id}`} prefetch={false} className="title">{item.name}</Link>
         <p className="muted">
@@ -76,6 +77,7 @@ export function WardrobeList() {
         <h1>Wardrobe</h1>
         <div className="row">
           {dataBackend() === 'supabase' && <Link href="/items/new/photo" className="button secondary">Add by photo</Link>}
+          <Link href="/catalogue" className="button secondary">Add from catalogue</Link>
           <Link href="/items/new" className="button">Add item</Link>
         </div>
       </div>
@@ -98,7 +100,7 @@ export function WardrobeList() {
       </form>
       <p aria-live="polite" className="muted">{repo ? `${shown.length} of ${items.length} items` : 'Loading…'}</p>
       {error && <p role="alert" className="error">{error}</p>}
-      {repo && items.length === 0 && !error && <p>Your wardrobe is empty. Add an item, or load a demo wardrobe below.</p>}
+      {repo && items.length === 0 && !error && <p>Your wardrobe is empty. Add an item, start from the catalogue, or load a demo wardrobe below.</p>}
       <ul className="list tiles">
         {shown.map((i) => (
           <ItemCard key={i.id} item={i}

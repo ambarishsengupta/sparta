@@ -1,6 +1,6 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-11 (owner said keep working until the usage limit hits; WO-0084 resumed). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 30 minutes, another orchestrator session is active: do nothing and stop
+Updated: 2026-11-11 (WO-0084 committed 8bd7dd1, GitHub synced; WO-0085 picker maker running). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 30 minutes, another orchestrator session is active: do nothing and stop
 Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
@@ -79,3 +79,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-07 OWNER RE-CUT: Release 0 = pre-MVP stakeholder demo with all features; Release 1 = the MVP. Receipts (R6d + receipt parts of WO-0082), ALL pen testing, dedicated Opus security reviews and R8 hardening move to Release 1 (docs/MVP-AGENT-WORKFLOW.md 2a). UI to be styled off off---white.com (style only; spec in workflow/work-orders/Demo.md, WO-0093; no brand marks). Release 0 order: WO-0092 (fix loop, running) -> WO-0093 restyle -> WO-0081 -> WO-0082 (plan purchases only) -> R6b (+ flagged synthetic demo catalogue) -> R6c -> R7 -> WO-0097 demo pack + script -> Release 0 demo checkpoint. Spec QC, gate and mutation proof are NOT deferred.
 - 2026-11-07: R6a (WO-0080, 0092, 0081, 0082-slice) + WO-0093/0094 restyle complete, retro R6a, goal R6a-purchases. Merged to main. Next: R6b (WO-0083 DB first, WO-0084 illustrations, WO-0085 picker), R6c, R7, WO-0097 demo pack. Machine load is high (avg ~9): never run two gates/builds at once.
 - 2026-11-11: weekly usage hit 98%, so heavy work is paused until the reset at 16:00 UTC (21:30 IST). One-time resume task `sparta-resume-after-weekly-reset` fires 21:35 IST. GitHub project #3 'Sparta' (ambarishsengupta) exists with 65 items; keep it in step with `python3 workflow/github/sync_github_project.py WO-nnnn=Status` after every work order (added to the workflow). Prototype server (local backend, port 3640) stopped. WO-0084 partial work is uncommitted in the tree.
+- 2026-11-11: WO-0084 done (illustrations). Venv rebuilt at ~/.sparta-venv (the /tmp venv had been emptied by macOS). Next: WO-0085, then R6b retro/goal/merge, R6c, R7, WO-0097.

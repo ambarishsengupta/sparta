@@ -1,7 +1,7 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-11 (WO-0084 committed 8bd7dd1, GitHub synced; WO-0085 picker maker running). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 30 minutes, another orchestrator session is active: do nothing and stop
-Status: running
+Updated: 2026-11-11 (paused: weekly limit hit during WO-0085; no orchestrator is active, the scheduled resume task may proceed)
+Status: paused (weekly usage limit hit; resets 21:30 IST; resume task fires 21:35 IST)
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
 Integration branch: none yet (release/R0 is cut from main after the preconditions below are ticked)
@@ -80,3 +80,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-07: R6a (WO-0080, 0092, 0081, 0082-slice) + WO-0093/0094 restyle complete, retro R6a, goal R6a-purchases. Merged to main. Next: R6b (WO-0083 DB first, WO-0084 illustrations, WO-0085 picker), R6c, R7, WO-0097 demo pack. Machine load is high (avg ~9): never run two gates/builds at once.
 - 2026-11-11: weekly usage hit 98%, so heavy work is paused until the reset at 16:00 UTC (21:30 IST). One-time resume task `sparta-resume-after-weekly-reset` fires 21:35 IST. GitHub project #3 'Sparta' (ambarishsengupta) exists with 65 items; keep it in step with `python3 workflow/github/sync_github_project.py WO-nnnn=Status` after every work order (added to the workflow). Prototype server (local backend, port 3640) stopped. WO-0084 partial work is uncommitted in the tree.
 - 2026-11-11: WO-0084 done (illustrations). Venv rebuilt at ~/.sparta-venv (the /tmp venv had been emptied by macOS). Next: WO-0085, then R6b retro/goal/merge, R6c, R7, WO-0097.
+- 2026-11-11 ~21:00 IST: weekly limit hit while the WO-0085 maker (catalogue picker) was working. Its partial, uncommitted work is in the tree (apps/web: demo catalogue, repository interface, mappers, repositories). Next: finish WO-0085 with a fresh Sonnet maker that reviews the partial work, gate, commit, sync GitHub (WO-0085=Done), then R6b retro/goal/merge, R6c, R7, WO-0097.

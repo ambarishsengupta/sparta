@@ -1,6 +1,6 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-11 (paused for the weekly limit reset 16:00 UTC; resume task scheduled 21:35 IST; next: finish WO-0084 on release/R6b)
+Updated: 2026-11-11 (owner said keep working until the usage limit hits; WO-0084 resumed). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 30 minutes, another orchestrator session is active: do nothing and stop
 Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)

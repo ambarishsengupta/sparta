@@ -41,7 +41,7 @@ WO-0081,"WO-0081: purchases, prices with conversion, wishlist bought",R6a,Releas
 WO-0082,WO-0082: plan purchases (Release 0 slice; the receipt parts are a separate Release 1 item),R6a,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0083,"WO-0083: catalogue tables, take-down, audit log, collector and worker grants (database)",R6b,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0084,WO-0084: category illustrations,R6b,Release 0 (stakeholder demo),Delivery agents,Done
-WO-0085,"WO-0085: catalogue picker, popular-items onboarding choice, illustrated tiles, source link",R6b,Release 0 (stakeholder demo),Delivery agents,In Progress
+WO-0085,"WO-0085: catalogue picker, popular-items onboarding choice, illustrated tiles, source link",R6b,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0086,"WO-0086: collector fetch, robots, rate limit, extraction and mapping",R6c,Release 0 (stakeholder demo),Delivery agents,Todo
 WO-0087,WO-0087: collector storage run as collector_role,R6c,Release 0 (stakeholder demo),Delivery agents,Todo
 WO-0088,"WO-0088: catalogue admin routes and page, barcode lookup",R6c,Release 0 (stakeholder demo),Delivery agents,Todo

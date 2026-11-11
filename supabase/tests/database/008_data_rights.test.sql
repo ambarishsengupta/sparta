@@ -31,8 +31,11 @@ select is_empty($$ select t.tbl from pg_temp.app_tables t where t.tbl <> 'profil
 select is((select array_agg(conrelid::regclass::text || ':' || confdeltype::text order by conrelid::regclass::text) from pg_constraint
            where contype = 'f' and (confrelid = 'auth.users'::regclass or confrelid::regclass::text like 'app.%') and confdeltype <> 'c'),
   array['auth.scim_users:n'], 'the only non-cascading key into auth.users or app.* is auth.scim_users (SET NULL; SCIM is not used)');
-select is((select array_agg(c.relname::text order by c.relname) from pg_class c where c.relnamespace = 'ops'::regnamespace and c.relkind in ('r', 'p')),
-  array['admin_audit_log', 'daily_counts', 'fx_rates', 'invitations', 'settings', 'worker_heartbeat'], 'ops holds exactly the three tables this suite checks for personal data, the worker heartbeat (worker id, times, counts), fx_rates (currency, date, rate) and the admin audit log (admin id, action, a row id or a count, WO-0083): no participant data');
+-- WO-0098 (R7a) replaces the table list with a stricter check: it now also names ops.aggregate_runs (run times and counts only) and pins that table's columns, so no column can hold a person
+select is((select array_agg(c.relname::text order by c.relname) from pg_class c where c.relnamespace = 'ops'::regnamespace and c.relkind in ('r', 'p'))::text
+  || ' / ' || (select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'aggregate_runs')::text,
+  '{admin_audit_log,aggregate_runs,daily_counts,fx_rates,invitations,settings,worker_heartbeat} / {id,started_at,finished_at,status,error_code,users_included,items_included,rows_suppressed,duration_ms}',
+  'ops holds exactly the three tables this suite checks for personal data, the worker heartbeat (worker id, times, counts), fx_rates (currency, date, rate), the admin audit log (admin id, action, a row id or a count, WO-0083) and aggregate_runs (times, counts and a fixed error code, WO-0098): no participant data');
 select is((select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'daily_counts'),
   array['day', 'metric', 'n'], 'ops.daily_counts has a day, a metric and a number: no column can hold a person');
 select is_empty($$ select 1 from pg_constraint where contype = 'f' and conrelid::regclass::text in ('ops.settings', 'ops.invitations', 'ops.daily_counts') $$, 'no ops table points at a user');

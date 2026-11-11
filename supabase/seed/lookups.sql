@@ -132,6 +132,33 @@ insert into catalog.lk_size_system (code, label, sort, active) values
   ('Shoe IN', 'Shoe size (IN)', 6, true)
 on conflict (code) do update set label = excluded.label, sort = excluded.sort, active = excluded.active;
 
+insert into catalog.lk_size (size_system, code, label, sort, active) values
+  ('Letter', 'XS', 'XS', 1, true),
+  ('Letter', 'S', 'S', 2, true),
+  ('Letter', 'M', 'M', 3, true),
+  ('Letter', 'L', 'L', 4, true),
+  ('Letter', 'XL', 'XL', 5, true),
+  ('Letter', 'XXL', 'XXL', 6, true),
+  ('Letter', 'XXXL', 'XXXL', 7, true)
+on conflict (size_system, code) do update set label = excluded.label, sort = excluded.sort, active = excluded.active;
+
+insert into catalog.lk_price_band (code, label, sort, active) values
+  ('<25', '<25', 1, true),
+  ('25-50', '25-50', 2, true),
+  ('50-100', '50-100', 3, true),
+  ('100-200', '100-200', 4, true),
+  ('200+', '200+', 5, true),
+  ('Unknown', 'Unknown', 6, true)
+on conflict (code) do update set label = excluded.label, sort = excluded.sort, active = excluded.active;
+
+insert into catalog.lk_region (code, label, sort, active) values
+  ('South Asia', 'South Asia', 1, true)
+on conflict (code) do update set label = excluded.label, sort = excluded.sort, active = excluded.active;
+
+insert into catalog.country_region (country, region) values
+  ('IN', 'South Asia')
+on conflict (country) do update set region = excluded.region;
+
 insert into catalog.lk_condition_band (code, label, sort, active, min_score, max_score) values
   ('Brand new', 'Brand new', 1, true, 0, 9),
   ('Like new', 'Like new', 2, true, 10, 29),

@@ -11,8 +11,9 @@ select has_table('catalog', t, 'catalog.' || t || ' exists') from unnest(array['
 select is((xpath('/row/c/text()', query_to_xml(format('select count(*) as c from catalog.%I', t.name), false, true, '')))[1]::text::int, t.n,
   t.n || ' rows in ' || t.name) from (values ('lk_category', 9), ('lk_sub_type', 40), ('lk_colour_family', 18), ('lk_fit', 5), ('lk_material', 8),
   ('lk_pattern', 6), ('lk_season', 5), ('lk_occasion', 7), ('lk_size_system', 6), ('lk_condition_band', 5), ('colour_family_ref', 32)) as t(name, n);
-select is((select count(*) from catalog.lk_size) + (select count(*) from catalog.lk_brand) + (select count(*) from catalog.lk_price_band)
-  + (select count(*) from catalog.lk_region) + (select count(*) from catalog.country_region), 0::bigint, 'tables without taxonomy data are empty');
+-- WO-0098 (R7a) replaces "tables without taxonomy data are empty" with exact counts: lk_brand stays empty (the owner's list, O3), the others hold the R7 glossary values
+select is((select count(*) from catalog.lk_brand)::text || '/' || (select count(*) from catalog.lk_size) || '/' || (select count(*) from catalog.lk_price_band)
+  || '/' || (select count(*) from catalog.lk_region) || '/' || (select count(*) from catalog.country_region), '0/7/6/1/1', 'lk_brand is empty; lk_size, lk_price_band, lk_region and country_region hold exactly their taxonomy rows');
 
 -- shape and order
 select col_is_pk('catalog', 'lk_sub_type', array['category','code'], 'lk_sub_type key is (category, code)');
@@ -37,8 +38,11 @@ select is_empty($$ select c.relname from pg_class c where c.relnamespace = 'cata
 select ok(has_schema_privilege('anon', 'app', 'usage'), 'anon has usage on app');
 select ok(not has_schema_privilege('anon', 'catalog', 'usage'), 'anon has no usage on catalog');
 select ok(not has_schema_privilege('authenticated', 'ops', 'usage') and not has_schema_privilege('service_role', 'ops', 'usage'), 'no usage on ops');
-select ok(not has_schema_privilege('authenticated', 'analytics', 'usage') and not has_schema_privilege('authenticated', 'analytics_private', 'usage'),
-  'no usage on analytics or analytics_private');
+-- WO-0098 (R7a) replaces "no usage on analytics or analytics_private" with the grant matrix: usage on analytics for authenticated only, none on analytics_private for anyone
+select ok(has_schema_privilege('authenticated', 'analytics', 'usage') and not has_schema_privilege('anon', 'analytics', 'usage') and not has_schema_privilege('service_role', 'analytics', 'usage')
+  and not has_schema_privilege('anon', 'analytics_private', 'usage') and not has_schema_privilege('authenticated', 'analytics_private', 'usage') and not has_schema_privilege('service_role', 'analytics_private', 'usage')
+  and not exists (select 1 from pg_namespace n, aclexplode(n.nspacl) a where n.nspname in ('analytics', 'analytics_private') and a.grantee = 0),
+  'usage on analytics for authenticated only; no usage on analytics_private for anon, authenticated, service_role or public');
 select ok(not has_function_privilege('anon', 'catalog.colour_family(int,int,int)', 'execute')
   and has_function_privilege('authenticated', 'catalog.colour_family(int,int,int)', 'execute'), 'colour_family is executable by signed-in users only');
 

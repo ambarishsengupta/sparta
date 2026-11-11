@@ -51,5 +51,13 @@
     { "code": "Shoe UK", "label": "Shoe size (UK)" },
     { "code": "Shoe US", "label": "Shoe size (US)" },
     { "code": "Shoe IN", "label": "Shoe size (IN)" }
+  ],
+  "sizes": [
+    { "system": "Letter", "codes": ["XS", "S", "M", "L", "XL", "XXL", "XXXL"] }
+  ],
+  "priceBands": ["<25", "25-50", "50-100", "100-200", "200+", "Unknown"],
+  "regions": ["South Asia"],
+  "countryRegions": [
+    { "country": "IN", "region": "South Asia" }
   ]
 }

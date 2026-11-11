@@ -178,6 +178,7 @@ sparta/
 │   ├── FDD.md                     functional design (screens, rules, engine)
 │   ├── HLD.md                     high-level design (architecture)
 │   ├── LLD.md                     low-level design (tables, policies, jobs)
+│   ├── RELEASE-0-AUDIT-PLAN.md    audit plan for Release 0 (stakeholder demo)
 │   └── ANCP_TM_D1_v1.pdf          ANCP D1 project charter
 ├── legal/                         pilot legal and privacy pack (drafts, not legal advice)
 ├── data/
@@ -200,6 +201,7 @@ There is no application code yet. The planned code layout (web app, worker, rule
 | [Functional Design (FDD)](docs/FDD.md) | What the system does, screen by screen and rule by rule |
 | [High-Level Design (HLD)](docs/HLD.md) | Architecture, components, security, deployment |
 | [Low-Level Design (LLD)](docs/LLD.md) | Tables, policies, functions, worker, API routes, tests, operations |
+| [Release 0 audit plan](docs/RELEASE-0-AUDIT-PLAN.md) | How the work closed for Release 0 (the stakeholder demo before the MVP) will be verified, and how the remaining Release 0 work will be checked before it is built (draft) |
 | [Legal and privacy pack](legal/README.md) | Privacy policy, terms of use, vendor pilot agreement, incident plan, privacy risk assessment, data sourcing policy, privacy contact address and review log (pilot drafts, not legal advice) |
 | [ANCP D1 project charter](docs/ANCP_TM_D1_v1.pdf) | The course charter that frames this project (Group M) |
 | [Flow diagrams](flow-diagrams/) | Process flow (outfit recommendation and inventory planning) and the D2 data flow |

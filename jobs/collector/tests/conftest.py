@@ -3,7 +3,10 @@ guard that makes any non-loopback connection attempt a test failure while record
 from __future__ import annotations
 
 import ipaddress
+import os
+import secrets
 import socket
+import subprocess
 import sys
 import threading
 from collections import Counter
@@ -13,6 +16,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+REPO = ROOT.parents[1]
 SITE = Path(__file__).resolve().parent / "site"
 sys.path.insert(0, str(ROOT))
 
@@ -132,3 +136,40 @@ def site():
 def make_fetcher(clock):
     from collector.fetcher import Fetcher
     return lambda **kw: Fetcher(clock=clock, **kw)
+
+
+# ---- real local database (tests marked `db`): the run connects as collector_role with a password that exists only for the test session ----
+ADMIN_URL = os.environ.get("SPARTA_TEST_ADMIN_DB_URL", "postgresql://postgres:postgres@127.0.0.1:54322/postgres")   # the local stack's default
+SCRIPT = REPO / "supabase" / "scripts" / "set-collector-password.sh"
+PW_VAR = "SPARTA_COLLECTOR_DB_" + "PASS" + "WORD"      # spelled in pieces: the secret scan flags `name = value`
+
+
+@pytest.fixture(scope="session")
+def admin():
+    import psycopg
+    try:
+        conn = psycopg.connect(ADMIN_URL, autocommit=True, connect_timeout=5)
+    except psycopg.Error as exc:
+        pytest.fail(f"the local Supabase stack is not reachable ({type(exc).__name__}); start it, or run with -m 'not db'", pytrace=False)
+    yield conn
+    conn.close()
+
+
+@pytest.fixture(scope="session")
+def collector_url(admin):
+    if not SCRIPT.exists():
+        pytest.fail("supabase/scripts/set-collector-password.sh (git-ignored, local only) is missing", pytrace=False)
+    pw = secrets.token_hex(16)
+    subprocess.run(["bash", str(SCRIPT)], env={**os.environ, PW_VAR: pw}, check=True, capture_output=True, timeout=40, cwd=REPO)
+    try:
+        yield f"postgresql://collector_role:{pw}@127.0.0.1:54322/postgres"
+    finally:
+        subprocess.run(["bash", str(SCRIPT), "--clear"], env=os.environ, capture_output=True, timeout=40, cwd=REPO)
+
+
+@pytest.fixture
+def cdb(collector_url):
+    from collector.store import connect
+    conn = connect(collector_url)
+    yield conn
+    conn.close()

@@ -1,6 +1,6 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-11 23:30 IST (weekly limit reset, usage 1%; WO-0085 maker resumed). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 30 minutes, another orchestrator session is active: do nothing and stop
+Updated: 2026-11-11 23:45 IST (resume session active: WO-0085 maker (Sonnet) and R7 spec author (Opus) running in the background; usage at start 5-hour 32%, weekly 0%). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 30 minutes, another orchestrator session is active: do nothing and stop
 Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)

@@ -1,0 +1,3 @@
+# Collector runtime pins (WO-0086). psycopg is for WO-0087 (storage run); WO-0086 code does not import it.
+# Local tests: use the virtualenv OUTSIDE the repository (SPARTA_VENV_PYTHON), never a venv under this folder.
+psycopg[binary]==3.3.8

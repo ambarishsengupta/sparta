@@ -1,6 +1,6 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-12 01:41 IST (R6c complete and merged to main; R7 next). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 30 minutes, another orchestrator session is active: do nothing and stop
+Updated: 2026-11-12 01:42 IST (R6c merged; R7 started on release/R7: WO-0098 maker running; safety-net resume task sparta-resume-0440-ist armed). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 60 minutes, another orchestrator session is active: do nothing and stop
 Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
@@ -86,3 +86,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-12: WO-0088 done (admin routes, audit writer, barcode). Next: WO-0086 (collector fetch/robots/extraction), WO-0087 (collector storage), R6c retro/merge, then R7 (WO-0098..0109), WO-0097.
 - 2026-11-12: WO-0086 done (collector fetch/robots/extraction, loopback only, collector_tests stage). Next: WO-0087, R6c retro/goal/merge, R7 (WO-0098..0109), WO-0097.
 - 2026-11-12: R6c complete (WO-0086, 0087, 0088), retro R6c, goal R6c-collector-safety, merged to main. Next: R7 (WO-0098..0109 in workflow/work-orders/R7.md), then WO-0097 demo pack and the Release 0 checkpoint.
+- 2026-11-12 ~01:50 IST: 5-hour usage at 86%; owner said keep going until the limit hits. Armed `sparta-resume-0440-ist` (04:40 IST, with a collision check). R7 branch release/R7 (R7.md WO-0098..0109; sub-releases R7a, R7b, R7c, merge each to main).

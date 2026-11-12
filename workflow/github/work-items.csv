@@ -67,7 +67,7 @@ X-DOCS,"Review doc-sync updates to HLD/LLD (WebP vs JPEG, polling vs Realtime, P
 WO-0098,WO-0098: insight lookups and the anonymised fact table (database),R7a,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0099,"WO-0099: aggregation run, cube, suppression, rounding and audit (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0100,"WO-0100: vendor access, agreement, query log, rate limit, first vendor functions (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Todo
-WO-0101,"WO-0101: trends, gaps and condition spectrum (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0101,"WO-0101: trends, gaps and condition spectrum (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0102,"WO-0102: reports, admin read functions and the demo insights seed (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Todo
 WO-0103,"WO-0103: vendor access in the app: gating, agreement, account, shell",R7b,Release 0 (stakeholder demo),Delivery agents,Todo
 WO-0104,WO-0104: vendor chart primitives (design),R7b,Release 0 (stakeholder demo),Delivery agents,Todo

@@ -1,0 +1,29 @@
+{
+  "selected_on": "validation origins 59..91 (targets 2019-11-20 to 2020-07-21), menswear WAPE",
+  "design_sha": "ce0c8ff14330",
+  "chosen_for_D5": "M3",
+  "valid_wape_menswear": {
+    "B0": 0.58706,
+    "B1": 0.49959,
+    "M1": 0.46195,
+    "M2": 0.4963,
+    "M3": 0.45479
+  },
+  "M1": {
+    "window_weeks": 8,
+    "shrink": 1.0,
+    "ly_smooth": 3
+  },
+  "M2": {
+    "alpha": 1.0
+  },
+  "M3": {
+    "num_leaves": 31,
+    "learning_rate": 0.0313,
+    "n_estimators": 800,
+    "min_child_samples": 50,
+    "colsample_bytree": 0.8,
+    "subsample": 0.7,
+    "tweedie_variance_power": 1.1
+  }
+}

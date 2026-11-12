@@ -1,0 +1,79 @@
+{
+  "menswear_segments": 131,
+  "B0_wape_independent": 0.58706,
+  "B1_wape_independent": 0.49959,
+  "B0_wape_log": 0.58706,
+  "B1_wape_log": 0.49959,
+  "baselines_match": true,
+  "wape_from_predictions": {
+    "B0": 0.58706,
+    "B1": 0.49959,
+    "M1": 0.46195,
+    "M2": 0.4963,
+    "M3": 0.45479
+  },
+  "bootstrap_over_menswear_segments": {
+    "draws": 2000,
+    "seed": 7,
+    "M3 - B0": {
+      "diff": -0.13227,
+      "ci95": [
+        -0.18165,
+        -0.09309
+      ],
+      "relative_reduction": 0.2253,
+      "relative_ci95": [
+        0.1725,
+        0.2769
+      ]
+    },
+    "M3 - B1": {
+      "diff": -0.0448,
+      "ci95": [
+        -0.07096,
+        -0.02367
+      ],
+      "relative_reduction": 0.0897,
+      "relative_ci95": [
+        0.0511,
+        0.1317
+      ]
+    },
+    "M3 - M1": {
+      "diff": -0.00716,
+      "ci95": [
+        -0.03234,
+        0.01341
+      ],
+      "relative_reduction": 0.0155,
+      "relative_ci95": [
+        -0.0315,
+        0.0635
+      ]
+    },
+    "M3 - M2": {
+      "diff": -0.04151,
+      "ci95": [
+        -0.0661,
+        -0.02212
+      ],
+      "relative_reduction": 0.0836,
+      "relative_ci95": [
+        0.0479,
+        0.1221
+      ]
+    },
+    "M1 - B0": {
+      "diff": -0.12511,
+      "ci95": [
+        -0.17182,
+        -0.08562
+      ],
+      "relative_reduction": 0.2131,
+      "relative_ci95": [
+        0.1519,
+        0.2667
+      ]
+    }
+  }
+}

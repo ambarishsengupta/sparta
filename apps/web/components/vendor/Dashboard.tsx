@@ -5,11 +5,11 @@ import { EventLog } from '../../lib/events';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 import { INITIAL, MIX_DIMS, TREND_DIMS, loadHeader, loadMix, loadSpectrum, loadTrends, share, viewKey, type Base, type DashState, type Seg, type TrendView } from '../../lib/vendor/dashboard';
 import { filterReducer, type FilterAction } from '../../lib/vendor/filter-state';
-import { FILTER_DIMS, type BandShare, type Coverage, type FilterOption, type Insight } from '../../lib/vendor/insights';
+import type { BandShare, Coverage, FilterOption, Insight } from '../../lib/vendor/insights';
 import { BandShareBar, BarList, TrendTable } from '../ui/vendor';
 import styles from '../ui/vendor/vendor-charts.module.css';
+import { FilterBar, NAMES } from './FilterBar';
 
-const NAMES: Record<string, string> = { category: 'Category', colour_family: 'Colour family', fit: 'Fit', brand: 'Brand', size: 'Size', season: 'Season', price_band: 'Price band', region: 'Region' };
 type Slot<T> = Insight<T> | null; // null: still loading
 const when = (iso: string) => `${new Date(iso).toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 
@@ -60,16 +60,7 @@ export function DashboardView({ s, header, mix, trends, spectrum, onPick, onFilt
         : cov === null ? <p role="status">No aggregation run yet.</p>
         : cov && <p>Based on {cov.users_rounded === null ? 'a cohort too small to display' : `about ${cov.users_rounded} users`}, counts rounded to the nearest 5. Last aggregation run: {cov.last_run_at ? when(cov.last_run_at) : 'unknown'}.</p>}
       {cov && <>
-        <div className="filters" role="group" aria-label="Filter, one at a time">
-          {FILTER_DIMS.map((dim) => (
-            <label key={dim}>{NAMES[dim]}
-              <select value={s.filter?.dim === dim ? s.filter.value : ''} onChange={(e) => onFilter(e.target.value ? { type: 'set', dim, value: e.target.value } : { type: 'clear', dim })}>
-                <option value="">Any</option>
-                {options.filter((o) => o.filter_dim === dim).map((o) => <option key={o.filter_value} value={o.filter_value}>{o.filter_value}</option>)}
-              </select>
-            </label>
-          ))}
-        </div>
+        <FilterBar filter={s.filter} options={options} onFilter={onFilter} />
         <h2>Ownership mix</h2>
         {select('Segment', s.mixDim, MIX_DIMS, (v) => onPick({ mixDim: v as DashState['mixDim'] }))}
         {mix === null ? <p role="status">Loading.</p> : mix.ok && <BarList name={`Ownership mix by ${NAMES[s.mixDim]!.toLowerCase()}`} rows={mix.data.map((r) => {

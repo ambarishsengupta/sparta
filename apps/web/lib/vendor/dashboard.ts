@@ -36,7 +36,7 @@ export function pivot(base: TrendRow[], now: TrendRow[], field: 'users_rounded' 
 }
 
 /** Runs `load` for the current filter; with a filter on and no unfiltered answer yet for this view, asks once for that too. Returns the base and the current rows. */
-async function withBase<T>(base: Base, key: string, filter: Filter, load: (f: Filter) => Promise<Insight<T[]>>): Promise<Insight<{ base: T[]; now: T[] }>> {
+export async function withBase<T>(base: Base, key: string, filter: Filter, load: (f: Filter) => Promise<Insight<T[]>>): Promise<Insight<{ base: T[]; now: T[] }>> {
   const now = await load(filter);
   if (!now.ok) return now;
   if (!filter) base[key] = now.data;

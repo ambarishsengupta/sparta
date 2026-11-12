@@ -72,7 +72,7 @@ WO-0102,"WO-0102: reports, admin read functions and the demo insights seed (data
 WO-0103,"WO-0103: vendor access in the app: gating, agreement, account, shell",R7b,Release 0 (stakeholder demo),Delivery agents,Todo
 WO-0104,WO-0104: vendor chart primitives (design),R7b,Release 0 (stakeholder demo),Delivery agents,Todo
 WO-0105,WO-0105: vendor dashboard,R7b,Release 0 (stakeholder demo),Delivery agents,Todo
-WO-0106,WO-0106: vendor gaps and reports,R7b,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0106,WO-0106: vendor gaps and reports,R7b,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0107,"WO-0107: admin insights: runs, query log, report generation and review",R7b,Release 1 (MVP),Delivery agents,Todo
 WO-0108,"WO-0108: feed validation, feed tables and vendor names for consumers",R7c,Release 1 (MVP),Delivery agents,Todo
 WO-0109,"WO-0109: feed routes, feed screen and vendor items in the consumer catalogue",R7c,Release 1 (MVP),Delivery agents,Todo

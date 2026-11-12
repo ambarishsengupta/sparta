@@ -30,6 +30,8 @@ const TEXT: [string, string][] = [
   ['accent', 'bg'], ['accent', 'surface'], ['on-ink', 'ink'], ['black', 'paper'], ['disabled', 'bg'], ['muted', 'hairline'], ['text', 'hairline'], ['link', 'hairline'], ['focus', 'bg'],
   // WO-0094: the focus ring inside the white box of a tile (blue on the box, white on the black box when hovered)
   ['focus-box', 'paper'], ['paper', 'black'],
+  // WO-0112: the vendor bar fill (accent) on its hairline track (the suppressed text is muted on bg, already listed)
+  ['accent', 'hairline'],
 ];
 describe.each(Object.entries(themes))('colour contrast, %s theme', (_name, t) => {
   it.each(TEXT)('%s on %s is at least 4.5:1', (fg, bg) => {

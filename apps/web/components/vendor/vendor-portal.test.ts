@@ -91,7 +91,7 @@ describe('/vendor/account (FR-95)', () => {
     vi.stubEnv('NEXT_PUBLIC_CONTACT_EMAIL', 'privacy@example.test');
     const markup = html(await Account());
     expect(markup).toContain('ada@example.test');
-    expect(markup).toContain('The vendor name is not shown in this build.');   // catalog.vendors has no client grant yet (see the notes)
+    expect(markup).toContain('The vendor name is not available.');   // the mock answers no vendor row; with the WO-0112 grant the real page shows the name
     expect(markup).toContain('<a href="mailto:privacy@example.test">privacy@example.test</a>');
     expect(markup).not.toContain(CONTACT_NOT_SET);
     expect(a11yProblems(markup)).toEqual([]);

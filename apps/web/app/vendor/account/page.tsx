@@ -13,7 +13,7 @@ export default async function Page() {
       <h2>Signed in as</h2>
       <p>{data.user?.email ?? 'Not signed in.'}</p>
       <h2>Vendor</h2>
-      <p>{vendor?.name ?? 'The vendor name is not shown in this build.'}</p>
+      <p>{vendor?.name ?? 'The vendor name is not available.'}</p>
       <h2>Privacy contact</h2>
       {contact ? <p>Questions, requests and complaints about privacy: <a href={`mailto:${contact}`}>{contact}</a>. We answer within 7 days.</p> : <p>{CONTACT_NOT_SET}</p>}
     </>

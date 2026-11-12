@@ -117,7 +117,11 @@ select is(pg_temp.run_as('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'authenticated'
 
 -- ======== 4. no client grants on sources, vendors, members and the audit log ============================================================
 select ok(not has_any_column_privilege(r, t, 'select,insert,update,references') and not has_table_privilege(r, t, 'delete,truncate,trigger'), r || ' has no privilege on ' || t)
-  from unnest(array['anon', 'authenticated']) r, unnest(array['catalog.sources', 'catalog.vendors', 'ops.admin_audit_log']) t;
+  from unnest(array['anon', 'authenticated']) r, unnest(array['catalog.sources', 'ops.admin_audit_log']) t;
+-- WO-0112 replaces "authenticated has no privilege on catalog.vendors": anon still has none; authenticated has select on (id, name) only (own vendor by policy, 021 tests it)
+select ok(not has_any_column_privilege('anon', 'catalog.vendors', 'select,insert,update,references') and not has_table_privilege('anon', 'catalog.vendors', 'delete,truncate,trigger'), 'anon has no privilege on catalog.vendors');
+select ok(not has_any_column_privilege('authenticated', 'catalog.vendors', 'insert,update,references') and not has_table_privilege('authenticated', 'catalog.vendors', 'delete,truncate,trigger') and not has_table_privilege('authenticated', 'catalog.vendors', 'select')
+  and has_column_privilege('authenticated', 'catalog.vendors', 'id', 'select') and has_column_privilege('authenticated', 'catalog.vendors', 'name', 'select') and not has_column_privilege('authenticated', 'catalog.vendors', 'created_at', 'select'), 'authenticated may select catalog.vendors (id, name) only: no created_at, no write');
 -- WO-0100 (R7a) replaces "authenticated has no privilege on catalog.vendor_members": anon still has none; authenticated has select only (own rows by policy, 017 tests it)
 select ok(not has_any_column_privilege('anon', 'catalog.vendor_members', 'select,insert,update,references') and not has_table_privilege('anon', 'catalog.vendor_members', 'delete,truncate,trigger'), 'anon has no privilege on catalog.vendor_members');
 select ok(has_table_privilege('authenticated', 'catalog.vendor_members', 'select') and not has_any_column_privilege('authenticated', 'catalog.vendor_members', 'insert,update,references') and not has_table_privilege('authenticated', 'catalog.vendor_members', 'delete,truncate,trigger'), 'authenticated has select and nothing else on catalog.vendor_members');
@@ -126,7 +130,7 @@ select ok(has_table_privilege('service_role', t, 'select') and has_table_privile
 select ok(not has_any_column_privilege('service_role', 'ops.admin_audit_log', 'select,insert,update,references') and not has_table_privilege('service_role', 'ops.admin_audit_log', 'delete,truncate'), 'service_role has nothing on ops.admin_audit_log (LLD 4.1: ops is reached through functions)');
 select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from catalog.sources'), 'err=42501', 'a consumer cannot read the source register');
 select is(pg_temp.run_as('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'authenticated', 'select 1 from catalog.sources'), 'err=42501', 'nor can an admin through the client role');
-select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from catalog.vendors'), 'err=42501', 'nor the vendors');
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from catalog.vendors'), 'rows=0', 'a consumer sees no vendor row (WO-0112: the select policy shows a member its own vendor only)');
 select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from catalog.vendor_members'), 'rows=0', 'a consumer sees no vendor member row (WO-0100: the select policy shows each user their own rows only)');
 select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from ops.admin_audit_log'), 'err=42501', 'nor the audit log');
 select is(pg_temp.run_as(null, 'anon', 'select 1 from catalog.sources'), 'err=42501', 'anon cannot read sources');

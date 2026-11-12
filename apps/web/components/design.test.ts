@@ -15,6 +15,7 @@ const ROOT = process.env.DESIGN_ROOT ?? new URL('..', import.meta.url).pathname;
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
 const css = read('app/globals.css');
 const moduleCss = read('components/outfits/outfits.module.css');
+const vendorCss = read('components/ui/vendor/vendor-charts.module.css');
 
 const TEXT_EXT = /\.(tsx?|css|md|json|svg|html|webmanifest|txt|mjs|js)$/;
 function walk(dir: string, out: string[] = []): string[] {
@@ -144,6 +145,27 @@ describe('each mutant of the design rules is caught (in memory; the scratch-copy
   it('an inline radius or shadow in a component is caught', () => {
     expect(inlineStyleProblems({ 'a.tsx': '<span style={{ borderRadius: 4 }} />' })).toHaveLength(1);
     expect(inlineStyleProblems({ 'a.tsx': "<span style={{ background: item.hex }} />" })).toEqual([]);
+  });
+});
+
+// WO-0112: the vendor chart styles are a CSS module (the stylesheet is outside that work order's scope); the same rules apply to them, and each mutant of them is caught
+describe('the vendor chart styles follow the design rules (WO-0112)', () => {
+  const check = (c: string) => cssProblems(`:root { --fs-body: 14px; } ${c}`).filter((p) => /^(radius:|shadow|gradient|font-size-below|colour-outside|quote|justified)/.test(p));
+  it('draw no radius, shadow, gradient, small text or raw colour, and use only tokens that the stylesheet defines', () => {
+    expect(check(vendorCss)).toEqual([]);
+    const defined = new Set(Object.keys(tokensOf(parseRules(css))));
+    expect([...vendorCss.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]!).filter((u) => !defined.has(u))).toEqual([]);
+  });
+  it.each([
+    ['track with a radius', (c: string) => inRule(c, '.track', 'display: block;', 'display: block; border-radius: 4px;'), /radius:4px/],
+    ['fill in a raw colour', (c: string) => inRule(c, '.track > span', 'background: var(--accent)', 'background: #1b2bff'), /colour-outside-tokens/],
+    ['track with a shadow', (c: string) => inRule(c, '.track', 'display: block;', 'display: block; box-shadow: 0 1px 2px var(--text);'), /shadow/],
+    ['value text 11px', (c: string) => inRule(c, '.value', 'font-weight: 500;', 'font-weight: 500; font-size: 11px;'), /font-size-below-12/],
+    ['gradient fill', (c: string) => inRule(c, '.track > span', 'background: var(--accent)', 'background: linear-gradient(var(--accent), var(--text))'), /gradient/],
+  ])('mutant: %s is caught', (_n, mutate, expected) => {
+    const mutated = mutate(vendorCss);
+    expect(mutated).not.toBe(vendorCss);
+    expect(check(mutated).join(' ')).toMatch(expected);
   });
 });
 

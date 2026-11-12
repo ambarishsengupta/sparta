@@ -187,12 +187,12 @@ select is(pg_temp.mix(pg_temp.u(1), $$'category', 'season', 'All year'$$), 'Tops
 select is(pg_temp.mix(pg_temp.u(1), $$'category', 'price_band', '25-50'$$), 'Tops=10', 'price_band filter');
 select is(pg_temp.mix(pg_temp.u(1), $$'category', 'size', 'Letter:S'$$), '-', 'a filter value whose only row has users_floor 5 returns nothing');
 select is(pg_temp.mix(pg_temp.u(1), $$'colour_family', 'size', 'Letter:M'$$), '-', 'a combination with no row returns nothing');
-select is(pg_temp.mix(pg_temp.u(1), $$'category', 'size', 'Letter:M''; drop table analytics.cube; --'$$), '-', 'a value with a quote and a semicolon is just a value that matches nothing');
+select is(pg_temp.mix(pg_temp.u(1), $$'category', 'size', 'Letter:M''; drop table analytics.cube; --'$$), 'err=P0001: invalid_dimension', 'a value with a quote and a semicolon is refused with invalid_dimension (WO-0110: it is not an allowlisted value, so it is never logged)');
 select ok((select count(*) from analytics.cube) > 0, 'and the cube is still there');
-select is(pg_temp.mix(pg_temp.u(1), $$'category', 'size', ''$$), '-', 'an empty value matches nothing');
+select is(pg_temp.mix(pg_temp.u(1), $$'category', 'size', ''$$), 'err=P0001: invalid_dimension', 'an empty value is refused with invalid_dimension (WO-0110: not an allowlisted value)');
 select is_empty($$ select d || '/' || coalesce(f, '-') from (values ('category'), ('colour_family'), ('fit'), ('brand'), ('category_colour_family'), ('category_fit'), ('category_brand')) d(d)
   cross join (values (null), ('size'), ('season'), ('price_band'), ('region')) f(f)
-  where pg_temp.call(pg_temp.u(1), 'authenticated', format('select count(*) from analytics.ownership_mix(%L, %L, %L)', d, f, case when f is null then null else 'x' end)) <> 'ok' $$, 'all seven dimensions and all four filters are accepted');
+  where pg_temp.call(pg_temp.u(1), 'authenticated', format('select count(*) from analytics.ownership_mix(%L, %L, %L)', d, f, case f when 'size' then 'Letter:M' when 'season' then 'All year' when 'price_band' then '25-50' when 'region' then 'South Asia' end)) <> 'ok' $$, 'all seven dimensions and all four filters are accepted (with an allowlisted value each; WO-0110)');
 delete from ops.vendor_query_log;
 create temp table bad (n int, a text);
 insert into bad values (1, $$'colour'$$), (2, $$'category; drop table analytics.cube'$$), (3, $$'Category'$$), (4, $$''$$), (5, 'null'), (6, $$'user_hash'$$), (7, $$'category', 'bogus', 'x'$$),
@@ -235,14 +235,14 @@ delete from ops.vendor_query_log;
 select pg_temp.call(pg_temp.u(1), 'authenticated', $$select count(*) from analytics.ownership_mix('category', 'size', 'Letter:M')$$) as r \gset
 select pg_temp.call(pg_temp.u(1), 'authenticated', 'select count(*) from analytics.coverage()') as r \gset
 select pg_temp.call(pg_temp.u(1), 'authenticated', 'select count(*) from analytics.filter_options()') as r \gset
-select pg_temp.call(pg_temp.u(2), 'authenticated', $$select count(*) from analytics.ownership_mix('fit', 'size', $q$x'; drop table analytics.cube; --$q$)$$) as r \gset
+select pg_temp.call(pg_temp.u(2), 'authenticated', $$select count(*) from analytics.ownership_mix('fit', 'size', 'Letter:S')$$) as r \gset
 select is(pg_temp.nlog(), 4::bigint, 'four answered calls, four log rows');
 select is((select vendor_id::text || '/' || user_id::text || '/' || params::text from ops.vendor_query_log where fn = 'ownership_mix' and user_id = pg_temp.u(1))::text,
   pg_temp.va()::text || '/' || pg_temp.u(1)::text || '/' || '{"dim": "category", "filter_dim": "size", "filter_value": "Letter:M"}', 'a row holds the vendor, the user, the function and the parameters');
 select is((select params from ops.vendor_query_log where fn = 'coverage'), '{}'::jsonb, 'coverage logs empty parameters');
 select is((select params from ops.vendor_query_log where fn = 'filter_options'), '{}'::jsonb, 'filter_options logs empty parameters');
-select is((select vendor_id::text || '/' || user_id::text || '/' || (params->>'filter_value') from ops.vendor_query_log where user_id = pg_temp.u(2)), pg_temp.va()::text || '/' || pg_temp.u(2)::text || '/' || 'x''; drop table analytics.cube; --',
-  'a colleague''s call is logged under the same vendor with the value kept as plain text');
+select is((select vendor_id::text || '/' || user_id::text || '/' || (params->>'filter_value') from ops.vendor_query_log where user_id = pg_temp.u(2)), pg_temp.va()::text || '/' || pg_temp.u(2)::text || '/' || 'Letter:S',
+  'a colleague''s call is logged under the same vendor with the allowlisted value kept as plain text (WO-0110: the old value x''; drop table ... is now refused, see test 020)');
 select is_empty($$ select 1 from ops.vendor_query_log l, jsonb_object_keys(l.params) k where k not in ('dim', 'filter_dim', 'filter_value') $$, 'parameters hold dimension names and filter values only');
 select ok((select bool_and(called_at > now() - interval '1 minute' and called_at <= now()) from ops.vendor_query_log), 'called_at is the call time');
 

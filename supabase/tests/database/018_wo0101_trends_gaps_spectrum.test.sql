@@ -160,8 +160,8 @@ select is(pg_temp.nlog(), 0::bigint, 'a call refused for its input writes no log
 select is(pg_temp.val_as(pg_temp.u(6), 'authenticated', 'select count(*) from analytics.trend(''sales'', ''category'', ''week'')'), 'err=42501: forbidden', 'a consumer gets forbidden, not a hint about the inputs');
 select is_empty($$ select d || '/' || coalesce(f, '-') from (values ('category'), ('colour_family'), ('fit'), ('brand'), ('category_colour_family'), ('category_fit'), ('category_brand')) d(d)
   cross join (values (null), ('size'), ('season'), ('price_band'), ('region')) f(f)
-  where pg_temp.call(pg_temp.u(1), 'authenticated', format('select count(*) from analytics.trend(%L, %L, ''month'', %L, %L)', 'wishlist', d, f, case when f is null then null else 'x' end)) <> 'ok'
-     or pg_temp.call(pg_temp.u(1), 'authenticated', format('select count(*) from analytics.gaps(%L, %L, %L)', d, f, case when f is null then null else 'x' end)) <> 'ok' $$, 'all seven dimensions and all four filters are accepted by trend and by gaps');
+  where pg_temp.call(pg_temp.u(1), 'authenticated', format('select count(*) from analytics.trend(%L, %L, ''month'', %L, %L)', 'wishlist', d, f, case f when 'size' then 'Letter:M' when 'season' then 'All year' when 'price_band' then '25-50' when 'region' then 'South Asia' end)) <> 'ok'
+     or pg_temp.call(pg_temp.u(1), 'authenticated', format('select count(*) from analytics.gaps(%L, %L, %L)', d, f, case f when 'size' then 'Letter:M' when 'season' then 'All year' when 'price_band' then '25-50' when 'region' then 'South Asia' end)) <> 'ok' $$, 'all seven dimensions and all four filters are accepted by trend and by gaps (with an allowlisted value each; WO-0110)');
 delete from ops.vendor_query_log;
 
 -- ======== 6. condition spectrum: bands, shares, visible bands only (FR-76, LLD 5.4) ======================================================
@@ -170,7 +170,7 @@ select is(pg_temp.sp('Tops'), 'Brand new=null,Like new=20,Good=45,Worn=35,Fallin
 select is(pg_temp.sp('Bottoms'), 'Brand new=null,Like new=null,Good=null,Worn=null,Falling apart=null', 'a category with one visible band (and a stale month) gives every band a null share');
 select is(pg_temp.sp('Footwear'), 'Brand new=null,Like new=null,Good=50,Worn=50,Falling apart=null', 'exactly two visible bands are enough: 50 and 50');
 select is(pg_temp.sp('Accessories'), 'Brand new=null,Like new=null,Good=null,Worn=null,Falling apart=null', 'a category with no band rows returns every band with a null share (never 0)');
-select is(pg_temp.sp('Nope'), 'Brand new=null,Like new=null,Good=null,Worn=null,Falling apart=null', 'an unknown category returns every band with a null share');
+select is(pg_temp.sp('Nope'), 'err=P0001: invalid_dimension', 'an unknown category is refused with invalid_dimension (WO-0110: not a lk_category code, so it is never logged)');
 select is(pg_temp.vv('select count(*) from analytics.condition_spectrum(null)'), '5', 'a null category returns the five bands, all null');
 select is((select string_agg(code, ',' order by sort) from catalog.lk_condition_band), 'Brand new,Like new,Good,Worn,Falling apart', 'the bands of lk_condition_band are the five the spectrum returns');
 select is(pg_temp.vv('select count(*) from analytics.condition_spectrum(''Tops'') where share % 5 <> 0'), '0', 'every share is a multiple of 5 points');

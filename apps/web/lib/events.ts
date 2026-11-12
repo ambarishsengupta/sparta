@@ -10,8 +10,8 @@ export const EVENTS_KEY = 'sparta.events.v1';
 /** FDD 16 `engine_config` with every learned part off (what an event carries unless a switch is on; see lib/engine-config.ts). */
 export const ENGINE_CONFIG = 'gm1;emb0;pair0;ul:fb;w:base';
 export const EVENT_TYPES = ['suggestion_accepted', 'suggestion_rejected', 'suggestion_swapped', 'item_added'] as const;
-/** The four R3 types plus `wishlist_added` (R4: origin 'user' or 'unlock') and `purchase_recorded` (R6: origin only, see lib/purchases.ts). */
-export type EventType = (typeof EVENT_TYPES)[number] | 'wishlist_added' | 'purchase_recorded';
+/** The four R3 types plus `wishlist_added` (R4: origin 'user' or 'unlock'), `purchase_recorded` (R6: origin only, see lib/purchases.ts) and the two vendor portal types of R7 (no properties; recorded by the dashboard and report screens). */
+export type EventType = (typeof EVENT_TYPES)[number] | 'wishlist_added' | 'purchase_recorded' | 'vendor_dashboard_viewed' | 'vendor_report_opened';
 const MAX_EVENTS = 1000;
 
 let lastMs = 0;

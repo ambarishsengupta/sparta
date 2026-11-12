@@ -21,6 +21,9 @@ export function legalDir(from: string = process.cwd()): string {
 }
 
 export const readLegal = (which: LegalDocument): string => readFileSync(join(legalDir(), LEGAL_FILES[which]), 'utf8');
+/** WO-0103: the Vendor Pilot Agreement, shown read-only on /vendor/agreement (it is not a document of the consumer sign-up, so it is not in LEGAL_FILES). */
+export const VENDOR_AGREEMENT_FILE = 'VENDOR-PILOT-AGREEMENT.md';
+export const readVendorAgreement = (): string => readFileSync(join(legalDir(), VENDOR_AGREEMENT_FILE), 'utf8');
 
 /** Section 7 of the Privacy Policy, the paragraph that starts "When the pilot ends": the plan for the end of the pilot (FR-67, FR-69). Empty if the section changed. */
 export function endOfPilotPlan(privacyMarkdown: string): Inline[] {

@@ -109,3 +109,36 @@ describe('the matcher: which requests reach proxy() (M2)', () => {
     expect(named).toEqual([...new Set([...publicFiles.filter((f) => !/pairing-prior|unlock-candidates/.test(f)), PRIOR_URL, UNLOCK_URL])].sort());
   });
 });
+
+// WO-0103: the vendor pages through the proxy (LLD 9.1 steps 6 and 7).
+const where = (res: Response) => { const l = res.headers.get('location'); return l ? new URL(l).pathname + new URL(l).search : null; };
+describe('proxy(): the vendor pages', () => {
+  it.each([['needs_vendor_agreement', '/vendor/agreement', null], ['needs_vendor_agreement', '/vendor', '/vendor/agreement'], ['needs_vendor_agreement', '/', '/vendor/agreement'],
+    ['vendor', '/vendor', null], ['vendor', '/vendor/account', null], ['vendor', '/vendor/agreement', '/vendor'], ['vendor', '/catalogue', '/vendor'],
+    ['ready', '/vendor', '/'], ['ready', '/vendor/reports', '/'], ['unauthenticated', '/vendor', '/sign-in?next=%2Fvendor'], ['not_available', '/vendor/gaps', '/not-available']] as const)(
+    '%s on %s goes to %s', async (state, path, target) => {
+      answers(state);
+      const res = await proxy(at(path));
+      if (target === null) expect(res.headers.get('x-middleware-next')).toBe('1'); else expect(where(res)).toBe(target);
+    });
+  it('sign-out stays open to a vendor held at the agreement', async () => {
+    answers('needs_vendor_agreement');
+    expect((await proxy(at('/auth/sign-out', { method: 'POST' }))).headers.get('x-middleware-next')).toBe('1');
+  });
+  it('fails closed with the fixed text when the account service is down', async () => {
+    down();
+    for (const p of ['/vendor', '/vendor/agreement']) {
+      const res = await proxy(at(p));
+      expect(res.status).toBe(503);
+      expect(await res.text()).toBe(OUTAGE);
+    }
+  });
+  it('with the local backend it does nothing', async () => {
+    vi.stubEnv('NEXT_PUBLIC_DATA_BACKEND', 'local');
+    expect((await proxy(at('/vendor'))).headers.get('x-middleware-next')).toBe('1');
+    expect(updateSession).not.toHaveBeenCalled();
+  });
+  it('the matcher sends the vendor pages through the proxy', () => {
+    for (const p of ['/vendor', '/vendor/agreement', '/vendor/reports/abc']) expect(new RegExp(`^${config.matcher[0]!}$`).test(p), p).toBe(true);
+  });
+});

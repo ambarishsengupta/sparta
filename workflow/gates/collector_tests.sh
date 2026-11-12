@@ -22,4 +22,10 @@ if ! supabase status >/dev/null 2>&1; then
 fi
 cd jobs/collector || exit 2
 export PYTHONDONTWRITEBYTECODE=1
-if command -v timeout >/dev/null 2>&1; then timeout 300 "$PY" -m pytest ${args[@]+"${args[@]}"}; else "$PY" -m pytest ${args[@]+"${args[@]}"}; fi
+run() { if command -v timeout >/dev/null 2>&1; then timeout 300 "$@"; else "$@"; fi; }
+run "$PY" -m pytest ${args[@]+"${args[@]}"}; rc1=$?
+# The H&M demo catalogue loader's tests (WO-0120): pure tests on an invented fixture; the live test is opt-in (SEED_LIVE=1) and reads the local H&M folder only at run time.
+cd ../.. || exit 2
+run "$PY" -m pytest workflow/demo/hm/tests -q; rc2=$?
+[ "$rc1" -ne 0 ] && exit "$rc1"
+exit "$rc2"

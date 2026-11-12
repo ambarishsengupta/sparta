@@ -39,10 +39,10 @@ select ok(has_schema_privilege('anon', 'app', 'usage'), 'anon has usage on app')
 select ok(not has_schema_privilege('anon', 'catalog', 'usage'), 'anon has no usage on catalog');
 select ok(not has_schema_privilege('authenticated', 'ops', 'usage') and not has_schema_privilege('service_role', 'ops', 'usage'), 'no usage on ops');
 -- WO-0098 (R7a) replaces "no usage on analytics or analytics_private" with the grant matrix: usage on analytics for authenticated only, none on analytics_private for anyone
-select ok(has_schema_privilege('authenticated', 'analytics', 'usage') and not has_schema_privilege('anon', 'analytics', 'usage') and not has_schema_privilege('service_role', 'analytics', 'usage')
+select ok(has_schema_privilege('authenticated', 'analytics', 'usage') and not has_schema_privilege('anon', 'analytics', 'usage') and has_schema_privilege('service_role', 'analytics', 'usage')   -- WO-0102: service_role for build_report only
   and not has_schema_privilege('anon', 'analytics_private', 'usage') and not has_schema_privilege('authenticated', 'analytics_private', 'usage') and not has_schema_privilege('service_role', 'analytics_private', 'usage')
   and not exists (select 1 from pg_namespace n, aclexplode(n.nspacl) a where n.nspname in ('analytics', 'analytics_private') and a.grantee = 0),
-  'usage on analytics for authenticated only; no usage on analytics_private for anon, authenticated, service_role or public');
+  'usage on analytics for authenticated and service_role only (WO-0102: build_report); no usage on analytics_private for anon, authenticated, service_role or public');
 select ok(not has_function_privilege('anon', 'catalog.colour_family(int,int,int)', 'execute')
   and has_function_privilege('authenticated', 'catalog.colour_family(int,int,int)', 'execute'), 'colour_family is executable by signed-in users only');
 

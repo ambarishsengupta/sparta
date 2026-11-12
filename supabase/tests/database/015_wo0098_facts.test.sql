@@ -83,8 +83,8 @@ select ok(not has_sequence_privilege('authenticated', 'ops.aggregate_runs_id_seq
   and not has_sequence_privilege('anon', 'ops.aggregate_runs_id_seq', 'usage,select,update'), 'no client role can use the run id sequence');
 select is_empty($$ select r.r || ' ' || t from tbls cross join (values ('anon'), ('authenticated'), ('service_role')) r(r)
   where pg_temp.run_as(pg_temp.u('A'), r.r, 'select 1 from ' || t) is distinct from 'err=42501' $$, 'a select on any of the four tables is refused with 42501 for every client role');
-select ok(has_schema_privilege('authenticated', 'analytics', 'usage') and not has_schema_privilege('anon', 'analytics', 'usage') and not has_schema_privilege('service_role', 'analytics', 'usage'),
-  'usage on schema analytics: authenticated only');
+select ok(has_schema_privilege('authenticated', 'analytics', 'usage') and not has_schema_privilege('anon', 'analytics', 'usage') and has_schema_privilege('service_role', 'analytics', 'usage'),   -- WO-0102: service_role for build_report only
+  'usage on schema analytics: authenticated and service_role only');
 select ok(not has_schema_privilege('anon', 'analytics_private', 'usage') and not has_schema_privilege('authenticated', 'analytics_private', 'usage')
   and not has_schema_privilege('service_role', 'analytics_private', 'usage'), 'no client role has usage on analytics_private');
 select is_empty($$ select 1 from pg_namespace n, aclexplode(n.nspacl) a where n.nspname in ('analytics', 'analytics_private') and a.grantee = 0 $$, 'public has usage on neither analytics schema');

@@ -133,7 +133,7 @@ select is_empty($$ select n from w3 where (select proconfig from pg_proc where o
 select is_empty($$ select n from w3 where not has_function_privilege('authenticated', oid, 'execute') or has_function_privilege('anon', oid, 'execute') or has_function_privilege('service_role', oid, 'execute')
   or exists (select 1 from pg_proc p, aclexplode(p.proacl) a where p.oid = w3.oid and a.grantee = 0) $$, 'executable by authenticated only (not public, anon or service_role)');
 select is_empty($$ select p.oid::regprocedure::text from pg_proc p where p.pronamespace in ('analytics'::regnamespace, 'analytics_private'::regnamespace) and p.oid not in (select oid from w3)
-  and p.oid not in (select q.oid from pg_proc q where q.pronamespace = 'analytics'::regnamespace and q.proname in ('trend', 'gaps', 'condition_spectrum'))   -- WO-0101: the three later wrappers are pinned by 018
+  and p.oid not in (select q.oid from pg_proc q where q.pronamespace = 'analytics'::regnamespace and q.proname in ('trend', 'gaps', 'condition_spectrum', 'reports', 'report', 'build_report'))   -- WO-0101 and WO-0102: the later wrappers are pinned by 018 and 019
   and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute') or has_function_privilege('service_role', p.oid, 'execute')
        or exists (select 1 from pg_proc q, aclexplode(q.proacl) a where q.oid = p.oid and a.grantee = 0)) $$, 'every other function in analytics and analytics_private is executable by no client role');
 select is((select pg_get_function_result('analytics.ownership_mix(text, text, text)'::regprocedure)), 'TABLE(segment text, users_rounded integer)', 'ownership_mix returns a segment and a rounded count only');

@@ -116,14 +116,15 @@ from gen g join auth.users u on u.email = g.email join col on col.c = g.ci
 on conflict (id) do nothing;
 
 -- some purchases of the items just made (rich: every fourth item, thin: two) and four planned wishlist entries for the rich account
-insert into app.purchases (id, user_id, item_id, purchase_date, price, currency, quantity)
-select md5('demo-data-purchase:' || i.id)::uuid, i.user_id, i.id, current_date - (row_number() over (partition by i.user_id order by i.id)::int * 9 % 170), i.price, i.currency, 1
+insert into app.purchases (id, user_id, item_id, purchase_date, price, currency, quantity, store)
+select md5('demo-data-purchase:' || i.id)::uuid, i.user_id, i.id, current_date - (row_number() over (partition by i.user_id order by i.id)::int * 9 % 170), i.price, i.currency, 1,
+  (array['Harbour Row Outfitters', 'Lantern Street Menswear', 'Quill and Cotton'])[row_number() over (partition by i.user_id order by i.id)::int % 3 + 1]
 from app.items i join auth.users u on u.id = i.user_id
 where (u.email = 'demo-rich@example.test' and i.id in (select md5('demo-data:demo-rich@example.test:' || n)::uuid from generate_series(4, 60, 4) n))
    or (u.email = 'demo-thin@example.test' and i.id in (select md5('demo-data:demo-thin@example.test:' || n)::uuid from generate_series(3, 6, 3) n))
 on conflict (id) do nothing;
-insert into app.wishlist_entries (id, user_id, name, category, sub_type, colour_r, colour_g, colour_b, target_price, currency, priority, planned_month, origin)
-select md5('demo-data-wish:' || w.n)::uuid, u.id, w.name, w.category, w.sub, w.r, w.g, w.b, w.price, 'INR', w.prio, (date_trunc('month', current_date) + make_interval(months => w.n))::date, 'user'
+insert into app.wishlist_entries (id, user_id, name, category, sub_type, colour_r, colour_g, colour_b, target_price, currency, priority, planned_month, budget, origin)
+select md5('demo-data-wish:' || w.n)::uuid, u.id, w.name, w.category, w.sub, w.r, w.g, w.b, w.price, 'INR', w.prio, (date_trunc('month', current_date) + make_interval(months => w.n))::date, w.price + 500, 'user'
 from auth.users u, (values (1, 'Navy overcoat', 'Outerwear', 'Coat', 31, 42, 68, 6500, 'high'), (2, 'White court sneakers', 'Footwear', 'Sneakers', 244, 244, 240, 3500, 'medium'),
   (3, 'Olive field jacket', 'Outerwear', 'Jacket', 107, 107, 47, 4200, 'medium'), (4, 'Grey wool jumper', 'Tops', 'Sweater', 110, 120, 130, 2300, 'low')) w(n, name, category, sub, r, g, b, price, prio)
 where u.email = 'demo-rich@example.test' on conflict (id) do nothing;

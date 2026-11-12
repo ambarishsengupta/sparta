@@ -1,7 +1,7 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-12 14:14 IST (CULL applied: WO-0107/0108/0109 moved to Release 1; WO-0102..0106 and WO-0097 shrunk; one merge after WO-0106; next WO-0102). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 60 minutes, another orchestrator session is active: do nothing and stop
-Status: running
+Updated: 2026-11-12 17:54 IST (Release 0 complete and merged to main; checkpoint = the owner walks DEMO-SCRIPT.md). ORCHESTRATOR LOCK: no orchestrator is running
+Status: Release 0 build complete; waiting for the owner's checkpoint walk-through
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)
 Integration branch: none yet (release/R0 is cut from main after the preconditions below are ticked)
@@ -88,3 +88,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-12: R6c complete (WO-0086, 0087, 0088), retro R6c, goal R6c-collector-safety, merged to main. Next: R7 (WO-0098..0109 in workflow/work-orders/R7.md), then WO-0097 demo pack and the Release 0 checkpoint.
 - 2026-11-12 ~01:50 IST: 5-hour usage at 86%; owner said keep going until the limit hits. Armed `sparta-resume-0440-ist` (04:40 IST, with a collision check). R7 branch release/R7 (R7.md WO-0098..0109; sub-releases R7a, R7b, R7c, merge each to main).
 - 2026-11-12 OWNER CULL: Opus scope review applied (see 'CULL of 2026-11-12' in workflow/work-orders/R7.md). WO-0107, 0108, 0109 are Release 1. WO-0102 drops the four app.admin_* functions; WO-0103 no Feed nav; WO-0104 four chart primitives and no UX brief; WO-0105 desktop evidence only; WO-0106 no print stylesheet; WO-0097 three accounts. Process trims: maker mutation minimums dropped (checker writes 3 to 5), no R7a/b/c split, no per-sub-release Opus checks or retros/goals, one design critic pass after WO-0106, fold STATE and CSV changes into the WO commit, desktop screenshots only. Gate, one fresh Spec QC per WO, no secrets/accounts/push, H&M off and Rule 11 stay.
+- 2026-11-12: RELEASE 0 BUILD COMPLETE. Everything merged to main (R0..R7, restyle, demo pack). Demo: `bash supabase/scripts/demo-data.sh` then `bash workflow/demo/start-demo.sh` (or `--no-login`); script in workflow/demo/DEMO-SCRIPT.md; retro workflow/retros/Release0.md. NEXT is the owner's checkpoint, then Release 1 (receipts, pen tests, security reviews, R8 hardening, owner decisions). The scheduled resume task sparta-resume-0440-ist should be disabled/deleted.

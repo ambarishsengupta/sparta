@@ -20,6 +20,9 @@ def gh(*a):
 
 def main():
     args = [a for a in sys.argv[1:] if a != '--dry-run']
+    rels = {}
+    while '--release' in args:  # --release WO-0107=Release 1 (MVP): move an item to another release (board field, label, milestone and the CSV)
+        i = args.index('--release'); k, v = args[i + 1].split('=', 1); rels[k] = v; del args[i:i + 2]
     rows = list(csv.DictReader(CSV.open()))
     adds = [args[i + 1] for i, a in enumerate(args) if a == '--add']
     sets = dict(a.split('=', 1) for a in args if '=' in a and not a.startswith('--') and a not in adds)
@@ -39,6 +42,8 @@ def main():
             sys.exit(f'no {f} option {v!r}')
         issues = {i['title']: i for i in json.loads(gh('issue', 'list', '--repo', REPO, '--state', 'all', '--limit', '500', '--json', 'title,number,url,state'))}
         items = {i['content'].get('url'): i['id'] for i in json.loads(gh('project', 'item-list', num, '--owner', OWNER, '--limit', '500', '--format', 'json'))['items'] if i.get('content')}
+    for wid, rel in rels.items():
+        sets.setdefault(wid, byid[wid]['status']); byid[wid]['release'] = rel
     for wid, status in sets.items():
         row = byid.get(wid) or sys.exit(f'unknown id {wid}')
         row['status'] = status
@@ -54,6 +59,10 @@ def main():
             for f, v in (('Release', row['release']), ('Slice', row['slice']), ('Role', row['role'])):
                 try: gh('project', 'item-edit', '--id', items[url], '--project-id', pid, '--field-id', fields[f]['id'], '--single-select-option-id', opt(f, v))
                 except SystemExit: print(f'  note: {f} option {v!r} is not on the board yet; set it by hand')
+        if wid in rels:
+            gh('project', 'item-edit', '--id', items[url], '--project-id', pid, '--field-id', fields['Release']['id'], '--single-select-option-id', opt('Release', rels[wid]))
+            old, new = ('release-0', 'release-1') if rels[wid].startswith('Release 1') else ('release-1', 'release-0')
+            gh('issue', 'edit', url, '--add-label', new, '--remove-label', old, '--milestone', rels[wid])
         gh('project', 'item-edit', '--id', items[url], '--project-id', pid, '--field-id', fields['Status']['id'], '--single-select-option-id', opt('Status', status))
         if status == 'Done' and (iss is None or iss['state'] != 'CLOSED'): gh('issue', 'close', url, '--reason', 'completed')
         if status != 'Done' and iss is not None and iss['state'] == 'CLOSED': gh('issue', 'reopen', url)

@@ -39,13 +39,13 @@ create function pg_temp.vis(p_uid uuid, p_role text, p_where text) returns text 
 
 -- ======== 1. shape ======================================================================================================================
 select is((select array_agg(c::text order by c) from (select relname c from pg_class where relnamespace = 'catalog'::regnamespace and relkind = 'r' and relname !~ '^lk_|^colour_family_ref$|^country_region$') q),
-  array['catalog_items', 'sources', 'vendor_members', 'vendors'], 'the catalog schema holds the four R6b tables next to the lookups');
+  array['catalog_items', 'sources', 'vendor_agreement_acceptances', 'vendor_members', 'vendors'], 'the catalog schema holds the four R6b tables and the WO-0100 acceptances table next to the lookups');
 select is((select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'catalog' and table_name = 'sources'),
   array['id','name','site_url','robots_allowed','terms_note','allowed','checked_on','contact','last_collected_at','takedown_at','takedown_note'], 'sources has the LLD 4.8 columns');
 select is((select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'catalog' and table_name = 'catalog_items'),
   array['id','source_id','vendor_id','sku','name','brand','gtin','category','sub_type','colour_r','colour_g','colour_b','colour_hex','colour_family','is_multicolour','secondary_colour_hex',
         'fit','material','pattern','sizes_available','price','currency','seasons','occasions','product_url','collected_at','missed_runs','status'], 'catalog_items has the LLD 4.8 columns');
-select ok((select bool_and(relrowsecurity and relforcerowsecurity) from pg_class where oid = any (array['catalog.sources'::regclass, 'catalog.vendors'::regclass, 'catalog.vendor_members'::regclass, 'catalog.catalog_items'::regclass, 'ops.admin_audit_log'::regclass])),
+select ok((select bool_and(relrowsecurity and relforcerowsecurity) from pg_class where oid = any (array['catalog.sources'::regclass, 'catalog.vendors'::regclass, 'catalog.vendor_members'::regclass, 'catalog.catalog_items'::regclass, 'catalog.vendor_agreement_acceptances'::regclass, 'ops.admin_audit_log'::regclass])),
   'RLS is enabled and forced on every new table');
 select is((select string_agg(conrelid::regclass || ':' || confdeltype::text || convalidated::text, ',' order by conrelid::regclass::text) from pg_constraint where confrelid = 'catalog.catalog_items'::regclass),
   'app.items:ntrue,app.wishlist_entries:ntrue', 'items and wishlist_entries point at catalog_items, validated, on delete set null');
@@ -117,14 +117,21 @@ select is(pg_temp.run_as('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'authenticated'
 
 -- ======== 4. no client grants on sources, vendors, members and the audit log ============================================================
 select ok(not has_any_column_privilege(r, t, 'select,insert,update,references') and not has_table_privilege(r, t, 'delete,truncate,trigger'), r || ' has no privilege on ' || t)
-  from unnest(array['anon', 'authenticated']) r, unnest(array['catalog.sources', 'catalog.vendors', 'catalog.vendor_members', 'ops.admin_audit_log']) t;
+  from unnest(array['anon', 'authenticated']) r, unnest(array['catalog.sources', 'ops.admin_audit_log']) t;
+-- WO-0112 replaces "authenticated has no privilege on catalog.vendors": anon still has none; authenticated has select on (id, name) only (own vendor by policy, 021 tests it)
+select ok(not has_any_column_privilege('anon', 'catalog.vendors', 'select,insert,update,references') and not has_table_privilege('anon', 'catalog.vendors', 'delete,truncate,trigger'), 'anon has no privilege on catalog.vendors');
+select ok(not has_any_column_privilege('authenticated', 'catalog.vendors', 'insert,update,references') and not has_table_privilege('authenticated', 'catalog.vendors', 'delete,truncate,trigger') and not has_table_privilege('authenticated', 'catalog.vendors', 'select')
+  and has_column_privilege('authenticated', 'catalog.vendors', 'id', 'select') and has_column_privilege('authenticated', 'catalog.vendors', 'name', 'select') and not has_column_privilege('authenticated', 'catalog.vendors', 'created_at', 'select'), 'authenticated may select catalog.vendors (id, name) only: no created_at, no write');
+-- WO-0100 (R7a) replaces "authenticated has no privilege on catalog.vendor_members": anon still has none; authenticated has select only (own rows by policy, 017 tests it)
+select ok(not has_any_column_privilege('anon', 'catalog.vendor_members', 'select,insert,update,references') and not has_table_privilege('anon', 'catalog.vendor_members', 'delete,truncate,trigger'), 'anon has no privilege on catalog.vendor_members');
+select ok(has_table_privilege('authenticated', 'catalog.vendor_members', 'select') and not has_any_column_privilege('authenticated', 'catalog.vendor_members', 'insert,update,references') and not has_table_privilege('authenticated', 'catalog.vendor_members', 'delete,truncate,trigger'), 'authenticated has select and nothing else on catalog.vendor_members');
 select ok(has_table_privilege('service_role', t, 'select') and has_table_privilege('service_role', t, 'insert') and has_table_privilege('service_role', t, 'update') and has_table_privilege('service_role', t, 'delete'),
   'service_role holds select, insert, update and delete on ' || t) from unnest(array['catalog.sources', 'catalog.vendors', 'catalog.vendor_members', 'catalog.catalog_items']) t;
 select ok(not has_any_column_privilege('service_role', 'ops.admin_audit_log', 'select,insert,update,references') and not has_table_privilege('service_role', 'ops.admin_audit_log', 'delete,truncate'), 'service_role has nothing on ops.admin_audit_log (LLD 4.1: ops is reached through functions)');
 select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from catalog.sources'), 'err=42501', 'a consumer cannot read the source register');
 select is(pg_temp.run_as('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'authenticated', 'select 1 from catalog.sources'), 'err=42501', 'nor can an admin through the client role');
-select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from catalog.vendors'), 'err=42501', 'nor the vendors');
-select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from catalog.vendor_members'), 'err=42501', 'nor the vendor members');
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from catalog.vendors'), 'rows=0', 'a consumer sees no vendor row (WO-0112: the select policy shows a member its own vendor only)');
+select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from catalog.vendor_members'), 'rows=0', 'a consumer sees no vendor member row (WO-0100: the select policy shows each user their own rows only)');
 select is(pg_temp.run_as(pg_temp.ua(), 'authenticated', 'select 1 from ops.admin_audit_log'), 'err=42501', 'nor the audit log');
 select is(pg_temp.run_as(null, 'anon', 'select 1 from catalog.sources'), 'err=42501', 'anon cannot read sources');
 

@@ -5,7 +5,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { Nav } from './Nav';
-import { FORBIDDEN_STRINGS, brandProblems, cssProblems, inlineStyleProblems, parseRules, tokensOf } from './design-rules';
+import { FORBIDDEN_STRINGS, brandProblems, cssProblems, inlineStyleProblems, parseRules, tokensOf, vendorTableProblems } from './design-rules';
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
 
@@ -15,6 +15,7 @@ const ROOT = process.env.DESIGN_ROOT ?? new URL('..', import.meta.url).pathname;
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
 const css = read('app/globals.css');
 const moduleCss = read('components/outfits/outfits.module.css');
+const vendorCss = read('components/ui/vendor/vendor-charts.module.css');
 
 const TEXT_EXT = /\.(tsx?|css|md|json|svg|html|webmanifest|txt|mjs|js)$/;
 function walk(dir: string, out: string[] = []): string[] {
@@ -144,6 +145,42 @@ describe('each mutant of the design rules is caught (in memory; the scratch-copy
   it('an inline radius or shadow in a component is caught', () => {
     expect(inlineStyleProblems({ 'a.tsx': '<span style={{ borderRadius: 4 }} />' })).toHaveLength(1);
     expect(inlineStyleProblems({ 'a.tsx': "<span style={{ background: item.hex }} />" })).toEqual([]);
+  });
+});
+
+// WO-0112: the vendor chart styles are a CSS module (the stylesheet is outside that work order's scope); the same rules apply to them, and each mutant of them is caught
+describe('the vendor chart styles follow the design rules (WO-0112)', () => {
+  const check = (c: string) => cssProblems(`:root { --fs-body: 14px; } ${c}`).filter((p) => /^(radius:|shadow|gradient|font-size-below|colour-outside|quote|justified)/.test(p));
+  it('draw no radius, shadow, gradient, small text or raw colour, and use only tokens that the stylesheet defines', () => {
+    expect(check(vendorCss)).toEqual([]);
+    const defined = new Set(Object.keys(tokensOf(parseRules(css))));
+    expect([...vendorCss.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]!).filter((u) => !defined.has(u))).toEqual([]);
+  });
+  it.each([
+    ['track with a radius', (c: string) => inRule(c, '.track', 'display: block;', 'display: block; border-radius: 4px;'), /radius:4px/],
+    ['fill in a raw colour', (c: string) => inRule(c, '.track > span', 'background: var(--accent)', 'background: #1b2bff'), /colour-outside-tokens/],
+    ['track with a shadow', (c: string) => inRule(c, '.track', 'display: block;', 'display: block; box-shadow: 0 1px 2px var(--text);'), /shadow/],
+    ['value text 11px', (c: string) => inRule(c, '.value', 'font-weight: 500;', 'font-weight: 500; font-size: 11px;'), /font-size-below-12/],
+    ['gradient fill', (c: string) => inRule(c, '.track > span', 'background: var(--accent)', 'background: linear-gradient(var(--accent), var(--text))'), /gradient/],
+  ])('mutant: %s is caught', (_n, mutate, expected) => {
+    const mutated = mutate(vendorCss);
+    expect(mutated).not.toBe(vendorCss);
+    expect(check(mutated).join(' ')).toMatch(expected);
+  });
+});
+
+// WO-0114: the global th rule draws a black rule under a header cell; in a vendor table a row header takes the cells' hairline instead
+describe('the vendor tables draw one hairline under every row (WO-0114)', () => {
+  it('has a row-header override in the vendor module, and the global th rule is still the black one it overrides', () => {
+    expect(vendorTableProblems(vendorCss)).toEqual([]);
+    expect(parseRules(css).find((r) => r.selector === 'th')?.decls).toContainEqual(['border-bottom-color', 'var(--rule)']);
+  });
+  it.each([
+    ['override removed', (c: string) => c.replace(/\.trend tbody th \{[^}]*\}/, '')],
+    ['override in the rule colour', (c: string) => c.replace('.trend tbody th { border-bottom-color: var(--hairline)', '.trend tbody th { border-bottom-color: var(--rule)')],
+  ])('mutant: %s is caught', (_n, mutate) => {
+    expect(mutate(vendorCss)).not.toBe(vendorCss);
+    expect(vendorTableProblems(mutate(vendorCss))).toEqual(['vendor-row-header-rule']);
   });
 });
 

@@ -62,6 +62,14 @@ describe('taxonomy consistency', () => {
     expect(CONDITION_BANDS).toEqual(['Brand new', 'Like new', 'Good', 'Worn', 'Falling apart']);
     expect(SIZE_SYSTEMS).toEqual(['Letter', 'Waist and length', 'Shoe EU', 'Shoe UK', 'Shoe US', 'Shoe IN']);
   });
+  it('WO-0098 insight lookups: six price bands, the region map and the Letter sizes of the R7 glossary', () => {
+    expect(taxonomy.priceBands).toEqual(['<25', '25-50', '50-100', '100-200', '200+', 'Unknown']);
+    expect(taxonomy.regions).toEqual(['South Asia']);
+    expect(taxonomy.countryRegions).toEqual([{ country: 'IN', region: 'South Asia' }]);
+    expect(taxonomy.countryRegions.every((c) => taxonomy.regions.includes(c.region))).toBe(true);
+    expect(taxonomy.sizes).toEqual([{ system: 'Letter', codes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] }]);
+    expect(taxonomy.sizes.every((s) => (SIZE_SYSTEMS as string[]).includes(s.system))).toBe(true);
+  });
   it('the public API exposes the documented functions', () => {
     for (const name of ['colourFamily', 'rgbToLab', 'referenceSwatch', 'isCategory', 'isSubType',
       'isColourFamily', 'categoryOfSubType', 'slotsOfSubType', 'assertTaxonomy']) {

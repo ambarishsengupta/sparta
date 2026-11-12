@@ -1,12 +1,14 @@
 /** Access gating of LLD 9.1 as pure functions. These only guide the interface; the database policies (LLD 4.5) are the enforcement. */
 export type GateState =
-  | 'unauthenticated' | 'needs_email_confirmation' | 'needs_documents' | 'needs_pilot_notice' | 'needs_onboarding' | 'not_available' | 'admin' | 'ready';
+  | 'unauthenticated' | 'needs_email_confirmation' | 'needs_documents' | 'needs_pilot_notice' | 'needs_onboarding' | 'not_available' | 'admin' | 'needs_vendor_agreement' | 'vendor' | 'ready';
 export type Decision = { action: 'allow' } | { action: 'redirect'; to: string };
 
 /** What the session and the person's own rows say. Each flag is true when that step is done. */
 export interface Facts {
   emailConfirmed: boolean; role: string; eligible: boolean;
   ageConfirmed: boolean; termsCurrent: boolean; privacyCurrent: boolean; noticeCurrent: boolean; country: string | null;
+  /** WO-0103, role `vendor` only: exactly one membership (the vendor functions refuse zero or several) and the current agreement accepted. Absent means no membership. */
+  vendor?: { member: boolean; agreed: boolean };
 }
 
 /** The first step still open, in the order of LLD 9.1. Anything that is not eligible for another reason (a country off the list,
@@ -14,6 +16,7 @@ export interface Facts {
 export function stateFromFacts(f: Facts): GateState {
   if (!f.emailConfirmed) return 'needs_email_confirmation';
   if (f.role === 'admin') return 'admin';   // WO-0088: the catalogue admin page; the routes behind it check the role again in the database
+  if (f.role === 'vendor') return !f.vendor?.member ? 'not_available' : f.vendor.agreed ? 'vendor' : 'needs_vendor_agreement';   // LLD 9.1 steps 6 and 7
   if (f.role !== 'consumer') return 'not_available';
   if (f.eligible) return 'ready';
   if (!f.ageConfirmed || !f.termsCurrent || !f.privacyCurrent) return 'needs_documents';
@@ -24,7 +27,7 @@ export function stateFromFacts(f: Facts): GateState {
 
 const HOME: Record<Exclude<GateState, 'unauthenticated'>, string> = {
   needs_email_confirmation: '/check-your-email', needs_documents: '/accept-terms', needs_pilot_notice: '/pilot-notice',
-  needs_onboarding: '/onboarding', not_available: '/not-available', admin: '/admin/catalog', ready: '/',
+  needs_onboarding: '/onboarding', not_available: '/not-available', admin: '/admin/catalog', needs_vendor_agreement: '/vendor/agreement', vendor: '/vendor', ready: '/',
 };
 const AUTH_PAGES = ['/sign-in', '/sign-up', '/check-your-email', '/reset'];
 const GATE_PAGES = ['/accept-terms', '/pilot-notice', '/onboarding', '/not-available'];
@@ -38,6 +41,8 @@ const INVALID = '/__invalid__';
 /** WO-0088: the admin routes answer 401 or 403 themselves in every state (an API client cannot follow a redirect to a sign-in page); the admin page belongs to the admin state only. */
 const ADMIN_API = '/api/admin';
 const ADMIN_PAGES = ['/admin/catalog'];
+/** WO-0103: the vendor portal. A vendor without the current agreement can open only its agreement page; a vendor with it lives under /vendor; no one else gets in. */
+const isVendorPath = (path: string): boolean => path === '/vendor' || path.startsWith('/vendor/');
 
 /** A request path read against a placeholder host that is never contacted (the one URL literal in this file). */
 const asUrl = (raw: string): URL => new URL(`http://sparta.invalid${raw.startsWith('/') ? '' : '/'}${raw}`);
@@ -74,7 +79,8 @@ export function decideRoute(state: GateState, rawPath: string): Decision {
     // The sign-in page sends the person back to the page they asked for, query string included; the value is encoded as one parameter.
     return redirect(path === '/' ? '/sign-in' : `/sign-in?next=${encodeURIComponent(path + (path === INVALID ? '' : searchOf(rawPath)))}`);
   }
-  if (state === 'ready') return AUTH_PAGES.includes(path) || GATE_PAGES.includes(path) || ADMIN_PAGES.includes(path) ? redirect('/') : ALLOW;
-  const held = state !== 'needs_email_confirmation' && (HELD_PAGES.includes(path) || HELD_API.some((p) => path === p || path.startsWith(`${p}/`)));
+  if (state === 'ready') return AUTH_PAGES.includes(path) || GATE_PAGES.includes(path) || ADMIN_PAGES.includes(path) || isVendorPath(path) ? redirect('/') : ALLOW;
+  if (state === 'vendor') return isVendorPath(path) && path !== HOME.needs_vendor_agreement ? ALLOW : redirect(HOME.vendor);
+  const held = state !== 'needs_email_confirmation' && state !== 'needs_vendor_agreement' && (HELD_PAGES.includes(path) || HELD_API.some((p) => path === p || path.startsWith(`${p}/`)));
   return path === HOME[state] || held ? ALLOW : redirect(HOME[state]);
 }

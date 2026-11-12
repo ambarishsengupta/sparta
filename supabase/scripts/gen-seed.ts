@@ -13,6 +13,10 @@ interface Taxonomy {
   occasions: string[];
   conditionBands: { code: string; min: number; max: number }[];
   sizeSystems: { code: string; label: string }[];
+  sizes: { system: string; codes: string[] }[];       // WO-0098: Letter sizes (R7 glossary)
+  priceBands: string[];                                // WO-0098: band codes, USD, lower bound inclusive
+  regions: string[];
+  countryRegions: { country: string; region: string }[];
 }
 
 const TAXONOMY_URL = new URL('../../packages/taxonomy/src/taxonomy.json', import.meta.url);
@@ -42,6 +46,12 @@ export function generateLookupsSql(taxonomy: Taxonomy = JSON.parse(readFileSync(
   out.push(simple('lk_colour_family', names(t.colourFamilies.map((c) => c.family))));
   out.push(simple('lk_fit', names(t.fit)), simple('lk_material', names(t.material)), simple('lk_pattern', names(t.pattern)));
   out.push(simple('lk_season', names(t.seasons)), simple('lk_occasion', names(t.occasions)), simple('lk_size_system', t.sizeSystems));
+  // WO-0098 (R7): the insight lookups. lk_brand stays empty (the brand list is the owner's, O3); 'Other' and 'Unknown' are fallbacks, not rows.
+  const sizes = t.sizes.flatMap((s) => s.codes.map((code, i) => `(${q(s.system)}, ${q(code)}, ${q(code)}, ${i + 1}, true)`));
+  out.push(`insert into catalog.lk_size (size_system, code, label, sort, active) values\n  ${sizes.join(',\n  ')}\n${upsert('size_system, code', ['label', 'sort', 'active'])}\n`,
+    simple('lk_price_band', names(t.priceBands)), simple('lk_region', names(t.regions)));
+  const countries = t.countryRegions.map((c) => `(${q(c.country)}, ${q(c.region)})`);
+  out.push(`insert into catalog.country_region (country, region) values\n  ${countries.join(',\n  ')}\n${upsert('country', ['region'])}\n`);
   const bands = t.conditionBands.map((b, i) => `(${q(b.code)}, ${q(b.code)}, ${i + 1}, true, ${b.min}, ${b.max})`);
   out.push(`insert into catalog.lk_condition_band (code, label, sort, active, min_score, max_score) values\n  ${bands.join(',\n  ')}\n${upsert('code', ['label', 'sort', 'active', 'min_score', 'max_score'])}\n`);
   // Swatches in seed order; id = position, so the colour function's tie-break (lowest id) is the first listed swatch.

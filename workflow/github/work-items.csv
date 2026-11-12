@@ -64,15 +64,19 @@ X-O4,Review OCR engine and model licences (PaddleOCR) against GPL-3.0 (O4),R6d,R
 X-O6,Create the first admin account and collect.yml secret (O6),R6c,Release 1 (MVP),Product owner,Todo
 X-PWD,Decide the password-change-with-stolen-session residual risk before hosting (MAJOR-1),R2c,Release 1 (MVP),Solution architect,Todo
 X-DOCS,"Review doc-sync updates to HLD/LLD (WebP vs JPEG, polling vs Realtime, Python 3.13, HMAC vs bearer token, GTIN length, export format)",R6a,Release 1 (MVP),Solution architect,Todo
-WO-0098,WO-0098: insight lookups and the anonymised fact table (database),R7a,Release 0 (stakeholder demo),Delivery agents,Todo
-WO-0099,"WO-0099: aggregation run, cube, suppression, rounding and audit (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0098,WO-0098: insight lookups and the anonymised fact table (database),R7a,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0099,"WO-0099: aggregation run, cube, suppression, rounding and audit (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0100,"WO-0100: vendor access, agreement, query log, rate limit, first vendor functions (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Todo
-WO-0101,"WO-0101: trends, gaps and condition spectrum (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0101,"WO-0101: trends, gaps and condition spectrum (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0102,"WO-0102: reports, admin read functions and the demo insights seed (database)",R7a,Release 0 (stakeholder demo),Delivery agents,Todo
 WO-0103,"WO-0103: vendor access in the app: gating, agreement, account, shell",R7b,Release 0 (stakeholder demo),Delivery agents,Todo
 WO-0104,WO-0104: vendor chart primitives (design),R7b,Release 0 (stakeholder demo),Delivery agents,Todo
 WO-0105,WO-0105: vendor dashboard,R7b,Release 0 (stakeholder demo),Delivery agents,Todo
-WO-0106,WO-0106: vendor gaps and reports,R7b,Release 0 (stakeholder demo),Delivery agents,Todo
-WO-0107,"WO-0107: admin insights: runs, query log, report generation and review",R7b,Release 0 (stakeholder demo),Delivery agents,Todo
-WO-0108,"WO-0108: feed validation, feed tables and vendor names for consumers",R7c,Release 0 (stakeholder demo),Delivery agents,Todo
-WO-0109,"WO-0109: feed routes, feed screen and vendor items in the consumer catalogue",R7c,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0106,WO-0106: vendor gaps and reports,R7b,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0107,"WO-0107: admin insights: runs, query log, report generation and review",R7b,Release 1 (MVP),Delivery agents,Todo
+WO-0108,"WO-0108: feed validation, feed tables and vendor names for consumers",R7c,Release 1 (MVP),Delivery agents,Todo
+WO-0109,"WO-0109: feed routes, feed screen and vendor items in the consumer catalogue",R7c,Release 1 (MVP),Delivery agents,Todo
+X-UNRATED,Close the Unrated-band recovery case in complementary suppression (needs an LLD 5.3 wording change),R7,Release 1 (MVP),Solution architect,Todo
+WO-0110,"WO-0110: R7a checker fixes (suppression distinct users, log allowlist)",R7,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0112,"WO-0112: vendor chart primitives, dashboard and the vendor-name read grant (WO-0104 + WO-0105 merged)",R7,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0114,WO-0114: vendor portal polish (checker findings),R7,Release 0 (stakeholder demo),Delivery agents,Done

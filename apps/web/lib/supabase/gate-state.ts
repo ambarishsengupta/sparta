@@ -30,5 +30,16 @@ export async function loadGateState(client: SupabaseClient): Promise<GateState> 
     facts.privacyCurrent = accepted('privacy_policy', rows(privacy));
     facts.noticeCurrent = list(notices).some((n: { notice_version: string }) => n.notice_version === rows(notice));
   }
+  if (facts.emailConfirmed && row?.role === 'vendor') facts.vendor = await vendorFacts(client);
   return stateFromFacts(facts);
+}
+
+/** WO-0103: the caller's own membership and acceptance rows (their policies show a vendor only its own) against the current version from `app.public_setting`. */
+async function vendorFacts(client: SupabaseClient): Promise<NonNullable<Facts['vendor']>> {
+  const catalog = client.schema('catalog');
+  const [members, accepted, current] = await Promise.all([
+    catalog.from('vendor_members').select('vendor_id'), catalog.from('vendor_agreement_acceptances').select('version'), client.schema('app').rpc('public_setting', { p_key: 'current_vendor_agreement_version' }),
+  ]);
+  const version = rows(current);
+  return { member: list(members).length === 1, agreed: typeof version === 'string' && list(accepted).some((a: { version: string }) => a.version === version) };
 }

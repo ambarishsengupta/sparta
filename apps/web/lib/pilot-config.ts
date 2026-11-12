@@ -2,6 +2,9 @@
 /** Values the team sets for the deployment (FR-67). Both are public, set at build time, and empty by default: the About page then says so. */
 const EMAIL = /^[^\s@<>"'\\]+@[^\s@<>"'\\]+\.[^\s@<>"'\\]+$/;
 
+/** The sentence shown where the privacy contact address would be when the build has none (the About page and the vendor Account page say the same). */
+export const CONTACT_NOT_SET = 'The privacy contact address is not configured in this build, so it cannot be shown here. Ask the person who invited you.';
+
 /** The privacy contact address (NEXT_PUBLIC_CONTACT_EMAIL), or null when it is empty or not an email address. */
 export function contactEmail(): string | null {
   const value = (process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? '').trim();

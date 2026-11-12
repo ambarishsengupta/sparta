@@ -114,6 +114,7 @@ describe('every redirect sink takes a fixed path or a checked one', () => {
       "components/consent/AcceptTermsForm.tsx: location.assign('/')",
       "components/consent/OnboardingForm.tsx: location.assign(startPage(start.current)", // WO-0085: one of three fixed pages (lib/onboarding.ts startPage, whose table is checked in lib/catalogue.test.ts)
       "components/consent/PilotNoticeForm.tsx: location.assign('/')",
+      "components/vendor/AgreementForm.tsx: location.assign('/vendor')",   // WO-0103: the fixed vendor home, after the agreement is recorded
     ].sort());
   });
   it('router.push / router.replace take fixed paths, and nothing else assigns location or redirects from the request', () => {

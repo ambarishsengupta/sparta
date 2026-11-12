@@ -5,7 +5,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { Nav } from './Nav';
-import { FORBIDDEN_STRINGS, brandProblems, cssProblems, inlineStyleProblems, parseRules, tokensOf } from './design-rules';
+import { FORBIDDEN_STRINGS, brandProblems, cssProblems, inlineStyleProblems, parseRules, tokensOf, vendorTableProblems } from './design-rules';
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
 
@@ -166,6 +166,21 @@ describe('the vendor chart styles follow the design rules (WO-0112)', () => {
     const mutated = mutate(vendorCss);
     expect(mutated).not.toBe(vendorCss);
     expect(check(mutated).join(' ')).toMatch(expected);
+  });
+});
+
+// WO-0114: the global th rule draws a black rule under a header cell; in a vendor table a row header takes the cells' hairline instead
+describe('the vendor tables draw one hairline under every row (WO-0114)', () => {
+  it('has a row-header override in the vendor module, and the global th rule is still the black one it overrides', () => {
+    expect(vendorTableProblems(vendorCss)).toEqual([]);
+    expect(parseRules(css).find((r) => r.selector === 'th')?.decls).toContainEqual(['border-bottom-color', 'var(--rule)']);
+  });
+  it.each([
+    ['override removed', (c: string) => c.replace(/\.trend tbody th \{[^}]*\}/, '')],
+    ['override in the rule colour', (c: string) => c.replace('.trend tbody th { border-bottom-color: var(--hairline)', '.trend tbody th { border-bottom-color: var(--rule)')],
+  ])('mutant: %s is caught', (_n, mutate) => {
+    expect(mutate(vendorCss)).not.toBe(vendorCss);
+    expect(vendorTableProblems(mutate(vendorCss))).toEqual(['vendor-row-header-rule']);
   });
 });
 

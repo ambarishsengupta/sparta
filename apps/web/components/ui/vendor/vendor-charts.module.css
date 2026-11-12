@@ -3,4 +3,5 @@
 .bars li { display: grid; grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr) minmax(5rem, 9rem); gap: var(--s3); align-items: center; }
 .track { display: block; height: var(--s3); background: var(--hairline); } .track > span { display: block; height: 100%; background: var(--accent); }
 .value { font-weight: 500; white-space: nowrap; } .suppressed { grid-column: 2 / -1; color: var(--muted); }
-.control { max-width: 20rem; margin: 0 0 var(--s3); } .trend td .track { margin-bottom: var(--s1); } .trend caption { text-align: left; padding: 0 0 var(--s2); text-transform: uppercase; }
+.control { max-width: 20rem; margin: 0 0 var(--s3); } .trend td .track { margin-bottom: var(--s1); } .trend tbody th { border-bottom-color: var(--hairline); } /* the global th rule draws a black rule; a row header takes the cells' hairline */
+.trend caption { text-align: left; padding: 0 0 var(--s2); text-transform: uppercase; }

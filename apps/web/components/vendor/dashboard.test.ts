@@ -1,3 +1,5 @@
+/// <reference types="node" />
+import { readFileSync } from 'node:fs';
 import { createElement, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
@@ -34,6 +36,24 @@ describe('the dashboard markup', () => {
     expect(m).toContain('60 users / 40%');
     expect(m).toMatch(/<span>Footwear<\/span><span class="suppressed">Not enough users to display<\/span>/);
     expect(m).not.toMatch(/Footwear[^]*?0 users/);
+  });
+  it('draws each ownership bar as the share shown (of the coverage cohort), also under a filter: 35 users / 23% is not a full bar (WO-0114)', () => {
+    const widths = (h: string) => [...h.matchAll(/aria-label="([^"]*), Ownership mix[^"]*"[^>]*><span style="width:([\d.]+)%"/g)].map((x) => [x[1], Math.round(Number(x[2]))]);
+    expect(widths(m)).toEqual([['Tops', 40]]);
+    const some = [{ segment: 'Tops', users_rounded: 35 }, { segment: 'Footwear', users_rounded: 30 }];
+    const filtered = view({ s: { ...INITIAL, filter: { dim: 'size', value: 'Letter:M' } }, mix: ok(withHidden(some, some)) });
+    expect(filtered).toContain('35 users / 23%');
+    expect(widths(filtered)).toEqual([['Tops', 23], ['Footwear', 20]]);
+    const tiny = view({ mix: ok(withHidden([{ segment: 'Tops', users_rounded: 145 }, { segment: 'Footwear', users_rounded: 5 }], [{ segment: 'Tops', users_rounded: 145 }, { segment: 'Footwear', users_rounded: 5 }])) });
+    expect(widths(tiny)).toEqual([['Tops', 97], ['Footwear', 3]]);   // the 3% minimum for a small non-null value
+  });
+  it('lists the price bands in the order of the price-band lookup, not as text (WO-0114)', () => {
+    const lookup = (JSON.parse(readFileSync(new URL('../../../../packages/taxonomy/src/taxonomy.json', import.meta.url), 'utf8')) as { priceBands: string[] }).priceBands;
+    const shuffled = ['200+', '100-200', 'Unknown', '25-50', '<25', '50-100'];   // filter_options returns text order: '100-200' before '25-50'
+    const options = [...shuffled.map((v) => ({ filter_dim: 'price_band', filter_value: v })), { filter_dim: 'season', filter_value: 'Winter' }];
+    const h = view({ header: { ...loaded.header, options: ok(options) } });
+    const price = h.slice(h.indexOf('Price band'), h.indexOf('Region'));
+    expect([...price.matchAll(/<option value="([^"]+)"/g)].map((x) => x[1]!.replace('&lt;', '<')).filter((v) => v !== '')).toEqual(lookup);
   });
   it('shows both trend tables with their values and the condition spectrum with a suppressed band', () => {
     expect(m).toContain('<caption>Purchases per month by category</caption>');

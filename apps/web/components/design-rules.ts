@@ -151,6 +151,12 @@ export function cssProblems(css: string): string[] {
   return [...new Set(bad)];
 }
 
+/** WO-0114: a row header of a vendor table takes the cells' hairline; the global `th` rule draws the black rule under a header cell. */
+export function vendorTableProblems(vendorCss: string): string[] {
+  const r = parseRules(vendorCss).filter((x) => /(^|\s)\.trend\s+(tbody\s+)?th$/.test(x.selector));
+  return r.some((x) => x.decls.some(([p, v]) => p === 'border-bottom-color' && v === 'var(--hairline)')) ? [] : ['vendor-row-header-rule'];
+}
+
 /** Brand, trademark and proprietary-font strings that must appear nowhere in apps/web. Built from pieces so this file does not contain them whole. */
 const j = (...p: string[]) => p.join('');
 export const FORBIDDEN_STRINGS: string[] = [

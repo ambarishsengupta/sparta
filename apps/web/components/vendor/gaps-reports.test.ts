@@ -68,6 +68,12 @@ describe('a report on screen', () => {
     expect(m).toMatch(/<h3>Hats<\/h3><p><span class="suppressed">Not enough users to display<\/span><\/p>/);
     expect(a11yProblems(m)).toEqual([]);
   });
+  it('names the report month in the heading, and keeps the plain heading while loading or when there is no report (WO-0114)', () => {
+    expect(m).toContain('<h1>Report: November 2026</h1>');
+    expect(html(createElement(ReportView, { one: ok({ id: 'x', period: '2026-01-01', reviewed_at: '2026-02-03T09:00:00Z', payload }) }))).toContain('<h1>Report: January 2026</h1>');
+    for (const one of [null, ok(null), { ok: false as const, kind: 'forbidden' as const, message: INSIGHT_SENTENCES.forbidden }]) expect(html(createElement(ReportView, { one }))).toMatch(/^<h1>Report<\/h1>/);
+    expect(read('../../app/vendor/reports/[id]/page.tsx')).not.toContain('<h1>');
+  });
   it('says so for an empty section instead of showing a blank', () => {
     const e = html(createElement(ReportView, { one: detail({ ...payload, gaps: [], rising_wishlist: [], condition_spectrum: [] }) }));
     expect(e).toContain('No gaps to show this month.');

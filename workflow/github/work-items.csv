@@ -79,3 +79,4 @@ WO-0109,"WO-0109: feed routes, feed screen and vendor items in the consumer cata
 X-UNRATED,Close the Unrated-band recovery case in complementary suppression (needs an LLD 5.3 wording change),R7,Release 1 (MVP),Solution architect,Todo
 WO-0110,"WO-0110: R7a checker fixes (suppression distinct users, log allowlist)",R7,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0112,"WO-0112: vendor chart primitives, dashboard and the vendor-name read grant (WO-0104 + WO-0105 merged)",R7,Release 0 (stakeholder demo),Delivery agents,Done
+WO-0114,WO-0114: vendor portal polish (checker findings),R7,Release 0 (stakeholder demo),Delivery agents,Done

@@ -12,6 +12,9 @@ import { GapsTable } from './Gaps';
 type Slot<T> = Insight<T> | null; // null: still loading
 const month = (d: string) => d.slice(0, 7);
 const day = (iso: string) => iso.slice(0, 10);
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+/** '2026-11-01' to 'November 2026' (no locale, no time zone). */
+export const monthName = (d: string) => `${MONTHS[Number(d.slice(5, 7)) - 1] ?? d.slice(5, 7)} ${d.slice(0, 4)}`;
 
 /** FR-78: the reviewed reports of the vendor's portal, newest first. */
 export function ReportList() {
@@ -47,7 +50,11 @@ export function ReportPage({ id }: { id: string }) {
   }, [id]);
   return <ReportView one={one} />;
 }
+/** The heading is part of the view: 'Report: November 2026' once the report is known, 'Report' while loading or when there is none. */
 export function ReportView({ one }: { one: Slot<ReportDetail | null> }) {
+  return <><h1>{one?.ok && one.data ? `Report: ${monthName(one.data.period)}` : 'Report'}</h1><ReportBody one={one} /></>;
+}
+function ReportBody({ one }: { one: Slot<ReportDetail | null> }) {
   if (one === null) return <p role="status">Loading.</p>;
   if (!one.ok) return <p className="error" role="alert">{one.message}</p>;
   const payload = one.data && parsePayload(one.data.payload);

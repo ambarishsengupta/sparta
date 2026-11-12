@@ -62,3 +62,6 @@ services/worker/.u2net/
 
 # Local-only helper that sets the collector database password from an env var (WO-0083)
 supabase/scripts/set-collector-password.sh
+
+# H&M demo (WO-0120): anything the loader or the demo derives from the H&M folder stays local; never commit it
+workflow/demo/hm/out/

@@ -1,6 +1,6 @@
 id,title,slice,release,role,status
 WO-0093,"WO-0093: restyle the whole app (design system, existing screens)",Demo,Release 0 (stakeholder demo),Delivery agents,Done
-WO-0097,WO-0097: demo data pack and demo script,Demo,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0097,WO-0097: demo data pack and demo script,Demo,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0094,WO-0094: design fixes from the WO-0093 critic and the WO-0081 nav,Demo,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0001,"WO-0001: workspace, gates and goals",R0,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0002,WO-0002: taxonomy package and colour family function,R0,Release 0 (stakeholder demo),Delivery agents,Done
@@ -50,7 +50,7 @@ WO-0090,"WO-0090: receipt job handler, OCR adapter, catalogue match, Docker imag
 WO-0091,"WO-0091: receipt flow in the app, signed URLs for receipt jobs, end to end",R6d,Release 1 (MVP),Delivery agents,Todo
 WO-0092,WO-0092: WO-0080 fix loop 1 (checker findings),R6a,Release 0 (stakeholder demo),Delivery agents,Done
 X-R7,R7 Aggregation and vendor portal (to be specced),R7,Release 0 (stakeholder demo),Delivery agents,Done
-X-CHECK0,Release 0 checkpoint: stakeholder demo walk-through,Demo,Release 0 (stakeholder demo),Product owner,Todo
+X-CHECK0,Release 0 checkpoint: stakeholder demo walk-through,Demo,Release 0 (stakeholder demo),Product owner,In Progress
 X-WO82B,"WO-0082 receipt parts: attach files, DELETE /api/receipts/[id], export with files",R6a,Release 1 (MVP),Delivery agents,Todo
 X-R8,R8 Hardening and pilot open,R8,Release 1 (MVP),Delivery agents,Todo
 X-PEN,"Penetration test of secret-key routes (/api/worker/signed-urls, /api/account/purge-storage, /api/receipts, /api/admin) (O5)",R8,Release 1 (MVP),Solution architect,Todo

@@ -13,6 +13,7 @@ import taxonomy from '../../packages/taxonomy/src/taxonomy.json';
 import '../../supabase/scripts/seed.test';
 import '../../supabase/scripts/seed-demo-catalog.test';
 import '../../supabase/scripts/seed-demo-insights.test';
+import '../../supabase/scripts/demo-data.test';
 
 // ---- db_tests.sh with a stub `supabase` that logs its calls ----
 function runScript(codes: { status?: number; reset?: number; test?: number }) {

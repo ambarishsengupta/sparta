@@ -79,12 +79,12 @@ select ok(has_column_privilege('authenticated', 'app.consent_records', 'notice_v
 create temp table fn as
   select p.oid, n.nspname || '.' || p.proname as name, p.prosecdef, p.proconfig, pg_get_function_identity_arguments(p.oid) as args, p.prorettype = 'trigger'::regtype as is_trigger
   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-  where n.nspname in ('app', 'ops', 'catalog') and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e');
+  where n.nspname in ('app', 'ops', 'catalog', 'analytics', 'analytics_private') and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e');   -- WO-0100: the analytics schemas are now covered too
 select is_empty($$ select name from fn where has_function_privilege('anon', oid, 'execute') and name <> 'app.supported_countries' $$,
   'anon can execute nothing but app.supported_countries');
 select ok(has_function_privilege('anon', 'app.supported_countries()', 'execute'), 'anon can execute app.supported_countries');
 select is((select array_agg(name order by name) from fn where has_function_privilege('authenticated', oid, 'execute')),
-  array['app.accept_documents','app.complete_onboarding','app.confirm_receipt','app.current_role','app.delete_my_account','app.export_my_data','app.has_consent','app.insert_item_from_json','app.insert_purchase_from_json','app.is_recent_sign_in','app.job_input_ok','app.latest_fx_rates','app.public_setting','app.recent_job_count','app.storage_used','app.supported_countries','app.wishlist_bought',
+  array['analytics.coverage','analytics.filter_options','analytics.ownership_mix','app.accept_documents','app.complete_onboarding','app.confirm_receipt','app.current_role','app.delete_my_account','app.export_my_data','app.has_consent','app.insert_item_from_json','app.insert_purchase_from_json','app.is_recent_sign_in','app.job_input_ok','app.latest_fx_rates','app.public_setting','app.recent_job_count','app.storage_used','app.supported_countries','app.wishlist_bought',
         'catalog.colour_family','catalog.rgb_hex','catalog.rgb_to_lab','catalog.set_colour_fields','catalog.srgb_lin','catalog.take_down_source'],
   'authenticated can execute exactly the documented functions');
 select is((select array_agg(name order by name) from fn where has_function_privilege('service_role', oid, 'execute')), array['app.write_admin_audit','catalog.colour_family','catalog.rgb_hex','catalog.rgb_to_lab','catalog.set_colour_fields','catalog.srgb_lin'],

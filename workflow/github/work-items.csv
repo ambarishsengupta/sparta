@@ -1,6 +1,6 @@
 id,title,slice,release,role,status
 WO-0093,"WO-0093: restyle the whole app (design system, existing screens)",Demo,Release 0 (stakeholder demo),Delivery agents,Done
-WO-0097,WO-0097: demo data pack and demo script,Demo,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0097,WO-0097: demo data pack and demo script,Demo,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0094,WO-0094: design fixes from the WO-0093 critic and the WO-0081 nav,Demo,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0001,"WO-0001: workspace, gates and goals",R0,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0002,WO-0002: taxonomy package and colour family function,R0,Release 0 (stakeholder demo),Delivery agents,Done

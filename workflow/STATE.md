@@ -1,6 +1,6 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-12 01:42 IST (R6c merged; R7 started on release/R7: WO-0098 maker running; safety-net resume task sparta-resume-0440-ist armed). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 60 minutes, another orchestrator session is active: do nothing and stop
+Updated: 2026-11-12 12:48 IST (limit reset; main session resumed the WO-0099 maker; a second resume session (local_b9e493b1) was told to stand down). ORCHESTRATOR LOCK: if Status is running and Updated is within the last 60 minutes, another orchestrator session is active: do nothing and stop
 Status: running
 Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
 In-flight branches: none (no work-order worktrees exist yet)

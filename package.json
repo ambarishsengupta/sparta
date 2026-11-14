@@ -7,9 +7,10 @@
     "apps/*"
   ],
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p apps/web/tsconfig.json --noEmit --incremental false",
     "test": "vitest run",
     "lint": "eslint .",
+    "lint:repo": "python3 workflow/gates/repo_lint.py",
     "gate": "bash workflow/gates/gate.sh",
     "db:seed": "tsx supabase/scripts/gen-seed.ts",
     "test:db": "vitest run workflow/gates/db_tests.test.ts"

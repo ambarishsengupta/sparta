@@ -82,7 +82,7 @@ Native iOS and Android apps; paid AI features, inspiration matching and a style 
 
 ## Status
 
-The design documents (BRD, FDD, HLD, LLD) are final; each lists its remaining open items. The legal and privacy pack is a set of pilot drafts and is not legal advice. The charter is the course document already submitted. Implementation has not started, so there is no application code in this repository yet. The recommendation engine was added to the pilot design on 2026-10-29 (BRD section 7.5, FDD section 14). Build order and milestones are in section 14 of the LLD.
+The design documents (BRD, FDD, HLD, LLD) are final; each lists its remaining open items. The legal and privacy pack is a set of pilot drafts and is not legal advice. The charter is the course document already submitted. Release 0 (a stakeholder demo with every feature except receipts) is built and runs on a local machine only; nothing is hosted. Release 1 (the MVP: receipts, penetration tests, hardening) is next; the state of the build is in [`workflow/STATE.md`](workflow/STATE.md) and the open work in [`workflow/github/work-items.csv`](workflow/github/work-items.csv). The recommendation engine was added to the pilot design on 2026-10-29 (BRD section 7.5, FDD section 14). Build order and milestones are in section 14 of the LLD.
 
 ## Contributing
 

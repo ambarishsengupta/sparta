@@ -1,11 +1,13 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-12 17:54 IST (Release 0 complete and merged to main; checkpoint = the owner walks DEMO-SCRIPT.md). ORCHESTRATOR LOCK: no orchestrator is running
-Status: Release 0 build complete; waiting for the owner's checkpoint walk-through
-Resume trigger: none (no build is running; the orchestrator arms `sparta-resume-<yyyymmddhhmm>` before each work order, workflow doc section 9 step 4)
-In-flight branches: none (no work-order worktrees exist yet)
-Integration branch: none yet (release/R0 is cut from main after the preconditions below are ticked)
-Branch of the documents: engine-hm-images (uncommitted changes; main is untouched)
+Updated: 2026-11-15 (audit of the whole build done; lint rules and the strict gate added in WO-0123). ORCHESTRATOR LOCK: no orchestrator is running
+Status: Release 0 built and merged to main (2026-11-12). H&M demo branch `release/hm-demo` in progress: WO-0120 done, WO-0121 and WO-0122 open. Waiting for the owner's checkpoint walk-through.
+Resume trigger: none
+In-flight branches: release/hm-demo (WO-0121 has no work in the tree yet)
+Integration branch: release/hm-demo
+Next: WO-0121, WO-0122, then the audit work orders WO-0124 to WO-0130 (workflow/work-orders/Audit.md), then Release 1. Womenswear (CR-001, WO-0131 to WO-0147 in workflow/work-orders/Womenswear.md) waits for the owner's yes on the change request.
+Before any merge: `GATE_STRICT=1 bash workflow/gates/gate.sh` must end with `GATE: PASS (FULL: no stage skipped a check)` (workflow rule 12).
+Note: the sections from "Preconditions" to "G8 check of v0.4" below are the record of 4 November and are kept for history; the build log at the end is current.
 
 ## Preconditions (the owner and the SA tick these; an agent never does)
 Workflow doc 4.1 (before R0):
@@ -89,3 +91,4 @@ Checked before and after every work order with `mcp__ccd_session_mgmt__get_usage
 - 2026-11-12 ~01:50 IST: 5-hour usage at 86%; owner said keep going until the limit hits. Armed `sparta-resume-0440-ist` (04:40 IST, with a collision check). R7 branch release/R7 (R7.md WO-0098..0109; sub-releases R7a, R7b, R7c, merge each to main).
 - 2026-11-12 OWNER CULL: Opus scope review applied (see 'CULL of 2026-11-12' in workflow/work-orders/R7.md). WO-0107, 0108, 0109 are Release 1. WO-0102 drops the four app.admin_* functions; WO-0103 no Feed nav; WO-0104 four chart primitives and no UX brief; WO-0105 desktop evidence only; WO-0106 no print stylesheet; WO-0097 three accounts. Process trims: maker mutation minimums dropped (checker writes 3 to 5), no R7a/b/c split, no per-sub-release Opus checks or retros/goals, one design critic pass after WO-0106, fold STATE and CSV changes into the WO commit, desktop screenshots only. Gate, one fresh Spec QC per WO, no secrets/accounts/push, H&M off and Rule 11 stay.
 - 2026-11-12: RELEASE 0 BUILD COMPLETE. Everything merged to main (R0..R7, restyle, demo pack). Demo: `bash supabase/scripts/demo-data.sh` then `bash workflow/demo/start-demo.sh` (or `--no-login`); script in workflow/demo/DEMO-SCRIPT.md; retro workflow/retros/Release0.md. NEXT is the owner's checkpoint, then Release 1 (receipts, pen tests, security reviews, R8 hardening, owner decisions). The scheduled resume task sparta-resume-0440-ist should be disabled/deleted.
+- 2026-11-15: AUDIT (owner's request). Findings A1 to A13 and fix work orders WO-0124 to WO-0130 in workflow/work-orders/Audit.md. WO-0123 built: ESLint boundary and type-aware rules with a 40-entry baseline, workflow/gates/repo_lint.py (RL01 to RL12), 900_catalog_lint.test.sql, db_lint stage, GATE_STRICT and the PARTIAL/FULL last line, typecheck now covers the whole web app. Fixed on the spot: .gitignore for env files, pandas pin, torch.load weights_only, workflow permissions, five stale Todo items. Open and High: the public repository still shows five H&M purchase rows in the D3 notebook (WO-0124; history rewrite is the owner's item X-HIST). Womenswear change request drafted: docs/CR-001-womenswear.md, 17 work orders in workflow/work-orders/Womenswear.md, not started.

@@ -1,0 +1,104 @@
+{
+  "_comment": "Exceptions for workflow/gates/repo_lint.py. allow = permanent, with a reason. baseline = found when the rule was added, with the work order that removes it. An entry that matches nothing is an error, so both lists can only shrink.",
+  "allow": [
+    {
+      "rule": "RL01",
+      "path": "services/worker/models/garment-cnn-v1.onnx",
+      "reason": "Garment model version 1, trained on Fashion-MNIST (MIT licence) only; it ships with the worker image and its hash is pinned by the model card test (R5a)."
+    },
+    {
+      "rule": "RL01",
+      "path": "submissions/D2/data_dictionary.csv",
+      "reason": "A dictionary of column names for the D2 course submission; it holds no data rows."
+    },
+    {
+      "rule": "RL01",
+      "path": "workflow/demo/hm/tests/articles.csv",
+      "reason": "An invented test fixture for the H&M demo loader (ids 099..., product names Zzyx); no H&M row."
+    },
+    {
+      "rule": "RL01",
+      "path": "workflow/github/work-items.csv",
+      "reason": "The list of work items that mirrors the GitHub project; no personal or licensed data."
+    },
+    {
+      "rule": "RL01",
+      "path": "workflow/evidence/R5/evaluate.log",
+      "reason": "Training and export evidence of garment model version 1 (Fashion-MNIST); numbers only, no data rows, kept as R5a evidence."
+    },
+    {
+      "rule": "RL01",
+      "path": "workflow/evidence/R5/export.log",
+      "reason": "Training and export evidence of garment model version 1 (Fashion-MNIST); numbers only, no data rows, kept as R5a evidence."
+    },
+    {
+      "rule": "RL01",
+      "path": "workflow/evidence/R5/train.log",
+      "reason": "Training and export evidence of garment model version 1 (Fashion-MNIST); numbers only, no data rows, kept as R5a evidence."
+    },
+    {
+      "rule": "RL01",
+      "path": "workflow/evidence/R5/tuning-mid-aug-lr3e-3.log",
+      "reason": "Training and export evidence of garment model version 1 (Fashion-MNIST); numbers only, no data rows, kept as R5a evidence."
+    },
+    {
+      "rule": "RL01",
+      "path": "workflow/evidence/R5/tuning-soft-aug-lr3e-3.log",
+      "reason": "Training and export evidence of garment model version 1 (Fashion-MNIST); numbers only, no data rows, kept as R5a evidence."
+    },
+    {
+      "rule": "RL10",
+      "path": "supabase/migrations/20261105095803_schemas_and_extensions.sql",
+      "reason": "`usage on schema app to anon` lets the sign-up page call app.supported_countries() before sign-in (LLD 4.9); anon holds no table privilege, which 003_schema_and_grants and 900_catalog_lint test."
+    },
+    {
+      "rule": "RL10",
+      "path": "supabase/migrations/20261105102310_functions_and_triggers.sql",
+      "reason": "app.supported_countries() is the one function anon may run: the sign-up page shows the country list before sign-in (LLD 4.9)."
+    }
+  ],
+  "baseline": [
+    {
+      "rule": "RL02",
+      "path": "submissions/D3/ANCP_TM_D3_eda.html",
+      "work_order": "WO-0124",
+      "reason": "The D3 course submission as exported HTML; over 1 MB and holds the same table as the notebook."
+    },
+    {
+      "rule": "RL03",
+      "path": "submissions/D3/ANCP_TM_D3_eda.html",
+      "work_order": "WO-0124",
+      "reason": "Five H&M purchase rows in a rendered table (legal review finding 20); the repository is public."
+    },
+    {
+      "rule": "RL02",
+      "path": "submissions/D3/ANCP_TM_D3_eda.ipynb",
+      "work_order": "WO-0124",
+      "reason": "The D3 notebook with all outputs kept; over 1 MB."
+    },
+    {
+      "rule": "RL03",
+      "path": "submissions/D3/ANCP_TM_D3_eda.ipynb",
+      "work_order": "WO-0124",
+      "reason": "Five H&M purchase rows in a cell output (legal review finding 20); the repository is public."
+    },
+    {
+      "rule": "RL12",
+      "path": "submissions/D3/ANCP_TM_D3_eda.ipynb",
+      "work_order": "WO-0124",
+      "reason": "23 rendered table outputs; clear or summarise them."
+    },
+    {
+      "rule": "RL07",
+      "path": "services/worker/Dockerfile",
+      "work_order": "WO-0127",
+      "reason": "Base image python:3.13-slim is named by tag; pin its digest."
+    },
+    {
+      "rule": "RL08",
+      "path": ".github/workflows/ci.yml",
+      "work_order": "WO-0127",
+      "reason": "actions/checkout and actions/setup-node are named by tag; pin their commits."
+    }
+  ]
+}

@@ -238,6 +238,11 @@ These come from the product owner's instructions and from mistakes already made 
     - **Makers and checkers stop what they start**: a server or watcher started for a demo or a test is stopped before the report, and the report says so. An agent that leaves a server running has not finished the work order.
     - **Every subagent gets a time box in its brief** (default 45 minutes for a maker, 45 minutes for a verifier, 20 minutes for a re-check of a fix); the orchestrator checks elapsed time at each sweep and sends a wrap-up message to any agent past its box, asking it to report what it has and say what it skipped.
     - The orchestrator checks the agent list (`ListAgents`) and the scheduled tasks at each sweep and stops anything that has no work order behind it; a resume trigger that has fired or is no longer needed is deleted, not left disabled.
+12. **Lint is law, baselines only shrink, and a merge needs a FULL gate.** (Added on the product owner's instruction of 2026-11-15 after the audit in `workflow/work-orders/Audit.md`.)
+    - Every lint rule is an error. Rules live in `eslint.config.js` (TypeScript), `workflow/gates/repo_lint.py` (everything else), `supabase/tests/database/900_catalog_lint.test.sql` and `workflow/gates/db_lint.sh` (database). `docs/LINT-RULES.md` explains each.
+    - No inline `eslint-disable`, no `@ts-ignore`, no skipped or focused test. An exception exists only as an entry in a baseline file (`eslint-suppressions.json`, `repo_lint.baseline.json`, `db_lint.baseline.json`) with a work order that removes it. A maker never adds an entry; the Gate engineer does, in a work order that says why.
+    - A defect that a human or a checker finds and a rule could have caught gets its rule in the same fix (retro section 3, "Escapes").
+    - **Before a merge into `main` or a release branch the orchestrator runs `GATE_STRICT=1 bash workflow/gates/gate.sh`** and the last line must be `GATE: PASS (FULL: no stage skipped a check)`. `PASS (PARTIAL)` is for a maker's quick loop only and is never evidence of done.
 
 ## 11. Risks to the workflow itself
 
@@ -272,4 +277,5 @@ The product owner said: everything is approved, and do not ask for approvals or 
 | Verification (Opus, extra effort): workflow and engine documents | *first report received 2026-11-04; fixes applied, re-check pending* | |
 | Approval (Opus): this workflow | 0.2 rejected 2026-11-04 (1 blocker, 10 conditions). 0.3 approved with conditions on 2026-11-04 by the Opus workflow approver (second review): no blocker; 13 conditions. Condition 3 (LLD 7.8, 7.9 and HLD wording, SA-signed) must be applied before R4 G1. All the others, 1, 2 and 4 to 13, must be applied before R0 G1. Each applied change goes through G8. | 2026-11-04 |
 | Rule 11 (background work, sweep) added on the product owner's instruction of 2026-11-05 | applied by the orchestrator; the workflow approver's G8 check of this addition is pending | 2026-11-05 |
+| Rule 12 (lint, baselines, FULL gate before a merge) added on the product owner's instruction of 2026-11-15 | applied in WO-0123; the workflow approver's G8 check of this addition is pending | 2026-11-15 |
 | Product owner | *pending* | |

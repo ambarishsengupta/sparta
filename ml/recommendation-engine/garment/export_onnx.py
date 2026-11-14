@@ -43,7 +43,7 @@ def max_difference(net, path, x):
 
 def main():
     net = M.GarmentCNN()
-    net.load_state_dict(torch.load(CHECKPOINT))
+    net.load_state_dict(torch.load(CHECKPOINT, weights_only=True))
     path = export(net, ONNX_PATH)
     images, _ = idx.load_split(idx.data_root(), "test")      # used for the export check only, never for any model choice
     diff = max_difference(net, path, pp.normalise(images[:100]))

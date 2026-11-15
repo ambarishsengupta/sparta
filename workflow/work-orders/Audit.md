@@ -87,8 +87,8 @@ Completion conditions: a CI run on the work-order branch ends with `GATE: PASS (
 ---
 # Work Order WO-0128: empty the database lint baseline
 Action: execute. Owner: Database maker. Checker: Spec QC.
-In scope: supabase/migrations/** (one new migration), supabase/tests/database/**, workflow/gates/db_lint.baseline.json
-Note: finding A10. Never edit an applied migration; add a new one.
+In scope: supabase/migrations/**, supabase/tests/database/**, workflow/gates/db_lint.baseline.json
+Note: finding A10. Never edit an applied migration; add exactly one new migration.
 Instructions: new migration: `alter function ... set search_path = ''` for catalog.colour_family, rgb_hex, rgb_to_lab, set_colour_fields and srgb_lin, after schema-qualifying every name they use (they call each other; 002_colour.test.sql must stay green, and the item insert path through the trigger must be exercised). In `app.confirm_receipt` initialise the two uuid[] variables with explicit casts. For `analytics.run_aggregation` either keep the temporary table and record in the baseline that the finding is a limit of the static check (with the test that proves the function runs), or replace the temporary table with a CTE or an array so the linter can read it; prefer the second if it is under 30 changed lines. Empty the five-name list in 900_catalog_lint.test.sql and delete the fixed entries from db_lint.baseline.json.
 Completion conditions: 900_catalog_lint's fifth assertion compares with an empty array; db_lint.baseline.json holds at most the run_aggregation entry, with its reason; pgTAP and the aggregation tests pass; gate green with GATE_STRICT=1.
 

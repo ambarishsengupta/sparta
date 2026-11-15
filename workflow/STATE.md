@@ -1,12 +1,18 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-15 14:55 IST (orchestrator run started on the owner's instruction of 2026-11-15). ORCHESTRATOR LOCK: this session is the orchestrator
-Status: running
+Updated: 2026-11-15 15:25 IST (checkpoint written because the five-hour usage window reached 91%). ORCHESTRATOR LOCK: none after this session ends its turn
+Status: waiting-for-owner (five-hour window at 91%, over the 85% rule; it resets at 19:40 IST; no resume trigger is armed, so the owner restarts the run)
 Model rule (owner, 2026-11-15): the orchestrator uses ONLY Opus and Sonnet subagents: Opus 5.5 for every role that decides or judges (spec, Spec QC, code and security review, design critic, consultants, approver, retro), Sonnet for every role that carries out a task (makers, gate engineer, demo). Never Haiku, never a fork of the orchestrator.
-Resume trigger: none. Not armed for this run: the owner started it from a live session, and the two collisions of 11 and 12 November came from armed triggers. If a usage limit stops the run, Status is set to waiting-for-owner with a checkpoint and the owner restarts it. Of the three old fired triggers one was deleted (rule 11); the permission system refused to delete the other two (sparta-resume-after-limit-reset, sparta-resume-after-weekly-reset), which stay disabled and cannot fire.
-In-flight branches: wo/WO-0121 (/Users/ambarish/.sparta-worktrees/wo-0121), wo/WO-0124 (/Users/ambarish/.sparta-worktrees/wo-0124)
+Resume trigger: none (see Status). Two old fired triggers remain disabled (the permission system refused their deletion).
+CHECKPOINT, exact state:
+- WO-0124 (D3 notebook and HTML cleaned): built by a Sonnet maker, Opus Spec QC PASS after two fix loops, committed on wo/WO-0124.
+- WO-0121 (H&M photographs: route, reader module, tiles): built by a Sonnet maker, Opus check (spec, code, security, real browser) PASS, committed on wo/WO-0121 (5e3456e). Decisions recorded in workflow/work-orders/Demo.md; SA review item X-LINT1 on the board.
+- GATE CANDIDATE: branch wo/WO-0124 at 822b153 in /Users/ambarish/.sparta-worktrees/wo-0124 = release/hm-demo + WO-0124 + WO-0121. `GATE_STRICT=1 bash workflow/gates/gate.sh` was started on it at 15:22 IST; its log is /tmp/sparta-gate-cand1.log.
+- TO FINISH (only if the last lines of that log are `GATE: PASS (FULL: no stage skipped a check)` and `gate exit 0`; if the log is gone or red, run the strict gate again in that worktree first): in the candidate worktree `git merge --no-edit release/hm-demo` (brings in the state-only commits made after the gate started), then in the primary checkout `git merge --ff-only wo/WO-0124`; `python3 workflow/github/sync_github_project.py WO-0121=Done WO-0124=Done` and commit work-items.csv; `git worktree remove --force` the two worktrees under /Users/ambarish/.sparta-worktrees; `bash workflow/gates/sweep.sh`.
+- THEN, in order: WO-0122 (Demo.md, with its 2026-11-15 additions), WO-0128, WO-0125, WO-0126, WO-0127 (Audit.md). One maker at a time for anything that uses the local database; a worktree needs workflow/local.env and supabase/scripts/set-*-password.sh copied in and `npm ci`. WO-0129 and WO-0130 later; womenswear waits for X-CR1.
+In-flight branches: wo/WO-0124 (the gate candidate, includes wo/WO-0121), wo/WO-0121
 Integration branch: release/hm-demo
-Usage at start: five-hour window 32% (resets 19:40 IST), weekly 57%, weekly Fable 42%.
+Usage: five-hour window 32% at 14:55 IST, 91% at 15:25 IST after two Sonnet makers and two Opus checkers; weekly 65%; weekly Fable 52%. Lesson for the next run: one work order with its checker costs about a quarter of a five-hour window; run them one at a time and check usage after each.
 Next: WO-0121, WO-0122, then the audit work orders WO-0124 to WO-0130 (workflow/work-orders/Audit.md), then Release 1. Womenswear (CR-001, WO-0131 to WO-0147 in workflow/work-orders/Womenswear.md) waits for the owner's yes on the change request.
 Before any merge: `GATE_STRICT=1 bash workflow/gates/gate.sh` must end with `GATE: PASS (FULL: no stage skipped a check)` (workflow rule 12).
 Note: the sections from "Preconditions" to "G8 check of v0.4" below are the record of 4 November and are kept for history; the build log at the end is current.

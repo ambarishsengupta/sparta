@@ -82,7 +82,7 @@ WO-0112,"WO-0112: vendor chart primitives, dashboard and the vendor-name read gr
 WO-0114,WO-0114: vendor portal polish (checker findings),R7,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0120,WO-0120: H&M demo catalogue loader (local only),Demo,Release 0 (stakeholder demo),Delivery agents,Done
 WO-0121,WO-0121: H&M product photographs in the demo (local-only image route and tiles),Demo,Release 0 (stakeholder demo),Delivery agents,Done
-WO-0122,WO-0122: H&M-flavoured demo accounts and the demo script,Demo,Release 0 (stakeholder demo),Delivery agents,Todo
+WO-0122,WO-0122: H&M-flavoured demo accounts and the demo script,Demo,Release 0 (stakeholder demo),Delivery agents,Done
 X-HMOK,"Record who at H&M confirmed the demo use, when and how (legal/HM-DEMO-DECISION.md)",R4,Release 0 (stakeholder demo),Product owner,Todo
 WO-0123,"WO-0123: lint rules, repository lint, database lint and the strict gate",R8,Release 1 (MVP),Delivery agents,Done
 WO-0124,WO-0124: clean the D3 notebook and HTML outputs (legal finding 20),R8,Release 1 (MVP),Delivery agents,Done

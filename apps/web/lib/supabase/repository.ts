@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { FxRates } from '../money';
-import { CATALOGUE_PAGE, CATALOGUE_SELECT, catalogueFromRow, cleanCatalogueFilter, parseStyle } from '../catalogue';
+import { CATALOGUE_PAGE, CATALOGUE_SELECT, catalogueFromRow, cleanCatalogueFilter, hmPhotoId, parseStyle } from '../catalogue';
 import type { CatalogueCollection, CatalogueCursor, CataloguePage } from '../catalogue';
 import { PAGE, totalsByCurrency } from '../purchases';
 import type { Cursor, Page, Purchase, PurchaseFilter } from '../purchases';
@@ -41,6 +41,8 @@ export class SupabaseRepository implements WardrobeRepository {
     const base = this.table<StoredItem, ItemInput>('items', ITEM_SELECT, itemFromRow, (n, uid) => itemRow(n, uid, this.now()), itemPatch);
     this.items = {
       ...base,
+      list: () => base.list().then((list) => this.withPhotos(list)),
+      get: (id) => base.get(id).then(async (item) => (item ? (await this.withPhotos([item]))[0] : item)),
       create: (n) => this.createItem(n, base),
       archive: (id, reason) => this.setItem(id, { status: 'archived', archive_reason: reason, archived_at: this.now() }),
       restore: (id) => this.setItem(id, { status: 'active', archive_reason: null, archived_at: null }),
@@ -83,6 +85,23 @@ export class SupabaseRepository implements WardrobeRepository {
   }
 
   private app() { return this.client.schema('app'); }
+
+  /**
+   * Items picked from the catalogue get `photoId` when their catalogue row is of the `hm-demo` source (WO-0121): the sku is read through the
+   * consumer-visible active row (no schema change). A photograph is decoration, so a failed lookup leaves the items as they are (the tiles keep the illustration).
+   */
+  private async withPhotos(items: StoredItem[]): Promise<StoredItem[]> {
+    const ids = [...new Set(items.flatMap((i) => (i.catalogueId ? [i.catalogueId] : [])))];
+    if (ids.length === 0) return items;
+    const photo = new Map<string, string>();
+    try {
+      for (let at = 0; at < ids.length; at += 100) {
+        const rows = (take((await this.client.schema('catalog').from('catalog_items').select(CATALOGUE_SELECT).eq('status', 'active').in('id', ids.slice(at, at + 100))) as Answer, false) as Row[] | null) ?? [];
+        for (const r of rows) { const c = catalogueFromRow(r); const p = c ? hmPhotoId(c.sku, c.source) : null; if (c && p) photo.set(c.id, p); }
+      }
+    } catch { return items; }
+    return items.map((i) => { const p = i.catalogueId ? photo.get(i.catalogueId) : undefined; return p ? { ...i, photoId: p } : i; });
+  }
 
   /** The active catalogue rows, read with the person's own session (row-level security shows consumers active rows only; `status = 'active'` is asked for as well). Name then id, 40 per page. */
   private catalogueCollection(): CatalogueCollection {

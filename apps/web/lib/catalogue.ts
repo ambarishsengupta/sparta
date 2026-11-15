@@ -12,6 +12,8 @@ export interface CatalogueItem {
   id: string; name: string; brand: string | null; category: Category; subType: SubType; hex: string; colourFamily: ColourFamily | null;
   fit: Fit | null; pattern: Pattern | null; material: Material | null; seasons: Season[]; occasions: Occasion[]; sizes: string[];
   price: number | null; currency: string | null; productUrl: string;
+  /** The row's sku and the name of its source, when known (WO-0121: only the local H&M demo source, `hm-demo`, has photographs). */
+  sku?: string; source?: string;
 }
 /** `style` is one tag: `fit:Slim`, `pattern:Solid` or `occasion:Casual` (glossary: "style" is a fit, pattern or occasion tag). */
 export interface CatalogueFilter { q: string; category: string; brand: string; colourFamily: string; style: string }
@@ -44,10 +46,21 @@ export function cleanCatalogueFilter(f: CatalogueFilter): CatalogueFilter {
   };
 }
 
-export const CATALOGUE_SELECT = 'id,name,brand,category,sub_type,colour_hex,colour_family,fit,pattern,material,seasons,occasions,sizes_available,price,currency,product_url';
+export const CATALOGUE_SELECT = 'id,sku,name,brand,category,sub_type,colour_hex,colour_family,fit,pattern,material,seasons,occasions,sizes_available,price,currency,product_url';
 type Row = Record<string, unknown>;
 const list = <T extends string>(v: unknown, ok: (x: unknown) => x is T): T[] => (Array.isArray(v) ? v.filter(ok) : []);
 const orNull = <T extends string>(v: unknown, ok: (x: unknown) => x is T): T | null => (ok(v) ? v : null);
+
+export const HM_DEMO_SOURCE = 'hm-demo';
+/** Consumers cannot read `catalog.sources`, so the demo source is recognised by the address its loader (WO-0120) gives every row: the local host, path `/hm-demo/<sku>`. */
+export function sourceNameOf(sku: string, productUrl: string): string | undefined {
+  try {
+    const u = new URL(productUrl);
+    return u.hostname === '127.0.0.1' && u.pathname === `/${HM_DEMO_SOURCE}/${sku}` ? HM_DEMO_SOURCE : undefined;
+  } catch { return undefined; }
+}
+/** The 10-digit H&M article id whose photograph a tile may show: only for the `hm-demo` source and a sku of exactly 10 digits. */
+export const hmPhotoId = (sku: string | undefined, source: string | undefined): string | null => (source === HM_DEMO_SOURCE && sku !== undefined && /^[0-9]{10}$/.test(sku) ? sku : null);
 
 /** A catalogue row, or null when it cannot be shown (no id, name or link, or a category and sub-type the taxonomy does not know). */
 export function catalogueFromRow(r: Row): CatalogueItem | null {
@@ -61,6 +74,7 @@ export function catalogueFromRow(r: Row): CatalogueItem | null {
     sizes: Array.isArray(r.sizes_available) ? r.sizes_available.filter((s): s is string => typeof s === 'string' && s.length <= 20) : [],
     price: price !== null && Number.isFinite(price) && price >= 0 ? price : null, currency: typeof r.currency === 'string' && /^[A-Za-z]{3}$/.test(r.currency.trim()) ? r.currency.trim().toUpperCase() : null,
     productUrl: r.product_url,
+    ...(typeof r.sku === 'string' ? { sku: r.sku, ...(sourceNameOf(r.sku, r.product_url) ? { source: HM_DEMO_SOURCE } : {}) } : {}),
   };
 }
 

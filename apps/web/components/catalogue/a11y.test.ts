@@ -179,10 +179,17 @@ describe('no source image, no external picture (FR-24, BR-41)', () => {
   it('every <img> in the app takes its src from the person\'s own preview or signed storage address, never a literal or catalogue address', () => {
     for (const f of all) {
       for (const m of read(f).matchAll(/<img\b[^>]*>/g)) {
-        expect(m[0], f).toMatch(/src=\{(shown|urls\[path\])\}/);
+        expect(m[0], f).toMatch(/src=\{(shown|urls\[path\]|photoSrc)\}/);
         expect(m[0], f).not.toMatch(/https?:|catalog|productUrl|product_url/i);
       }
     }
+  });
+  it('the only other <img> source is the same-origin /hm-image/<10 digits> path (WO-0121), built once in ProductPhoto from an id checked to be 10 digits', () => {
+    const text = read('../ui/ProductPhoto.tsx');
+    expect([...text.matchAll(/photoSrc/g)].length).toBe(2);
+    expect(text).toContain("!/^[0-9]{10}$/.test(id)");
+    expect(text).toContain('const photoSrc = `/hm-image/${id}`;');
+    expect(all.filter((f) => /<img\b[^>]*photoSrc/.test(read(f))).map((f) => f.replace('../../', ''))).toEqual(['components/ui/ProductPhoto.tsx']);
   });
   it('the catalogue code has no <img>, no image field, no next/image and no fetch', () => {
     for (const f of all.filter((p) => /catalogue/.test(p) || /demo-catalogue/.test(p))) {

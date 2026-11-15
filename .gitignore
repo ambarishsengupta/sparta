@@ -65,6 +65,8 @@ supabase/scripts/set-collector-password.sh
 
 # H&M demo (WO-0120): anything the loader or the demo derives from the H&M folder stays local; never commit it
 workflow/demo/hm/out/
+# WO-0121: screenshots that show an H&M photograph stay local
+workflow/evidence/Demo/screenshots/hm-*
 
 # Env files anywhere (WO-0123): only the *.example templates are tracked
 .env

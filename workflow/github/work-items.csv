@@ -113,3 +113,4 @@ WO-0145,WO-0145: audience as a vendor dimension and filter,W,Release 2 (womenswe
 WO-0146,WO-0146: demo data and the H&M demo catalogue for womenswear,W,Release 2 (womenswear; waits for CR-001),Delivery agents,Todo
 WO-0147,"WO-0147: collector mapping, release check and retro",W,Release 2 (womenswear; waits for CR-001),Delivery agents,Todo
 X-LINT1,"Review the lint exemption that lets app/hm-image/[id]/route.ts import lib/server (WO-0121, docs/LINT-RULES.md rule 4)",R8,Release 1 (MVP),Solution architect,Todo
+WO-0148,WO-0148: strict_tests runs the live seed checks on their own (blocks merges),R8,Release 1 (MVP),Delivery agents,Todo

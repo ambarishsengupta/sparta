@@ -33,7 +33,7 @@ describe('repo_lint', () => {
     const all = [...baseline.allow, ...baseline.baseline];
     expect(all.filter((e) => /\.env|\.pem$|\.key$|secret|password/i.test(e.path))).toEqual([]);
     expect(all.filter((e) => e.rule === 'RL04' || e.rule === 'RL05' || e.rule === 'RL09')).toEqual([]);
-    expect(baseline.allow.length).toBeLessThanOrEqual(11);
-    expect(baseline.baseline.length).toBeLessThanOrEqual(7);
+    expect(baseline.allow.length).toBeLessThanOrEqual(13);
+    expect(baseline.baseline.length).toBeLessThanOrEqual(2);
   });
 });

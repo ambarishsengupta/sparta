@@ -55,39 +55,19 @@
       "rule": "RL10",
       "path": "supabase/migrations/20261105102310_functions_and_triggers.sql",
       "reason": "app.supported_countries() is the one function anon may run: the sign-up page shows the country list before sign-in (LLD 4.9)."
+    },
+    {
+      "rule": "RL02",
+      "path": "submissions/D3/ANCP_TM_D3_eda.html",
+      "reason": "Submitted D3 course deliverable; its size is its 12 embedded charts (about 1.6 MB), which are kept as submitted. Row-level tables were removed by WO-0124."
+    },
+    {
+      "rule": "RL02",
+      "path": "submissions/D3/ANCP_TM_D3_eda.ipynb",
+      "reason": "Submitted D3 course deliverable; its size is its 12 embedded charts (about 1.6 MB), which are kept as submitted. Row-level tables were removed by WO-0124."
     }
   ],
   "baseline": [
-    {
-      "rule": "RL02",
-      "path": "submissions/D3/ANCP_TM_D3_eda.html",
-      "work_order": "WO-0124",
-      "reason": "The D3 course submission as exported HTML; over 1 MB and holds the same table as the notebook."
-    },
-    {
-      "rule": "RL03",
-      "path": "submissions/D3/ANCP_TM_D3_eda.html",
-      "work_order": "WO-0124",
-      "reason": "Five H&M purchase rows in a rendered table (legal review finding 20); the repository is public."
-    },
-    {
-      "rule": "RL02",
-      "path": "submissions/D3/ANCP_TM_D3_eda.ipynb",
-      "work_order": "WO-0124",
-      "reason": "The D3 notebook with all outputs kept; over 1 MB."
-    },
-    {
-      "rule": "RL03",
-      "path": "submissions/D3/ANCP_TM_D3_eda.ipynb",
-      "work_order": "WO-0124",
-      "reason": "Five H&M purchase rows in a cell output (legal review finding 20); the repository is public."
-    },
-    {
-      "rule": "RL12",
-      "path": "submissions/D3/ANCP_TM_D3_eda.ipynb",
-      "work_order": "WO-0124",
-      "reason": "23 rendered table outputs; clear or summarise them."
-    },
     {
       "rule": "RL07",
       "path": "services/worker/Dockerfile",

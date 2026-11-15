@@ -13,7 +13,7 @@ Recorded from: the product owner (Ambarish Sengupta), who stated that the course
 - H&M data is never shown to vendors as rows; vendor figures stay aggregated, rounded and thresholded as built.
 - BRD BR-59 is relaxed for this private demo build only. Release 1 and any wide release must re-check it.
 - The Kaggle expectation that raw files are deleted when the course ends still applies.
-- Known earlier finding (legal review item 20): a notebook output already pushed to GitHub shows five H&M purchase rows; it should be removed from the repository history or at least from the current tree.
+- Known earlier finding (legal review item 20): a notebook output already pushed to GitHub shows five H&M purchase rows; it should be removed from the repository history or at least from the current tree. The current tree was cleaned on 2026-11-15 (WO-0124); the rows remain in the pushed Git history, and rewriting that history is the product owner's open decision X-HIST.
 
 ## The vendor is H&M (owner statement, 2026-11-12)
 Until the app goes live and H&M approves it, **H&M itself is the only vendor**: there are no third-party stores or brands acting as vendors. In the demo the vendor portal therefore belongs to H&M, with one vendor row named 'H&M' and one vendor account. The vendor features for other vendors (product feed upload, vendor onboarding, a vendor-owned catalogue) are not needed and stay in Release 1 or are dropped. Aggregated figures are still built only from the synthetic demo consumers (invented, @example.test); no H&M customer row is used.

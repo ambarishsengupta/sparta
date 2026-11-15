@@ -114,7 +114,7 @@ Action: execute first in the next run (it blocks every merge). Owner: Gate engin
 In scope: workflow/gates/strict_tests.sh, workflow/gates/gate.sh, workflow/gates/*.test.ts
 Note: found by the orchestrator on 2026-11-15. The strict gate on the WO-0121 plus WO-0124 candidate failed one test: `seed-demo-insights.sh against the local stack > two runs leave identical row counts` (cube_rows 843 then 835). The live seed checks (SEED_LIVE=1, collected through workflow/gates/db_tests.test.ts) run the aggregation over the whole local database while the other integration suites create and delete users, items and purchases beside them, so two aggregation runs can see different data.
 Instructions: in strict_tests.sh run `workflow/gates/db_tests.test.ts` in a step of its own with SEED_LIVE=1, after the step that runs every other suite (which then excludes that file and runs without SEED_LIVE), and before the demo-insights step; nothing else may use the database during that step. Add a test that pins the three steps and their order in the script (as web_containment.test.ts pins the stage order). Do not weaken or skip the seed checks.
-Completion conditions: `GATE_STRICT=1 bash workflow/gates/gate.sh` ends with `GATE: PASS (FULL: no stage skipped a check)` three times in a row on the candidate; the new order test passes.
+Completion conditions: `bash workflow/gates/strict_tests.sh` passes three times in a row on the candidate (the failure was in this stage), then one `GATE_STRICT=1 bash workflow/gates/gate.sh` ends with `GATE: PASS (FULL: no stage skipped a check)`; the new order test passes.
 
 ---
 ## Owner item X-HIST (not a work order)

@@ -1,7 +1,7 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-15 15:25 IST (checkpoint written because the five-hour usage window reached 91%). ORCHESTRATOR LOCK: none after this session ends its turn
-Status: waiting-for-owner (five-hour window at 91%, over the 85% rule; it resets at 19:40 IST; no resume trigger is armed, so the owner restarts the run)
+Updated: 2026-11-15 15:50 IST (run resumed on the owner's word; usage five-hour 1%, weekly 0%). ORCHESTRATOR LOCK: this session is the orchestrator
+Status: running (WO-0148 in the candidate worktree /Users/ambarish/.sparta-worktrees/wo-0124 on branch wo/WO-0148; then re-gate and merge; one work order at a time)
 Model rule (owner, 2026-11-15): the orchestrator uses ONLY Opus and Sonnet subagents: Opus 5.5 for every role that decides or judges (spec, Spec QC, code and security review, design critic, consultants, approver, retro), Sonnet for every role that carries out a task (makers, gate engineer, demo). Never Haiku, never a fork of the orchestrator.
 Resume trigger: none (see Status). Two old fired triggers remain disabled (the permission system refused their deletion).
 CHECKPOINT, exact state:

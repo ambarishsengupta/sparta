@@ -1,10 +1,12 @@
 # Build state (the orchestrator's only memory between sessions)
 
-Updated: 2026-11-15 (audit of the whole build done; lint rules and the strict gate added in WO-0123). ORCHESTRATOR LOCK: no orchestrator is running
-Status: Release 0 built and merged to main (2026-11-12). H&M demo branch `release/hm-demo` in progress: WO-0120 done, WO-0121 and WO-0122 open. Waiting for the owner's checkpoint walk-through.
-Resume trigger: none
-In-flight branches: release/hm-demo (WO-0121 has no work in the tree yet)
+Updated: 2026-11-15 14:55 IST (orchestrator run started on the owner's instruction of 2026-11-15). ORCHESTRATOR LOCK: this session is the orchestrator
+Status: running
+Model rule (owner, 2026-11-15): the orchestrator uses ONLY Opus and Sonnet subagents: Opus 5.5 for every role that decides or judges (spec, Spec QC, code and security review, design critic, consultants, approver, retro), Sonnet for every role that carries out a task (makers, gate engineer, demo). Never Haiku, never a fork of the orchestrator.
+Resume trigger: none. Not armed for this run: the owner started it from a live session, and the two collisions of 11 and 12 November came from armed triggers. If a usage limit stops the run, Status is set to waiting-for-owner with a checkpoint and the owner restarts it. The three old fired triggers were deleted (rule 11).
+In-flight branches: wo/WO-0121 (/Users/ambarish/.sparta-worktrees/wo-0121), wo/WO-0124 (/Users/ambarish/.sparta-worktrees/wo-0124)
 Integration branch: release/hm-demo
+Usage at start: five-hour window 32% (resets 19:40 IST), weekly 57%, weekly Fable 42%.
 Next: WO-0121, WO-0122, then the audit work orders WO-0124 to WO-0130 (workflow/work-orders/Audit.md), then Release 1. Womenswear (CR-001, WO-0131 to WO-0147 in workflow/work-orders/Womenswear.md) waits for the owner's yes on the change request.
 Before any merge: `GATE_STRICT=1 bash workflow/gates/gate.sh` must end with `GATE: PASS (FULL: no stage skipped a check)` (workflow rule 12).
 Note: the sections from "Preconditions" to "G8 check of v0.4" below are the record of 4 November and are kept for history; the build log at the end is current.

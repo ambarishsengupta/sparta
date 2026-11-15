@@ -29,10 +29,9 @@ select is_empty($$ select name from lint_rels where relkind in ('v', 'm') and no
 -- 2. functions
 select is_empty($$ select name from lint_fns where prosecdef and not pinned order by 1 $$,
   'every security definer function pins an empty search_path');
--- BASELINE (WO-0128): five colour helpers of 20261105095807 run as the caller with a search_path the caller controls. Pin them, then empty this list.
 select is((select coalesce(array_agg(short order by short), '{}') from lint_fns where not prosecdef and not pinned),
-  array['catalog.colour_family', 'catalog.rgb_hex', 'catalog.rgb_to_lab', 'catalog.set_colour_fields', 'catalog.srgb_lin'],
-  'no other function leaves search_path open (the list is the WO-0128 baseline and may only shrink)');
+  array[]::text[],
+  'no function in any project schema leaves search_path open (the WO-0128 exception list is empty)');
 select is((select coalesce(array_agg(name order by name), '{}') from lint_fns where has_function_privilege('anon', oid, 'execute')),
   array['app.supported_countries()'],
   'anon can run exactly one function: the country list of the sign-up page (LLD 4.9)');

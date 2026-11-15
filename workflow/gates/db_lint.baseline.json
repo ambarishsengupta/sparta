@@ -1,7 +1,4 @@
 {
-  "_comment": "Known findings of `supabase db lint --level warning` (WO-0123). Each has a work order. A finding that is not here fails the gate; an entry the linter no longer reports must be deleted.",
-  "baseline": [
-    { "function": "analytics.run_aggregation", "level": "error", "message": "relation \"pg_temp.run_marks\" does not exist", "work_order": "WO-0128", "reason": "The function creates its temporary table at run time, which the static check cannot see. Confirm it is a false alarm, then restructure or keep with this note." },
-    { "function": "app.confirm_receipt", "level": "warning", "message": "target type is different type than source type", "work_order": "WO-0128", "reason": "Two variables of type uuid[] are initialised from text; add explicit casts." }
-  ]
+  "_comment": "Known findings of `supabase db lint --level warning` (WO-0123). Each has a work order. A finding that is not here fails the gate; an entry the linter no longer reports must be deleted. Emptied by WO-0128.",
+  "baseline": []
 }

@@ -115,12 +115,12 @@ export default tseslint.config(
   },
   {
     // The two readers of server-only variables (LLD 6): the secret-key module and the worker route.
-    files: [`${WEB}/lib/server/admin.ts`, `${WEB}/app/api/worker/signed-urls/route.ts`],
+    files: [`${WEB}/lib/server/admin.ts`, `${WEB}/lib/server/hm-demo.ts`, `${WEB}/app/api/worker/signed-urls/route.ts`],
     rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV] },
   },
   {
     // Who may import lib/server: the route handlers and lib/server itself. They still may not build other Supabase clients.
-    files: [`${WEB}/app/api/**/route.ts`, `${WEB}/lib/server/**/*.ts`],
+    files: [`${WEB}/app/api/**/route.ts`, `${WEB}/app/hm-image/[[]id]/route.ts`, `${WEB}/lib/server/**/*.ts`],
     ignores: TESTS,
     rules: { '@typescript-eslint/no-restricted-imports': ['error', SUPABASE_FACTORIES] },
   },

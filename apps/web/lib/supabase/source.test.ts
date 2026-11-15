@@ -38,10 +38,10 @@ describe('no secret or service key anywhere in apps/web except the one server-on
   it('the app reads only public (NEXT_PUBLIC_) environment variables, and the three Supabase ones among them; the only others are the secret key (admin module) and the worker token (worker route)', () => {
     const reads = all.filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith('.test.ts')).flatMap((f) => readFileSync(f, 'utf8').split('\n').flatMap((line) => [...(line.split('//')[0] ?? '').matchAll(/process\.env\.(\w+)/g)].map((m) => `${m[1]} <- ${f.slice(root.length)}`)));
     const names = new Set(reads.map((r) => r.split(' <- ')[0]!));
-    expect([...new Set(reads.filter((r) => !r.startsWith('NEXT_PUBLIC_')))].sort()).toEqual([`${['SUPABASE', 'SECRET', 'KEY'].join('_')} <- ${ADMIN}`, `${WORKER_VAR} <- app/api/worker/signed-urls/route.ts`].sort());
+    expect([...new Set(reads.filter((r) => !r.startsWith('NEXT_PUBLIC_')))].sort()).toEqual([`${['SUPABASE', 'SECRET', 'KEY'].join('_')} <- ${ADMIN}`, `${WORKER_VAR} <- app/api/worker/signed-urls/route.ts`, 'HM_DEMO_IMAGE_ROOT <- lib/server/hm-demo.ts'].sort());
     for (const n of ['NEXT_PUBLIC_DATA_BACKEND', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL']) expect(names.has(n)).toBe(true);
   });
-  it('the secret-key module is imported by the route handlers (the two of R5b and the three admin routes of WO-0088) and its own test, and nothing else imports anything from lib/server', () => {
+  it('the secret-key module is imported by the route handlers (the two of R5b and the three admin routes of WO-0088) and its own test, and nothing else imports anything from lib/server (WO-0121: the local demo photograph route is the one further importer, of lib/server/hm-demo only)', () => {
     const sources = all.filter((f) => /\.tsx?$/.test(f) && !f.includes('/node_modules/'));
     // WO-0074: every import form (quotes, dynamic import(), require(), export ... from, re-export chains), see test-support/imports.ts and imports.test.ts
     const text = Object.fromEntries(sources.map((f) => [f.slice(root.length), readFileSync(f, 'utf8')]));
@@ -49,7 +49,7 @@ describe('no secret or service key anywhere in apps/web except the one server-on
     expect(importing(/(^|\/)admin$/)).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/worker/signed-urls/route.ts', 'lib/server/admin.test.ts']);
     const outside = importing(/(^|\/)server\/[a-z-]+$/).filter((f) => !f.startsWith('lib/server/'));
     // route handlers, and the integration/support code that exercises the handlers; no page, component or other lib module
-    expect(outside).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/worker/signed-urls/route.ts', 'test-support/purge.ts']);
+    expect(outside).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/worker/signed-urls/route.ts', 'app/hm-image/[id]/route.ts', 'test-support/purge.ts']);
   });
   it('the Leave screen removes the files through the server before the deletion, and the purge route never takes a user id from the request', () => {
     expect(readFileSync(join(root, 'components/account/LeaveForm.tsx'), 'utf8')).toContain('leaveThePilot(createBrowserSupabase(), pw, () => purgeMyStorage())');

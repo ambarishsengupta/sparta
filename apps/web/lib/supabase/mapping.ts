@@ -19,7 +19,7 @@ const ITEM_COLUMNS = {
   occasions: 'occasions', condition: 'condition', favourite: 'favourite', neverWorn: 'never_worn', status: 'status', archiveReason: 'archive_reason',
 } as const;
 /** Everything a read needs from app.items (no image paths, notes or prices). */
-export const ITEM_SELECT = 'id,name,category,sub_type,colour_r,colour_g,colour_b,colour_hex,colour_family,fit,material,pattern,seasons,occasions,condition,never_worn,favourite,status,archive_reason,created_at,updated_at';
+export const ITEM_SELECT = 'id,name,category,sub_type,colour_r,colour_g,colour_b,colour_hex,colour_family,fit,material,pattern,seasons,occasions,condition,never_worn,favourite,status,archive_reason,created_at,updated_at,catalog_item_id';
 
 /** Changed fields only, as columns. `hex`, `colourFamily` and the ids are never sent: the database derives them from the RGB. */
 export function itemPatch(patch: Partial<ItemInput>): Row {
@@ -69,6 +69,7 @@ export function itemFromRow(r: Row): StoredItem {
     seasons: strings(r.seasons, isSeason, 'item seasons'), occasions: strings(r.occasions, isOccasion, 'item occasions'),
     condition: r.condition as number | null, favourite: r.favourite === true, neverWorn: r.never_worn === true,
     status: status as StoredItem['status'], archiveReason: reason as StoredItem['archiveReason'], createdAt: r.created_at as string, updatedAt: r.updated_at as string,
+    ...(typeof r.catalog_item_id === 'string' ? { catalogueId: r.catalog_item_id } : {}),
   };
 }
 

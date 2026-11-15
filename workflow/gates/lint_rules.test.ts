@@ -17,6 +17,7 @@ const SERVER_ONLY_VAR = ['SUPABASE', 'SECRET', 'KEY'].join('_');   // assembled:
 const CASES: [name: string, path: string, code: string, rule: string][] = [
   ['a component reads a server-only variable', COMPONENT, `export const k = process.env.${SERVER_ONLY_VAR};\n`, 'no-restricted-syntax'],
   ['a component reads any environment variable', COMPONENT, 'export const k = process.env.NEXT_PUBLIC_DATA_BACKEND;\n', 'no-restricted-syntax'],
+  ['a component reads the demo image folder variable', COMPONENT, `export const k = process.env.HM_DEMO_IMAGE_ROOT;\n`, 'no-restricted-syntax'],
   ['a configuration module reads a server-only variable', 'apps/web/lib/pilot-config.ts', `export const k = process.env.${SERVER_ONLY_VAR};\n`, 'no-restricted-syntax'],
   ['a computed environment read in the secret-key module', 'apps/web/lib/server/admin.ts', "const n = 'X'; export const k = process.env[n];\n", 'no-restricted-syntax'],
   ['a component imports the secret-key module', COMPONENT, "import { createAdminSupabase } from '../lib/server/admin';\nexport const c = createAdminSupabase;\n", '@typescript-eslint/no-restricted-imports'],

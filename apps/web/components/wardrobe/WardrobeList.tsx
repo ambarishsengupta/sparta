@@ -11,6 +11,7 @@ import type { ArchiveReason, StoredItem } from '../../lib/repository';
 import { dataBackend } from '../../lib/supabase/config';
 import { attempt, messageOf } from '../../lib/supabase/errors';
 import { CategoryIllustration } from '../ui/illustrations';
+import { ProductPhoto } from '../ui/ProductPhoto';
 import { useRepository } from '../use-repository';
 
 const REASONS: ArchiveReason[] = ['sold', 'donated', 'discarded', 'lost'];
@@ -22,7 +23,7 @@ export function ItemCard({ item, onArchive, onRestore }: {
   const band = item.condition === null ? null : conditionBandOf(item.condition);
   return (
     <li className="card item">
-      <div className="swatch"><CategoryIllustration category={item.category} hex={item.hex} label={`${item.subType} illustration`} /></div>
+      <div className="swatch"><ProductPhoto id={item.photoId} name={item.name}><CategoryIllustration category={item.category} hex={item.hex} label={`${item.subType} illustration`} /></ProductPhoto></div>
       <div className="grow">
         <Link href={`/items/${item.id}`} prefetch={false} className="title">{item.name}</Link>
         <p className="muted">

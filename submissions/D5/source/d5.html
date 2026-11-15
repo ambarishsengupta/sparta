@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>ANCP D5: validation memo for the garment model</title>
+<style>
+ @page { size: A4; margin: 11mm 13mm 13mm 13mm;
+   @bottom-center { content: "ANCP Group M | D5 Model validation memo v1 | Page " counter(page) " of 4"; font: 7.5pt Arial, Helvetica, sans-serif; color: #777; } }
+ * { box-sizing: border-box; }
+ html { font-family: Arial, Helvetica, sans-serif; color: #111; }
+ body { margin: 0; font-size: 8.5pt; line-height: 1.34; }
+ h1 { font-size: 15pt; color: #1b2a4e; margin: 0 0 2px; line-height: 1.2; }
+ h2 { font-size: 10.3pt; color: #1b2a4e; margin: 8px 0 3px; break-after: avoid; border-bottom: 1px solid #b7bfd2; padding-bottom: 1px; }
+ p { margin: 0 0 4px; }
+ ul { margin: 2px 0 4px; padding-left: 15px; } li { margin-bottom: 1.5px; }
+ code { font-family: "Courier New", monospace; font-size: 7.6pt; }
+ table { width: 100%; border-collapse: collapse; margin: 3px 0 3px; font-size: 7.5pt; line-height: 1.26; }
+ th { background: #eaeef7; text-align: left; font-weight: 700; }
+ th, td { border: 1px solid #b7bfd2; padding: 2px 4px; vertical-align: top; }
+ tr { break-inside: avoid; }
+ .meta td { border: none; padding: 0 8px 0 0; font-size: 8pt; } .meta td:first-child { font-weight: 700; width: 11%; }
+ .box { border: 1px solid #1b2a4e; background: #f3f5fa; padding: 4px 7px; margin: 5px 0; }
+ .box p { margin: 0 0 2px; }
+ .pass { background: #e3f3e6; color: #17612b; font-weight: 700; text-align: center; white-space: nowrap; }
+ .fail { background: #fbe3e1; color: #9a1b12; font-weight: 700; text-align: center; }
+ .na { background: #eceef2; color: #444; font-weight: 700; text-align: center; white-space: nowrap; }
+ tr.hl td { background: #fff6d6; }
+ td.n, th.n { text-align: right; }
+ .cap { font-size: 7.4pt; color: #444; margin: 1px 0 4px; }
+ .two { display: flex; gap: 8px; align-items: flex-start; } .two > div { flex: 1; }
+ .two img { width: 100%; display: block; }
+ .pb { break-before: page; }
+ .refs p { font-size: 7.3pt; margin-bottom: 1px; padding-left: 12px; text-indent: -12px; }
+</style></head><body>
+
+<!-- ===== PAGE 1 ===== -->
+<h1>Can we trust the garment model? Validation memo for garment-cnn-v1</h1>
+<table class="meta"><tr><td>To</td><td>Project owner and decision-maker for the Sparta pilot</td><td style="font-weight:700;width:9%">Date</td><td>15 November 2026</td></tr>
+<tr><td>From</td><td>ANCP Group M (deliverable D5, version 1)</td><td style="font-weight:700">Repository</td><td>tag <code>d5-v1</code>, folder <code>submissions/D5</code></td></tr>
+<tr><td>Model</td><td colspan="3">Photo-to-garment suggestion (FDD 14.3, LLD 7.7): a 25,706-weight network that names one of ten garment types from a 28 by 28 greyscale picture. Released file SHA-256 <code>fcd2da1fdfc6701f&hellip;</code></td></tr></table>
+
+<div class="box"><p><b>Decision asked.</b> Keep the photo suggestion switched <b>off</b> for the pilot (<code>GARMENT_GUESS_ENABLED=false</code>) until the 100-photo team test of LLD 7.7 is done, as the model card already says. Nothing in this memo replaces that test.</p>
+<p><b>Why.</b> On the test it was built for, the model is sound and honestly measured: <b>89.5% accuracy</b> (95% interval 88.9 to 90.1), against 84.2% for a plain logistic regression and 10.0% for guessing. No leakage was found. But that test uses clean studio pictures. Two weaknesses will matter on phone photos: <b>footwear facing the other way is almost never recognised</b> (ankle boot 0%, sneaker 32%, sandal 47% when mirrored) and <b>accuracy drops 6 to 14 points for faint garments</b> (intensity x0.5 to x0.3). Both are cheap to test on the team photos and the first is cheap to fix in training.</p></div>
+
+<div class="box" style="background:#fff"><p><b>Recommended next steps</b> (in order): (1) run the 100-photo team test with shoes photographed in both directions and some white garments, and read the threshold from the cost table in section 4; (2) before it, retrain as a new version with a left-right flip for footwear in the augmentation (one run takes about 6 minutes; the notebook re-scores it unchanged); (3) add a worker test that the colour-inversion step ran, since without it accuracy falls to 23%; (4) once the pilot runs, replace the assumed cost ratio c with the measured share of wrong suggestions users change.</p></div>
+
+<h2>1. Validation design</h2>
+<svg viewBox="0 0 740 218" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif" font-size="9.5">
+ <defs><marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1b2a4e"/></marker></defs>
+ <rect x="250" y="4" width="240" height="30" rx="4" fill="#eaeef7" stroke="#1b2a4e"/><text x="370" y="17" text-anchor="middle" font-weight="700">Fashion-MNIST (Zalando), IDX files</text><text x="370" y="29" text-anchor="middle">70,000 pictures, 28 x 28, ten types</text>
+ <rect x="580" y="4" width="156" height="42" rx="4" fill="#fbe3e1" stroke="#9a1b12" stroke-dasharray="4 3"/><text x="658" y="17" text-anchor="middle" font-weight="700" fill="#9a1b12">CSV copies: never used</text><text x="658" y="29" text-anchor="middle" fill="#9a1b12">7,919 of 10,000 CSV test</text><text x="658" y="40" text-anchor="middle" fill="#9a1b12">pictures are in IDX training</text>
+ <line x1="330" y1="34" x2="190" y2="64" stroke="#1b2a4e" marker-end="url(#ar)"/><line x1="440" y1="34" x2="600" y2="64" stroke="#1b2a4e" marker-end="url(#ar)"/>
+ <rect x="20" y="64" width="330" height="22" rx="4" fill="#eaeef7" stroke="#1b2a4e"/><text x="185" y="79" text-anchor="middle" font-weight="700">IDX training file: 60,000 pictures</text>
+ <rect x="450" y="64" width="270" height="22" rx="4" fill="#eaeef7" stroke="#1b2a4e"/><text x="585" y="79" text-anchor="middle" font-weight="700">IDX test file: 10,000 (1,000 per type)</text>
+ <text x="185" y="100" text-anchor="middle" font-size="8.5">stratified split, fixed seed 20261104, no picture in both parts</text>
+ <line x1="110" y1="104" x2="90" y2="120" stroke="#1b2a4e" marker-end="url(#ar)"/><line x1="260" y1="104" x2="280" y2="120" stroke="#1b2a4e" marker-end="url(#ar)"/>
+ <rect x="10" y="120" width="170" height="52" rx="4" fill="#e3f3e6" stroke="#17612b"/><text x="95" y="134" text-anchor="middle" font-weight="700">Training part: 54,000</text><text x="95" y="147" text-anchor="middle">weights are fitted here;</text><text x="95" y="159" text-anchor="middle">augmentation applied here only</text>
+ <rect x="195" y="120" width="170" height="52" rx="4" fill="#fff6d6" stroke="#8a6d00"/><text x="280" y="134" text-anchor="middle" font-weight="700">Validation: 6,000</text><text x="280" y="147" text-anchor="middle">600 per type; early stopping,</text><text x="280" y="159" text-anchor="middle">learning rate, augmentation strength</text>
+ <rect x="450" y="104" width="270" height="68" rx="4" fill="#e6ecfa" stroke="#1b2a4e" stroke-width="2"/><text x="585" y="119" text-anchor="middle" font-weight="700">Locked test: scored after settings were fixed</text><text x="585" y="132" text-anchor="middle">every number in this memo; nothing is chosen from it;</text><text x="585" y="144" text-anchor="middle">five retrainings (new seed = new 54k / 6k split) are</text><text x="585" y="156" text-anchor="middle">scored on this same test file for the repeated-run spread</text>
+ <line x1="585" y1="86" x2="585" y2="104" stroke="#1b2a4e" marker-end="url(#ar)"/>
+ <rect x="195" y="184" width="525" height="28" rx="4" fill="#fff" stroke="#9a1b12" stroke-dasharray="4 3"/><text x="457" y="196" text-anchor="middle" font-weight="700" fill="#9a1b12">Not done: 100 team photographs taken the way a user would (LLD 7.7, LOI-9)</text><text x="457" y="207" text-anchor="middle" fill="#9a1b12">the only test that matches the real input; it decides the threshold and whether the feature is switched on</text>
+</svg>
+<p class="cap">Figure 1. How the data was split. Sources: model card, <code>train.py</code>, data README [2], notebook [3].</p>
+<p><b>Why this avoids leakage.</b> Three independent parts, cut once from the files Zalando published as training and test. Everything the model learns from or is tuned on sits in the training and validation parts; the 10,000 test pictures were scored once the settings were fixed. The data README warns that the CSV copies mix the two files, so only the IDX files are read [2]. Repeating training with five seeds shows how much the result depends on the particular split and starting point, not just on test sampling.</p>
+<p><b>What it does not cover.</b> The test pictures come from the same photo studio as the training pictures. That is why the decision above turns on the team-photo test, not on this memo.</p>
+
+<!-- ===== PAGE 2 ===== -->
+<h2 class="pb">2. Leakage checklist</h2>
+<table><thead><tr><th style="width:3%">#</th><th style="width:22%">Check</th><th style="width:7%">Result</th><th>Evidence</th></tr></thead><tbody><tr><td>1</td><td>Test pictures never used to train or tune</td><td class="pass">PASS</td><td>The only data call in <code>train.py</code> is <code>load_split(root, "train")</code>; settings were picked on the validation part (tuning notes). The five retraining runs load the test file only after training ends [3].</td></tr><tr><td>2</td><td>Splits disjoint and stratified</td><td class="pass">PASS</td><td>54,000 / 6,000 / 10,000 pictures; 0 indices shared by training and validation; 600 validation and 1,000 test pictures per class [3].</td></tr><tr><td>3</td><td>Exact duplicates across splits</td><td class="pass">PASS</td><td>0 test pictures have a pixel-identical twin in the training file; 0 validation pictures in the training part; 0 duplicates inside either file [3].</td></tr><tr><td>4</td><td>Near-duplicates (same product, other crop)</td><td class="pass">PASS</td><td>The data has no product ID, so a proxy was run: 16 test pictures (0.16%) lie within distance 1.0 of a training picture (closest 0.08; median nearest 3.46). At most 0.16 accuracy points could come from them [3].</td></tr><tr><td>5</td><td>A second copy of the data (CSV vs IDX)</td><td class="pass">PASS</td><td>Trap avoided. 7,919 of the 10,000 CSV test pictures are in the IDX <em>training</em> file [2][3]. Scoring on the CSV file would report 90.7% instead of 89.5%. Code reads IDX files only.</td></tr><tr><td>6</td><td>Preprocessing or scaling fitted on all data</td><td class="na">N/A</td><td>Preprocessing is fixed arithmetic (crop, greyscale, invert, resize, divide by 255); no mean, standard deviation or scaler is learned.</td></tr><tr><td>7</td><td>Time, customer or group structure</td><td class="na">N/A</td><td>Pictures carry no date, customer or group field, so a time or group split is not defined. Near-duplicate test (item 4) is the closest check.</td></tr><tr><td>8</td><td>Label information in the inputs</td><td class="pass">PASS</td><td>Input is the 28 by 28 pixel array only; no file name, ID or metadata reaches the network.</td></tr><tr><td>9</td><td>Threshold, early stopping or augmentation tuned on test</td><td class="pass">PASS</td><td>Early stopping and augmentation strength used the 6,000 validation pictures. The 0.6 threshold is the LLD default, untouched; this memo reports a threshold sweep but selects nothing from it.</td></tr><tr><td>10</td><td>Pretrained weights or outside data overlapping test</td><td class="na">N/A</td><td>Trained from random weights on the 54,000 training pictures; <code>model.py</code> loads nothing.</td></tr><tr><td>11</td><td>Augmentation applied before the split</td><td class="pass">PASS</td><td>Augmentation runs inside the training loop on training batches only.</td></tr><tr><td>12</td><td>Training and worker preprocessing differ (skew)</td><td class="pass">PASS</td><td>Test pictures turned into synthetic cut-outs and sent through the worker's own preprocessing: accuracy -0.3 points (-0.6 to +0.1) [3].</td></tr></tbody></table>
+<p class="cap">Result: 9 pass, 0 fail, 3 not applicable. [2] data README, section on the IDX/CSV overlap. [3] evaluation notebook, sections 1, 2 and 6, tag d5-v1.</p>
+
+<h2>3. Metrics against baselines</h2>
+<p>Model suggestion at the shipped threshold 0.6 (a suggestion is shown only if the top score is at least 0.6 and the type has a mapping; Dress has none, so a tenth of all pictures can never get a correct suggestion). Per 100 test photos, the outcome is exactly one of: <b>correct suggestion</b>, <b>wrong suggestion</b>, <b>no suggestion</b>.</p>
+<table><thead><tr><th>Model</th><th>Accuracy % (95% CI)</th><th>Macro-F1 %</th><th>Correct shown /100</th><th>Wrong shown /100</th><th>None /100</th><th>Right when shown %</th><th>Net benefit /100 (c=3)</th></tr></thead><tbody>
+<tr><td>Always the most common type (no feature)</td><td>10.0 (9.4 to 10.6)</td><td>1.8</td><td>0.0</td><td>0.0</td><td>100.0</td><td>0.0</td><td>0.0</td></tr>
+<tr><td>Logistic regression on pixels, same training pictures</td><td>84.2 (83.4 to 84.9)</td><td>84.1</td><td>70.2</td><td>7.7</td><td>22.1</td><td>90.1</td><td>46.9</td></tr>
+<tr><td><b>garment-cnn-v1, released file</b></td><td>89.5 (88.9 to 90.1)</td><td>89.5</td><td>73.7</td><td>3.6</td><td>22.7</td><td>95.4</td><td>63.0</td></tr>
+<tr><td><b>garment-cnn-v1, five retrainings</b> (mean &plusmn; sd)</td><td>89.5 &plusmn; 0.3</td><td>89.5 &plusmn; 0.3</td><td>73.6 &plusmn; 0.9</td><td>3.7 &plusmn; 0.2</td><td>&ndash;</td><td>95.3 &plusmn; 0.2</td><td>62.6 &plusmn; 0.8</td></tr></tbody></table>
+<p class="cap">Released file: 95% intervals from 2,000 resamples of the test pictures: correct shown 72.8 to 74.6; wrong shown 3.2 to 3.9. Five retrainings (seeds 1, 2, 20261104, 3, 4): accuracy ranges 89.2 to 89.9; the run with the release seed reproduced the released file exactly (validation 89.83%, test 89.53%). Net benefit is defined in section 4.</p>
+<ul><li>The network beats logistic regression by <b>+5.4 accuracy points</b> (paired interval +4.7 to +6.0), and shows a wrong suggestion 2.2 times less often than that baseline (3.6 vs 7.7 per 100).</li>
+<li>Training noise is small: one standard deviation is 0.28 accuracy points, about the same as the test-sampling error (interval half-width 0.61 points). Differences under about half a point are not real.</li>
+<li>The scores are <b>under-confident</b>: pictures scored 0.6 to 0.7 are right 77% of the time; expected calibration error 8.5%. That makes 0.6 a cautious threshold on this test, but a shift in lighting or framing can reverse it.</li></ul>
+
+<!-- ===== PAGE 3 ===== -->
+<h2 class="pb">4. Cost of errors</h2>
+<p><b>What the two errors are here.</b> A photo is added and the form is pre-filled with a type, labelled &ldquo;Suggested from your photo&rdquo; (FR-23a); the user can change it.</p>
+<ul><li><b>False positive (a wrong suggestion is shown).</b> The user must notice and correct it (extra effort), or does not and saves a wrong type. A cross-category error (157 of the 356 wrong suggestions here, e.g. trouser read as dress) can put the item in the wrong outfit slot and so wrongly allow or block outfits (rules R1, R2); a within-category error (199, e.g. shirt read as T-shirt) mostly harms sub-type matching. Uncorrected errors also reach the vendor aggregates. It also erodes trust in the feature, which is measured in the pilot as <code>garment_guess_changed</code>.</li>
+<li><b>False negative (no suggestion, or a wrong one hiding the right one).</b> Compared with no feature, the user simply types the type as today, so the extra cost is small: the saving is lost. Dress is a permanent miss (1,000 of 10,000 test pictures).</li></ul>
+<p><b>Costs are not measured yet.</b> The pilot events <code>garment_guess_shown</code>, <code>_kept</code> and <code>_changed</code> will measure them. Until then, treat a correct suggestion as worth 1 (one manual entry saved) and a wrong suggestion as costing <b>c</b> (correction effort plus risk of a bad type). Break-even precision is c/(1+c): 50% for c=1, 75% for c=3, 91% for c=10. LLD 7.7 aims at about 80% right when shown, which assumes c of about 4. <b>Net benefit per 100 photos</b> = correct shown &minus; c &times; wrong shown.</p>
+<table><thead><tr><th>Threshold</th><th>Correct shown /100</th><th>Wrong shown /100</th><th>None /100</th><th>Right when shown %</th><th>Net, c=1</th><th>Net, c=3</th><th>Net, c=10</th></tr></thead><tbody><tr><td>0.4</td><td>79.8</td><td>7.8</td><td>12.4</td><td>91.1</td><td>72.0</td><td>56.5</td><td>2.2</td></tr><tr><td>0.5</td><td>77.4</td><td>5.6</td><td>17.0</td><td>93.3</td><td>71.8</td><td>60.7</td><td>21.5</td></tr><tr class="hl"><td>0.6</td><td>73.7</td><td>3.6</td><td>22.7</td><td>95.4</td><td>70.1</td><td>63.0</td><td>38.1</td></tr><tr><td>0.7</td><td>68.5</td><td>2.1</td><td>29.4</td><td>97.0</td><td>66.4</td><td>62.2</td><td>47.5</td></tr><tr><td>0.8</td><td>60.9</td><td>0.9</td><td>38.2</td><td>98.5</td><td>60.0</td><td>58.1</td><td>51.6</td></tr><tr><td>0.9</td><td>39.2</td><td>0.1</td><td>60.7</td><td>99.6</td><td>39.0</td><td>38.7</td><td>37.7</td></tr></tbody></table>
+<p class="cap">Released file on the 10,000 test photos (studio pictures). Highlighted: the shipped default 0.6, which was not tuned. Best threshold depends on c: 0.4 for c=1, 0.6 for c=3, 0.8 for c=10. At c=3 the default is the best of those shown; if wrong suggestions are costly (c=10), 0.8 is worth 13 more per 100 photos. Net benefit is positive at every threshold shown, for all three values of c, on studio pictures; on phone photos the wrong-shown column will rise (section 6).</p>
+
+<h2>5. Error analysis</h2>
+<div class="two"><div><img src="../figs/fig_confusion.png" alt="Confusion matrix"><p class="cap">Figure 2. Where the released model errs (row = true type).</p></div>
+<div>
+<ul><li><b>Upper-body garments are confused with each other.</b> Largest confusions: Shirt read as T-shirt/top (124), T-shirt/top read as Shirt (103), Shirt read as Coat (82), Coat as Shirt (70). Shirt is the weakest type: right 70.0% (67.1 to 72.8); it produces 11.5 wrong suggestions per 100 shirts shown. Seed-to-seed sd for Shirt is 1.4 points.</li>
+<li><b>Footwear and trousers are reliable</b> (96.4% and 96.9%); sneaker, sandal and boot mix up mainly with each other.</li>
+<li><b>Of 1,047 errors, 473 stay inside one category and 574 cross categories</b> (Dress counts as its own category, so every Dress error crosses).</li>
+<li><b>Few confident mistakes.</b> 18 errors have a top score of 0.9 or more; 414 have 0.6 or more, of which 356 are shown to the user (the rest are read as Dress, which has no mapping).</li>
+<li>Dress: 32 of 1,000 dress pictures get a wrong suggestion of another garment, since the model has no &ldquo;none of these&rdquo; option.</li></ul></div></div>
+
+<!-- ===== PAGE 4 ===== -->
+<h2 class="pb">6. Robustness and subgroups</h2>
+<p>The released file was run on perturbed copies of the same 10,000 test pictures, with no retraining. The perturbations imitate what phone photos do to a studio-trained model; they are not real phone photos.</p>
+<div class="two"><div><img src="../figs/fig_robust.png" alt="Robustness"><p class="cap">Figure 3. Accuracy change, with 95% interval from paired resampling.</p></div>
+<div><table><thead><tr><th>Perturbation</th><th>Acc %</th><th>Change, pts</th><th>Wrong /100</th></tr></thead><tbody>
+<tr><td>None (clean)</td><td>89.5</td><td>0.0</td><td>3.6</td></tr>
+<tr><td>intensity x0.5 (light garment)</td><td>83.3</td><td>-6.2</td><td>7.4</td></tr><tr><td>intensity x0.3 (very faint)</td><td>75.3</td><td>-14.2</td><td>9.2</td></tr><tr><td>noise, sd 25 of 255</td><td>73.0</td><td>-16.6</td><td>5.9</td></tr><tr><td>shift 4 px of 28</td><td>74.2</td><td>-15.3</td><td>3.2</td></tr><tr><td>rotate 15 deg</td><td>82.0</td><td>-7.6</td><td>3.5</td></tr><tr><td>rotate 30 deg</td><td>45.0</td><td>-44.6</td><td>8.2</td></tr><tr><td>hide a 12 x 12 patch</td><td>67.3</td><td>-22.2</td><td>6.2</td></tr><tr><td><b>mirror left-right</b></td><td>67.9</td><td>-21.6</td><td>13.5</td></tr>
+<tr><td>Worker preprocessing round trip</td><td>89.3</td><td>-0.3</td><td>3.7</td></tr></tbody></table></div></div>
+<ul><li><b>Mirroring is the largest practical risk.</b> In the training data every shoe points the same way. Mirrored: ankle boot 96% &rarr; 0%, sneaker 97% &rarr; 32%, sandal 97% &rarr; 47%; tops and trousers barely change. A user photographing a shoe pointing the other way gets a wrong or no suggestion. Training has no left-right flip.</li>
+<li><b>Light garments and noise hurt next:</b> LLD 7.7 already names white and very light garments as a weak spot; the x0.3 row imitates it. The picture needs to be roughly upright (15 degrees costs 8 points, 30 degrees 45) and within about 2 pixels of centre. Skipping the colour inversion step would break it completely (accuracy 22.7%), so that step needs a test in the worker.</li>
+<li><b>Subgroups.</b> The data has no people, so there are no demographic groups to test; subgroups are garment types and picture properties. Intervals are 95% (Wilson).</li></ul>
+<table><thead><tr><th>Subgroup (test pictures)</th><th class="n">n</th><th>Accuracy % (95% CI)</th><th>Wrong shown /100</th></tr></thead><tbody><tr><td>Shirt (weakest class)</td><td>1,000</td><td>70.0 (67.1 to 72.8)</td><td>11.5</td></tr><tr><td>Tops (T-shirt, pullover, shirt)</td><td>3,000</td><td>79.6 (78.1 to 81.0)</td><td>7.2</td></tr><tr><td>Outerwear (coat)</td><td>1,000</td><td>83.2 (80.8 to 85.4)</td><td>4.5</td></tr><tr><td>Footwear (sandal, sneaker, boot)</td><td>3,000</td><td>96.4 (95.7 to 97.0)</td><td>2.0</td></tr><tr><td>Bottoms (trouser)</td><td>1,000</td><td>96.9 (95.6 to 97.8)</td><td>0.3</td></tr><tr><td>Faint garments (lowest third of brightness within class)</td><td>3,330</td><td>87.8 (86.7 to 88.9)</td><td>3.8</td></tr><tr><td>Small garments (lowest third of area within class)</td><td>3,290</td><td>87.8 (86.7 to 88.9)</td><td>3.4</td></tr><tr><td>Large garments (highest third of area within class)</td><td>3,375</td><td>87.8 (86.6 to 88.8)</td><td>4.6</td></tr></tbody></table>
+<p class="cap">Brightness and size thirds are ranked inside each type so every group has the same type mix. The weakest group is Tops, 10.0 points below overall.</p>
+
+<h2>7. Limitations</h2>
+<ul><li><b>Not tested on the real input.</b> All numbers are for clean, centred, greyscale studio pictures from one retailer. Phone photos (hangers, folds, shadows, hands, either shoe direction) are unmeasured. The 100-photo team test has not been done.</li>
+<li><b>Ten types only.</b> No Dress mapping, no Jeans, Shorts, Kurta, Blazer; none of the types was chosen for Indian menswear, which is the pilot population. Fashion-MNIST includes women's garments.</li>
+<li><b>Stress tests are synthetic.</b> They show which weaknesses exist, not how large they are in real use. Perturbation sizes were chosen by us, not calibrated to phones.</li>
+<li><b>Cost ratios are assumptions</b> (c = 1, 3, 10); no user cost was measured. The conclusions about the best threshold move with c.</li>
+<li><b>Intervals cover limited things.</b> The 95% intervals reflect test-sampling error only; the five-seed spread is small (n=5). Neither covers a change of camera, lighting or population. Labels are the retailer's and some (shirt vs T-shirt) are ambiguous, so the test ceiling is below 100%.</li>
+<li>The same 10,000 test pictures were used for every analysis here. Nothing was selected from them, but the robustness and subgroup figures are descriptive, not independent confirmations.</li>
+<li>Tools: the notebook, seed script and this memo were drafted with Claude Code (Anthropic); all numbers are written by the notebook run to <code>evidence/d5_results.json</code>. Group M should read the results before submission.</li></ul>
+<div class="refs"><p>[1] Sparta LLD section 7.7 and FDD sections 14.3 to 14.4 (garment model, confidence rule, evaluation plan).</p>
+<p>[2] <code>data/recommendation-engine/README.md</code>: Fashion-MNIST files, checksums, and the IDX/CSV overlap audit of 2026-11-03.</p>
+<p>[3] <code>submissions/D5/ANCP_TM_D5_eval.ipynb</code> and <code>d5_seed_runs.py</code>, tag <code>d5-v1</code>; results in <code>evidence/d5_results.json</code>. Model card: <code>ml/recommendation-engine/garment/model_card.md</code>. Data: Xiao, Rasul and Vollgraf (2017), arXiv:1708.07747.</p></div>
+</body></html>

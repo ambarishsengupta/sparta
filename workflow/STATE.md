@@ -3,7 +3,7 @@
 Updated: 2026-11-15 14:55 IST (orchestrator run started on the owner's instruction of 2026-11-15). ORCHESTRATOR LOCK: this session is the orchestrator
 Status: running
 Model rule (owner, 2026-11-15): the orchestrator uses ONLY Opus and Sonnet subagents: Opus 5.5 for every role that decides or judges (spec, Spec QC, code and security review, design critic, consultants, approver, retro), Sonnet for every role that carries out a task (makers, gate engineer, demo). Never Haiku, never a fork of the orchestrator.
-Resume trigger: none. Not armed for this run: the owner started it from a live session, and the two collisions of 11 and 12 November came from armed triggers. If a usage limit stops the run, Status is set to waiting-for-owner with a checkpoint and the owner restarts it. The three old fired triggers were deleted (rule 11).
+Resume trigger: none. Not armed for this run: the owner started it from a live session, and the two collisions of 11 and 12 November came from armed triggers. If a usage limit stops the run, Status is set to waiting-for-owner with a checkpoint and the owner restarts it. Of the three old fired triggers one was deleted (rule 11); the permission system refused to delete the other two (sparta-resume-after-limit-reset, sparta-resume-after-weekly-reset), which stay disabled and cannot fire.
 In-flight branches: wo/WO-0121 (/Users/ambarish/.sparta-worktrees/wo-0121), wo/WO-0124 (/Users/ambarish/.sparta-worktrees/wo-0124)
 Integration branch: release/hm-demo
 Usage at start: five-hour window 32% (resets 19:40 IST), weekly 57%, weekly Fable 42%.

@@ -23,6 +23,8 @@ const WORDS: [string, RegExp][] = [
   ['the service-role name', new RegExp(['service', 'role'].join('_'), 'i')],
   ['the worker token variable name', new RegExp(['WORKER', 'API', 'TOKEN'].join('_'))],
   // supabase-js itself contains the bare prefix (a `startsWith` check, its own refusal to run a secret key in a browser); a key VALUE has a long tail
+  // WO-0122: the local demo's photograph folder variable is read by the server-only module lib/server/hm-demo.ts and never reaches a browser
+  ['the H&M photograph folder variable name', new RegExp(['HM', 'DEMO', 'IMAGE', 'ROOT'].join('_'))],
   ['a secret key value', new RegExp(['sb', 'secret', '[A-Za-z0-9_-]{10,}'].join('_'))],
   ['a service-role JWT', /eyJ[A-Za-z0-9_-]{30,}\.eyJ[A-Za-z0-9_-]{30,}/],
 ];

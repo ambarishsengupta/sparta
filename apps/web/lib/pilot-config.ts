@@ -16,3 +16,9 @@ export function hostingRegion(): string | null {
   const value = [...(process.env.NEXT_PUBLIC_HOSTING_REGION ?? '')].filter((c) => c.charCodeAt(0) >= 0x20 && c.charCodeAt(0) !== 0x7f).join('').trim();
   return value === '' ? null : value.slice(0, 100);
 }
+
+/** The H&M demo articles of the no-login mode (NEXT_PUBLIC_HM_DEMO_ARTICLES, WO-0122): compact JSON made by `load_hm_demo_catalog.py --json`, local demo only; null when empty (the usual case). */
+export function hmDemoArticles(): string | null {
+  const value = process.env.NEXT_PUBLIC_HM_DEMO_ARTICLES ?? '';
+  return value === '' ? null : value;
+}

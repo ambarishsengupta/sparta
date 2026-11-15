@@ -20,15 +20,20 @@ describe('supabase/scripts/seed-demo-insights.sh', () => {
     }
   });
 
-  it('holds only invented data: example.test addresses, invented brands, the SYNTHETIC label, no H&M reference, no password or key', () => {
+  it('holds only invented consumer data: example.test addresses, five invented brands and H&M as the one vendor and leading brand, the SYNTHETIC label, no other retailer, no H&M row, no password or key', () => {
     expect(text).toMatch(/SYNTHETIC/);
-    expect(text).not.toMatch(new RegExp(['H\\s*&\\s*M', 'Henn' + 'es', 'hm\\.' + 'com'].join('|'), 'i'));   // pieces, so this file does not hold the strings it forbids
+    expect(text).not.toMatch(new RegExp(['Henn' + 'es', 'hm\\.' + 'com', 'Zar' + 'a', 'Uni' + 'qlo', 'Northwind'].join('|'), 'i'));   // pieces, so this file does not hold the strings it forbids; H&M itself is the vendor (WO-0122)
+    expect([...text.matchAll(/H\s*&\s*M/g)].length).toBeGreaterThan(0);
+    expect(text).not.toMatch(/\b0[1-9][0-9]{8}\b|catalog_items|transactions|customers/i);   // no H&M article id, catalogue, transaction or customer row is read
     expect(text).not.toMatch(/password\s*[=:]\s*['"]?[A-Za-z0-9]|sb_secret|crypt\(|encrypted_password\s*=/i);
     const emails = [...text.matchAll(/[A-Za-z0-9._-]+@[A-Za-z0-9.-]+/g)].map((m) => m[0]).filter((e) => !e.includes('//'));   // the URL pattern in the refusal check has user@host
     expect(emails.filter((e) => !e.endsWith('@example.test') && !e.endsWith('@(127.0.0.1')).length).toBeLessThanOrEqual(2);   // postgres@... in the usage comment and URL forms only
     for (const e of ['panel-', 'vendor-demo@example.test', 'demo-admin@example.test']) expect(text).toContain(e);
-    for (const brand of ['Aster Loom', 'Zor Vane', 'Marlow Thistle', 'Pellam Ridge', 'Corvin Hale', 'Brindle Quay']) expect(text).toContain(`'${brand}'`);
-    expect(text).toContain("'Northwind Demo Outfitters'");
+    for (const brand of ['Zor Vane', 'Marlow Thistle', 'Pellam Ridge', 'Corvin Hale', 'Brindle Quay']) expect(text).toContain(`'${brand}'`);
+    expect(text).toContain("'H&M'");
+    expect(text).not.toContain('Aster Loom');
+    expect(text).toContain("values ('demo-h-and-m', 'H&M', 1), ('demo-zor-vane'");   // H&M is sort 1, the brand the item rule gives the largest share (4 in 10)
+    expect((text.match(/name = 'H&M'/g) ?? []).length).toBe(4);   // the vendor row is found by that name in --counts (3) and --remove (1); the insert names it once more
   });
 
   it('is idempotent by construction (fixed ids, conflict handling), runs a real aggregation, reviews with a direct update, and is never part of config.toml seeding', () => {

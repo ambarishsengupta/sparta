@@ -11,7 +11,7 @@ import { openReport, parsePayload } from './reports';
 // WO-0106 smoke test against the REAL local stack after `bash supabase/scripts/seed-demo-insights.sh` (never run by a gate, so without it this file is skipped): a throwaway vendor user
 // (role and membership of the seeded demo vendor set by SQL as postgres, deleted afterwards) reads the gaps and the reports with its own session.
 const stack = discover();
-const DEMO = 'Northwind Demo Outfitters';
+const DEMO = 'H&M';   // WO-0122: the demo's only vendor
 const seeded = stack ? sql(`select count(*) from catalog.vendors v where v.name = :'n' and exists (select 1 from analytics.cube) and exists (select 1 from ops.reports where reviewed_at is not null)`, { n: DEMO }) === '1' : false;
 if (!seeded) console.warn('SKIPPED reports.int.test.ts: the local stack is not running or the demo insights are not loaded. Run `bash supabase/scripts/seed-demo-insights.sh`, then this test, then `--remove`.');
 vi.setConfig({ testTimeout: 90_000, hookTimeout: 120_000 });

@@ -1,0 +1,33 @@
+# WO-0122 notes: H&M-flavoured demo accounts and the demo script (local, private)
+
+Counted lines: estimated about 330 before building (target 250, flag 400); actual about 395 added (234 insertions in 16 changed files, 160 in two new files), of which roughly 150 are tests.
+
+## Built
+- `supabase/scripts/demo-data.sh --hm` (with `--counts`/`--remove` in any order): after both seeds it runs the WO-0120 loader (1,500 articles, source `hm-demo`), then builds the 60 and 12 wardrobe items FROM catalogue articles (origin `catalogue`, `catalog_item_id` set, brand `H&M`, name, sub-type and colour of the article; sizes, fits, conditions, seasons and ids from the same rules and fixed ids as before; slot j of a category is the j-th article of that category in an order that differs per account). Purchases of catalogue-origin items use stores `H&M` and `H&M Online`; the rich account gets three more (20 purchases in all with thin's two). `--counts` adds `hm_catalogue=` and `hm_items=`. Every `--remove` also deletes the `hm-demo` source (after the consumers, so the items go first). Without `--hm` the wardrobe SQL is unchanged (psql variable `hm` = 0 switches the join off).
+- `workflow/demo/start-demo.sh --hm` (either mode): `HM_DEMO_IMAGE_ROOT` (from `SPARTA_DATA_ROOT_HM`, environment or `workflow/local.env`) goes to the `next start` process only, never to the build. With `--no-login` the loader's new `--json [N]` writes 200 articles to `workflow/demo/hm/out/hm-demo.json` (git-ignored, checked with `git check-ignore` first) and the file's text goes into the build as `NEXT_PUBLIC_HM_DEMO_ARTICLES`.
+- `load_hm_demo_catalog.py --json`: compact rows `[sku, name, category, subType, r, g, b]`, balanced over categories by the existing sampler; no database needed.
+- `apps/web/lib/demo-hm.ts` (parse with strict checks, picker rows with `sku` and `source` so tiles show photographs, two wardrobes of 60 and 12 items with `photoId`), wired in `demo-catalogue.ts` (the H&M articles replace the 40 synthetic items when a list is in the build), `demo.ts` (the two H&M wardrobes come first; `Office regular` is left out of the LIST in this mode so the Outfits screen's one-press load picks an H&M wardrobe, it still loads by name), `local-repository.ts` (an item picked from an H&M row keeps `photoId`/`catalogueId`, like the signed-in app), `pilot-config.ts` (the one place that reads the new NEXT_PUBLIC variable; the lint rule allows only the configuration modules to read the environment).
+- Insights seed: the vendor row and the leading brand are `H&M` (lk_brand code `demo-h-and-m`, sort 1, which the item rule already gives 4 items in 10); the other five brands stay invented; the vendor account is still `vendor-demo@example.test`. The two `lib/vendor/*.int.test.ts` smoke tests now look for the vendor `H&M`.
+- WO-0121 follow-ups (a), (b), (c): DEMO-SCRIPT says a browser keeps shown photographs for up to an hour and that "variable unset" is shown in a fresh private window; `build-output.test.ts` forbids `HM_DEMO_IMAGE_ROOT` in the client bundle; `source.test.ts` pins the imports of `app/hm-image/[id]/route.ts` to `lib/server/hm-demo` and no other relative import.
+- DEMO-SCRIPT: the vendor steps speak as H&M (exact wording of the addendum), "feed upload" removed from the limits, new H&M section.
+- Rule 12: no baseline entry, no inline disable, no skipped or focused test; the live tests use the `SEED_LIVE=1` pattern with SKIPPED lines.
+
+## Decisions not settled by the work order
+- The no-login list goes into the build through an environment variable (the lint rule forbids reading the environment outside configuration modules and a JSON import would break typecheck when the file is absent).
+- In the no-login H&M mode the picker shows only H&M articles, and `Office regular` is hidden from the wardrobe list (above). The Outfits screen is a component (out of scope), so this is how its one-press load becomes an H&M wardrobe.
+- The no-login wardrobes are picked by a TypeScript rule that mirrors, but is not byte-identical to, the SQL rule of the accounts mode.
+- Insights seed brand weight unchanged (H&M takes the old first brand's share); no vendor row for other brands.
+- A re-run of `demo-data.sh` after a run of the other kind keeps the old items (fixed ids, do nothing on conflict): switch kinds with `--remove` first.
+
+## Checker: real-browser rehearsal commands (do these in order; passwords are printed once)
+Accounts mode:
+1. `cd /Users/ambarish/.sparta-worktrees/work` (or the merged tree), `supabase status` must answer.
+2. `bash supabase/scripts/demo-data.sh --hm` (about 40 s; copy the four passwords).
+3. `bash workflow/demo/start-demo.sh --hm` and open the printed address. Sign in as `demo-rich@example.test`: Wardrobe tiles show H&M photographs (60 items), 'Add from catalogue' shows photographs, Purchases show stores H&M and H&M Online, `demo-thin` has 12. Sign in as `vendor-demo@example.test`: the portal is H&M's, brand view leads with H&M, only invented consumers behind the figures.
+4. Photographs off: `bash workflow/demo/start-demo.sh --stop`, `bash workflow/demo/start-demo.sh` (no `--hm`), open it in a FRESH PRIVATE WINDOW (the browser keeps photographs for up to an hour): tiles show the illustrations and `/hm-image/<id>` answers 404.
+No-login mode:
+5. `bash workflow/demo/start-demo.sh --stop; bash workflow/demo/start-demo.sh --no-login --hm`, open the address. 'Add from catalogue' lists H&M articles with photographs; Wardrobe > 'Load demo wardrobe' offers 'H&M men's wardrobe (60 items)' and 'H&M thin wardrobe (12 items)' first; Outfits > load demo wardrobe loads the 60-item H&M wardrobe; an item picked from the picker keeps its photograph.
+Stop and clean up: `bash workflow/demo/start-demo.sh --stop; bash supabase/scripts/demo-data.sh --remove`; then `docker exec -i supabase_db_sparta psql -U postgres -d postgres -X -A -c "select (select count(*) from auth.users), (select count(*) from catalog.vendors), (select count(*) from catalog.catalog_items)"` must print `0|0|0`. `workflow/demo/hm/out/` may be deleted (`rm -r workflow/demo/hm/out`); it is git-ignored.
+
+## Verified
+Typecheck, lint, lint:repo, secret scan, `vitest run workflow/gates/db_tests.test.ts apps/web/lib`, the loader's Python tests, one live `demo-data.sh --hm` (counts before 0|0|0, after `consumers=3 items=72 purchases=20 ... hm_catalogue=1500 hm_items=72`, a second run identical, removed to 0|0|0), a no-login `--hm` start (photo route 200 image/jpeg, bad id 404, `HM_DEMO_IMAGE_ROOT` in no client file, list present in the bundle, stopped). The real-browser rehearsal is the checker's.

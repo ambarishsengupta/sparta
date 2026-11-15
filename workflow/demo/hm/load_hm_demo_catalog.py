@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """LOCAL DEMO ONLY (WO-0120). Loads H&M men's articles from the local folder $SPARTA_DATA_ROOT_HM into the LOCAL database as one catalogue source
 named `hm-demo` (allowed = false, so the collector never selects it). READ-ONLY on that folder: it opens articles.csv and checks that single photo files
-exist; it copies, writes, hashes and keeps nothing of it, and nothing H&M-derived is ever committed.
+exist; it copies, hashes and keeps nothing of it, and nothing H&M-derived is ever committed (only `--json` writes rows, into the git-ignored out/ folder).
   ~/.sparta-venv/bin/python workflow/demo/hm/load_hm_demo_catalog.py [--count N] [--db-url URL]   (default 1500; idempotent)
   ... --remove   deletes only the hm-demo source and its items      ... --counts   prints what is loaded
+  ... --json [N] (WO-0122) writes N (default 200) articles as compact JSON to workflow/demo/hm/out/hm-demo.json (git-ignored) for the no-login demo; no database
 The URL (or SPARTA_DEMO_DB_URL) is REFUSED unless its host is 127.0.0.1, localhost or [::1]. Uses psql if installed, else `docker exec` into the local stack."""
 import argparse, csv, json, os, random, re, shutil, subprocess, sys
 from pathlib import Path
@@ -82,6 +83,15 @@ def sample(rows, n, seed=SEED):
     return sorted(chosen, key=lambda r: r["sku"])
 
 
+JSON_OUT = HERE / "out" / "hm-demo.json"
+
+
+def write_json(rows, path=JSON_OUT):
+    """Compact `[[sku, name, category, sub_type, r, g, b], ...]` (r, g, b are null when the article has no colour); the folder is git-ignored."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps([[r["sku"], r["name"], r["category"], r["sub_type"], *(r["rgb"] or [None] * 3)] for r in rows], separators=(",", ":"), ensure_ascii=False))
+
+
 def lit(s):
     return "'" + s.replace("'", "''") + "'"
 
@@ -128,9 +138,19 @@ def main(argv=None):
     ap.add_argument("--count", type=int, default=1500)
     ap.add_argument("--remove", action="store_true")
     ap.add_argument("--counts", action="store_true")
+    ap.add_argument("--json", nargs="?", type=int, const=200, default=None, metavar="N")
     ap.add_argument("--db-url", default=os.environ.get("SPARTA_DEMO_DB_URL", DEFAULT_URL))
     a = ap.parse_args(argv)
     url = check_url(a.db_url)   # before anything is read
+    if a.json is not None:
+        if not 1 <= a.json <= 2000:
+            die("--json must be between 1 and 2000.")
+        chosen = sample(read_articles(data_root()), a.json)
+        if not chosen:
+            die("no menswear article of a mapped type with a photo was found.")
+        write_json(chosen)
+        print(f"wrote {len(chosen)} articles to workflow/demo/hm/out/hm-demo.json")
+        return
     if a.remove or a.counts:
         print(run_sql(REMOVE_SQL if a.remove else COUNTS_SQL, url))
         return

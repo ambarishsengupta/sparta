@@ -51,6 +51,11 @@ describe('no secret or service key anywhere in apps/web except the one server-on
     // route handlers, and the integration/support code that exercises the handlers; no page, component or other lib module
     expect(outside).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/worker/signed-urls/route.ts', 'app/hm-image/[id]/route.ts', 'test-support/purge.ts']);
   });
+  it('the H&M photograph route imports lib/server/hm-demo and no other lib/server module (WO-0122)', () => {
+    const route = readFileSync(join(root, 'app/hm-image/[id]/route.ts'), 'utf8');
+    expect(specifiers(route).filter((s) => /(^|\/)server\//.test(s))).toEqual(['../../../lib/server/hm-demo']);
+    expect(specifiers(route).filter((s) => s.startsWith('.'))).toEqual(['../../../lib/server/hm-demo']);   // not even a relative import of anything else
+  });
   it('the Leave screen removes the files through the server before the deletion, and the purge route never takes a user id from the request', () => {
     expect(readFileSync(join(root, 'components/account/LeaveForm.tsx'), 'utf8')).toContain('leaveThePilot(createBrowserSupabase(), pw, () => purgeMyStorage())');
     const route = readFileSync(join(root, 'app/api/account/purge-storage/route.ts'), 'utf8');

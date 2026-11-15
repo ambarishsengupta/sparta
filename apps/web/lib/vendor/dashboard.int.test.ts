@@ -9,7 +9,7 @@ import { INSIGHT_SENTENCES } from './insights';
 // WO-0112 smoke test against the REAL local stack after `bash supabase/scripts/seed-demo-insights.sh` (the seed is never run by a gate, so without it this file is skipped):
 // a throwaway vendor user (role and membership of the seeded demo vendor set by SQL as postgres, deleted afterwards) loads the dashboard's views with its own session.
 const stack = discover();
-const DEMO = 'Northwind Demo Outfitters';
+const DEMO = 'H&M';   // WO-0122: the demo's only vendor
 const seeded = stack ? sql(`select count(*) from catalog.vendors v where v.name = :'n' and exists (select 1 from analytics.cube)`, { n: DEMO }) === '1' : false;
 if (!seeded) console.warn('SKIPPED dashboard.int.test.ts: the local stack is not running or the demo insights are not loaded. Run `bash supabase/scripts/seed-demo-insights.sh`, then this test, then `--remove`.');
 vi.setConfig({ testTimeout: 90_000, hookTimeout: 120_000 });

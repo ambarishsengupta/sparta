@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # LOCAL DEMO ONLY (WO-0102, Release 0). Loads a SYNTHETIC consumer panel into the LOCAL database so the vendor dashboard has real-looking numbers after a real
 # `analytics.run_aggregation()`: 150 invented eligible consumers (panel-001@example.test .. panel-150@example.test, auth rows by SQL, NO password, they can not sign in)
-# with items, wishlist entries (some from Wardrobe unlock, which never count) and purchases over the last six months, six INVENTED brands (also inserted into catalog.lk_brand
-# as demo rows, codes demo-*), one invented vendor `Northwind Demo Outfitters` with a member row and the current agreement accepted for vendor-demo@example.test (a
+# with items, wishlist entries (some from Wardrobe unlock, which never count) and purchases over the last six months, six brands, H&M leading and five INVENTED ones (also inserted into catalog.lk_brand
+# as demo rows, codes demo-*), the one vendor `H&M` (the demo's only vendor, legal/HM-DEMO-DECISION.md; its row is only a name, no H&M customer or transaction row is used for any figure) with a member row and the current agreement accepted for vendor-demo@example.test (a
 # passwordless profile with role vendor if no such user exists yet; the demo-data script of WO-0097 gives that account its password), and a local admin profile
 # demo-admin@example.test (no password) that is recorded as the reviewer of one report for the current month, marked reviewed with a direct update as postgres.
 # The sizes are chosen so that some segments stay under the minimum group size (Activewear 7 owners, Ethnic wear 9, one colour 8, one condition band 5) and show as hidden.
@@ -32,9 +32,9 @@ select 'panel=' || (select count(*) from auth.users where email ~ '^panel-[0-9]{
   || ' wishlist=' || (select count(*) from app.wishlist_entries w join auth.users u on u.id = w.user_id where u.email ~ '^panel-[0-9]{3}@example\.test$')
   || ' purchases=' || (select count(*) from app.purchases p join auth.users u on u.id = p.user_id where u.email ~ '^panel-[0-9]{3}@example\.test$')
   || ' brands=' || (select count(*) from catalog.lk_brand where code like 'demo-%')
-  || ' vendors=' || (select count(*) from catalog.vendors where name = 'Northwind Demo Outfitters')
-  || ' members=' || (select count(*) from catalog.vendor_members m join catalog.vendors v on v.id = m.vendor_id where v.name = 'Northwind Demo Outfitters')
-  || ' acceptances=' || (select count(*) from catalog.vendor_agreement_acceptances a join catalog.vendors v on v.id = a.vendor_id where v.name = 'Northwind Demo Outfitters')
+  || ' vendors=' || (select count(*) from catalog.vendors where name = 'H&M')
+  || ' members=' || (select count(*) from catalog.vendor_members m join catalog.vendors v on v.id = m.vendor_id where v.name = 'H&M')
+  || ' acceptances=' || (select count(*) from catalog.vendor_agreement_acceptances a join catalog.vendors v on v.id = a.vendor_id where v.name = 'H&M')
   || ' admins=' || (select count(*) from auth.users where email = 'demo-admin@example.test')
   || ' reports=' || (select count(*) from ops.reports r join auth.users u on u.id = r.reviewed_by where u.email = 'demo-admin@example.test')
   || ' cube_rows=' || (select count(*) from analytics.cube);
@@ -46,7 +46,7 @@ if [ "$mode" = "remove" ]; then
   run_psql <<'SQL'
 begin;
 delete from ops.reports where reviewed_by in (select id from auth.users where email = 'demo-admin@example.test');
-delete from catalog.vendors where name = 'Northwind Demo Outfitters';
+delete from catalog.vendors where name = 'H&M';
 delete from auth.users where email ~ '^panel-[0-9]{3}@example\.test$' or email = 'demo-admin@example.test' or (email = 'vendor-demo@example.test' and encrypted_password is null);
 delete from catalog.lk_brand where code like 'demo-%';
 select 'cube refreshed by run ' || analytics.run_aggregation();
@@ -59,7 +59,7 @@ fi
 run_psql <<'SQL'
 begin;
 create function pg_temp.pid(n int) returns uuid language sql immutable as $f$ select md5('demo-insights-panel:' || n)::uuid $f$;
-insert into catalog.lk_brand (code, label, sort) values ('demo-aster-loom', 'Aster Loom', 1), ('demo-zor-vane', 'Zor Vane', 2), ('demo-marlow-thistle', 'Marlow Thistle', 3),
+insert into catalog.lk_brand (code, label, sort) values ('demo-h-and-m', 'H&M', 1), ('demo-zor-vane', 'Zor Vane', 2), ('demo-marlow-thistle', 'Marlow Thistle', 3),
   ('demo-pellam-ridge', 'Pellam Ridge', 4), ('demo-corvin-hale', 'Corvin Hale', 5), ('demo-brindle-quay', 'Brindle Quay', 6) on conflict (code) do nothing;
 
 -- the panel: eligible consumers (supported country, age confirmed, notice and both documents at the current version)
@@ -110,7 +110,7 @@ select md5('demo-insights-wish:' || w.n || ':' || w.k)::uuid, pg_temp.pid(w.n), 
 from w on conflict (id) do update set created_at = excluded.created_at;
 
 -- the vendor row, its member (a passwordless profile unless the account already exists), the current agreement, and the local admin profile
-insert into catalog.vendors (id, name) values (md5('demo-insights-vendor')::uuid, 'Northwind Demo Outfitters') on conflict (id) do nothing;
+insert into catalog.vendors (id, name) values (md5('demo-insights-vendor')::uuid, 'H&M') on conflict (id) do nothing;
 insert into auth.users (id, email) select md5('demo-insights-vendor-user')::uuid, 'vendor-demo@example.test' where not exists (select 1 from auth.users where email = 'vendor-demo@example.test');
 insert into auth.users (id, email) select md5('demo-insights-admin')::uuid, 'demo-admin@example.test' where not exists (select 1 from auth.users where email = 'demo-admin@example.test');
 update app.profiles set role = 'vendor' where id = (select id from auth.users where email = 'vendor-demo@example.test');

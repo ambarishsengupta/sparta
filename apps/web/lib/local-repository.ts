@@ -1,5 +1,5 @@
 import { categoryOfSubType, colourFamily, hexToRgb, referenceSwatch } from '@sparta/taxonomy';
-import { filterCatalogue } from './catalogue';
+import { filterCatalogue, hmPhotoId } from './catalogue';
 import { DEMO_CATALOGUE } from './demo-catalogue';
 import type { CatalogueItem } from './catalogue';
 import { PAGE, afterCursor, matches, newestFirst, totalsByCurrency } from './purchases';
@@ -76,6 +76,12 @@ export class LocalRepository implements WardrobeRepository {
     const base = this.collection<'items', StoredItem, ItemInput>('items', 'item');
     this.items = {
       ...base,
+      // WO-0122: an item picked from an H&M demo article keeps its photograph, like the signed-in app (photoId from the catalogue row)
+      create: async (input) => {
+        const picked = input.catalogue ? catalogue.find((c) => c.id === input.catalogue?.id) : undefined;
+        const photoId = picked ? hmPhotoId(picked.sku, picked.source) : null;
+        return base.create(photoId ? { ...input, photoId, catalogueId: picked?.id } : input);
+      },
       archive: (id, reason: ArchiveReason) => base.update(id, { status: 'archived', archiveReason: reason }),
       restore: (id) => base.update(id, { status: 'active', archiveReason: null }),
       remove: async (id) => {

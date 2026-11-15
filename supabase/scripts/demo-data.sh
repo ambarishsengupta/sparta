@@ -10,9 +10,13 @@
 #   bash supabase/scripts/demo-data.sh [DATABASE_URL]    # default: postgresql://postgres:postgres@127.0.0.1:54322/postgres  (SPARTA_DEMO_DB_URL also works)
 #   bash supabase/scripts/demo-data.sh --counts          # one line of row counts for the idempotence check
 #   bash supabase/scripts/demo-data.sh --remove          # deletes the three consumers, un-passwords the vendor profile, then runs both seeds' --remove
+#   bash supabase/scripts/demo-data.sh --hm              # WO-0122, LOCAL private demo (legal/HM-DEMO-DECISION.md): also loads the H&M demo catalogue (workflow/demo/hm/load_hm_demo_catalog.py, 1,500
+#                                                        # articles read from $SPARTA_DATA_ROOT_HM at run time, nothing copied) and builds the 60 and 12 wardrobe items FROM those articles (origin
+#                                                        # catalogue, with catalog_item_id, so tiles show the photographs), plus a few more purchases of them; --remove (with or without --hm) removes it all
 # REFUSED unless the database host AND the auth API host are 127.0.0.1, localhost or [::1]. Stops at the first error. psql, else `docker exec` into the database container.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 2
+hm=0; rest=(); for a in "$@"; do if [ "$a" = "--hm" ]; then hm=1; else rest+=("$a"); fi; done; set -- ${rest[@]+"${rest[@]}"}
 mode="seed"; case "${1:-}" in --remove) mode="remove"; shift;; --counts) mode="counts"; shift;; esac
 url="${1:-${SPARTA_DEMO_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}}"
 if ! printf '%s' "$url" | grep -Eq '^postgres(ql)?://[^@/?#[:space:]]*@(127\.0\.0\.1|localhost|\[::1\])(:[0-9]{1,5})?/[A-Za-z0-9_]+$'; then
@@ -33,7 +37,9 @@ select 'consumers=' || (select count(*) from auth.users where email in ($EMAILS)
   || ' consent=' || (select count(*) from app.consent_records c join auth.users u on u.id = c.user_id where u.email in ($EMAILS))
   || ' invitations=' || (select count(*) from ops.invitations where email in ($EMAILS))
   || ' vendor_users=' || (select count(*) from auth.users where email = 'vendor-demo@example.test')
-  || ' catalogue=' || (select count(*) from catalog.catalog_items i join catalog.sources s on s.id = i.source_id where s.name = 'demo');
+  || ' catalogue=' || (select count(*) from catalog.catalog_items i join catalog.sources s on s.id = i.source_id where s.name = 'demo')
+  || ' hm_catalogue=' || (select count(*) from catalog.catalog_items i join catalog.sources s on s.id = i.source_id where s.name = 'hm-demo')
+  || ' hm_items=' || (select count(*) from app.items i join auth.users u on u.id = i.user_id where u.email in ($EMAILS) and i.origin = 'catalogue' and i.catalog_item_id is not null);
 SQL
   bash supabase/scripts/seed-demo-insights.sh --counts "$url"; exit $?
 fi
@@ -43,6 +49,7 @@ if [ "$mode" = "remove" ]; then
 delete from auth.users where email in ($EMAILS);
 delete from ops.invitations where email in ($EMAILS);
 update auth.users set encrypted_password = null where email = 'vendor-demo@example.test';
+delete from catalog.sources where name = 'hm-demo' and site_url = 'http://127.0.0.1/';
 select 'demo consumers removed';
 SQL
   bash supabase/scripts/seed-demo-insights.sh --remove "$url" && bash supabase/scripts/seed-demo-catalog.sh --remove "$url"; exit $?
@@ -60,8 +67,23 @@ admin() { printf 'url = "%s%s"\nrequest = "%s"\nheader = "apikey: %s"\nheader = 
 newpw() { openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 20; }
 uid() { printf "select id from auth.users where email = '%s'" "$1" | run_psql; }
 
+# a seed of the other kind may already be there (fixed ids: a re-run would keep those items): say so BEFORE anything is changed, and change nothing
+# only the rows this script seeds count (its own fixed ids, md5('demo-data:' || email || ':' || i)); items a presenter added by hand are ignored. A seeded row is H&M-made when its article is of the hm-demo source.
+held="$(printf "select count(*) filter (where s.name is distinct from 'hm-demo') || ' ' || count(*) filter (where s.name = 'hm-demo') from app.items i join auth.users u on u.id = i.user_id
+  left join catalog.catalog_items ci on ci.id = i.catalog_item_id left join catalog.sources s on s.id = ci.source_id
+  where u.email in (%s) and i.id in (select md5('demo-data:' || e || ':' || n)::uuid from unnest(array[%s]) e, generate_series(1, 60) n)" "$EMAILS" "$EMAILS" | run_psql)" || exit 1
+read -r plain_items catalogue_items <<< "$held"
+if [ "$hm" = 1 ] && [ "${plain_items:-0}" -gt 0 ]; then
+  echo "demo-data: the demo accounts still hold the PLAIN demo wardrobe (${plain_items} seeded items not made from hm-demo articles), so --hm would keep it and show illustrations, not photographs. Nothing was changed. Run: bash supabase/scripts/demo-data.sh --remove   and then   bash supabase/scripts/demo-data.sh --hm" >&2; exit 3
+elif [ "$hm" = 0 ] && [ "${catalogue_items:-0}" -gt 0 ]; then
+  echo "demo-data: the demo accounts still hold the --hm wardrobe (${catalogue_items} seeded items made from hm-demo articles), so a plain seed would keep it. Nothing was changed. Run: bash supabase/scripts/demo-data.sh --remove   and then   bash supabase/scripts/demo-data.sh" >&2; exit 3
+fi
 bash supabase/scripts/seed-demo-catalog.sh "$url" || die "the catalogue seed failed."
 bash supabase/scripts/seed-demo-insights.sh "$url" || die "the insights seed failed."
+if [ "$hm" = 1 ]; then   # the loader refuses a non-local URL itself and only reads the H&M folder; python3 is enough (standard library only)
+  py="${SPARTA_VENV_PYTHON:-$(sed -n 's/^SPARTA_VENV_PYTHON=//p' workflow/local.env 2>/dev/null | head -n1)}"; [ -x "${py:-}" ] || py=python3
+  "$py" -B workflow/demo/hm/load_hm_demo_catalog.py --db-url "$url" || die "the hm-demo catalogue could not be loaded (is SPARTA_DATA_ROOT_HM set?)."
+fi
 
 declare -a creds=()
 for e in demo-rich demo-thin demo-new vendor-demo; do
@@ -79,7 +101,7 @@ for e in demo-rich demo-thin demo-new vendor-demo; do
   creds+=("$email  $pw")
 done
 
-run_psql <<'SQL' || exit 1
+{ echo "\\set hm $hm"; cat <<'SQL'; } | run_psql || exit 1
 begin;
 -- consent and documents (age confirmed) for the three consumers; onboarding (rich and thin) uses the real function with the user's id as the caller
 insert into app.document_acceptances (user_id, document, version) select u.id, d.doc, (select value from ops.settings where key = d.key)
@@ -102,25 +124,32 @@ cat(k, category, subs, base) as (values (1, 'Tops', '{T-shirt,Shirt,Polo,Sweater
 col(c, label, r, g, b) as (values (1, 'Ink black', 17, 17, 17), (2, 'Chalk white', 244, 244, 240), (3, 'Harbour navy', 31, 42, 68), (4, 'Sage green', 46, 139, 87), (5, 'Dune beige', 217, 199, 160),
   (6, 'Slate grey', 110, 120, 130), (7, 'Rust', 160, 70, 40), (8, 'Olive', 107, 107, 47), (9, 'Denim blue', 60, 90, 140)),
 brand(b, label) as (values (1, 'Aster Loom'), (2, 'Zor Vane'), (3, 'Marlow Thistle'), (4, 'Pellam Ridge'), (5, 'Corvin Hale'), (6, 'Brindle Quay')),
-gen as (select a.email, i, c.*, c.subs[(i * 7 + c.k) % cardinality(c.subs) + 1] sub, (i * 5 + c.k * 3) % 9 + 1 ci
-        from acct a, generate_series(1, 60) i, lateral (select * from cat where k = a.pat[(i - 1) % cardinality(a.pat) + 1]) c where i <= a.n)
-insert into app.items (id, user_id, name, category, sub_type, colour_r, colour_g, colour_b, pattern, fit, size_system, size_value, brand, price, currency, seasons, occasions, condition, origin)
-select md5('demo-data:' || g.email || ':' || g.i)::uuid, u.id, col.label || ' ' || lower(g.sub), g.category, g.sub, col.r, col.g, col.b, 'Solid',
+gen as (select a.email, i, c.*, c.subs[(i * 7 + c.k) % cardinality(c.subs) + 1] sub, (i * 5 + c.k * 3) % 9 + 1 ci, count(*) over (partition by a.email, c.k order by i) - 1 j
+        from acct a, generate_series(1, 60) i, lateral (select * from cat where k = a.pat[(i - 1) % cardinality(a.pat) + 1]) c where i <= a.n),
+-- with --hm (:hm = 1) slot j of a category is the j-th H&M demo article of that category in an order that differs per account: the item is made FROM the article (name, sub-type, colour, brand)
+sel as (select g.*, p.id cid, p.name pname, p.colour_r pr, p.colour_g pg, p.colour_b pb, coalesce(p.sub_type, g.sub) esub from gen g left join lateral (
+          select ci.id, ci.name, ci.sub_type, ci.colour_r, ci.colour_g, ci.colour_b from catalog.catalog_items ci join catalog.sources s on s.id = ci.source_id
+          where s.name = 'hm-demo' and ci.status = 'active' and ci.category = g.category order by md5(ci.sku || g.email) offset g.j limit 1) p on :hm = 1)
+insert into app.items (id, user_id, catalog_item_id, name, category, sub_type, colour_r, colour_g, colour_b, pattern, fit, size_system, size_value, brand, price, currency, seasons, occasions, condition, origin)
+select md5('demo-data:' || g.email || ':' || g.i)::uuid, u.id, g.cid, coalesce(g.pname, col.label || ' ' || lower(g.sub)), g.category, g.esub, coalesce(g.pr, col.r), coalesce(g.pg, col.g), coalesce(g.pb, col.b), 'Solid',
   case when g.k in (3, 5) then null else (array['Regular', 'Slim', 'Relaxed'])[g.i % 3 + 1] end,
   case when g.k in (1, 2, 4) then 'Letter' end, case when g.k in (1, 2, 4) then (array['S', 'M', 'M', 'L', 'L', 'XL'])[g.i % 6 + 1] end,
-  (select label from brand where b = (g.i + g.k) % 6 + 1), g.base + g.i * 37 % 5 * (g.base / 4), 'INR',
-  case when g.k = 4 then '{Autumn,Winter}' when g.sub in ('Shorts', 'Sandals', 'T-shirt') then '{Spring,Summer}' else '{All year}' end::text[],
-  case when g.sub in ('Shirt', 'Chinos', 'Trousers', 'Watch', 'Belt') then '{Casual,Work,Date}' when g.sub in ('Formal shoes', 'Blazer') then '{Work,Formal,Date}' else '{Casual,Travel}' end::text[],
-  (g.i * 37 + g.k * 11) % 85, 'manual'
-from gen g join auth.users u on u.email = g.email join col on col.c = g.ci
+  case when g.cid is not null then 'H&M' else (select label from brand where b = (g.i + g.k) % 6 + 1) end, g.base + g.i * 37 % 5 * (g.base / 4), 'INR',
+  case when g.k = 4 then '{Autumn,Winter}' when g.esub in ('Shorts', 'Sandals', 'T-shirt') then '{Spring,Summer}' else '{All year}' end::text[],
+  case when g.esub in ('Shirt', 'Chinos', 'Trousers', 'Watch', 'Belt') then '{Casual,Work,Date}' when g.esub in ('Formal shoes', 'Blazer') then '{Work,Formal,Date}' else '{Casual,Travel}' end::text[],
+  (g.i * 37 + g.k * 11) % 85, case when g.cid is not null then 'catalogue' else 'manual' end
+from sel g join auth.users u on u.email = g.email join col on col.c = g.ci
 on conflict (id) do nothing;
 
 -- some purchases of the items just made (rich: every fourth item, thin: two) and four planned wishlist entries for the rich account
+-- with --hm the purchases are of catalogue-origin items (store H&M or H&M Online), and the rich account has three more
 insert into app.purchases (id, user_id, item_id, purchase_date, price, currency, quantity, store)
 select md5('demo-data-purchase:' || i.id)::uuid, i.user_id, i.id, current_date - (row_number() over (partition by i.user_id order by i.id)::int * 9 % 170), i.price, i.currency, 1,
-  (array['Harbour Row Outfitters', 'Lantern Street Menswear', 'Quill and Cotton'])[row_number() over (partition by i.user_id order by i.id)::int % 3 + 1]
+  case when i.catalog_item_id is not null then (array['H&M', 'H&M Online'])[row_number() over (partition by i.user_id order by i.id)::int % 2 + 1]
+    else (array['Harbour Row Outfitters', 'Lantern Street Menswear', 'Quill and Cotton'])[row_number() over (partition by i.user_id order by i.id)::int % 3 + 1] end
 from app.items i join auth.users u on u.id = i.user_id
 where (u.email = 'demo-rich@example.test' and i.id in (select md5('demo-data:demo-rich@example.test:' || n)::uuid from generate_series(4, 60, 4) n))
+   or (:hm = 1 and u.email = 'demo-rich@example.test' and i.id in (select md5('demo-data:demo-rich@example.test:' || n)::uuid from generate_series(2, 58, 28) n))
    or (u.email = 'demo-thin@example.test' and i.id in (select md5('demo-data:demo-thin@example.test:' || n)::uuid from generate_series(3, 6, 3) n))
 on conflict (id) do nothing;
 insert into app.wishlist_entries (id, user_id, name, category, sub_type, colour_r, colour_g, colour_b, target_price, currency, priority, planned_month, budget, origin)

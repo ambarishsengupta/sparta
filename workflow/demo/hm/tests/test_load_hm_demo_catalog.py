@@ -69,6 +69,21 @@ def test_sql_keeps_the_leading_zero_escapes_quotes_and_never_invents_price_or_ba
     assert L.REMOVE_SQL.startswith("delete from catalog.sources where name = 'hm-demo'") and "catalog_items" not in L.REMOVE_SQL
 
 
+def test_json_output_is_compact_complete_and_goes_to_the_ignored_folder(root, tmp_path):
+    rows = L.sample(L.read_articles(root), 12)
+    out = tmp_path / "out" / "x.json"
+    L.write_json(rows, out)
+    data = json.loads(out.read_text())
+    assert len(data) == 12 and all(re.fullmatch(r"099[0-9]{7}", d[0]) and len(d) == 7 for d in data)
+    assert out.read_text().startswith('[["099') and {(d[2], d[3]) for d in data} <= SUBTYPES
+    assert all((d[4:] == [None] * 3) or all(isinstance(c, int) and 0 <= c <= 255 for c in d[4:]) for d in data)
+    assert L.JSON_OUT.relative_to(REPO).as_posix() == "workflow/demo/hm/out/hm-demo.json"
+    assert subprocess.run(["git", "check-ignore", "-q", str(L.JSON_OUT)], cwd=REPO).returncode == 0
+    env = {**os.environ, "SPARTA_DATA_ROOT_HM": str(root)}
+    bad = subprocess.run([sys.executable, "-B", str(HM / "load_hm_demo_catalog.py"), "--json", "0"], capture_output=True, text=True, env=env, timeout=20)
+    assert bad.returncode == 2 and "--json must be between" in bad.stderr
+
+
 @pytest.mark.parametrize("url", [
     "postgresql://postgres:x@db.example.test:5432/postgres", "postgresql://postgres:x@127.0.0.1:54322/postgres?host=db.example.test",
     "postgresql://postgres@evil.test@127.0.0.1/postgres", "postgresql://postgres:x@127.0.0.1.evil.test:5432/postgres",
@@ -89,6 +104,8 @@ def test_it_reads_only_inside_the_data_root_and_never_writes(root, monkeypatch):
     assert [p for p, *_ in seen] == [str(root / "articles.csv")] and all(len(a) == 0 and "mode" not in k for _, a, k in seen)
     assert all(p.startswith(str(root / "images")) for p in isfiles)
     src = (HM / "load_hm_demo_catalog.py").read_text()
+    assert src.count("write_text") == 1 and "path.write_text(json.dumps(" in src   # WO-0122: the one write is the --json output below
+    src = src.replace("path.write_text(json.dumps(", "")
     assert not re.search(r"open\([^)]*(,\s*|mode=)['\"][rbt]*[wax+]|shutil\.(copy|move|rmtree)|os\.(remove|rename|unlink|replace)|write_text|write_bytes|hashlib|\.unlink|\.rename", src)
 
 

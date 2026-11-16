@@ -24,6 +24,8 @@ const CASES: [name: string, path: string, code: string, rule: string][] = [
   ['a library module imports lib/server', LIB, "import { fail } from './server/api';\nexport const f = fail;\n", '@typescript-eslint/no-restricted-imports'],
   ['a component builds its own Supabase client', COMPONENT, "import { createClient } from '@supabase/supabase-js';\nexport const c = createClient;\n", '@typescript-eslint/no-restricted-imports'],
   ['a route handler builds its own Supabase client', ROUTE, "import { createClient } from '@supabase/supabase-js';\nexport const c = createClient;\n", '@typescript-eslint/no-restricted-imports'],
+  ['a library module names an untyped Supabase client', LIB, "import type { SupabaseClient } from '@supabase/supabase-js';\nexport type C = Pick<SupabaseClient, 'auth' | 'schema'>;\n", 'no-restricted-syntax'],
+  ['the secret-key module names an untyped Supabase client', 'apps/web/lib/server/admin.ts', "import type { SupabaseClient } from '@supabase/supabase-js';\nexport const f = (c: SupabaseClient): SupabaseClient => c;\n", 'no-restricted-syntax'],
   ['a component calls the network directly', COMPONENT, "export const load = () => fetch('/api/x');\n", 'no-restricted-globals'],
   ['a component injects HTML', COMPONENT, 'export const P = ({ h }: { h: string }) => <div dangerouslySetInnerHTML={{ __html: h }} />;\n', 'no-restricted-syntax'],
   ['a component logs to the console', COMPONENT, "export const f = () => { console.log('x'); };\n", 'no-console'],
@@ -59,6 +61,26 @@ describe('the project lint rules fire (eslint.config.js, WO-0123)', () => {
     expect(await rulesFor(ROUTE, "import { fail } from '../../../../lib/server/api';\nexport const f = fail;\n")).toEqual([]);
     expect(await rulesFor(WEB_TEST, "import { describe } from 'vitest';\ndescribe.skipIf(true)('x', () => {});\n")).toEqual([]);
   }, 60_000);
+
+  it('a client that names the database passes, and only the three listed modules may still hold an untyped one (WO-0149; the list may only shrink)', async () => {
+    const typed = "import type { SupabaseClient } from '@supabase/supabase-js';\nimport type { Database } from './supabase/database.types';\nexport type C = Pick<SupabaseClient<Database>, 'auth' | 'schema'>;\n";
+    expect(await rulesFor(LIB, typed)).toEqual([]);
+    const untyped = "import type { SupabaseClient } from '@supabase/supabase-js';\nexport type C = Pick<SupabaseClient, 'auth'>;\n";
+    const config = readFileSync('eslint.config.js', 'utf8');
+    const block = /still hold an untyped Supabase client[\s\S]*?files: \[([^\]]*)\]/.exec(config)?.[1] ?? '';
+    const listed = [...block.matchAll(/\$\{WEB\}\/([^`]+)`/g)].map((m) => `apps/web/${m[1]!}`).sort();
+    expect(listed).toEqual(['apps/web/lib/server/admin-catalog.ts', 'apps/web/lib/supabase/backend.ts', 'apps/web/lib/supabase/repository.ts']);
+    for (const p of listed) {
+      expect(existsSync(p), p).toBe(true);
+      expect(await rulesFor(p, untyped), p).not.toContain('no-restricted-syntax');
+      // the exception covers the client type only: every other boundary rule still fires in these files
+      expect(await rulesFor(p, 'export const k = process.env.NEXT_PUBLIC_DATA_BACKEND;\n'), p).toContain('no-restricted-syntax');
+      // and each listed file really still needs it (an entry nobody needs must be deleted)
+      expect(readFileSync(p, 'utf8'), p).toMatch(/SupabaseClient(?!<)/);
+    }
+    // a test file may build loose clients
+    expect(await rulesFor(WEB_TEST, untyped)).toEqual([]);
+  }, 120_000);
 
   it('the baseline exists, names only known rules, and holds no boundary rule (those have no exceptions)', () => {
     expect(existsSync('eslint-suppressions.json')).toBe(true);

@@ -2,13 +2,13 @@ import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { a11yProblems } from '../../test-support/a11y';
-import { findAll, mount, textOf, type Found } from '../hook-shim';
+import { findAll, mount, textOf, type Found } from '../../test-support/hook-shim';
 import { ItemPurchases } from '../purchases/ItemPurchases';
 import { ItemForm } from '../wardrobe/ItemForm';
 import { ConfirmStep } from './ConfirmStep';
 
 // WO-0125: the in-page confirmation that replaces window.confirm. Keyboard and cancel paths are run on the component function with hook stand-ins (no browser in these tests).
-vi.mock('react', async (orig) => ({ ...(await orig<object>()), ...(await import('../hook-shim')).hookStandIns }));
+vi.mock('react', async (orig) => ({ ...(await orig<object>()), ...(await import('../../test-support/hook-shim')).hookStandIns }));
 const { push, remove, removePurchase } = vi.hoisted(() => ({ push: vi.fn(), remove: vi.fn(async () => undefined), removePurchase: vi.fn(async () => undefined) }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 const ITEM = { id: 'i1', name: 'Shirt', category: 'Tops', subType: 'Shirt', hex: '#336699', fit: null, pattern: null, material: null, seasons: [], occasions: [], favourite: false, neverWorn: false, condition: null, status: 'active', archiveReason: null, photoId: null };

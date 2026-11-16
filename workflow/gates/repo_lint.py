@@ -17,6 +17,8 @@ Rules (each finding prints `RLnn path: message`):
   RL10 sql                no grant to anon or public, no security definer function without an empty search_path, no RLS switch-off
   RL11 work-items         a work order with a commit is not still `Todo`; every work order heading has a row in work-items.csv
   RL12 notebook-output    no notebook is committed with table or HTML outputs (that is how the H&M rows leaked)
+  RL13 scope-lines        every `In scope:` line of a work order is a list scope_check.sh can read (no commentary, no brackets, no spaces in an item)
+  RL14 gate-tool-errors   a gate script never captures a tool's output with its error output thrown away unless it uses the exit status
 
 Exceptions live in workflow/gates/repo_lint.baseline.json and nowhere else:
   "allow":    permanent, each with a reason (for example the Fashion-MNIST model file that ships with the worker)
@@ -231,6 +233,45 @@ def rl12(_path, text):
     return [f'{bad} cell output(s) hold a rendered table: clear outputs before committing (tables are how row-level data leaks)'] if bad else []
 
 
+# ---- RL13 ----
+# The same reading as workflow/gates/scope_check.sh: the items are separated by commas or semicolons, and an item with a bracket or with
+# whitespace in it is a parse error there (exit 2), which fails the gate of that work order at its very last stage. Found three times in
+# the run of 15 and 16 November 2026 (WO-0128 "(one new migration)", WO-0126 "app/(auth)/...", WO-0130), each only when a gate ran.
+def rl13(_path, text):
+    out = []
+    for n, line in enumerate(text.splitlines(), 1):
+        if not line.startswith('In scope:'):
+            continue
+        for item in re.split(r'[,;]', line[len('In scope:'):].strip()):
+            item = item.strip()
+            if item == '':
+                out.append(f'line {n}: an empty item in the In scope line (a stray comma or semicolon)')
+            elif re.search(r'[()]', item):
+                out.append(f'line {n}: `{item}`: a bracket in an In scope item. Put commentary on the Note: line; write each bracket of a route-group folder such as (auth) as ? (app/?auth?/**)')
+            elif re.search(r'\s', item):
+                out.append(f'line {n}: `{item}`: whitespace in an In scope item. One path or glob per item; put the words on the Note: line')
+    return out
+
+
+# ---- RL14 ----
+# A gate stage that runs a tool as  out="$(tool ... 2>/dev/null)"  and then reads `out` cannot tell a tool that found nothing from a tool
+# that crashed: both give no output. db_lint.sh did this and would have reported PASS on a broken linter (found by the WO-0128 check).
+# Allowed: the same line uses the exit status (`|| ...`, `$?`, or the capture is the condition of an `if`).
+CAPTURE_NO_STDERR = re.compile(r'\$\([^()]*2>\s*/dev/null[^()]*\)')
+
+
+def rl14(_path, text):
+    out = []
+    for n, line in enumerate(text.splitlines(), 1):
+        code = line.split(' #', 1)[0]
+        if code.lstrip().startswith('#') or not CAPTURE_NO_STDERR.search(code):
+            continue
+        if '||' in code or '$?' in code or re.match(r'\s*(if|elif|while|until)\b', code):
+            continue
+        out.append(f'line {n}: a tool\'s output is captured with its error output thrown away and its exit status unused: a crashed tool then reads as a clean one. Keep the errors (2>"$err") and fail on a non-zero status')
+    return out
+
+
 def kind_rules(path):
     """Which per-file rules read this path (RL01 and RL03 read every file)."""
     name = path.rsplit('/', 1)[-1]
@@ -249,6 +290,10 @@ def kind_rules(path):
         rules.append(('RL10', rl10))
     if path.endswith('.ipynb'):
         rules.append(('RL12', rl12))
+    if re.fullmatch(r'workflow/work-orders/[^/]+\.md', path):
+        rules.append(('RL13', rl13))
+    if re.fullmatch(r'workflow/gates/[^/]+\.sh', path):
+        rules.append(('RL14', rl14))
     return rules
 
 
@@ -354,6 +399,11 @@ SAMPLES = [
     ('RL10', rl10, 'm.sql', 'alter table app.items disable row level security;\n', 'm.sql', "-- never disable row level security\nalter table app.items enable row level security;\ncomment on role w is 'not a superuser';\n"),
     ('RL10', rl10, 'm.sql', 'grant all on app.items to authenticated;\n', 'm.sql', 'grant all on app.items to service_role;\ngrant select on app.items to authenticated;\n'),
     ('RL12', rl12, 'x.ipynb', json.dumps({'cells': [{'outputs': [{'data': {'text/html': ['<table><tr><td>1</td></tr></table>']}}]}]}), 'x.ipynb', json.dumps({'cells': [{'outputs': []}]})),
+    ('RL13', rl13, 'workflow/work-orders/X.md', 'In scope: supabase/migrations/** (one new migration), docs/x.md\n', 'workflow/work-orders/X.md', 'In scope: supabase/migrations/**, apps/web/app/*/sign-up/page.tsx; docs/x.md\nNote: one new migration (see above).\n'),
+    ('RL13', rl13, 'workflow/work-orders/X.md', 'In scope: workflow/gates/release_map.py and its data\n', 'workflow/work-orders/X.md', 'Instructions: read the files (all of them), then build.\nIn scope: apps/web/app/api/admin/sources/[id]/takedown/route.ts\n'),
+    ('RL13', rl13, 'workflow/work-orders/X.md', 'In scope: a.ts,, b.ts\n', 'workflow/work-orders/X.md', 'In scope: a.ts, b.ts\n'),
+    ('RL14', rl14, 'workflow/gates/x.sh', 'out="$(limited supabase db lint --level warning 2>/dev/null </dev/null)"\n', 'workflow/gates/x.sh', 'out="$(limited supabase db lint --level warning 2>"$err" </dev/null)"; rc=$?\n'),
+    ('RL14', rl14, 'workflow/gates/x.sh', 'n="$(tool --count 2> /dev/null)"\necho "$n"\n', 'workflow/gates/x.sh', 'got="$(bash "$script" --parse-only "$wo" 2>/dev/null)"; got_rc=$?\nif ! v="$(tool 2>/dev/null)"; then exit 1; fi\nst="$(tool 2>/dev/null)" || exit 1\nsupabase status >/dev/null 2>&1\n# out="$(tool 2>/dev/null)"\n'),
 ]
 
 

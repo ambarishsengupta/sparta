@@ -1,11 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 import { MIN_PW_LENGTH, normaliseEmail } from '../auth-form';
 
 /** FR-8: the refusal for an address that is not on the invitation list, word for word as the sign-up hook sends it. */
 export const INVITE_ONLY_MESSAGE = 'Sparta is invitation-only during the pilot.';
 const GENERIC = 'Something went wrong. Please try again in a moment.';
 export type Outcome = { ok: true } | { ok: false; message: string };
-type AuthClient = Pick<SupabaseClient, 'auth'>;
+type AuthClient = Pick<SupabaseClient<Database>, 'auth'>;
 
 /** Plain-language text for an Auth error. Only the FR-8 refusal is passed through; no other server text reaches the screen. */
 export function describeAuthError(e: { message?: string; code?: string; status?: number }): string {

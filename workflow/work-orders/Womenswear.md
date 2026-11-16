@@ -29,8 +29,8 @@ Standing rules restated:
 
 # Work Order WO-0131: documents and legal text for CR-001
 Action: execute. Owner: Spec agent (doc sync), legal consultant for the legal pack. Checker: Spec QC; the product owner signs BRD, FDD and legal changes, the SA signs HLD and LLD.
-In scope: docs/BRD.md, docs/FDD.md, docs/HLD.md, docs/LLD.md, README.md, legal/**, workflow/gates/release_map.py and its data, docs/MVP-AGENT-WORKFLOW.md section 7
-Note: no code. New requirement ids continue the existing ranges.
+In scope: docs/BRD.md, docs/FDD.md, docs/HLD.md, docs/LLD.md, README.md, legal/**, workflow/gates/release_map.py, workflow/gates/release_map.test.ts, docs/MVP-AGENT-WORKFLOW.md
+Note: no code. New requirement ids continue the existing ranges. Scope limits moved off the In scope line on 2026-11-16 (WO-0149, repo_lint RL13: the line must be a list scope_check.sh can read): of the workflow document only section 7 (the release plan) may change; "its data" of release_map.py is the Traces column of that section and the script's test file.
 Instructions: apply D1 to D10. BRD: audience in 1, 4.1, 4.2 (remove "womenswear and other audiences" from out of scope; add D10's list), 5 (style specialists), 7.5, 9, 11 (targets), RK-11 wording, a new risk for thin segments. FDD: FR-6 (the wardrobe question), 5.3 and 13 (sub-types with audience, sizes), 8 and 14.1 (one-piece group, rule sets by audience), 14.3 (Dress row), 14.5 (unlock list per audience), 10 and 11 (audience dimension), 16 (no new event). HLD and LLD: every sentence that says menswear; LLD 4 (columns), 5 (facts and cube), 7.8 and 7.9 (type map, index groups), 9.5 (rule-set selection). Legal: privacy policy and pilot notice name the wardrobe question and say it is shared only in group figures; privacy risk assessment gets a row for it; vendor agreement names the audience dimension. Add the release row "W" to the release plan and map every new id.
 Completion conditions: release_map passes; `git grep -n -i "men only"` and the README's audience row agree with D1; the legal review log has an entry for this change; gate green (WO_ID=WO-0131).
 
@@ -45,8 +45,8 @@ Completion conditions: taxonomy tests cover every new sub-type and the three war
 ---
 # Work Order WO-0133: database: audience on sub-types, new lookups, `profiles.wardrobe`
 Action: execute. Owner: Database maker. Checker: Spec QC + security review (a new personal-data column).
-In scope: supabase/migrations/** (new files only), supabase/seed/**, supabase/scripts/gen-seed.ts, supabase/tests/database/**
-Note: migrations are append-only. 900_catalog_lint must pass unchanged.
+In scope: supabase/migrations/**, supabase/seed/**, supabase/scripts/gen-seed.ts, supabase/tests/database/**
+Note: migrations are append-only. 900_catalog_lint must pass unchanged. Scope limits moved off the In scope line on 2026-11-16 (WO-0149, repo_lint RL13: the line must be a list scope_check.sh can read): under supabase/migrations only new files; an applied migration is never edited.
 Instructions: `catalog.lk_sub_type.audience text not null default 'both' check (audience in ('men','women','both'))`, set from the taxonomy by the generated seed; new rows for sub-types, fits, materials, size systems and sizes. `app.profiles.wardrobe text not null default 'menswear' check (wardrobe in ('menswear','womenswear','both'))`; the person may update their own value (column grant and policy as for `currency`); it is in the export and removed with the account. A trigger or check keeps `items.sub_type` valid for any audience (an item is never rejected because of the profile's wardrobe: the wardrobe only filters what the forms offer). pgTAP: grants, the default, the check, export and delete, and that another user cannot read the column.
 Completion conditions: `supabase db reset` and all pgTAP files pass, including 900_catalog_lint; the seed test shows lookups equal to the taxonomy; no new db_lint finding; gate green with GATE_STRICT=1 (WO_ID=WO-0133).
 
@@ -55,8 +55,8 @@ Completion conditions: `supabase db reset` and all pgTAP files pass, including 9
 
 # Work Order WO-0134: one-piece slot group and audience-aware eligibility
 Action: execute. Owner: Engine maker. Checker: Spec QC + code review.
-In scope: packages/taxonomy/src/slots.json, packages/taxonomy/src/**, packages/rules/src/** (not data/rules.json)
-Note: decision D3. The men's baseline fixture must not change.
+In scope: packages/taxonomy/src/slots.json, packages/taxonomy/src/**, packages/rules/src/**
+Note: decision D3. The men's baseline fixture must not change. Scope limits moved off the In scope line on 2026-11-16 (WO-0149, repo_lint RL13: the line must be a list scope_check.sh can read): packages/rules/data/rules.json is NOT in scope (it lies outside packages/rules/src and changes only with the style specialist's signature).
 Instructions: add the group `top-and-bottom` (`slots: ["Top","Bottom"]`, `fill: "both"`) for the one-piece sub-types and the saree, lehenga and salwar kameez sets as the specialist's draft says; generalise the code paths that today special-case `layer-and-bottom` (eligibility, combinations, completeness, swap, anchor, unlock counting, the Supabase and local mappers' `fill === 'both'` branch) so any two-slot group works. `suggest()` takes the wardrobe type and offers only sub-types of that audience (`both` offers all). Property tests: an outfit never holds a one-piece together with another top or bottom; every suggestion's items belong to the requested audience.
 Completion conditions: new unit and property tests pass; the men's baseline fixture is byte-identical (a test compares its hash); the engine stays browser-safe (lint section 3); gate green (WO_ID=WO-0134).
 
@@ -89,8 +89,8 @@ Completion conditions: both baseline fixtures are checked by tests; the determin
 
 # Work Order WO-0138: the wardrobe question at onboarding and in Settings
 Action: execute. Owner: Frontend maker (UX brief first). Checker: Spec QC + design critic; real-browser evidence.
-In scope: apps/web/components/consent/**, apps/web/components/account/**, apps/web/lib/onboarding.ts, apps/web/lib/settings-form.ts, apps/web/lib/supabase/**, apps/web/lib/local-repository.ts, apps/web/lib/repository.ts, apps/web/app/(auth)/**
-Note: decision D1. Exact wording: "Which clothes do you keep here?" with Menswear, Womenswear, Both. No default is pre-selected at onboarding; existing accounts keep `menswear`.
+In scope: apps/web/components/consent/**, apps/web/components/account/**, apps/web/lib/onboarding.ts, apps/web/lib/settings-form.ts, apps/web/lib/supabase/**, apps/web/lib/local-repository.ts, apps/web/lib/repository.ts, apps/web/app/?auth?/**
+Note: the last item is the route group apps/web/app/(auth)/: a bracket cannot be written on the In scope line, so each bracket is written as ? (one character), which matches that folder and no other (WO-0149, repo_lint RL13). Decision D1. Exact wording: "Which clothes do you keep here?" with Menswear, Womenswear, Both. No default is pre-selected at onboarding; existing accounts keep `menswear`.
 Instructions: add the field to the onboarding form and to Settings (changeable at any time, with one sentence on what it changes), to both repositories and the mappers, and to the export. The gate (lib/supabase/gate.ts) does not change. The local (no-login) backend stores it in the browser document.
 Completion conditions: form tests and a11y source tests for the new field; integration test against the stack (set at onboarding, change in Settings, present in the export); screenshots desktop and mobile; lint clean with no new baseline entry; gate green with GATE_STRICT=1 (WO_ID=WO-0138).
 
@@ -119,7 +119,8 @@ Completion conditions: illustrations.test.ts covers every taxonomy sub-type (no 
 ---
 # Work Order WO-0142: wording sweep and accessibility
 Action: execute. Owner: Frontend maker. Checker: Spec QC.
-In scope: apps/web/app/**, apps/web/components/**, apps/web/lib/**, supabase/scripts/demo-data.sh (wording only)
+In scope: apps/web/app/**, apps/web/components/**, apps/web/lib/**, supabase/scripts/demo-data.sh
+Note: scope limits moved off the In scope line on 2026-11-16 (WO-0149, repo_lint RL13: the line must be a list scope_check.sh can read): in supabase/scripts/demo-data.sh only wording may change.
 Instructions: remove every user-facing "men" or "menswear" that is now wrong (About, pilot notice summary, empty states, the thin-wardrobe message, vendor headings). Add a source test that fails on "men's", "for men" or "menswear" in user-facing strings outside the taxonomy labels and the wardrobe question.
 Completion conditions: the new source test passes; a11y tests green; gate green (WO_ID=WO-0142).
 
@@ -128,8 +129,8 @@ Completion conditions: the new source test passes; a11y tests green; gate green 
 
 # Work Order WO-0143: garment maps for womenswear
 Action: execute. Owner: ML maker. Checker: Model QC.
-In scope: ml/recommendation-engine/garment/class_map.json, ml/recommendation-engine/garment_v2/**, ml/recommendation-engine/garment/tests/**, services/worker/worker/** (map loading only), services/worker/tests/**
-Note: version 1 (Fashion-MNIST) is not retrained: only its class map changes (class 3 Dress maps to One-pieces / Dress). Version 2 is still not built; this work order extends its type map so the later training work order covers both audiences.
+In scope: ml/recommendation-engine/garment/class_map.json, ml/recommendation-engine/garment_v2/**, ml/recommendation-engine/garment/tests/**, services/worker/worker/**, services/worker/tests/**
+Note: scope limits moved off the In scope line on 2026-11-16 (WO-0149, repo_lint RL13: the line must be a list scope_check.sh can read): in services/worker/worker only the loading of the class map may change. Version 1 (Fashion-MNIST) is not retrained: only its class map changes (class 3 Dress maps to One-pieces / Dress). Version 2 is still not built; this work order extends its type map so the later training work order covers both audiences.
 Instructions: map Dress in version 1 and return it only when the job's wardrobe type is womenswear or both (the worker reads the type from the job input, which the app sets). Extend the version 2 type map from 20 to about 32 H&M product types (Dress, Skirt, Blouse, Top, Vest top, Leggings/Tights, Jumpsuit/Playsuit, Bodysuit, Heels and so on), each with category, sub-type and prior slot, DRAFT. Update the model card of version 1 (map change only, hash unchanged).
 Completion conditions: map tests for both versions; the worker tests show Dress suggested for a womenswear job and not for a menswear job; the committed model file's hash is unchanged; gate green with GATE_STRICT=1 (WO_ID=WO-0143).
 
@@ -146,8 +147,8 @@ Completion conditions: pipeline tests on the synthetic data for both audiences; 
 
 # Work Order WO-0145: audience as a vendor dimension and filter
 Action: execute. Owner: Database maker, then Frontend maker. Checker: Spec QC + security review (suppression).
-In scope: supabase/migrations/** (new files only), supabase/tests/database/**, apps/web/lib/vendor/**, apps/web/components/vendor/**
-Note: decision D9. The audience of a fact is the audience of the item's sub-type (`both` counts under the owner's wardrobe type; under `both` profiles it counts in each audience's figures once). Minimum group size, rounding and complementary suppression are unchanged and must be re-proved with the new dimension.
+In scope: supabase/migrations/**, supabase/tests/database/**, apps/web/lib/vendor/**, apps/web/components/vendor/**
+Note: scope limits moved off the In scope line on 2026-11-16 (WO-0149, repo_lint RL13: the line must be a list scope_check.sh can read): under supabase/migrations only new files. Decision D9. The audience of a fact is the audience of the item's sub-type (`both` counts under the owner's wardrobe type; under `both` profiles it counts in each audience's figures once). Minimum group size, rounding and complementary suppression are unchanged and must be re-proved with the new dimension.
 Instructions: add `audience` to `analytics_private.facts` and as filter dimension `f_audience` in the cube and in every vendor function's filter list; the suppression tests of 016 and 020 are extended with an audience split that would reveal a small group by subtraction and must be hidden. Dashboard, gaps and reports get the filter value in the existing filter control.
 Completion conditions: pgTAP for the new dimension including the subtraction case; integration tests of the dashboard with the filter; 900_catalog_lint green; no new no-unsafe baseline entry; gate green with GATE_STRICT=1 (WO_ID=WO-0145).
 

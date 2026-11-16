@@ -3,14 +3,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { a11yProblems } from '../../test-support/a11y';
 import { INSIGHT_SENTENCES, loadFailed } from '../../lib/vendor/insights';
-import { mount, settle } from '../hook-shim';
+import { mount, settle } from '../../test-support/hook-shim';
 import { Dashboard, type ViewProps } from './Dashboard';
 import { Gaps, type GapsViewProps } from './Gaps';
 import { ReportList, ReportListView, ReportPage, ReportView } from './Reports';
 
 // WO-0125: every load of the vendor portal ends in a handler. A loader that REJECTS (the wrappers of lib/vendor/insights.ts never do, but the loaders built on them can) must end on the fixed
-// 'unexpected' sentence, not on "Loading." for ever. Each component is run by hand with hook stand-ins (components/hook-shim.ts), its effects started, and the next render read.
-vi.mock('react', async (orig) => ({ ...(await orig<object>()), ...(await import('../hook-shim')).hookStandIns }));
+// 'unexpected' sentence, not on "Loading." for ever. Each component is run by hand with hook stand-ins (test-support/hook-shim.ts), its effects started, and the next render read.
+vi.mock('react', async (orig) => ({ ...(await orig<object>()), ...(await import('../../test-support/hook-shim')).hookStandIns }));
 vi.mock('../../lib/supabase/browser', () => ({ createBrowserSupabase: () => ({}) }));
 const { reject } = vi.hoisted(() => ({ reject: () => Promise.reject(new Error('the loader failed: internal detail')) }));
 vi.mock('../../lib/vendor/dashboard', async (orig) => ({ ...(await orig<object>()), loadHeader: () => reject(), loadMix: () => reject(), loadTrends: () => reject(), loadSpectrum: () => reject() }));

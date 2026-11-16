@@ -16,7 +16,7 @@ describe('repo_lint', () => {
 
   it('every rule fires on a bad sample and stays quiet on a good one (--selftest)', () => {
     const r = run('--selftest');
-    expect(r.stdout).toMatch(/repo_lint selftest: \d+ samples over 9 rules, 0 failure\(s\)/);
+    expect(r.stdout).toMatch(/repo_lint selftest: \d+ samples over 11 rules, 0 failure\(s\)/);
     expect(r.status).toBe(0);
   });
 

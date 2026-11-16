@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { messageOf } from '../lib/supabase/errors';
-import { findAll, mount, settle, textOf, type Found } from './hook-shim';
+import { findAll, mount, settle, textOf, type Found } from '../test-support/hook-shim';
 import { ExportButton } from './account/ExportButton';
 import { LeaveForm } from './account/LeaveForm';
 import { SettingsForm } from './account/SettingsForm';
@@ -14,7 +14,7 @@ import { AgreementForm } from './vendor/AgreementForm';
 
 // WO-0125: the eight forms flagged by no-misused-promises. Each submit handler is a plain function (it returns nothing, not a promise) and a rejection of the work it starts lands in the form's own
 // error state, with the button usable again. The rejection here is the client factory throwing, which every one of the eight calls inside its async part, after its own checks.
-vi.mock('react', async (orig) => ({ ...(await orig<object>()), ...(await import('./hook-shim')).hookStandIns }));
+vi.mock('react', async (orig) => ({ ...(await orig<object>()), ...(await import('../test-support/hook-shim')).hookStandIns }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: () => undefined, push: () => undefined }) }));
 vi.mock('../lib/supabase/browser', () => ({ createBrowserSupabase: () => { throw new Error('internal detail: connection refused'); } }));
 

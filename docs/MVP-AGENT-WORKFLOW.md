@@ -91,7 +91,7 @@ No file has two owners. The gate script of G2 (section 6) fails a diff in which 
 | `.github/workflows/**`, `workflow/gates/**` (including `workflow/gates/manifest_check`, which runs in CI and as the first step of `deploy.yml`; it may be changed only after G7 with the owner's sign-off), `apps/web/vercel.json` | Gate engineer |
 | `docs/BRD.md`, `FDD.md`, `HLD.md`, `LLD.md`, `docs/ANCP_TM_D1_v1.pdf`, `legal/**`, `flow-diagrams/**`, `README.md`, `LICENSE`, `.gitignore` | Doc-sync maker (diffs signed as in section 5) |
 | `submissions/**` | No one may edit it (LLD 7.9 reads `submissions/D2/clean_hm.py`) |
-| `docs/MVP-AGENT-WORKFLOW.md`, `docs/mvp-agent-workflow-graph.*`, `workflow/build_graph.py`, `workflow/graph_template.html`, `workflow/local.env.example` | Workflow editor (after G8) |
+| `docs/MVP-AGENT-WORKFLOW.md`, `docs/BUILD-GUIDE.md`, `docs/mvp-agent-workflow-graph.*`, `workflow/build_graph.py`, `workflow/graph_template.html`, `workflow/local.env.example` | Workflow editor (after G8) |
 | `workflow/STATE.md`, `workflow/work-orders/**`, `workflow/retros/**` | Orchestrator, Spec agent, Retro agent in that order |
 | `workflow/evidence/R<n>/**` (design briefs, consultant memos, QC verdicts, demo evidence, the R8 checklist) | Orchestrator |
 
@@ -244,6 +244,8 @@ These come from the product owner's instructions and from mistakes already made 
     - A defect that a human or a checker finds and a rule could have caught gets its rule in the same fix (retro section 3, "Escapes").
     - **Before a merge into `main` or a release branch the orchestrator runs `GATE_STRICT=1 bash workflow/gates/gate.sh`** and the last line must be `GATE: PASS (FULL: no stage skipped a check)`. `PASS (PARTIAL)` is for a maker's quick loop only and is never evidence of done.
 
+13. **Build by the guide.** (Added on the product owner's instruction of 2026-11-16, WO-0149.) Every maker and every checker reads `docs/BUILD-GUIDE.md` before a work order: it holds the steps for building one work order, the checks to run for each kind of change, the checker's method, and the mistakes this project has already made once with the habit that avoids each. The orchestrator names the guide in every brief. A new habit needs an incident behind it, and where a script can check it the rule is added in the same work order (`docs/LINT-RULES.md`).
+
 ## 11. Risks to the workflow itself
 
 | Risk | Control |
@@ -278,4 +280,5 @@ The product owner said: everything is approved, and do not ask for approvals or 
 | Approval (Opus): this workflow | 0.2 rejected 2026-11-04 (1 blocker, 10 conditions). 0.3 approved with conditions on 2026-11-04 by the Opus workflow approver (second review): no blocker; 13 conditions. Condition 3 (LLD 7.8, 7.9 and HLD wording, SA-signed) must be applied before R4 G1. All the others, 1, 2 and 4 to 13, must be applied before R0 G1. Each applied change goes through G8. | 2026-11-04 |
 | Rule 11 (background work, sweep) added on the product owner's instruction of 2026-11-05 | applied by the orchestrator; the workflow approver's G8 check of this addition is pending | 2026-11-05 |
 | Rule 12 (lint, baselines, FULL gate before a merge) added on the product owner's instruction of 2026-11-15 | applied in WO-0123; the workflow approver's G8 check of this addition is pending | 2026-11-15 |
+| Rule 13 (build by the guide, `docs/BUILD-GUIDE.md`) added on the product owner's instruction of 2026-11-16 | applied in WO-0149 by the session model; the workflow approver's G8 check of this addition is pending | 2026-11-16 |
 | Product owner | *pending* | |

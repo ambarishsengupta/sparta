@@ -36,6 +36,10 @@ const COMPUTED_ENV = {
   selector: "MemberExpression[computed=true][object.type='MemberExpression'][object.object.name='process'][object.property.name='env']",
   message: 'No computed process.env[...] reads: Next cannot inline them and the secret scans cannot see them.',
 };
+const UNTYPED_CLIENT = {
+  selector: "TSTypeReference[typeName.name='SupabaseClient']:not([typeArguments])",
+  message: 'Name the database: SupabaseClient<Database>, with `import type { Database }` from lib/supabase/database.types. Through an untyped client every row is an unchecked value and a renamed column still compiles (audit finding A6, WO-0126, WO-0149).',
+};
 const SERVER_ONLY_IMPORTS = {
   patterns: [{
     group: ['**/lib/server', '**/lib/server/*', './server/*', '../server/*', '../../server/*'],
@@ -103,20 +107,27 @@ export default tseslint.config(
       'no-console': 'error',
       'no-alert': 'error',
       'no-script-url': 'error',
-      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV],
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT],
       'no-restricted-globals': ['error', ...NETWORK_GLOBALS],
       '@typescript-eslint/no-restricted-imports': ['error', { ...SERVER_ONLY_IMPORTS, ...SUPABASE_FACTORIES }],
     },
   },
   {
+    // The three modules that still hold an untyped Supabase client (WO-0149). Typing them needs real changes: repository.ts builds its
+    // rows as loose records (16 type errors), backend.ts hands its client to repository.ts, and admin-catalog.ts sends null for arguments
+    // the generated types call non-null. WO-0150 types them and deletes this block. The list may only shrink: lint_rules.test.ts pins it.
+    files: [`${WEB}/lib/supabase/repository.ts`, `${WEB}/lib/supabase/backend.ts`, `${WEB}/lib/server/admin-catalog.ts`],
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV] },
+  },
+  {
     // The configuration modules: the only readers of process.env, and only of NEXT_PUBLIC_ names.
     files: [`${WEB}/lib/supabase/config.ts`, `${WEB}/lib/engine-config.ts`, `${WEB}/lib/pilot-config.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT] },
   },
   {
     // The two readers of server-only variables (LLD 6): the secret-key module and the worker route.
     files: [`${WEB}/lib/server/admin.ts`, `${WEB}/lib/server/hm-demo.ts`, `${WEB}/app/api/worker/signed-urls/route.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT] },
   },
   {
     // Who may import lib/server: the route handlers and lib/server itself. They still may not build other Supabase clients.

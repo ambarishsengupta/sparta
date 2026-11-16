@@ -71,8 +71,8 @@ Completion conditions: eslint-suppressions.json holds no entry for no-floating-p
 ---
 # Work Order WO-0126: generated database types, and no unchecked value from the database
 Action: execute. Owner: Backend maker. Checker: Spec QC + code review.
-In scope: apps/web/lib/supabase/**, apps/web/lib/vendor/**, apps/web/lib/server/**, apps/web/app/(auth)/sign-up/page.tsx, apps/web/components/account/account-actions.ts, supabase/scripts/**, workflow/gates/**, package.json, eslint-suppressions.json
-Note: finding A6. No new dependency: `supabase gen types typescript --local` is part of the CLI already in use.
+In scope: apps/web/lib/supabase/**, apps/web/lib/vendor/**, apps/web/lib/server/**, apps/web/app/*/sign-up/page.tsx, apps/web/components/account/account-actions.ts, supabase/scripts/**, workflow/gates/**, package.json, eslint-suppressions.json
+Note: finding A6. The sign-up page is apps/web/app/(auth)/sign-up/page.tsx; the scope line writes its route-group folder as * because scope_check reads a bracket in an item as commentary (changed by the orchestrator on 2026-11-16). No new dependency: `supabase gen types typescript --local` is part of the CLI already in use.
 Instructions: add `supabase/scripts/gen-types.sh` that writes `apps/web/lib/supabase/database.types.ts` from the LOCAL stack for the schemas app, catalog, ops and analytics; commit the file. Give the three client factories and `createAdminSupabase` the `Database` type parameter. Fix the 13 no-unsafe-* findings by using the generated row types (gate-state.ts first: it decides access) and keep the existing run-time narrowing in mapping.ts. Add a gate check (in db_tests.sh after the reset, or a small stage of its own) that regenerates the types to a temporary file and fails when they differ from the committed file, so a migration cannot land without its types. Prune the suppressions.
 Completion conditions: eslint-suppressions.json holds no no-unsafe-* entry; the type-drift check fails when a column is added without regenerating (shown by a test with a fixture or a recorded manual run); all integration suites pass against the stack; gate green with GATE_STRICT=1.
 

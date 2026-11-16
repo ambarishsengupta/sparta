@@ -5,3 +5,6 @@ submissions/**/raw/
 
 # Fashion-MNIST CSVs for the recommendation engine (size and licence)
 data/recommendation-engine/mnist/
+
+# D4 per-segment predictions are derived from H&M rows; regenerate with run_experiments.py
+submissions/D4/outputs/valid_predictions.csv.gz

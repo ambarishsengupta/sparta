@@ -1,0 +1,32 @@
+{
+  "declared_on": "2026-11-12",
+  "declared_before_any_model_run": true,
+  "charter_link": "ANCP_TM_D1_v1 Table 3: WAPE of segment demand forecast vs same-period-last-year forecast (target: 15% or more lower), evaluated on a time-based holdout of public transaction history; 80% prediction-interval coverage between 75% and 85%. Risk R4: keep the final holdout untouched until D5.",
+  "problem": "Weekly demand forecast per segment, horizons 1 to 4 weeks ahead (direct multi-horizon). Segment = product type x master colour within a department, the H&M stand-in for Sparta's category + colour family segment (H&M has no fit field).",
+  "data_version": "data-v1.0, transactions_clean.csv.gz sha256 b7762ff47cb6b31ad1f5e571e83e14618d6031b772ec66fabf3c000c3884157a",
+  "weeks": "104 full 7-day weeks ending Tuesday 2020-09-22 (week 0 = 2018-09-26..10-02, week 103 = 2020-09-16..22). The first six days (2018-09-20..25) form a partial week and are dropped.",
+  "segments": "Segments with mean weekly units >= 2 in weeks 0..58 (before the first validation target). Primary evaluation: Menswear segments (Sparta is menswear). Secondary: all kept segments. Global models train on all kept segments.",
+  "primary_metric": "WAPE = sum |actual - forecast| / sum actual, pooled over segments, origins and horizons 1-4",
+  "secondary_metrics": ["Bias = sum(forecast - actual) / sum actual", "80% prediction-interval coverage (selected model only)"],
+  "split": {
+    "type": "time-based, rolling origin, expanding window",
+    "train": "for an origin at week o, models see only weeks <= o; global models are fitted on training origins o' <= o - 4 so every training target is observed by week o",
+    "validation": "9 origins o = 59, 63, ..., 91; targets weeks 60..95 (2019-11-20 to 2020-07-21), spanning pre-COVID and 2020 weeks (D3 I9: do not tune on 2020 alone)",
+    "test": "2 origins o = 95 and 99; targets weeks 96..103 (2020-07-22 to 2020-09-22). Declared now, NOT scored in D4: held untouched until D5 (charter R4)"
+  },
+  "interval_design": "Split conformal on log((y+1)/(f+1)) residuals by horizon: calibrate on validation origins 59..75, check coverage on origins 79..91",
+  "leakage_guards": [
+    "Every feature for origin o uses weeks <= o only",
+    "Segment eligibility uses weeks 0..58 only",
+    "Last-year features use week (target - 52), which is always <= o for horizons <= 4",
+    "Test origins are not run by run_experiments.py; d5 code must add them"
+  ],
+  "tuning_budget": {
+    "B0 seasonal naive (same week last year)": "none: charter baseline",
+    "B1 naive (mean of last 4 weeks)": "none: rule fixed in advance",
+    "M1 scaled seasonal naive": "grid: recent window {4, 8, 13} x shrink {0, 0.5, 1} x last-year smoothing {1, 3} = 18",
+    "M2 Poisson GLM (linear, log link)": "grid alpha {0.001, 0.01, 0.1, 1}",
+    "M3 LightGBM Tweedie, global": "random search 12 trials, sampler seed 42, model seed 42; best re-run with seeds 1, 2, 3"
+  },
+  "selection_rule": "Lowest pooled validation WAPE on Menswear segments; ties to the simpler setting"
+}

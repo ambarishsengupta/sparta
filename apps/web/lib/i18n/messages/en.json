@@ -1,0 +1,123 @@
+{
+  "app": {
+    "name": "Sparta",
+    "description": "A private wardrobe for menswear: see what you own, plan outfits and track what you buy."
+  },
+  "shell": {
+    "skipLink": "Skip to content",
+    "navLabel": "Main"
+  },
+  "preview": {
+    "unavailable": "Not available in this preview yet."
+  },
+  "tabs": {
+    "wardrobe": {
+      "label": "Wardrobe",
+      "title": "Wardrobe",
+      "intro": "Everything you own, in one place.",
+      "empty": {
+        "title": "Your wardrobe is empty",
+        "body": "Start from popular items, or add your own.",
+        "action": "Start from popular items",
+        "secondaryAction": "Add my own"
+      },
+      "loading": "Loading your wardrobe",
+      "error": {
+        "title": "We could not load your wardrobe",
+        "body": "Check your connection and try again. Items already on this device stay visible offline."
+      }
+    },
+    "outfits": {
+      "label": "Outfits",
+      "title": "Outfits",
+      "intro": "Build outfits, get suggestions and plan the week.",
+      "empty": {
+        "title": "No outfits yet",
+        "body": "Pick an occasion and we will suggest up to three outfits.",
+        "action": "Suggest an outfit"
+      },
+      "loading": "Loading your outfits",
+      "error": {
+        "title": "We could not suggest an outfit",
+        "body": "You need a bottom for this occasion. Add one from your wardrobe or your wishlist.",
+        "linkWardrobe": "Open wardrobe",
+        "linkWishlist": "Open wishlist"
+      }
+    },
+    "wishlist": {
+      "label": "Wishlist",
+      "title": "Wishlist",
+      "intro": "What you want next, and when you plan to buy it.",
+      "empty": {
+        "title": "Your wishlist is empty",
+        "body": "Keep track of what you want next.",
+        "action": "Add to wishlist"
+      },
+      "loading": "Loading your wishlist",
+      "error": {
+        "title": "We could not load your wishlist",
+        "body": "Check your connection and try again."
+      }
+    },
+    "purchases": {
+      "label": "Purchases",
+      "title": "Purchases",
+      "intro": "What you bought, with receipts.",
+      "empty": {
+        "title": "No purchases yet",
+        "body": "Record what you bought, or scan a receipt.",
+        "action": "Scan a receipt"
+      },
+      "loading": "Loading your purchases",
+      "error": {
+        "title": "We could not load your purchases",
+        "body": "Check your connection and try again."
+      }
+    },
+    "me": {
+      "label": "Me",
+      "title": "Me",
+      "intro": "Your settings, privacy and data.",
+      "sections": {
+        "privacy": {
+          "title": "Privacy and sharing",
+          "body": "Choose what Sparta may use from your wardrobe."
+        },
+        "export": {
+          "title": "Export my data",
+          "body": "Download everything you have added, as a file."
+        },
+        "leave": {
+          "title": "Leave the pilot",
+          "body": "Delete your account and everything in it."
+        },
+        "about": {
+          "title": "About the pilot",
+          "body": "Who runs Sparta, how long the pilot lasts and how to reach us."
+        }
+      },
+      "loading": "Loading your settings",
+      "error": {
+        "title": "We could not load your settings",
+        "body": "Check your connection and try again."
+      }
+    }
+  },
+  "states": {
+    "retry": "Retry",
+    "errorLabel": "Error"
+  },
+  "specimen": {
+    "title": "Components",
+    "intro": "Button states and colour tokens, for design review and automated checks.",
+    "buttons": "Buttons",
+    "rest": "Save item",
+    "secondary": "Cancel",
+    "ghost": "Skip",
+    "disabled": "Save item",
+    "loading": "Saving",
+    "loadingDemo": "Save with a delay",
+    "saved": "Item saved.",
+    "tokens": "Colour tokens"
+  }
+}

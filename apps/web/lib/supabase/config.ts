@@ -13,5 +13,33 @@ export function supabaseEnv(): { url: string; key: string } {
   return { url, key };
 }
 
+/**
+ * WO-0130 (audit finding A13): what a production build and a production server must be told, or they refuse to start. Until this check a build
+ * without NEXT_PUBLIC_DATA_BACKEND=supabase quietly ran the browser-only backend, with no sign-in at all. Returns the reason, or null when the
+ * configuration can be served. The one build without sign-in is the local demo, and its script says so itself with NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN=1
+ * (a NEXT_PUBLIC_ name because the configuration modules read no other kind; it holds nothing secret, and next.config.ts marks such a build with a
+ * response header that the build-output test refuses in the gate's build).
+ */
+export type HostableEnv = { backend?: string | undefined; url?: string | undefined; key?: string | undefined; demoNoLogin?: string | undefined };
+export function hostableConfigProblem(env: HostableEnv = {
+  backend: process.env.NEXT_PUBLIC_DATA_BACKEND, url: process.env.NEXT_PUBLIC_SUPABASE_URL, key: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  demoNoLogin: process.env.NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN,
+}): string | null {
+  const demo = env.demoNoLogin === '1';
+  if (env.demoNoLogin !== undefined && env.demoNoLogin !== '' && !demo) return 'NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN must be 1 or unset.';
+  if (env.backend === 'supabase') {
+    if (demo) return 'NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN=1 says this is the local demo without sign-in, but NEXT_PUBLIC_DATA_BACKEND=supabase turns sign-in on. Set one or the other.';
+    const missing = [!env.url && 'NEXT_PUBLIC_SUPABASE_URL', !env.key && 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'].filter((v): v is string => typeof v === 'string');
+    return missing.length > 0 ? `Supabase is not configured: set ${missing.join(' and ')}.` : null;
+  }
+  if (demo) return null;
+  return `This build would have no sign-in at all: NEXT_PUBLIC_DATA_BACKEND is ${env.backend === undefined || env.backend === '' ? 'not set' : `"${env.backend}"`}, and only "supabase" turns accounts on. `
+    + 'Set NEXT_PUBLIC_DATA_BACKEND=supabase with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY. '
+    + 'The only build without sign-in is the local demo: bash workflow/demo/start-demo.sh --no-login.';
+}
+
+/** The no-login demo flag as the build environment gives it (see hostableConfigProblem). */
+export const hostableDemoFlag = (): string | undefined => process.env.NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN;
+
 /** Session cookies (LLD 10): SameSite=Lax, Secure whenever the project URL is https (every hosted deployment). Not HttpOnly: the browser client reads them. */
 export const cookieOptions = (url: string) => ({ sameSite: 'lax' as const, secure: url.startsWith('https:'), path: '/' });

@@ -1,5 +1,5 @@
 # Goal: the web app builds and its logic tests pass
-Predicate: `npm run build -w apps/web >/dev/null 2>&1 && npx vitest run apps/web >/dev/null 2>&1`
+Predicate: `NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN=1 npm run build -w apps/web >/dev/null 2>&1 && npx vitest run apps/web >/dev/null 2>&1`
 Completed: 2026-11-04
 Triggered by: release R3 (suggestions screen, browser-local repository)
 Status: holding

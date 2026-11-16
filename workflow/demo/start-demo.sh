@@ -40,6 +40,9 @@ if [ "$nologin" = 0 ]; then
   skn=SUPABASE_SECRET_KEY   # the server-only variable the app reads (Leave the pilot's file removal)
   envs=(NEXT_PUBLIC_DATA_BACKEND=supabase "NEXT_PUBLIC_SUPABASE_URL=$api" "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$pk" "$skn=$sk")
 fi
+# WO-0130: a production build without accounts refuses to start unless the build says it is this demo. The flag also puts the response header
+# X-Sparta-Build: demo-no-login on every page, which the gate's build-output test refuses, so this build can never pass as a hosted one.
+if [ "$nologin" = 1 ]; then envs+=(NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN=1); fi
 hmenv=()
 if [ "$hm" = 1 ]; then   # the H&M folder is read at run time only; nothing is copied. The variable goes to `next start` below, never to the build.
   root="${SPARTA_DATA_ROOT_HM:-$(sed -n 's/^SPARTA_DATA_ROOT_HM=//p' workflow/local.env 2>/dev/null | head -n1)}"

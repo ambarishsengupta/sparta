@@ -105,6 +105,10 @@ describe('workflow/demo/start-demo.sh', () => {
     expect(start).toContain('timeout 7200');
     expect(start).toContain('supabase status -o env');
     expect(start).toMatch(/envs=\(NEXT_PUBLIC_DATA_BACKEND=local\)/);
+    // WO-0130: only the no-login mode says it has no sign-in (a production build refuses to start otherwise), and it says so after the accounts branch, which replaces `envs`
+    expect(start).toContain('if [ "$nologin" = 1 ]; then envs+=(NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN=1); fi');
+    expect(start.indexOf('NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN=1')).toBeGreaterThan(start.indexOf('envs=(NEXT_PUBLIC_DATA_BACKEND=supabase'));
+    expect(start.match(/NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN/g)).toHaveLength(1);
     expect(start).not.toMatch(/grep[^\n]*\$logf|pgrep|pkill|killall|echo[^\n]*\$(sk|pk)\b|>\s*["']?[^\s"']*\.env/);
     expect(start).toMatch(/curl -s -o \/dev\/null --max-time 3/);   // readiness is the exit status of a request
   });

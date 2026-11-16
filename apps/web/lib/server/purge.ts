@@ -18,8 +18,6 @@ export interface PurgeDeps {
   publicOrigin?: string | null;
 }
 
-// The header name is assembled: the app's strict no-network scan (outfits.test.ts) reads the bare word as a request call, even inside a string.
-const FETCH_SITE = ['sec', 'fet' + 'ch', 'site'].join('-');
 const HOST = /^(?:[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?|\[[0-9A-Fa-f:.]+\])(?::[0-9]{1,5})?$/;
 const schemeOf = (req: Request, publicOrigin: string | null | undefined): 'http:' | 'https:' | null => {
   if (publicOrigin) { try { const p = new URL(publicOrigin).protocol; if (p === 'http:' || p === 'https:') return p; } catch { /* not a URL: fall through to the request */ } }
@@ -34,7 +32,7 @@ const schemeOf = (req: Request, publicOrigin: string | null | undefined): 'http:
  * browser's request metadata says it came from this origin or from no page at all (`Sec-Fetch-Site: same-origin` or `none`). */
 export function originAllowed(req: Request, publicOrigin?: string | null): boolean {
   const origin = req.headers.get('origin');
-  if (origin === null) { const site = req.headers.get(FETCH_SITE); return site === 'same-origin' || site === 'none'; }
+  if (origin === null) { const site = req.headers.get('sec-fetch-site'); return site === 'same-origin' || site === 'none'; }
   let given: URL;
   try { given = new URL(origin); } catch { return false; }          // includes the literal Origin: null of a sandboxed or redirected request
   if ((given.protocol !== 'http:' && given.protocol !== 'https:') || given.origin !== origin) return false;   // no path, user info or query, and not a non-default spelling

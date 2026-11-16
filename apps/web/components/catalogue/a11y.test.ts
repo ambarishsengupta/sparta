@@ -5,7 +5,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { a11yProblems } from '../../test-support/a11y';
 import { catalogueFromRow, formFromCatalogue } from '../../lib/catalogue';
+import { catalogueCaption } from './caption';
 import { DEMO_CATALOGUE } from '../../lib/demo-catalogue';
+import { HM_ARTICLES } from '../../lib/demo-hm';
 import { cssProblems } from '../design-rules';
 import { OnboardingForm } from '../consent/OnboardingForm';
 import { ItemForm } from '../wardrobe/ItemForm';
@@ -56,7 +58,21 @@ describe('the empty catalogue (CC6)', () => {
 
 describe('the flagged demo catalogue (re-cut of 2026-11-07)', () => {
   it('the browser-only (local) backend says in the picker that the items are invented demo data, and the account-backed one does not', () => {
-    expect(read('./CatalogueView.tsx')).toContain("{dataBackend() === 'local' && <p className=\"muted\" data-demo=\"catalogue\">Demo catalogue: invented items and brands for trying the app.");
+    expect(read('./CatalogueView.tsx')).toContain('<p className="muted" data-demo={caption.kind === \'hm\' ? \'hm-catalogue\' : \'catalogue\'}>{caption.text}</p>');
+    expect(read('./CatalogueView.tsx')).toContain('catalogueCaption(dataBackend(), HM_ARTICLES.length > 0)');   // the flag the picker's own list uses (lib/demo-catalogue.ts)
+    expect(catalogueCaption('local', false)).toEqual({ kind: 'invented', text: 'Demo catalogue: invented items and brands for trying the app. None of it is a real product.' });
+    expect(catalogueCaption('supabase', false)).toBeNull();
+    expect(catalogueCaption('supabase', true)).toBeNull();
+  });
+  it('WO-0125: the no-login H&M mode never calls the items invented; it says they are H&M products shown for the course demo', () => {
+    const hm = catalogueCaption('local', true);
+    expect(hm).toEqual({ kind: 'hm', text: 'Demo catalogue: these are H&M products, shown for the course demo.' });
+    expect(hm?.text).not.toMatch(/invented|None of it is a real product/);
+  });
+  it('shows from the first render in both modes: the caption does not wait for a page to load (nor vanish when the load fails)', () => {
+    expect(read('./CatalogueView.tsx')).not.toContain('seenHm');
+    // the flag is the one that decides what the local picker lists, so the caption and the list cannot disagree
+    expect(DEMO_CATALOGUE.some((i) => i.source === 'hm-demo')).toBe(HM_ARTICLES.length > 0);
   });
 });
 

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { EventLog } from '../../lib/events';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
-import { INSIGHT_SENTENCES, reports, type Insight, type ReportDetail, type ReportRow } from '../../lib/vendor/insights';
+import { INSIGHT_SENTENCES, loadFailed, reports, type Insight, type ReportDetail, type ReportRow } from '../../lib/vendor/insights';
 import { NOT_FOUND, openReport, parsePayload, type Payload } from '../../lib/vendor/reports';
 import { BandShareBar, BarList } from '../ui/vendor';
 import styles from '../ui/vendor/vendor-charts.module.css';
@@ -19,7 +19,7 @@ export const monthName = (d: string) => `${MONTHS[Number(d.slice(5, 7)) - 1] ?? 
 /** FR-78: the reviewed reports of the vendor's portal, newest first. */
 export function ReportList() {
   const [list, setList] = useState<Slot<ReportRow[]>>(null);
-  useEffect(() => { let live = true; reports(createBrowserSupabase()).then((r) => live && setList(r)); return () => { live = false; }; }, []);
+  useEffect(() => { let live = true; reports(createBrowserSupabase()).then((r) => live && setList(r), () => live && setList(loadFailed())); return () => { live = false; }; }, []);
   return <ReportListView list={list} />;
 }
 export function ReportListView({ list }: { list: Slot<ReportRow[]> }) {
@@ -45,7 +45,7 @@ export function ReportPage({ id }: { id: string }) {
       if (!live) return;
       setOne(r);
       if (r.ok && r.data && recorded.current !== id) { recorded.current = id; new EventLog().record('vendor_report_opened'); }
-    });
+    }, () => { if (live) setOne(loadFailed()); });
     return () => { live = false; };
   }, [id]);
   return <ReportView one={one} />;

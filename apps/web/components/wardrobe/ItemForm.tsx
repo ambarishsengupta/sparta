@@ -15,6 +15,7 @@ import { categoryChoices, emptyForm, familyOfHex, formFromItem, subTypeChoices, 
 import type { FormErrors, ItemFormValues } from '../../lib/item-form';
 import { CatalogueDetails, CatalogueIntro } from '../catalogue/CatalogueFields';
 import { CategoryIllustration } from '../ui/illustrations';
+import { ConfirmStep } from '../ui/ConfirmStep';
 import { ProductPhoto } from '../ui/ProductPhoto';
 import { useRepository } from '../use-repository';
 
@@ -67,6 +68,7 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
   const [missing, setMissing] = useState(false);
   const [existing, setExisting] = useState<StoredItem>();
   const [failure, setFailure] = useState(''); // the form keeps what was typed when a save fails
+  const [deleting, setDeleting] = useState(false); // Delete item was pressed once; the second press is in the confirmation
   const change = (patch: Partial<ItemFormValues>) => setValues((v) => updateForm(v, patch));
 
   useEffect(() => {
@@ -93,7 +95,8 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
     router.push('/');
   };
   const remove = async () => {
-    if (!itemId || !window.confirm('Delete this item permanently?')) return;
+    setDeleting(false);
+    if (!itemId) return;
     const problem = await attempt(() => repo!.items.remove(itemId));
     if (problem) return setFailure(problem);
     router.push('/');
@@ -149,8 +152,9 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
       <div className="row">
         <button type="submit" className="primary" disabled={!repo}>Save item</button>
         <button type="button" onClick={() => (catalogueStart ? catalogueStart.onCancel() : router.push('/'))}>Cancel</button>
-        {itemId && canDeleteItems() && <button type="button" className="danger" onClick={() => void remove()}>Delete item</button>}
+        {itemId && canDeleteItems() && <button type="button" className="danger" onClick={() => setDeleting(true)}>Delete item</button>}
       </div>
+      {deleting && <ConfirmStep label="Confirm deleting this item" question="Delete this item permanently?" confirmLabel="Delete item permanently" onConfirm={() => void remove()} onCancel={() => setDeleting(false)} />}
     </form>
   );
 }

@@ -5,6 +5,7 @@ import { CATEGORIES, COLOUR_FAMILIES } from '@sparta/taxonomy';
 import { NO_CATALOGUE_FILTER, STYLES, hmPhotoId, styleLabel } from '../../lib/catalogue';
 import type { CatalogueCursor, CatalogueFilter, CatalogueItem } from '../../lib/catalogue';
 import { formatPrice } from '../../lib/money';
+import { HM_ARTICLES } from '../../lib/demo-hm';
 import { dataBackend } from '../../lib/supabase/config';
 import { messageOf } from '../../lib/supabase/errors';
 import { addOwnWithBarcode, noMatch, severalMatches } from '../../lib/barcode-lookup';
@@ -14,6 +15,7 @@ import { CategoryIllustration } from '../ui/illustrations';
 import { ProductPhoto } from '../ui/ProductPhoto';
 import { useRepository } from '../use-repository';
 import { BarcodeLookup } from './BarcodeLookup';
+import { catalogueCaption } from './caption';
 import { SourceLink } from './SourceLink';
 
 export function CatalogueTile({ item, onChoose }: { item: CatalogueItem; onChoose: () => void }) {
@@ -62,13 +64,14 @@ export function CatalogueView() {
   if (chosen) return <ItemForm catalogueStart={{ item: chosen, onCancel: () => setChosen(null) }} barcode={chosenCode} />;
   const pick = (patch: Partial<CatalogueFilter>) => { const n = { ...draft, ...patch }; setDraft(n); setApplied(n); };
   const filtered = JSON.stringify(applied) !== JSON.stringify(NO_CATALOGUE_FILTER);
+  const caption = catalogueCaption(dataBackend(), HM_ARTICLES.length > 0);
   return (
     <>
       <div className="row between">
         <h1>Catalogue</h1>
         <Link href="/items/new" className="button secondary">Add my own</Link>
       </div>
-      {dataBackend() === 'local' && <p className="muted" data-demo="catalogue">Demo catalogue: invented items and brands for trying the app. None of it is a real product.</p>}
+      {caption && <p className="muted" data-demo={caption.kind === 'hm' ? 'hm-catalogue' : 'catalogue'}>{caption.text}</p>}
       {repo && (
         <BarcodeLookup catalogue={repo.catalogue} onResult={(r) => {
           if (r.kind === 'one') { setBarcode(null); setChosenCode(r.gtin); setChosen(r.item); } else { setChosenCode(undefined); setBarcode(r); }

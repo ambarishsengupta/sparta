@@ -30,6 +30,9 @@ export interface ReportDetail extends ReportRow { payload: unknown }
 
 const fail = (kind: InsightKind): Insight<never> => ({ ok: false, kind, message: INSIGHT_SENTENCES[kind] });
 
+/** What a screen shows for a load that rejected instead of answering (the wrappers below never reject, but a loader built on them can): the fixed 'unexpected' sentence, so a slot never stays on "Loading.". Use as the second argument of `.then`. */
+export const loadFailed = (): Insight<never> => fail('unexpected');
+
 /** Which fixed sentence an answer from the server stands for. `status` is 0 when no answer arrived. */
 export function kindOf(status: number | undefined, error: { code?: string | null; message?: string | null; name?: string | null }): InsightKind {
   const text = error.message ?? '';

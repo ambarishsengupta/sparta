@@ -1,6 +1,7 @@
 'use client';
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type SubmitEvent } from 'react';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
+import { messageOf } from '../../lib/supabase/errors';
 import { acceptVendorAgreement } from '../../lib/vendor/access';
 
 /** FR-94: one tick and Accept. The agreement above it is the file in legal/, shown unchanged; nothing else in the portal opens until this is recorded. */
@@ -11,8 +12,11 @@ export function AgreementForm() {
   const [busy, setBusy] = useState(false);
   const box = useRef<HTMLInputElement>(null);
 
-  async function submit(e: FormEvent) {
+  function submit(e: SubmitEvent) {
     e.preventDefault();
+    accept().catch((err: unknown) => { setBusy(false); setFailure(messageOf(err)); }); // a rejection is shown, never left unhandled
+  }
+  async function accept() {
     setFailure(null);
     setMissing(!agree);
     if (!agree) return box.current?.focus();

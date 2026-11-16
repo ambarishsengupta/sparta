@@ -1,5 +1,8 @@
-/** The strict no-network rule of the suggestion path (FR-59), as one function so a test can prove that it catches a mutant. Test support only. */
-export const NETWORK = /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|axios)\b|https?:\/\//;
+/** The strict no-network rule of the suggestion path (FR-59), as one function so a test can prove that it catches a mutant. Test support only.
+ * It matches the names `fetch`, `XMLHttpRequest`, `sendBeacon`, `WebSocket`, `EventSource` and `axios` as whole words anywhere in the code (a call, an alias, `window.fetch`, `globalThis['fetch']`, a destructuring,
+ * a constructor) and any `http(s)://` URL. A word joined to others by a hyphen is not a hit, so the header name `sec-fetch-site` is a plain string and nothing has to be assembled to get past the rule.
+ * The ESLint rule `no-restricted-globals` is a second guard, but only for a bare identifier (`fetch(u)`, `const g = fetch`) outside the three allowed files; it does not see `window.fetch` or a quoted name, so this scan stays strict. */
+export const NETWORK = /(?<![\w$-])(?:fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|axios)(?![\w$-])|https?:\/\//;
 
 /** The only things the rule lets through, each removed once from the named file before the scan. Nothing else, in any file. */
 export const ALLOWED: Record<string, string[]> = {

@@ -1,8 +1,9 @@
 'use client';
 import { OCCASIONS } from '@sparta/taxonomy';
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type SubmitEvent } from 'react';
 import { countryCode, currencyFor, hemisphereFor, OTHER_COUNTRY, startPage, validateOnboarding, type OnboardingErrors, type Option, type StartChoice } from '../../lib/onboarding';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
+import { messageOf } from '../../lib/supabase/errors';
 import { completeOnboarding } from '../../lib/supabase/consent-actions';
 
 const err = (id: string, text?: string) => text && <p id={id} className="error" role="alert">{text}</p>;
@@ -29,8 +30,11 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
     if (/^[A-Z]{2}$/.test(code)) { setHemisphere(hemisphereFor(code)); setCurrency(currencyFor(code)); }
   }
 
-  async function submit(e: FormEvent) {
+  function submit(e: SubmitEvent) {
     e.preventDefault();
+    complete().catch((err: unknown) => { setBusy(false); setFailure(messageOf(err)); }); // a rejection is shown, never left unhandled
+  }
+  async function complete() {
     setFailure(null);
     const found = validateOnboarding({ country, hemisphere, currency }, choice);
     setErrors(found);

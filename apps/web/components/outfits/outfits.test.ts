@@ -5,7 +5,7 @@ import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WARDROBES } from '../../../../packages/rules/src/fixtures/wardrobes';
-import { ALLOWED, networkOffences } from '../../test-support/network-scan';
+import { ALLOWED, NETWORK, networkOffences } from '../../test-support/network-scan';
 import { EventLog } from '../../lib/events';
 import type { StoredItem } from '../../lib/repository';
 import { applySwap, buildCtx, startView, swapOptions } from '../../lib/suggestions-view-model';
@@ -32,7 +32,6 @@ const sources = import.meta.glob<string>(
   ],
   { query: '?raw', import: 'default', eager: true },
 );
-const NETWORK = /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|axios)\b|https?:\/\//;
 const ctx = buildCtx('Work', 'north', new Date('2026-04-15T12:00:00Z'));
 const items = WARDROBES['Office regular']!;
 const stored = new Map<string, StoredItem>(items.map((i) => [i.id, { ...i, hex: '#336699', fit: null, material: null, neverWorn: false, archiveReason: null, createdAt: '', updatedAt: '' }]));
@@ -259,6 +258,21 @@ describe('the strict no-network scan runs on every file, with exactly the listed
     const text = everyFile.find(([f]) => f === file)![1];
     expect(networkOffences(file, text)).toEqual([]);
     for (const [name, mutate] of MUTANTS) expect(networkOffences(file, mutate(text)), `${file}: ${name}`).not.toEqual([]);
+  });
+  it('is a whole-word rule: the header name sec-fetch-site (WO-0125) is a plain string, while calls, constructors, beacons, axios, URLs and every alias of the network globals fail', () => {
+    const purge = everyFile.find(([f]) => f === 'lib/server/purge.ts')![1];
+    expect(purge).toContain("req.headers.get('sec-fetch-site')");   // written as a plain string, not assembled to get past this scan
+    expect(networkOffences('lib/server/purge.ts', purge)).toEqual([]);
+    expect(networkOffences('lib/other.ts', "// fetch(url) in a comment\nconst h = 'sec-fetch-site';")).toEqual([]);
+    const BAD = [
+      "fetch('/x');", "fetch?.('/x');", 'new XMLHttpRequest();', 'new WebSocket(u);', 'new EventSource(u);', 'navigator.sendBeacon(u, d);', 'axios.get(u);', "const u = 'https://x.example';",
+      'const f = fetch;', 'const f = globalThis.fetch;', 'const f = window.fetch;', 'const f = self.fetch;', "window['fetch'](u);", "const { fetch: f } = globalThis;", "Reflect.get(globalThis, 'fetch');",
+      'const W = window.WebSocket; new W(u);', 'const X = globalThis.XMLHttpRequest;', "const E = window['EventSource'];", 'const b = navigator.sendBeacon;',
+    ];
+    for (const code of BAD) {
+      expect(networkOffences('lib/other.ts', code), code).not.toEqual([]);
+      expect(networkOffences('components/account/account-actions.ts', code), `${code} (in an allowed file)`).not.toEqual([]);   // where the ESLint rule is off
+    }
   });
   it('a request added to ANY scanned file fails the scan', () => {
     for (const [file, text] of everyFile) expect(networkOffences(file, `${text}\nvoid fetch('https://evil.example/x');`), file).not.toEqual([]);

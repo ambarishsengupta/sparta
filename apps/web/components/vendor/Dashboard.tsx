@@ -5,9 +5,10 @@ import { EventLog } from '../../lib/events';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 import { INITIAL, MIX_DIMS, TREND_DIMS, loadHeader, loadMix, loadSpectrum, loadTrends, share, viewKey, type Base, type DashState, type Seg, type TrendView } from '../../lib/vendor/dashboard';
 import { filterReducer, type FilterAction } from '../../lib/vendor/filter-state';
-import type { BandShare, Coverage, FilterOption, Insight } from '../../lib/vendor/insights';
+import { loadFailed, type BandShare, type Coverage, type FilterOption, type Insight } from '../../lib/vendor/insights';
 import { BandShareBar, BarList, TrendTable } from '../ui/vendor';
 import styles from '../ui/vendor/vendor-charts.module.css';
+import { segmentLabel, trendLabels } from './brand-label';
 import { FilterBar, NAMES } from './FilterBar';
 
 type Slot<T> = Insight<T> | null; // null: still loading
@@ -29,10 +30,10 @@ export function Dashboard() {
   const key = viewKey(s);
   const c = () => (client.current ??= createBrowserSupabase());
 
-  useEffect(() => { let live = true; loadHeader(c()).then((h) => live && setHeader(h)); return () => { live = false; }; }, []);
-  useEffect(() => { let live = true; setMix(null); loadMix(c(), s, base.current).then((r) => live && setMix(r)); return () => { live = false; }; }, [pick.mixDim, filter]);
-  useEffect(() => { let live = true; setTrends({ purchase: null, wishlist: null }); loadTrends(c(), s, base.current).then((r) => live && setTrends(r)); return () => { live = false; }; }, [pick.trendDim, filter]);
-  useEffect(() => { let live = true; setSpectrum(null); loadSpectrum(c(), s).then((r) => live && setSpectrum(r)); return () => { live = false; }; }, [pick.category]);
+  useEffect(() => { let live = true; loadHeader(c()).then((h) => live && setHeader(h), () => live && setHeader({ coverage: loadFailed(), options: loadFailed() })); return () => { live = false; }; }, []);
+  useEffect(() => { let live = true; setMix(null); loadMix(c(), s, base.current).then((r) => live && setMix(r), () => live && setMix(loadFailed())); return () => { live = false; }; }, [pick.mixDim, filter]);
+  useEffect(() => { let live = true; setTrends({ purchase: null, wishlist: null }); loadTrends(c(), s, base.current).then((r) => live && setTrends(r), () => live && setTrends({ purchase: loadFailed(), wishlist: loadFailed() })); return () => { live = false; }; }, [pick.trendDim, filter]);
+  useEffect(() => { let live = true; setSpectrum(null); loadSpectrum(c(), s).then((r) => live && setSpectrum(r), () => live && setSpectrum(loadFailed())); return () => { live = false; }; }, [pick.category]);
   // one `vendor_dashboard_viewed` per distinct view (the visit, then each change of selector or filter), never per render
   useEffect(() => { if (seen.current !== key) { seen.current = key; new EventLog().record('vendor_dashboard_viewed'); } }, [key]);
 
@@ -51,7 +52,7 @@ export function DashboardView({ s, header, mix, trends, spectrum, onPick, onFilt
   const select = (label: string, value: string, values: readonly string[], onChange: (v: string) => void) => (
     <label className={styles.control}>{label}<select value={value} onChange={(e) => onChange(e.target.value)}>{values.map((v) => <option key={v} value={v}>{NAMES[v] ?? v}</option>)}</select></label>
   );
-  const view = (title: string, data: Slot<TrendView>) => data?.ok && (data.data.segments.length ? <TrendTable caption={title} data={data.data} /> : <p className="muted">Nothing to show for this view.</p>);
+  const view = (title: string, data: Slot<TrendView>) => data?.ok && (data.data.segments.length ? <TrendTable caption={title} data={trendLabels(s.trendDim, data.data)} /> : <p className="muted">Nothing to show for this view.</p>);
 
   return (
     <div className="wide">
@@ -65,7 +66,7 @@ export function DashboardView({ s, header, mix, trends, spectrum, onPick, onFilt
         {select('Segment', s.mixDim, MIX_DIMS, (v) => onPick({ mixDim: v as DashState['mixDim'] }))}
         {mix === null ? <p role="status">Loading.</p> : mix.ok && <BarList name={`Ownership mix by ${NAMES[s.mixDim]!.toLowerCase()}`} max={cov.users_rounded || undefined} rows={mix.data.map((r) => {
           const pct = r.value === null ? null : share(r.value, cov.users_rounded);
-          return { label: r.segment, value: r.value, text: r.value === null ? undefined : `${r.value} users${pct === null ? '' : ` / ${pct}%`}` };
+          return { label: segmentLabel(s.mixDim, r.segment), value: r.value, text: r.value === null ? undefined : `${r.value} users${pct === null ? '' : ` / ${pct}%`}` };
         })} />}
         <h2>Trends by month</h2>
         {select('By', s.trendDim, TREND_DIMS, (v) => onPick({ trendDim: v as DashState['trendDim'] }))}

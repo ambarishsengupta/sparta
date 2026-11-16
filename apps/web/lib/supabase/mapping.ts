@@ -189,8 +189,8 @@ export function purchaseFromRow(r: Row): Purchase | null {
   if (typeof r.id !== 'string' || typeof r.item_id !== 'string' || typeof r.created_at !== 'string' || !item || typeof item.name !== 'string') return bad('purchase');
   if (r.purchase_date === null || r.price === null || r.currency === null) return null; // a purchase made before R6 without a date, price or currency: not listed
   return {
-    id: r.id as string, itemId: r.item_id as string, date: String(r.purchase_date), store: typeof r.store === 'string' ? r.store : null, price: num(r.price, 'purchase price'),
-    currency: String(r.currency), quantity: num(r.quantity, 'purchase quantity'), notes: typeof r.notes === 'string' ? r.notes : null, createdAt: r.created_at as string,
+    id: r.id as string, itemId: r.item_id as string, date: typeof r.purchase_date === 'string' ? r.purchase_date : bad('purchase date'), store: typeof r.store === 'string' ? r.store : null, price: num(r.price, 'purchase price'),
+    currency: typeof r.currency === 'string' ? r.currency : bad('purchase currency'), quantity: num(r.quantity, 'purchase quantity'), notes: typeof r.notes === 'string' ? r.notes : null, createdAt: r.created_at as string,
     itemName: item.name as string, category: isCategory(item.category) ? item.category : null, brand: typeof item.brand === 'string' ? item.brand : null,
   };
 }

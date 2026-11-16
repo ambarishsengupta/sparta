@@ -4,9 +4,10 @@ import { createBrowserSupabase } from '../../lib/supabase/browser';
 import type { Base } from '../../lib/vendor/dashboard';
 import { NO_OWNERSHIP, loadGaps, type GapsData } from '../../lib/vendor/gaps';
 import { filterReducer, type FilterAction } from '../../lib/vendor/filter-state';
-import { filterOptions, type Dimension, type Filter, type FilterOption, type GapRow, type Insight } from '../../lib/vendor/insights';
+import { filterOptions, loadFailed, type Dimension, type Filter, type FilterOption, type GapRow, type Insight } from '../../lib/vendor/insights';
 import { Suppressed } from '../ui/vendor';
 import styles from '../ui/vendor/vendor-charts.module.css';
+import { segmentLabel } from './brand-label';
 import { FilterBar } from './FilterBar';
 
 const DIM_NAMES: Record<Dimension, string> = { category: 'Category', colour_family: 'Colour family', fit: 'Fit', brand: 'Brand', category_colour_family: 'Category and colour family', category_fit: 'Category and fit', category_brand: 'Category and brand' };
@@ -42,8 +43,8 @@ export function Gaps() {
   const [options, setOptions] = useState<Slot<FilterOption[]>>(null);
   const [data, setData] = useState<Slot<GapsData>>(null);
   const c = () => (client.current ??= createBrowserSupabase());
-  useEffect(() => { let live = true; filterOptions(c()).then((r) => live && setOptions(r)); return () => { live = false; }; }, []);
-  useEffect(() => { let live = true; setData(null); loadGaps(c(), dim, filter, base.current).then((r) => live && setData(r)); return () => { live = false; }; }, [dim, filter]);
+  useEffect(() => { let live = true; filterOptions(c()).then((r) => live && setOptions(r), () => live && setOptions(loadFailed())); return () => { live = false; }; }, []);
+  useEffect(() => { let live = true; setData(null); loadGaps(c(), dim, filter, base.current).then((r) => live && setData(r), () => live && setData(loadFailed())); return () => { live = false; }; }, [dim, filter]);
   return <GapsView dim={dim} filter={filter} options={options} data={data} onDim={setDim} onFilter={dispatch} />;
 }
 
@@ -59,7 +60,7 @@ export function GapsView({ dim, filter, options, data, onDim, onFilter }: GapsVi
         <select value={dim} onChange={(e) => onDim(e.target.value as Dimension)}>{Object.entries(DIM_NAMES).map(([v, n]) => <option key={v} value={v}>{n}</option>)}</select>
       </label>
       {data === null ? <p role="status">Loading.</p> : data.ok && (data.data.rows.length || data.data.hidden.length
-        ? <GapsTable caption={`Gaps by ${DIM_NAMES[dim].toLowerCase()}, highest gap score first`} rows={data.data.rows} hidden={data.data.hidden} />
+        ? <GapsTable caption={`Gaps by ${DIM_NAMES[dim].toLowerCase()}, highest gap score first`} rows={data.data.rows.map((r) => ({ ...r, segment: segmentLabel(dim, r.segment) }))} hidden={data.data.hidden.map((h) => segmentLabel(dim, h))} />
         : <p className="muted">No gaps to show. A segment is listed only when at least 10 users contribute to it.</p>)}
     </div>
   );

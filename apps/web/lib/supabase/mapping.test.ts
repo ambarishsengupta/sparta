@@ -4,7 +4,7 @@ import { CATEGORIES, COLOUR_FAMILIES, OCCASIONS, SUB_TYPES, categoryOfSubType, c
 import type { Slot } from '@sparta/rules';
 import type { ItemInput, OutfitInput, WishlistInput } from '../repository';
 import { itemInput } from '../../test-support/arbitraries';
-import { feedbackRow, itemFromRow, itemPatch, itemRow, outfitFromRow, outfitPatch, outfitRows, wishlistFromRow, wishlistPatch, wishlistRow } from './mapping';
+import { feedbackRow, itemFromRow, itemPatch, itemRow, outfitFromRow, outfitPatch, outfitRows, purchaseFromRow, wishlistFromRow, wishlistPatch, wishlistRow } from './mapping';
 
 // Unit tests of the mapping both ways (WO-0052). `database` stands in for what the real database does to a written row: it adds the
 // id and times and fills the colour columns exactly as the trigger does (the same colour function, LLD 4.3); the integration suite
@@ -124,6 +124,17 @@ describe('wishlist: entry to app.wishlist_entries and back', () => {
     expect(wishlistRow({ name: 'n', subType: 'Shirt', note: null }, 'u').origin).toBe('user');
     expect(wishlistPatch({ note: 'x' })).toEqual({ notes: 'x' });
   });
+});
+
+describe('purchases: a stored date or currency that is not text is refused, never turned into text (WO-0125)', () => {
+  const row = { id: 'p1', item_id: 'i1', purchase_date: '2026-11-01', store: null, price: '19.90', currency: 'EUR', quantity: 2, notes: null, created_at: 'T', items: { name: 'Shirt', category: 'Tops', brand: null } };
+  it('reads a row whose date and currency are text', () => {
+    expect(purchaseFromRow(row)).toMatchObject({ date: '2026-11-01', currency: 'EUR' });
+  });
+  it.each([['purchase_date', 20261101, 'purchase date'], ['purchase_date', undefined, 'purchase date'], ['purchase_date', { d: 1 }, 'purchase date'], ['currency', 978, 'purchase currency'], ['currency', undefined, 'purchase currency'], ['currency', ['EUR'], 'purchase currency']])(
+    'throws the stored-value error for a non-text %s (%s)', (field, value, what) => {
+      expect(() => purchaseFromRow({ ...row, [field]: value })).toThrow(`The stored ${what} could not be read.`);
+    });
 });
 
 describe('suggestion feedback rows hold the occasion, the rules and the engine string only (FR-53, LLD 4.4)', () => {

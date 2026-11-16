@@ -1,10 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type SubmitEvent } from 'react';
 import { MIN_PW_LENGTH, finishSignIn, validateAuth, type AuthErrors, type AuthMode } from '../../lib/auth-form';
 import { requestPasswordReset, signInWithEmail, signUpWithEmail, type Outcome } from '../../lib/supabase/auth-actions';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
+import { messageOf } from '../../lib/supabase/errors';
 
 const COPY = {
   'sign-up': { title: 'Create your account', button: 'Create account' },
@@ -26,8 +27,11 @@ export function AuthForm({ mode, next, notice }: { mode: AuthMode; next?: string
   const emailRef = useRef<HTMLInputElement>(null);
   const pwRef = useRef<HTMLInputElement>(null);
 
-  async function submit(e: FormEvent) {
+  function submit(e: SubmitEvent) {
     e.preventDefault();
+    send().catch((err: unknown) => { setBusy(false); setFailure(messageOf(err)); }); // a rejection is shown, never left unhandled
+  }
+  async function send() {
     setFailure(null);
     const found = validateAuth(mode, email, pw);
     setErrors(found);

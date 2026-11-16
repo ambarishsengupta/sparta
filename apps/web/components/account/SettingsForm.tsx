@@ -1,10 +1,11 @@
 'use client';
 import { OCCASIONS } from '@sparta/taxonomy';
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type SubmitEvent } from 'react';
 import type { Option } from '../../lib/onboarding';
 import { MAX_NAME, settingsPatch, validateSettings, type SettingsErrors, type SettingsInput } from '../../lib/settings-form';
 import { saveProfile } from './account-actions';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
+import { messageOf } from '../../lib/supabase/errors';
 
 /** The profile fields a person may change (FR-6): display name, hemisphere, currency and occasions. Country is shown by the page and is not editable. */
 export function SettingsForm({ initial, currencies }: { initial: SettingsInput; currencies: Option[] }) {
@@ -16,8 +17,11 @@ export function SettingsForm({ initial, currencies }: { initial: SettingsInput; 
   const refs = { displayName: useRef<HTMLInputElement>(null), hemisphere: useRef<HTMLSelectElement>(null), currency: useRef<HTMLSelectElement>(null) };
   const change = (patch: Partial<SettingsInput>) => { setV({ ...v, ...patch }); setSaved(false); };
 
-  async function submit(e: FormEvent) {
+  function submit(e: SubmitEvent) {
     e.preventDefault();
+    save().catch((err: unknown) => { setBusy(false); setFailure(messageOf(err)); }); // a rejection is shown, never left unhandled
+  }
+  async function save() {
     setFailure(null);
     setSaved(false);
     const found = validateSettings(v, currencies.map((c) => c.value));

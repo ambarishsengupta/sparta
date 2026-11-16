@@ -1,9 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type SubmitEvent } from 'react';
 import { clearSessionCookies, leaveThePilot, purgeMyStorage } from './account-actions';
 import { clearBrowserUsage } from './browser-data';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
+import { messageOf } from '../../lib/supabase/errors';
 
 /** FR-63, FR-66: the confirmation step. The password is asked again; nothing is deleted unless it is right. Afterwards the session cookies and the browser-only usage log are removed and the goodbye page opens. */
 export function LeaveForm() {
@@ -12,8 +13,11 @@ export function LeaveForm() {
   const [busy, setBusy] = useState(false);
   const pwRef = useRef<HTMLInputElement>(null);
 
-  async function submit(e: FormEvent) {
+  function submit(e: SubmitEvent) {
     e.preventDefault();
+    leave().catch((err: unknown) => { setBusy(false); setFailure(messageOf(err)); }); // a rejection is shown, never left unhandled
+  }
+  async function leave() {
     setFailure(null);
     setBusy(true);
     const out = await leaveThePilot(createBrowserSupabase(), pw, () => purgeMyStorage());

@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
+import { messageOf } from '../../lib/supabase/errors';
 import { acceptPilotNotice } from '../../lib/supabase/consent-actions';
 
 /** The only way forward from the pilot notice (FR-4): the consent record is stored for the notice version this page showed. */
@@ -8,7 +9,10 @@ export function PilotNoticeForm({ noticeVersion }: { noticeVersion: string }) {
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function join() {
+  function join() {
+    accept().catch((err: unknown) => { setBusy(false); setFailure(messageOf(err)); }); // a rejection is shown, never left unhandled
+  }
+  async function accept() {
     setFailure(null);
     setBusy(true);
     const out = await acceptPilotNotice(createBrowserSupabase(), noticeVersion);

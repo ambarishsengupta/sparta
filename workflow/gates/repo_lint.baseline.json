@@ -67,18 +67,5 @@
       "reason": "Submitted D3 course deliverable; its size is its 12 embedded charts (about 1.6 MB), which are kept as submitted. Row-level tables were removed by WO-0124."
     }
   ],
-  "baseline": [
-    {
-      "rule": "RL07",
-      "path": "services/worker/Dockerfile",
-      "work_order": "WO-0127",
-      "reason": "Base image python:3.13-slim is named by tag; pin its digest."
-    },
-    {
-      "rule": "RL08",
-      "path": ".github/workflows/ci.yml",
-      "work_order": "WO-0127",
-      "reason": "actions/checkout and actions/setup-node are named by tag; pin their commits."
-    }
-  ]
+  "baseline": []
 }

@@ -34,6 +34,6 @@ describe('repo_lint', () => {
     expect(all.filter((e) => /\.env|\.pem$|\.key$|secret|password/i.test(e.path))).toEqual([]);
     expect(all.filter((e) => e.rule === 'RL04' || e.rule === 'RL05' || e.rule === 'RL09')).toEqual([]);
     expect(baseline.allow.length).toBeLessThanOrEqual(13);
-    expect(baseline.baseline.length).toBeLessThanOrEqual(2);
+    expect(baseline.baseline.length).toBe(0);   // WO-0127 removed the last two (RL07 base image, RL08 actions); a new entry needs a work order and this number
   });
 });

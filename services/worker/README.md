@@ -32,7 +32,11 @@ The password of `worker_role`: the role is created without one. Locally: `SPARTA
 
 ## Run
 
-Docker (local, Colima): `cd services/worker && docker compose up --build`; stop with `docker compose down`. The image is `python:3.13-slim` (LLD 7.1 says 3.11; the pinned numpy needs 3.12 or newer and the tests run on 3.13), runs as a non-root user, models are downloaded at build time (`u2netp`), the container is read-only, has no published port and `restart: always`. Without Docker: `uvicorn --factory worker.app:app_factory --host 127.0.0.1 --port 8080` inside a virtualenv with `requirements.txt`.
+Docker (local, Colima): `cd services/worker && docker compose up --build`; stop with `docker compose down`. The image is `python:3.13-slim`, pinned by digest (LLD 7.1 says 3.11; the pinned numpy needs 3.12 or newer and the tests run on 3.13), runs as a non-root user, models are downloaded at build time (`u2netp`), the container is read-only, has no published port and `restart: always`. Without Docker: `uvicorn --factory worker.app:app_factory --host 127.0.0.1 --port 8080` inside a virtualenv with `requirements.txt`.
+
+## Base image
+
+The Dockerfile names its base image by digest (`python:3.13-slim@sha256:...`), so a rebuilt image starts from the same bytes until someone changes the line on purpose. To refresh it: `docker pull python:3.13-slim`, read the new digest with `docker images --digests python` (the DIGEST column of the `3.13-slim` row; it is the multi-platform index, so it is the same on every machine), put it in the `FROM` line, rebuild (`docker compose build`), run `bash workflow/gates/worker_tests.sh` and the local end-to-end check (`python services/worker/scripts/e2e_local.py`), and commit the one-line change with the date in the message. Refresh when the Python or Debian security notices name a fix; `repo_lint` (RL07) fails a `FROM` line without a digest.
 
 ## Tests
 

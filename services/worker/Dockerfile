@@ -1,6 +1,8 @@
 # Sparta worker (LLD 7.1). Build context: services/worker. No secret is ever copied into the image: configuration comes from the environment.
 # Python 3.13, not the 3.11 of LLD 7.1: the pinned numpy 2.5.4 (the version the tests ran with) needs Python 3.12 or newer.
-FROM python:3.13-slim
+# The base image is pinned by digest (WO-0127, repo_lint RL07): a tag can be moved, a digest cannot. This is the multi-platform index of
+# python:3.13-slim that the worker tests ran with. To refresh it, see "Base image" in README.md.
+FROM python:3.13-slim@sha256:09a17cad02668ae61ece136b4fd36ac3849e14f670ebedb637ea3e15580525bc
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 U2NET_HOME=/opt/u2net NUMBA_CACHE_DIR=/tmp/numba
 WORKDIR /app

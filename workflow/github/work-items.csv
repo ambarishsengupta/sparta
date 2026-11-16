@@ -87,7 +87,7 @@ X-HMOK,"Record who at H&M confirmed the demo use, when and how (legal/HM-DEMO-DE
 WO-0123,"WO-0123: lint rules, repository lint, database lint and the strict gate",R8,Release 1 (MVP),Delivery agents,Done
 WO-0124,WO-0124: clean the D3 notebook and HTML outputs (legal finding 20),R8,Release 1 (MVP),Delivery agents,Done
 WO-0125,WO-0125: handle every promise and remove code written around the old source scans,R8,Release 1 (MVP),Delivery agents,Done
-WO-0126,WO-0126: generated database types and no unchecked value from the database,R8,Release 1 (MVP),Delivery agents,Todo
+WO-0126,WO-0126: generated database types and no unchecked value from the database,R8,Release 1 (MVP),Delivery agents,Done
 WO-0127,WO-0127: CI runs the full gate; pin actions and the base image,R8,Release 1 (MVP),Delivery agents,Todo
 WO-0128,"WO-0128: empty the database lint baseline (search_path, casts, temporary table)",R8,Release 1 (MVP),Delivery agents,Done
 WO-0129,"WO-0129: linters that need a new development dependency (ruff, react-hooks, jsx-a11y, regexp)",R8,Release 1 (MVP),Delivery agents,Todo

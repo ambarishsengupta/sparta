@@ -1,8 +1,12 @@
 import type { createBrowserSupabase } from '../supabase/browser';
+import type { Database } from '../supabase/database.types';
 
 /** The vendor's calls to the aggregate functions of LLD 5.4, made with the signed-in vendor's own session. Nothing here keeps state between calls (no cache: the next user on this
  * machine must never see the last one's figures), reads another table or builds a number. A failed call becomes one of a few fixed sentences; the server's text is never shown. */
 type Client = Pick<ReturnType<typeof createBrowserSupabase>, 'schema'>;
+type AnalyticsFn = keyof Database['analytics']['Functions'];
+/** The shape of the one call made here. The functions are called by name with arguments built from the screen's filters (a null means no filter, which the generated argument types cannot say), so the typed builder is read through this wider shape (the one cast in this file, below). The function NAME stays typed: a renamed or dropped function stops compiling. The row types below are written by hand because the generated return types say non-null where the functions return null; the answer is checked at run time. */
+type Rpc = { rpc(fn: AnalyticsFn, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { code?: string; message?: string; name?: string } | null; status: number }> };
 export const DIMENSIONS = ['category', 'colour_family', 'fit', 'brand', 'category_colour_family', 'category_fit', 'category_brand'] as const;
 export const FILTER_DIMS = ['size', 'season', 'price_band', 'region'] as const;
 export type Dimension = (typeof DIMENSIONS)[number];
@@ -41,9 +45,10 @@ export function kindOf(status: number | undefined, error: { code?: string | null
   return error.code === '42501' || text.includes('forbidden') ? 'forbidden' : 'unexpected';
 }
 
-async function call<T>(client: Client, fn: string, args: Record<string, unknown> = {}): Promise<Insight<T[]>> {
+async function call<T>(client: Client, fn: AnalyticsFn, args: Record<string, unknown> = {}): Promise<Insight<T[]>> {
   try {
-    const r = await client.schema('analytics').rpc(fn, args);
+    const analytics = client.schema('analytics') as Rpc;
+    const r = await analytics.rpc(fn, args);
     if (r.error) return fail(kindOf(r.status, r.error));
     return Array.isArray(r.data) ? { ok: true, data: r.data as T[] } : fail('unexpected');
   } catch (e) { return fail(e instanceof TypeError ? 'network' : 'unexpected'); }

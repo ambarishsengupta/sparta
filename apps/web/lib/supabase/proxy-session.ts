@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { cookieOptions, supabaseEnv } from './config';
+import type { Database } from './database.types';
 import type { GateState } from './gate';
 import { loadGateState } from './gate-state';
 
@@ -8,7 +9,7 @@ import { loadGateState } from './gate-state';
 export async function updateSession(request: NextRequest): Promise<{ response: NextResponse; state: GateState }> {
   let response = NextResponse.next({ request });
   const { url, key } = supabaseEnv();
-  const client = createServerClient(url, key, {
+  const client = createServerClient<Database>(url, key, {
     cookieOptions: cookieOptions(url),
     cookies: {
       getAll: () => request.cookies.getAll(),

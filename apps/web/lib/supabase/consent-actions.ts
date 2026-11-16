@@ -1,10 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 
 /** Calls for the three steps after sign-in (LLD 9.1, 4.9), made with the caller's own session. The versions come from `app.public_setting`, never from a constant. */
 export interface Versions { terms: string; privacy: string; notice: string }
 export type Step = { ok: true } | { ok: false; message: string };
 export type OnboardingResult = { ok: true; result: 'ok' | 'unsupported_country' } | { ok: false; message: string };
-type Client = Pick<SupabaseClient, 'auth' | 'schema'>;
+type Client = Pick<SupabaseClient<Database>, 'auth' | 'schema'>;
 
 const GENERIC = 'Something went wrong. Please try again in a moment.';
 const RELOAD = 'These documents were updated while you were reading. Reload the page to see the latest version, then try again.';

@@ -45,7 +45,7 @@ export function inputPaths(userId: string, input: unknown): string[] | null {
   const o = input as Record<string, unknown>;
   const raw: unknown[] = [];
   if ('path' in o) raw.push(o.path);
-  if ('paths' in o) { if (!Array.isArray(o.paths) || o.paths.length < 1 || o.paths.length > 4) return null; raw.push(...o.paths); }
+  if ('paths' in o) { if (!Array.isArray(o.paths) || o.paths.length < 1 || o.paths.length > 4) return null; raw.push(...Array.from<unknown>(o.paths)); }
   if (raw.length === 0) return null;
   const re = new RegExp(`^${userId}/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`);
   if (!raw.every((p) => typeof p === 'string' && re.test(p))) return null;

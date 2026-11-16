@@ -2,12 +2,13 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { cookieOptions, supabaseEnv } from './config';
+import type { Database } from './database.types';
 
 /** The server client for server components and route handlers: the caller's session, read from and written to the request cookies. */
 export async function createServerSupabase() {
   const store = await cookies();
   const { url, key } = supabaseEnv();
-  return createServerClient(url, key, {
+  return createServerClient<Database>(url, key, {
     cookieOptions: cookieOptions(url),
     cookies: {
       getAll: () => store.getAll(),

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '../../lib/supabase/database.types';
 import { prepareImage } from '../../lib/image-prep';
 import type { Prepared, PrepEnv } from '../../lib/image-prep';
 import type { JobRow, JobStatus, PhotoDeps } from '../../lib/photo-flow';
@@ -38,7 +39,7 @@ export function browserEnv(): PrepEnv {
   };
 }
 
-export function photoDeps(client: SupabaseClient, sleep: PhotoDeps['sleep'], now: () => number = Date.now): PhotoDeps {
+export function photoDeps(client: Pick<SupabaseClient<Database>, 'auth' | 'schema' | 'storage'>, sleep: PhotoDeps['sleep'], now: () => number = Date.now): PhotoDeps {
   const userId = async (): Promise<string> => {
     const { data, error } = await client.auth.getSession();
     if (error) throw fail(error, true);
@@ -81,7 +82,7 @@ export function photoDeps(client: SupabaseClient, sleep: PhotoDeps['sleep'], now
 }
 
 /** Short-lived links (10 minutes) to look at the stored pictures; the bucket is private. A path that cannot be signed is simply left out. */
-export async function previewUrls(client: SupabaseClient, paths: readonly string[]): Promise<Record<string, string>> {
+export async function previewUrls(client: Pick<SupabaseClient<Database>, 'storage'>, paths: readonly string[]): Promise<Record<string, string>> {
   try {
     const { data, error } = await client.storage.from(BUCKET).createSignedUrls([...paths], 600);
     if (error || !data) return {};

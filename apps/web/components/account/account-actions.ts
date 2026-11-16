@@ -1,9 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ProfilePatch } from '../../lib/settings-form';
+import type { Database } from '../../lib/supabase/database.types';
 import { classify, type FailureKind } from '../../lib/supabase/errors';
 
 /** Calls behind Settings, Export my data and Leave the pilot (FR-62, FR-66), all made with the caller's own session through the publishable key. */
-type Client = Pick<SupabaseClient, 'auth' | 'schema'>;
+type Client = Pick<SupabaseClient<Database>, 'auth' | 'schema'>;
 export type Step = { ok: true } | { ok: false; message: string };
 
 // ---- export -------------------------------------------------------------------------------------------------------------

@@ -71,4 +71,40 @@ describe('parsePayload: the payload of CC6', () => {
     expect(parsePayload(ok)).toMatchObject({ gaps: [], rising_wishlist: [], condition_spectrum: [{ category: 'Tops', bands: [] }] });
     for (const bad of [null, 'x', {}, { ...ok, coverage: null }, { ...ok, gaps: 'x' }, { ...ok, condition_spectrum: {} }]) expect(parsePayload(bad)).toBeNull();
   });
+  // WO-0126: every field of every row, and coverage and the two periods, are checked (the payload is jsonb), so a damaged value refuses the whole snapshot instead of reaching the screen.
+  const g = { segment: 'Tops / Black', owner_users_rounded: 10, wishlist_users_rounded: 20, gap_score: 2, label: 'a label' };
+  const r = { segment: 'Tops', users_rounded: 30, previous_users_rounded: 20, increase: 10 };
+  const s = { category: 'Tops', bands: [{ band: 'good', share: 45 }] };
+  const full = { ...ok, gaps: [g], rising_wishlist: [r], condition_spectrum: [s] };
+  it('accepts well-formed rows, and every nullable field may be null (a snapshot of an empty cube)', () => {
+    expect(parsePayload(full)).toEqual({ coverage: { users_rounded: 150, last_run_at: 'T' }, cube_first_period: '2026-06-01', cube_last_period: '2026-11-01', gaps: [g], rising_wishlist: [r], condition_spectrum: [s] });
+    const nulls = { coverage: { users_rounded: null, last_run_at: null }, cube_first_period: null, cube_last_period: null,
+      gaps: [{ ...g, owner_users_rounded: null, gap_score: null, label: null }], rising_wishlist: null, condition_spectrum: [{ category: 'Tops', bands: [{ band: 'good', share: null }] }] };
+    expect(parsePayload(nulls)).toEqual({ ...nulls, rising_wishlist: [] });
+  });
+  it('a missing period reads as null (undefined is not refused)', () => {
+    const rest: Record<string, unknown> = { ...full };
+    delete rest.cube_first_period; delete rest.cube_last_period;
+    expect(parsePayload(rest)).toMatchObject({ cube_first_period: null, cube_last_period: null });
+  });
+  it('refuses each damaged field of a gap row, a rising row and a spectrum row, one at a time', () => {
+    const bad: [string, unknown][] = [
+      ['gaps: segment', { ...full, gaps: [{ ...g, segment: 5 }] }], ['gaps: owner_users_rounded', { ...full, gaps: [{ ...g, owner_users_rounded: '10' }] }],
+      ['gaps: wishlist_users_rounded', { ...full, gaps: [{ ...g, wishlist_users_rounded: null }] }], ['gaps: gap_score', { ...full, gaps: [{ ...g, gap_score: 'x' }] }],
+      ['gaps: label', { ...full, gaps: [{ ...g, label: 7 }] }], ['gaps: a null row', { ...full, gaps: [g, null] }], ['gaps: an array row', { ...full, gaps: [[]] }],
+      ['rising: segment', { ...full, rising_wishlist: [{ ...r, segment: null }] }], ['rising: users_rounded', { ...full, rising_wishlist: [{ ...r, users_rounded: '30' }] }],
+      ['rising: previous_users_rounded', { ...full, rising_wishlist: [{ ...r, previous_users_rounded: null }] }], ['rising: increase', { ...full, rising_wishlist: [{ ...r, increase: undefined }] }],
+      ['spectrum: category', { ...full, condition_spectrum: [{ ...s, category: 3 }] }], ['spectrum: bands', { ...full, condition_spectrum: [{ ...s, bands: null }] }],
+      ['spectrum: band', { ...full, condition_spectrum: [{ ...s, bands: [{ band: 1, share: 45 }] }] }], ['spectrum: share', { ...full, condition_spectrum: [{ ...s, bands: [{ band: 'good', share: 'x' }] }] }],
+    ];
+    for (const [name, payload] of bad) expect(parsePayload(payload), name).toBeNull();
+  });
+  it('refuses a damaged coverage or period', () => {
+    const bad: [string, unknown][] = [
+      ['coverage: not an object', { ...full, coverage: 'x' }], ['coverage: an array', { ...full, coverage: [] }], ['coverage: users_rounded', { ...full, coverage: { users_rounded: '150', last_run_at: 'T' } }],
+      ['coverage: users_rounded missing', { ...full, coverage: { last_run_at: 'T' } }], ['coverage: last_run_at', { ...full, coverage: { users_rounded: 150, last_run_at: 5 } }],
+      ['cube_first_period', { ...full, cube_first_period: 5 }], ['cube_last_period', { ...full, cube_last_period: {} }],
+    ];
+    for (const [name, payload] of bad) expect(parsePayload(payload), name).toBeNull();
+  });
 });

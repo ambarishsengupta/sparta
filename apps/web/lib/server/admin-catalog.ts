@@ -7,7 +7,9 @@ import { originAllowed } from './purge';
  * `caller` is the person's own session client (who they are, their role, the take-down function, which checks the role again); `admin` is the secret-key
  * client the route built after this module is handed it (it is never created here). Every call that gets past the checks writes ONE audit row
  * BEFORE it acts, through `app.write_admin_audit`: if the row cannot be written, nothing is done. A target is a row id or nothing; never free text. */
-export interface AdminDeps { caller: SupabaseClient; admin: SupabaseClient }
+/** Only the session and the schema-scoped builders are used here, so a client typed with the generated `Database` fits as well as an untyped one. */
+type Client = Pick<SupabaseClient, 'auth' | 'schema'>;
+export interface AdminDeps { caller: Client; admin: Client }
 const MAX_BODY = 20_000;
 const SOURCE_COLUMNS = 'id,name,site_url,robots_allowed,terms_note,allowed,checked_on,contact,last_collected_at,takedown_at,takedown_note';
 const REVIEW_COLUMNS = 'id,source_id,sku,name,brand,category,sub_type,colour_hex,price,currency,product_url';

@@ -30,3 +30,25 @@ describe('loadGateState', () => {
     await expect(loadGateState(client)).rejects.toThrow();
   });
 });
+
+// WO-0126: the client is now typed with the generated `Database`; these pin the cases where the database answers less than the types promise. None of them may open the gate.
+describe('loadGateState stays closed on missing rows, nulls and errors', () => {
+  it('no profile row at all is held (role none), never ready', async () => {
+    expect(await loadGateState(fake(user(), { profiles: null }, { has_consent: false }))).toBe('not_available');
+  });
+  it('a profile whose columns are null is held, never ready', async () => {
+    expect(await loadGateState(fake(user(), { profiles: { role: null, age_confirmed: null, country: null } }, { has_consent: true }))).not.toBe('ready');
+  });
+  it('a consent answer of null or false is not eligibility: a consumer with no accepted documents is not ready', async () => {
+    for (const has_consent of [null, false, undefined]) {
+      expect(await loadGateState(fake(user(), { profiles: { role: 'consumer', age_confirmed: true, country: 'IN' }, document_acceptances: [], consent_records: [] }, { has_consent }))).not.toBe('ready');
+    }
+  });
+  it('a missing list of accepted documents (null) counts as none accepted', async () => {
+    expect(await loadGateState(fake(user(), { profiles: { role: 'consumer', age_confirmed: true, country: 'IN' }, document_acceptances: null, consent_records: null }, { has_consent: false, public_setting: 'v1' }))).not.toBe('ready');
+  });
+  it('a failed consent call throws instead of guessing', async () => {
+    const client = { auth: { getUser: user() }, schema: () => ({ from: () => ({ select: () => ({ maybeSingle: () => ok({ role: 'consumer', age_confirmed: true, country: 'IN' }) }) }), rpc: () => Promise.resolve({ data: null, error: { message: 'x' } }) }) } as unknown as SupabaseClient;
+    await expect(loadGateState(client)).rejects.toThrow();
+  });
+});

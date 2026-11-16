@@ -28,7 +28,7 @@ export function blockedRepository(kind: FailureKind): WardrobeRepository {
   return { items: { ...collection, archive: fail, restore: fail }, outfits: collection, wishlist: { ...collection, bought: fail }, purchases, prices: { currency: fail, rates: fail }, catalogue: { page: fail, brands: fail, byGtin: fail } };
 }
 
-export async function selectRepository(backend: 'local' | 'supabase', makeClient: () => SupabaseClient, local: () => WardrobeRepository): Promise<WardrobeRepository> {
+export async function selectRepository(backend: 'local' | 'supabase', makeClient: () => Pick<SupabaseClient, 'auth' | 'schema'>, local: () => WardrobeRepository): Promise<WardrobeRepository> {
   if (backend !== 'supabase') return local();
   const client = makeClient();
   let state: GateState | null;

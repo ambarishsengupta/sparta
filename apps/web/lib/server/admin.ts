@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '../supabase/database.types';
 
 /**
  * THE ONLY MODULE THAT READS THE SUPABASE SECRET KEY (R5b decision after the WO-0070 review; LLD 6).
@@ -12,14 +13,14 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 /** True in a browser (or any page with a `window`); the check does not need the DOM types. */
 const inBrowser = (): boolean => typeof (globalThis as { window?: unknown }).window !== 'undefined';
 
-export function createAdminSupabase(): SupabaseClient {
+export function createAdminSupabase(): SupabaseClient<Database> {
   if (inBrowser()) throw new Error('The admin client is for the server only.');
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) throw new Error('The admin client is not configured.');
   // A publishable key (or anything else) put here by mistake would run with the wrong rights without any error; refuse it by its prefix.
   if (!key.startsWith('sb_secret_')) throw new Error('The admin client needs a secret key.');
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  return createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
 }
 
 /** True when a route can build the client (server side, URL and a secret key present). Never returns or logs the key. */

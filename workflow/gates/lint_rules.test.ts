@@ -67,8 +67,8 @@ describe('the project lint rules fire (eslint.config.js, WO-0123)', () => {
     for (const never of ['no-restricted-syntax', 'no-restricted-globals', '@typescript-eslint/no-restricted-imports', 'no-eval', 'no-console', '@typescript-eslint/no-explicit-any', '@typescript-eslint/ban-ts-comment']) {
       expect(rules.has(never), never).toBe(false);
     }
-    // The baseline may only shrink (WO-0125 emptied everything but the no-unsafe-* entries; WO-0126 removes those). Raise this number never; lower it as entries are fixed.
+    // The baseline may only shrink (WO-0125 emptied everything but the no-unsafe-* entries; WO-0126 removed those: it is empty). Raise this number never; lower it as entries are fixed.
     const total = Object.values(baseline).flatMap((r) => Object.values(r)).reduce((n, e) => n + e.count, 0);
-    expect(total).toBeLessThanOrEqual(13);
+    expect(total).toBeLessThanOrEqual(0);
   });
 });

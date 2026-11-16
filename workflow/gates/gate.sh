@@ -2,7 +2,7 @@
 # gate.sh: the deterministic final authority (G2). Every other approval defers to this script.
 # Exit 0 = work may be reported complete. Non-zero = not done, no exceptions.
 #
-# Stages, in order: typecheck, db_tests, worker_tests (pytest in the worker virtualenv; SKIPPED without it), collector_tests (pytest for jobs/collector, same virtualenv, local test server only; SKIPPED without it), test (with GATE_STRICT=1: workflow/gates/strict_tests.sh, which runs the live seed checks on their own and then the suites that need the demo insights), lint, web_containment (builds the web app with dummy secrets and scans the bundles; SKIPPED without Node), repo_lint (non-JavaScript lint: tracked files, H&M rows, Python, SQL, Docker, workflows, work items), db_lint (plpgsql checks against a baseline; SKIPPED without the local stack), manifest check, secret scan (BR-43), release map, goals check.
+# Stages, in order: typecheck, db_tests, types_drift (regenerates the database types from the freshly reset local database and fails when they differ from the committed apps/web/lib/supabase/database.types.ts; SKIPPED without the local stack), worker_tests (pytest in the worker virtualenv; SKIPPED without it), collector_tests (pytest for jobs/collector, same virtualenv, local test server only; SKIPPED without it), test (with GATE_STRICT=1: workflow/gates/strict_tests.sh, which runs the live seed checks on their own and then the suites that need the demo insights), lint, web_containment (builds the web app with dummy secrets and scans the bundles; SKIPPED without Node), repo_lint (non-JavaScript lint: tracked files, H&M rows, Python, SQL, Docker, workflows, work items), db_lint (plpgsql checks against a baseline; SKIPPED without the local stack), manifest check, secret scan (BR-43), release map, goals check.
 # db_tests runs before test so the vitest database checks see a freshly built database; it prints SKIPPED when
 # the local Supabase stack is not running.
 # GATE_STRICT=1: a stage that skipped a check fails the gate (required before a merge; see run_stage below).
@@ -50,6 +50,7 @@ run_stage() {
 run_stage "clean_dupes" bash workflow/gates/clean_dupes.sh
 run_stage "typecheck" npm run typecheck
 run_stage "db_tests" bash workflow/gates/db_tests.sh
+run_stage "types_drift" bash workflow/gates/types_drift.sh
 run_stage "worker_tests" bash workflow/gates/worker_tests.sh
 run_stage "collector_tests" bash workflow/gates/collector_tests.sh
 TEST_CMD=(npm test); [ "${GATE_STRICT:-0}" = "1" ] && TEST_CMD=(bash workflow/gates/strict_tests.sh)

@@ -26,7 +26,7 @@ export function itemPatch(patch: Partial<ItemInput>): Row {
   const row: Row = {};
   for (const [key, column] of Object.entries(ITEM_COLUMNS)) {
     const v = (patch as Row)[key];
-    if (v !== undefined) row[column] = Array.isArray(v) ? [...v] : v;
+    if (v !== undefined) row[column] = Array.isArray(v) ? v.slice() : v;
   }
   if (patch.rgb) [row.colour_r, row.colour_g, row.colour_b] = patch.rgb;
   if (patch.status === 'active') row.archived_at = null; // archiving sets archived_at in the repository, which has the clock

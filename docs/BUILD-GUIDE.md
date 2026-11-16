@@ -6,7 +6,7 @@
 | Version | 1.0, 2026-11-16 |
 | Owner | Ambarish Sengupta (product owner) |
 | Written by | The session model (Fable 5.2) on the product owner's instruction of 2026-11-16, as work order WO-0149 |
-| Basis | The run of 15 and 16 November 2026: WO-0128, WO-0125 and WO-0126 were built by Sonnet makers and checked by Opus; WO-0127 and WO-0149 were built directly by the session model |
+| Basis | The run of 15 and 16 November 2026: WO-0128, WO-0125 and WO-0126 were built by Sonnet makers and checked by Opus; WO-0127, WO-0149 and two parts of WO-0130 were built directly by the session model |
 | Companions | `docs/MVP-AGENT-WORKFLOW.md` (who does what, gates, standing rules), `docs/LINT-RULES.md` (what the lint stops) |
 
 ## 1. What this is
@@ -107,6 +107,7 @@ One independent check, one fix loop if needed (at most two), a re-check of the f
 | **Test support lives in `apps/web/test-support/`.** | A hook stand-in used only by tests was put in `components/` because that was the folder in scope (WO-0125). | Moved by WO-0149; say in the report when the scope forces a wrong home |
 | **Check the branch tip before cutting and before merging.** | Another session of the owner merged a course deliverable into the integration branch while this run was between work orders. | Section 2.2, check 4; the note in `workflow/STATE.md` |
 | **When a tool reports an error, look at the state before running it again.** | `gh issue close` returned an error twice after the issue had in fact closed; the board script stopped before writing the item list. The script is safe to run twice, and the second run finished the job. | Read the state (`gh issue view`), then re-run an idempotent script |
+| **Run the real thing once.** A unit test of your own function proves the function, not that the tool calls it the way you think. | WO-0130 made `next.config.ts` refuse a production build without accounts. Its nine unit tests passed, and then every real build was refused: Next calls the config function with its own second argument, which the first version took for the environment. One real build showed it in a minute. | A test for exactly that call; the `web_containment` stage builds for real |
 | **Keep a second copy from drifting.** When the same text must exist in two places, one place generates or tests the other. | The CI job needs the git-ignored password helpers, so their text now also lives in a committed generator. | The test compares the generator's output with the developer's copies byte for byte |
 
 ## 4. For the checker

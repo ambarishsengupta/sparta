@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
@@ -70,8 +71,20 @@ describe('the project lint rules fire (eslint.config.js, WO-0123)', () => {
     expect(await rulesFor(LIB, typed)).toEqual([]);
     const untyped = "import type { SupabaseClient } from '@supabase/supabase-js';\nexport type C = Pick<SupabaseClient, 'auth'>;\n";
     const config = readFileSync('eslint.config.js', 'utf8');
-    // the list of exceptions is empty: the configuration has no block that allows any module an untyped client
-    expect(config).not.toMatch(/still hold an untyped Supabase client/);
+    // the list of exceptions is empty: ESLint's computed configuration of EVERY tracked web-app source file (tests and test-support aside)
+    // holds the untyped-client selector at error, so an exception added for any module, in any wording, fails here
+    const SELECTOR = "TSTypeReference[typeName.name='SupabaseClient']:not([typeArguments])";
+    const sources = execSync("git ls-files 'apps/web/**/*.ts' 'apps/web/**/*.tsx'", { encoding: 'utf8' }).split('\n')
+      .filter((f) => f && !/\.test\.tsx?$/.test(f) && !f.startsWith('apps/web/test-support/'));
+    expect(sources.length).toBeGreaterThan(100);
+    const without: string[] = [];
+    for (const f of sources) {
+      const rule: unknown = (await eslint.calculateConfigForFile(f) as { rules?: Record<string, unknown> } | undefined)?.rules?.['no-restricted-syntax'];
+      const on = Array.isArray(rule) && (rule[0] === 2 || rule[0] === 'error') && rule.slice(1).some((o: unknown) => typeof o === 'object' && o !== null && (o as { selector?: unknown }).selector === SELECTOR);
+      if (!on) without.push(f);
+    }
+    expect(without).toEqual([]);
+    expect(config).toContain(SELECTOR);
     // the three modules WO-0150 typed refuse an untyped client like every other library module
     for (const p of ['apps/web/lib/supabase/repository.ts', 'apps/web/lib/supabase/backend.ts', 'apps/web/lib/server/admin-catalog.ts']) {
       expect(existsSync(p), p).toBe(true);

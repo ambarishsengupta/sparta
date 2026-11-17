@@ -14,7 +14,9 @@ fi
 limited() { if command -v timeout >/dev/null 2>&1; then timeout 180 "$@"; else perl -e 'alarm shift; exec @ARGV' 180 "$@"; fi; }
 err="$(mktemp "${TMPDIR:-/tmp}/sparta-db-lint.XXXXXX")" || exit 1
 trap '[ -n "${err:-}" ] && rm -f "$err"' EXIT
-out="$(limited supabase db lint --level warning 2>"$err" </dev/null)"; rc=$?
+# --output-format json is required: the CLI writes JSON on its own only when it sees an AI agent in the environment (CLAUDECODE,
+# AI_AGENT), so the gate passed in a Claude session and failed on every GitHub runner, which got text (found 2026-11-17).
+out="$(limited supabase db lint --level warning --output-format json 2>"$err" </dev/null)"; rc=$?
 if [ "$rc" -ne 0 ]; then
   echo "db_lint: FAIL, the database linter exited with status ${rc} (its last lines follow); nothing was checked."
   tail -n 15 "$err" | sed 's/^/  | /'

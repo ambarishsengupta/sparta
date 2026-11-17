@@ -21,11 +21,11 @@ describe('strict_tests.sh has three steps, in order', () => {
   });
   it('step 2 runs the seed checks file alone with SEED_LIVE=1', () => {
     const step2 = text.slice(at('strict_tests: 2/3'), at('strict_tests: 3/3'));
-    expect(step2).toMatch(new RegExp(`SEED_LIVE=1 limited \\d+ npx vitest run ${DB.replace(/\./g, '\\.')} \\|\\| rc=1`));
+    expect(step2).toMatch(new RegExp(`SEED_LIVE=1 limited \\d+ npx vitest run --reporter=dot ${DB.replace(/\./g, '\\.')} \\|\\| rc=1`));
     expect(step2).not.toContain('--exclude');
   });
   it('step 3 runs the two vendor suites and SEED_LIVE is set nowhere else', () => {
-    expect(text.slice(at('strict_tests: 3/3'))).toContain('npx vitest run "${SEEDED[@]}"');
+    expect(text.slice(at('strict_tests: 3/3'))).toContain('npx vitest run --reporter=dot "${SEEDED[@]}"');
     expect(text.match(/SEED_LIVE=1/g)?.length).toBe(2); // one in the header comment, one in step 2
     expect(lineOf('SEED_LIVE=1 limited')).toContain(DB);
   });
@@ -46,5 +46,14 @@ describe('the script keeps its guards', () => {
 describe('gate.sh', () => {
   it('uses strict_tests.sh for the test stage when GATE_STRICT=1', () => {
     expect(gate).toContain('TEST_CMD=(npm test); [ "${GATE_STRICT:-0}" = "1" ] && TEST_CMD=(bash workflow/gates/strict_tests.sh)');
+  });
+});
+
+describe('strict_tests.sh output (2026-11-17)', () => {
+  it('runs every vitest call with the dot reporter, so no passing test title reaches the gate log', () => {
+    const code = readFileSync('workflow/gates/strict_tests.sh', 'utf8').split('\n').filter((l) => !l.trimStart().startsWith('#'));
+    const runs = code.filter((l) => l.includes('npx vitest run'));
+    expect(runs).toHaveLength(3);
+    for (const l of runs) expect(l).toContain('npx vitest run --reporter=dot ');
   });
 });

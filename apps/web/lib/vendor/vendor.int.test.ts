@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { deleteQueryLogOf } from '../../test-support/ops-rows';
 import { cleanup, discover, lockStack, makeReady, provisionUser, sql } from '../../test-support/stack';
 import { decideRoute } from '../supabase/gate';
 import { loadGateState } from '../supabase/gate-state';
@@ -32,7 +33,7 @@ describe.skipIf(!stack)('vendor access against the real stack', () => {
     sql(`update app.profiles set role = 'vendor' where id = :'u'; with v as (insert into catalog.vendors (name) values (:'n') returning id) insert into catalog.vendor_members (vendor_id, user_id) select id, :'u' from v`, { u: vicId, n: `IT Vendor ${run}` });
   });
   afterAll(async () => {
-    try { sql(`delete from catalog.vendors where name = :'n'`, { n: `IT Vendor ${run}` }); await cleanup(stack!, Object.values(email), mailIds); } finally { unlock?.(); }
+    try { sql(`delete from catalog.vendors where name = :'n'`, { n: `IT Vendor ${run}` }); await cleanup(stack!, Object.values(email), mailIds); } finally { try { deleteQueryLogOf([vicId]); } finally { unlock?.(); } }
   });
 
   it('a vendor without the agreement is held at /vendor/agreement and the functions refuse it', async () => {

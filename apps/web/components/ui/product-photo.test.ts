@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { a11yProblems } from '../../test-support/a11y';
-import { catalogueFromRow, hmPhotoId, sourceNameOf } from '../../lib/catalogue';
+import { CATALOGUE_SELECT, catalogueFromRow, hmPhotoId } from '../../lib/catalogue';
 import { itemFromRow } from '../../lib/supabase/mapping';
 import { CatalogueTile } from '../catalogue/CatalogueView';
 import { ItemCard } from '../wardrobe/WardrobeList';
@@ -13,17 +13,18 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: () => undefined })
 const html = (el: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(el);
 const ID = '0990000001';
 const row = { id: '5c1b3b52-0000-4000-8000-000000000002', name: 'Zzyx tee', brand: 'H&M', category: 'Tops', sub_type: 'T-shirt', colour_hex: '#111111', colour_family: 'Black', seasons: [], occasions: [], sizes_available: [], product_url: 'x' };
-const hm = catalogueFromRow({ ...row, sku: ID, product_url: `http://127.0.0.1/hm-demo/${ID}` })!;
-const other = catalogueFromRow({ ...row, sku: ID, product_url: 'https://example.test/p' })!;
+const hm = catalogueFromRow({ ...row, sku: ID, product_url: `http://127.0.0.1/hm-demo/${ID}`, sources: { name: 'hm-demo' } })!;
+const other = catalogueFromRow({ ...row, sku: ID, product_url: 'https://example.test/p', sources: { name: 'other-shop' } })!;
 
 describe('the catalogue row knows its sku and source (WO-0121)', () => {
-  it('names the hm-demo source only for the loader\'s local address and the same sku', () => {
+  it('takes the source name from the embedded source, never from the shape of the product link', () => {
     expect(hm).toMatchObject({ sku: ID, source: 'hm-demo' });
-    expect(other.sku).toBe(ID);
-    expect(other.source).toBeUndefined();
-    expect(sourceNameOf(ID, `http://127.0.0.1/hm-demo/0990000002`)).toBeUndefined();
-    expect(sourceNameOf(ID, `http://example.test/hm-demo/${ID}`)).toBeUndefined();
-    expect(sourceNameOf(ID, 'not a url')).toBeUndefined();
+    expect(other).toMatchObject({ sku: ID, source: 'other-shop' });
+    // a link in the loader's local shape without an embedded source (or with an empty or malformed one) names no source
+    for (const sources of [undefined, null, {}, { name: '' }, { name: 7 }, [{ name: 'hm-demo' }], 'hm-demo']) {
+      expect(catalogueFromRow({ ...row, sku: ID, product_url: `http://127.0.0.1/hm-demo/${ID}`, sources })!.source).toBeUndefined();
+    }
+    expect(CATALOGUE_SELECT).toContain('sources(name)');
   });
   it('gives a photo id only for the hm-demo source and a 10-digit sku', () => {
     expect(hmPhotoId(hm.sku, hm.source)).toBe(ID);

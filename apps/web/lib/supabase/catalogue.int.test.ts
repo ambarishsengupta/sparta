@@ -102,10 +102,18 @@ describe.skipIf(!stack)('the catalogue against the real stack and the demo seed'
     expect(after.rows.length).toBeGreaterThan(0);
     expect(after.rows.map((r) => r.id)).not.toContain(hit[0]!.id);
   });
-  it('a consumer cannot change the catalogue and the source register is not reachable with the session', async () => {
+  it('every catalogue row carries the real name of its source, read with the consumer\'s own session (WO-0130 part 4)', async () => {
+    const { rows } = await all(A);
+    expect(rows.filter((r) => r.sku?.startsWith('IT-')).map((r) => r.source)).toEqual(Array(45).fill(source));
+    expect(rows.every((r) => typeof r.source === 'string' && r.source !== '')).toBe(true);
+  });
+  it('a consumer cannot change the catalogue and reads id and name of the source register, nothing else', async () => {
     const tbl = (A as unknown as { client: SupabaseClient }).client;
     expect((await tbl.schema('catalog').from('catalog_items').update({ name: 'x' }).eq('source_id', sourceId).select('id')).data ?? []).toEqual([]);
-    expect((await tbl.schema('catalog').from('sources').select('id')).error).not.toBeNull();
+    const names = (await tbl.schema('catalog').from('sources').select('id,name')).data ?? [];
+    expect(names.map((n) => n.name)).toContain(source);
+    for (const column of ['site_url', 'terms_note', 'contact', 'takedown_note', '*']) expect((await tbl.schema('catalog').from('sources').select(column)).error, column).not.toBeNull();
+    expect((await tbl.schema('catalog').from('sources').update({ name: 'x' }).eq('id', sourceId).select('id')).data ?? []).toEqual([]);
   });
   it('saves a catalogue item as origin catalogue with its link, brand, size, name and a purchase; it survives take-down with its attributes', async () => {
     const pick = (await A.catalogue.page({ ...NO_CATALOGUE_FILTER, q: 'Zz Test item 007' })).rows[0]!;

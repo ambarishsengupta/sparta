@@ -41,6 +41,22 @@ describe('catalogueFromRow (FR-21)', () => {
   });
 });
 
+describe('the source name comes from the embedded source (WO-0130 part 4)', () => {
+  it('is read from sources.name and from nothing else, whatever the link looks like', () => {
+    const local = { sku: '0990000001', product_url: 'http://127.0.0.1/hm-demo/0990000001' };
+    expect(catalogueFromRow(row({ ...local, sources: { name: 'Some Shop' } }))!.source).toBe('Some Shop');
+    expect(catalogueFromRow(row({ ...local }))!.source).toBeUndefined();
+    expect(catalogueFromRow(row({ ...local, sources: null }))!.source).toBeUndefined();
+    expect(catalogueFromRow(row({ ...local, sources: [{ name: 'Some Shop' }] }))!.source).toBeUndefined();
+    expect(catalogueFromRow(row({ sources: { name: 'Some Shop' } }))!.source).toBe('Some Shop');
+  });
+  it('the catalogue reads ask for the name through the foreign key and no other source column', () => {
+    expect(CATALOGUE_SELECT).toContain(',sources(name)');
+    expect(CATALOGUE_SELECT).not.toMatch(/sources\((?!name\))/);
+    expect(CATALOGUE_SELECT).not.toMatch(/site_url|terms_note|takedown|contact/);
+  });
+});
+
 describe('sourceLink: https only (FR-24)', () => {
   it('gives the address for https and nothing for anything else', () => {
     expect(sourceLink('https://example.test/p?id=1')).toBe('https://example.test/p?id=1');

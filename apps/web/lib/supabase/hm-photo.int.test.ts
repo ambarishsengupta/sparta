@@ -18,7 +18,9 @@ describe.skipIf(!stack)('the H&M demo photograph id against the real stack', () 
   const email = `it-${run}-hm@example.test`;
   const pw = randomBytes(12).toString('base64url');
   const mailIds: string[] = [];
-  const source = `it-hm-${run}`;
+  const source = 'hm-demo';   // the real source name is what marks a photograph row now (WO-0130 part 4); the other row sits in a source of another name
+  const otherSource = `it-other-${run}`;
+  let sourceId = ''; let otherId = '';
   let A: SupabaseRepository; let unlock: (() => void) | undefined;
   const make = (name: string, extra: Partial<ItemInput>): Promise<{ id: string }> => A.items.create({
     name, category: 'Tops', subType: 'T-shirt', rgb: [10, 20, 30], hex: '#0A141E', colourFamily: 'Black', fit: null, material: null, pattern: null, seasons: [], occasions: [],
@@ -29,22 +31,24 @@ describe.skipIf(!stack)('the H&M demo photograph id against the real stack', () 
     const user = (await provisionUser(stack!, email, pw, mailIds)) as SupabaseClient;
     await makeReady(user, 'IN');
     A = new SupabaseRepository(user);
-    const sid = sql(`insert into catalog.sources (name, site_url, robots_allowed, terms_note, allowed, checked_on) values (:'n', 'http://127.0.0.1/', false, 'SYNTHETIC test source', false, current_date) returning id`, { n: source }).split('\n')[0]!;
+    sourceId = sql(`insert into catalog.sources (name, site_url, robots_allowed, terms_note, allowed, checked_on) values (:'n', 'http://127.0.0.1/', false, 'SYNTHETIC test source', false, current_date) returning id`, { n: source }).split('\n')[0]!;
+    otherId = sql(`insert into catalog.sources (name, site_url, robots_allowed, terms_note, allowed, checked_on) values (:'n', 'http://127.0.0.1/', false, 'SYNTHETIC test source', false, current_date) returning id`, { n: otherSource }).split('\n')[0]!;
+    const [sid, oid] = [sourceId, otherId];
     sql(`insert into catalog.catalog_items (source_id, sku, name, brand, category, sub_type, colour_r, colour_g, colour_b, status, product_url)
          values (:'sid', '0990000001', 'Zzyx demo tee', 'Zzbrand', 'Tops', 'T-shirt', 10, 20, 30, 'active', 'http://127.0.0.1/hm-demo/0990000001'),
-                (:'sid', '0990000002', 'Zzyx other tee', 'Zzbrand', 'Tops', 'T-shirt', 10, 20, 30, 'active', 'https://example.test/p/2')`, { sid });
+                (:'oid', '0990000002', 'Zzyx other tee', 'Zzbrand', 'Tops', 'T-shirt', 10, 20, 30, 'active', 'http://127.0.0.1/hm-demo/0990000002')`, { sid, oid });
   });
   afterAll(async () => {
     try {
       sql(`delete from app.items where user_id in (select id from auth.users where email = :'e')`, { e: email });
-      sql(`delete from catalog.sources where name = :'n'`, { n: source });
+      sql(`delete from catalog.sources where id in (:'a', :'b')`, { a: sourceId, b: otherId });
       await cleanup(stack!, [email], mailIds);
     } finally { unlock?.(); }
   });
 
   it('exposes sku and the source of a catalogue row, and gives photoId only to items made from the demo-source row', async () => {
     const rows = (await A.catalogue.page({ ...NO_CATALOGUE_FILTER, q: 'Zzyx' })).rows;
-    expect(rows.map((r) => [r.sku, r.source])).toEqual([['0990000001', 'hm-demo'], ['0990000002', undefined]]);
+    expect(rows.map((r) => [r.sku, r.source])).toEqual([['0990000001', 'hm-demo'], ['0990000002', otherSource]]);
     const [demo, other] = rows;
     const fromDemo = await make('From demo row', { catalogue: { id: demo!.id, brand: demo!.brand, sizeValue: 'M' } });
     const fromOther = await make('From other row', { catalogue: { id: other!.id, brand: other!.brand, sizeValue: 'M' } });
@@ -60,7 +64,7 @@ describe.skipIf(!stack)('the H&M demo photograph id against the real stack', () 
   it('after the source is removed the item keeps working and shows no photograph', async () => {
     const [demo] = (await A.catalogue.page({ ...NO_CATALOGUE_FILTER, q: 'Zzyx demo' })).rows;
     const kept = await make('Kept demo item', { catalogue: { id: demo!.id, brand: demo!.brand, sizeValue: null } });
-    sql(`delete from catalog.sources where name = :'n'`, { n: source });
+    sql(`delete from catalog.sources where id = :'id'`, { id: sourceId });
     expect((await A.items.get(kept.id))!.photoId).toBeUndefined();
   });
 });

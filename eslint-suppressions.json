@@ -1,2 +1,447 @@
 {
+  "apps/web/components/account/SettingsForm.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "apps/web/components/account/a11y.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    },
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "apps/web/components/admin/AdminCatalog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "apps/web/components/auth/a11y.test.ts": {
+    "regexp/no-dupe-disjunctions": {
+      "count": 2
+    }
+  },
+  "apps/web/components/catalogue/BarcodeScanner.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "apps/web/components/catalogue/CatalogueView.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "apps/web/components/catalogue/a11y.test.ts": {
+    "regexp/no-contradiction-with-assertion": {
+      "count": 1
+    },
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/components/consent/OnboardingForm.tsx": {
+    "react-hooks/refs": {
+      "count": 3
+    }
+  },
+  "apps/web/components/consent/a11y.test.ts": {
+    "regexp/match-any": {
+      "count": 1
+    },
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/components/contrast.test.ts": {
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "apps/web/components/design-rules.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 10
+    },
+    "regexp/no-useless-character-class": {
+      "count": 1
+    }
+  },
+  "apps/web/components/design.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 3
+    }
+  },
+  "apps/web/components/legal/Markdown.tsx": {
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "apps/web/components/legal/markdown-time.test.ts": {
+    "regexp/no-super-linear-backtracking": {
+      "count": 2
+    }
+  },
+  "apps/web/components/legal/markdown.test.ts": {
+    "regexp/no-super-linear-backtracking": {
+      "count": 5
+    },
+    "regexp/no-unused-capturing-group": {
+      "count": 11
+    },
+    "regexp/use-ignore-case": {
+      "count": 2
+    }
+  },
+  "apps/web/components/outfits/outfits.test.ts": {
+    "regexp/no-contradiction-with-assertion": {
+      "count": 3
+    },
+    "regexp/no-unused-capturing-group": {
+      "count": 4
+    }
+  },
+  "apps/web/components/purchases/PurchasesView.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "apps/web/components/ui/ProductPhoto.tsx": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/components/ui/illustrations/colour.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/components/ui/illustrations/illustrations.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    },
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "apps/web/components/vendor/Dashboard.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 3
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "apps/web/components/vendor/Gaps.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "apps/web/components/vendor/dashboard.test.ts": {
+    "regexp/match-any": {
+      "count": 1
+    }
+  },
+  "apps/web/components/vendor/vendor-portal.test.ts": {
+    "regexp/match-any": {
+      "count": 1
+    }
+  },
+  "apps/web/components/wardrobe/WardrobeList.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "apps/web/components/wardrobe/a11y.test.ts": {
+    "regexp/no-contradiction-with-assertion": {
+      "count": 1
+    },
+    "regexp/no-super-linear-backtracking": {
+      "count": 1
+    },
+    "regexp/no-unused-capturing-group": {
+      "count": 3
+    }
+  },
+  "apps/web/components/wardrobe/photo.int.test.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/components/wardrobe/photo.test.ts": {
+    "regexp/prefer-w": {
+      "count": 1
+    },
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/admin-catalog.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/auth-form.ts": {
+    "regexp/no-super-linear-backtracking": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/catalogue.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    },
+    "regexp/use-ignore-case": {
+      "count": 2
+    }
+  },
+  "apps/web/lib/demo-hm.test.ts": {
+    "regexp/prefer-d": {
+      "count": 3
+    }
+  },
+  "apps/web/lib/demo-hm.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/gtin.test.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/gtin.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/image-prep.test.ts": {
+    "regexp/no-useless-character-class": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/item-form.ts": {
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/markdown.ts": {
+    "regexp/no-obscure-range": {
+      "count": 4
+    },
+    "regexp/prefer-w": {
+      "count": 2
+    },
+    "regexp/use-ignore-case": {
+      "count": 2
+    }
+  },
+  "apps/web/lib/photo-flow.ts": {
+    "regexp/prefer-w": {
+      "count": 1
+    },
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/pilot-config.ts": {
+    "regexp/no-super-linear-backtracking": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/purchase-form.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/purchases.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/server/admin-catalog.int.test.ts": {
+    "regexp/no-empty-alternative": {
+      "count": 1
+    },
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/server/build-output.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 2
+    },
+    "regexp/prefer-d": {
+      "count": 1
+    },
+    "regexp/prefer-w": {
+      "count": 3
+    }
+  },
+  "apps/web/lib/server/hm-demo.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/server/hm-demo.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/server/limits.ts": {
+    "regexp/negation": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/server/purge.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/server/purge.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    },
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/server/signed-urls.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/server/storage.int.test.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/supabase/barcode.int.test.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/supabase/gate-pages.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/supabase/gate.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/supabase/mapping.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    },
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/supabase/repository.ts": {
+    "regexp/prefer-d": {
+      "count": 1
+    }
+  },
+  "apps/web/lib/supabase/source.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 10
+    },
+    "regexp/prefer-w": {
+      "count": 2
+    }
+  },
+  "apps/web/lib/vendor/insights.test.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 2
+    }
+  },
+  "apps/web/lib/wishlist-plan.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "apps/web/test-support/a11y.ts": {
+    "regexp/no-contradiction-with-assertion": {
+      "count": 3
+    },
+    "regexp/no-super-linear-backtracking": {
+      "count": 2
+    },
+    "regexp/no-unused-capturing-group": {
+      "count": 4
+    }
+  },
+  "apps/web/test-support/imports.ts": {
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    }
+  },
+  "packages/rules/src/browser-safe.test.ts": {
+    "regexp/no-super-linear-backtracking": {
+      "count": 1
+    },
+    "regexp/no-useless-non-capturing-group": {
+      "count": 1
+    }
+  },
+  "packages/taxonomy/src/colour/convert.ts": {
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "supabase/scripts/demo-data.test.ts": {
+    "regexp/no-contradiction-with-assertion": {
+      "count": 1
+    },
+    "regexp/no-dupe-characters-character-class": {
+      "count": 2
+    },
+    "regexp/no-unused-capturing-group": {
+      "count": 1
+    },
+    "regexp/prefer-d": {
+      "count": 2
+    },
+    "regexp/prefer-w": {
+      "count": 1
+    },
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "supabase/scripts/seed-demo-catalog.test.ts": {
+    "regexp/no-dupe-characters-character-class": {
+      "count": 1
+    }
+  },
+  "supabase/scripts/seed-demo-insights.test.ts": {
+    "regexp/no-dupe-characters-character-class": {
+      "count": 1
+    },
+    "regexp/prefer-d": {
+      "count": 1
+    },
+    "regexp/prefer-w": {
+      "count": 1
+    },
+    "regexp/use-ignore-case": {
+      "count": 1
+    }
+  },
+  "workflow/gates/ci_role_password_scripts.test.ts": {
+    "regexp/no-super-linear-backtracking": {
+      "count": 1
+    }
+  },
+  "workflow/gates/db_tests.test.ts": {
+    "regexp/no-contradiction-with-assertion": {
+      "count": 1
+    },
+    "regexp/no-unused-capturing-group": {
+      "count": 3
+    },
+    "regexp/no-useless-flag": {
+      "count": 1
+    }
+  }
 }

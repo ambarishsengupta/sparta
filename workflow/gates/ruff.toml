@@ -1,0 +1,44 @@
+# ruff configuration for the py_lint gate stage (WO-0129). Pass it with --config; run it with workflow/gates/py_lint.sh.
+# Rule sets: pyflakes (F), flake8-bugbear (B), flake8-bandit (S). Every finding is an error; py_lint.sh passes --ignore-noqa, so a
+# `# noqa` comment switches nothing off. Findings that existed when the rules were added are listed per file below (the rule codes that
+# fire in that file). py_lint.test.ts counts them per file with exact numbers: the list may only shrink (docs/LINT-RULES.md).
+# Never add a line here by hand; a work order removes lines.
+target-version = "py311"
+line-length = 120
+respect-gitignore = true
+
+[lint]
+select = ["F", "B", "S"]
+
+[lint.per-file-ignores]
+"jobs/collector/collector/extract.py" = ["S314"]
+"jobs/collector/collector/fetcher.py" = ["S310"]
+"jobs/collector/collector/mapping.py" = ["F841"]
+"jobs/collector/tests/conftest.py" = ["S603", "S607"]
+"jobs/collector/tests/test_extract.py" = ["S101"]
+"jobs/collector/tests/test_fetcher.py" = ["B905", "S101"]
+"jobs/collector/tests/test_guard.py" = ["F401", "S101"]
+"jobs/collector/tests/test_mapping.py" = ["S101"]
+"jobs/collector/tests/test_run_db.py" = ["S101", "S603"]
+"jobs/collector/tests/test_store.py" = ["S101"]
+"ml/recommendation-engine/garment/export_onnx.py" = ["B905", "S101"]
+"ml/recommendation-engine/pairing/build_prior.py" = ["F541", "F841"]
+"ml/recommendation-engine/pairing/tests/test_maps_and_cleaning.py" = ["F401"]
+"ml/recommendation-engine/pairing/tests/test_validate_env_build.py" = ["S603"]
+"services/worker/scripts/e2e_local.py" = ["S101", "S104", "S603", "S607"]
+"services/worker/tests/conftest.py" = ["S603", "S607", "S608"]
+"services/worker/tests/test_app_and_background.py" = ["S101"]
+"services/worker/tests/test_config.py" = ["S101"]
+"services/worker/tests/test_db.py" = ["F401", "S101"]
+"services/worker/tests/test_handler.py" = ["F401", "S101"]
+"services/worker/tests/test_images.py" = ["S101"]
+"services/worker/tests/test_loop_fakes.py" = ["F401", "F841", "S101"]
+"services/worker/tests/test_preprocess_and_garment.py" = ["S101"]
+"services/worker/tests/test_storage_urls.py" = ["S101"]
+"services/worker/worker/handler.py" = ["B007"]
+"services/worker/worker/storage.py" = ["F841"]
+"workflow/demo/hm/load_hm_demo_catalog.py" = ["S311", "S603", "S608"]
+"workflow/demo/hm/tests/test_load_hm_demo_catalog.py" = ["S101", "S603", "S607"]
+"workflow/gates/repo_lint.py" = ["S603", "S607"]
+"workflow/github/setup_github_project.py" = ["S603", "S607"]
+"workflow/github/sync_github_project.py" = ["S603", "S607"]

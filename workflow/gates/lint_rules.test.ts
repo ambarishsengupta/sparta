@@ -40,6 +40,9 @@ const CASES: [name: string, path: string, code: string, rule: string][] = [
   ['the engine reads the environment', 'packages/taxonomy/src/index.ts', 'export const e = process.env;\n', 'no-restricted-globals'],
   ['dynamic code', SCRIPT, "export const r = eval('1');\n", 'no-eval'],
   ['a type-check suppression', LIB, '// @ts-ignore\nexport const n: number = 1;\n', '@typescript-eslint/ban-ts-comment'],
+  // WO-0129: one sample per new plugin. eslint-plugin-jsx-a11y 6.10.2 has no sample because npm refuses it next to ESLint 10 (docs/LINT-RULES.md).
+  ['an effect reads a prop that is not in its dependency list (eslint-plugin-react-hooks)', COMPONENT, "import { useEffect, useState } from 'react';\nexport function C({ n }: { n: number }) {\n  const [v, setV] = useState(0);\n  useEffect(() => { setV(n); }, []);\n  return <i>{v}</i>;\n}\n", 'react-hooks/exhaustive-deps'],
+  ['a regular expression that backtracks exponentially (eslint-plugin-regexp)', LIB, "export const words = (s: string): boolean => /^(\\w+\\s?)*$/.test(s);\n", 'regexp/no-super-linear-backtracking'],
 ];
 
 describe('the project lint rules fire (eslint.config.js, WO-0123)', () => {
@@ -82,15 +85,43 @@ describe('the project lint rules fire (eslint.config.js, WO-0123)', () => {
     expect(await rulesFor(WEB_TEST, untyped)).toEqual([]);
   }, 120_000);
 
-  it('the baseline exists, names only known rules, and holds no boundary rule (those have no exceptions)', () => {
+  it('the baseline exists, names only the new plugins\' rules, and holds no boundary rule (those have no exceptions)', () => {
     expect(existsSync('eslint-suppressions.json')).toBe(true);
     const baseline = JSON.parse(readFileSync('eslint-suppressions.json', 'utf8')) as Record<string, Record<string, { count: number }>>;
     const rules = new Set(Object.values(baseline).flatMap((r) => Object.keys(r)));
     for (const never of ['no-restricted-syntax', 'no-restricted-globals', '@typescript-eslint/no-restricted-imports', 'no-eval', 'no-console', '@typescript-eslint/no-explicit-any', '@typescript-eslint/ban-ts-comment']) {
       expect(rules.has(never), never).toBe(false);
     }
-    // The baseline may only shrink (WO-0125 emptied everything but the no-unsafe-* entries; WO-0126 removed those: it is empty). Raise this number never; lower it as entries are fixed.
-    const total = Object.values(baseline).flatMap((r) => Object.values(r)).reduce((n, e) => n + e.count, 0);
-    expect(total).toBeLessThanOrEqual(0);
+    // WO-0129: only the rules of eslint-plugin-react-hooks and eslint-plugin-regexp are baselined (WO-0125 and WO-0126 emptied every older rule).
+    for (const rule of rules) expect(rule, rule).toMatch(/^(react-hooks|regexp)\//);
+  });
+
+  it('the baseline may only shrink: its counts per rule are exact (lower a number when a finding is fixed; never raise one)', () => {
+    const baseline = JSON.parse(readFileSync('eslint-suppressions.json', 'utf8')) as Record<string, Record<string, { count: number }>>;
+    const perRule: Record<string, number> = {};
+    for (const entry of Object.values(baseline)) for (const [rule, { count }] of Object.entries(entry)) perRule[rule] = (perRule[rule] ?? 0) + count;
+    // Counted on 2026-11-17 when WO-0129 added the two plugins (npx eslint . --suppress-all): 177 findings in 68 files.
+    expect(perRule).toEqual({
+      'react-hooks/exhaustive-deps': 3,
+    'react-hooks/refs': 6,
+    'react-hooks/set-state-in-effect': 8,
+    'regexp/match-any': 3,
+    'regexp/negation': 1,
+    'regexp/no-contradiction-with-assertion': 10,
+    'regexp/no-dupe-characters-character-class': 4,
+    'regexp/no-dupe-disjunctions': 2,
+    'regexp/no-empty-alternative': 1,
+    'regexp/no-obscure-range': 4,
+    'regexp/no-super-linear-backtracking': 14,
+    'regexp/no-unused-capturing-group': 67,
+    'regexp/no-useless-character-class': 2,
+    'regexp/no-useless-flag': 1,
+    'regexp/no-useless-non-capturing-group': 1,
+    'regexp/prefer-d': 22,
+    'regexp/prefer-w': 11,
+    'regexp/use-ignore-case': 17
+    });
+    expect(Object.values(perRule).reduce((n, c) => n + c, 0)).toBe(177);
+    expect(Object.keys(baseline)).toHaveLength(68);
   });
 });

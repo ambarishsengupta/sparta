@@ -4,8 +4,11 @@ import { hostableConfigProblem, hostableDemoFlag } from './lib/supabase/config';
 
 // The workspace packages ship TypeScript source and import it with `.js` suffixes (NodeNext style), so Next compiles
 // them and webpack maps `./x.js` to `./x.ts`. Turbopack has no such alias yet, hence `--webpack` in the scripts.
-// Response headers for every route (WO-0053, partial hardening). The Content-Security-Policy is deliberately partial: it stops framing, form
-// posts to other sites, a changed base URL and plugins. A full policy with a script-src nonce is LATER work (see workflow/evidence/R2b/NOTES.md).
+// Response headers for every route (WO-0053, partial hardening). The Content-Security-Policy HERE is deliberately the static part: it stops framing, form
+// posts to other sites, a changed base URL and plugins, and it is the only policy the local no-login demo gets. The full policy, with a script-src nonce
+// that is new for every request, is set by proxy.ts for a build with accounts (WO-0130); a header in this file can not hold a per-request value.
+// On a response that went through the proxy, the proxy's policy is the one sent (seen with curl against `next start`: one Content-Security-Policy header, the
+// proxy's, which repeats these four directives); this one stays as it is and must never gain a script-src.
 const SECURITY_HEADERS = [
   { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'" },
   { key: 'X-Frame-Options', value: 'DENY' },

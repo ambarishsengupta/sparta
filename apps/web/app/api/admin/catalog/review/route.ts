@@ -1,5 +1,5 @@
 import { createAdminSupabase } from '../../../../../lib/server/admin';
-import { decideReview, listReview } from '../../../../../lib/server/admin-catalog';
+import { adminLimit, decideReview, listReview } from '../../../../../lib/server/admin-catalog';
 import { fail } from '../../../../../lib/server/api';
 import { dataBackend } from '../../../../../lib/supabase/config';
 import { createServerSupabase } from '../../../../../lib/supabase/server';
@@ -7,7 +7,7 @@ import { createServerSupabase } from '../../../../../lib/supabase/server';
 /** LLD 6 `/api/admin/catalog/review`: the review queue (FR-102). */
 async function deps() {
   if (dataBackend() !== 'supabase') return null;
-  try { return { caller: await createServerSupabase(), admin: createAdminSupabase() }; } catch { return undefined; }
+  try { const admin = createAdminSupabase(); return { caller: await createServerSupabase(), admin, limit: adminLimit(admin) }; } catch { return undefined; }
 }
 export async function GET(request: Request): Promise<Response> { const d = await deps(); return d === null ? new Response(null, { status: 404 }) : d ? listReview(request, d) : fail('unavailable'); }
 export async function POST(request: Request): Promise<Response> { const d = await deps(); return d === null ? new Response(null, { status: 404 }) : d ? decideReview(request, d) : fail('unavailable'); }

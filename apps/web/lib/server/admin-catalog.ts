@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/database.types';
 import { mayAllow, parseReview, parseSource, parseTakedown, sourceIdOf } from '../admin-catalog';
 import { fail, ok } from './api';
+import { makeLimiter, rateRpcOf, routeLimit, type RouteLimit } from './limits';
 import { originAllowed } from './purge';
 
 /** The admin catalogue routes of LLD 6 (WO-0088, FR-100 to FR-103): the source register, take-down and the review queue.
@@ -10,7 +11,15 @@ import { originAllowed } from './purge';
  * BEFORE it acts, through `app.write_admin_audit`: if the row cannot be written, nothing is done. A target is a row id or nothing; never free text. */
 /** Only the session and the schema-scoped builders are used here, so a client typed with the generated `Database` fits as well as an untyped one. */
 type Client = Pick<SupabaseClient<Database>, 'auth' | 'schema'>;
-export interface AdminDeps { caller: Client; admin: Client }
+/** WO-0130: `limit` is the per-process brake and the shared (database) count. Optional only so the existing fake-client and live-database tests of the checks need no limiter;
+ * the three admin routes always pass it (pinned by limits-shared.test.ts). */
+export interface AdminDeps { caller: Client; admin: Client; limit?: RouteLimit }
+/** WO-0130: at most this many admin calls per administrator in this many seconds, counted in the database (every instance); and the per-process brake over all callers. */
+export const ADMIN_LIMIT = { max: 120, windowSeconds: 60 } as const;
+export const ADMIN_BRAKE = { max: 300, windowMs: 60_000 } as const;
+const adminBrake = makeLimiter(ADMIN_BRAKE.max, ADMIN_BRAKE.windowMs);
+/** The limit for the admin routes, built per request from the secret-key client (the brake itself lives in this module, once per process). */
+export const adminLimit = (admin: Parameters<typeof rateRpcOf>[0]): RouteLimit => routeLimit(adminBrake, rateRpcOf(admin), ADMIN_LIMIT);
 const MAX_BODY = 20_000;
 const SOURCE_COLUMNS = 'id,name,site_url,robots_allowed,terms_note,allowed,checked_on,contact,last_collected_at,takedown_at,takedown_note';
 const REVIEW_COLUMNS = 'id,source_id,sku,name,brand,category,sub_type,colour_hex,price,currency,product_url';
@@ -25,7 +34,13 @@ async function adminId(request: Request, d: AdminDeps, mutating: boolean): Promi
   if (who.error || !who.data.user) return fail('not_signed_in');
   const role = await d.caller.schema('app').rpc('current_role');
   if (role.error) return fail('server_error');
-  return role.data === 'admin' ? who.data.user.id : fail('forbidden');
+  if (role.data !== 'admin') return fail('forbidden');
+  // The per-process brake and the shared count run only now, for a VERIFIED administrator: a caller with no session (the proxy lets /api/admin through without one) or
+  // without the role must not be able to use up a budget the real administrator needs.
+  if (d.limit && !d.limit.brake()) return fail('rate_limited');
+  // Counted per verified administrator, before the audit row and before anything is read or written. An unreadable count closes the route (503).
+  if (d.limit) { try { if (!(await d.limit.count(`admin:${who.data.user.id}`))) return fail('rate_limited'); } catch { return fail('unavailable'); } }
+  return who.data.user.id;
 }
 // The generated type of p_target is `string | undefined`, but the SQL parameter takes null (a list or create has no target), so null is still sent.
 const audit = async (d: AdminDeps, id: string, action: string, target: string | null): Promise<boolean> =>

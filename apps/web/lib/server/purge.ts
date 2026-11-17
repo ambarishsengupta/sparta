@@ -1,4 +1,5 @@
 import { fail, ok, UUID, type StorageLike } from './api';
+import type { RouteLimit } from './limits';
 
 /** `/api/account/purge-storage` (LLD 6, FR-63): removes every object the caller has in every bucket, through the Storage API, so the file
  * bytes go and not only the rows (the WO-0070 review's MAJOR-1). Only the caller's own folder `<user id>/` is ever listed or removed; the id comes
@@ -14,6 +15,8 @@ export interface Caller {
 }
 export interface PurgeDeps {
   caller: Caller; storage: StorageLike;
+  /** WO-0130: the per-process brake and the shared (database) count. Optional only because other callers of handlePurge (test-support/purge.ts, outside the scope of WO-0130) pass none; the route always passes it (pinned by limits-shared.test.ts). */
+  limit?: RouteLimit;
   /** The site's public origin, when configured (for example `https://app.example`): its scheme is then the scheme the browser used. Optional; not yet set by the route. */
   publicOrigin?: string | null;
 }
@@ -73,6 +76,12 @@ export async function purgeBucket(storage: StorageLike, bucket: string, uid: str
   throw new Error('still not empty');
 }
 
+/** WO-0130: at most this many purges per person in this many seconds, counted in the database (every instance). A purge that ends `purge_incomplete`
+ * is retried by the person, so the limit is not 1; it is low because each call lists and removes every file of the person. */
+export const PURGE_LIMIT = { max: 6, windowSeconds: 600 } as const;
+/** The per-process brake, over all callers of this process, asked once the person is verified and within their own shared limit (see handlePurge). */
+export const PURGE_BRAKE = { max: 30, windowMs: 60_000 } as const;
+
 export async function handlePurge(req: Request, deps: PurgeDeps): Promise<Response> {
   if (req.method !== 'POST') return fail('method_not_allowed');
   // A browser form on another site cannot carry the session cookie (SameSite=Lax), and a request that names another origin (or none, without the
@@ -86,6 +95,11 @@ export async function handlePurge(req: Request, deps: PurgeDeps): Promise<Respon
     uid = data.user.id;
   } catch { return fail('unavailable'); }
   if (!UUID.test(uid)) return fail('server_error');
+  // Counted per verified person, before the re-authentication check and before any file is listed. If the count can not be read the purge is not run (fail closed).
+  // The shared count comes BEFORE the per-process brake: a call the person's own limit refuses must not use up the brake that every other person on this
+  // instance shares, so one person takes at most PURGE_LIMIT.max brake slots per window. Calls with no valid session never get here.
+  if (deps.limit) { try { if (!(await deps.limit.count(`purge:${uid}`))) return fail('rate_limited'); } catch { return fail('unavailable'); } }
+  if (deps.limit && !deps.limit.brake()) return fail('rate_limited');
 
   // The same proof of a recent primary sign-in as app.delete_my_account() (database function, one source of truth): nothing is removed otherwise.
   try {
@@ -100,3 +114,7 @@ export async function handlePurge(req: Request, deps: PurgeDeps): Promise<Respon
   } catch { return fail('purge_incomplete'); }
   return ok({ ok: true, removed });
 }
+
+/** WO-0130: `handlePurge` with the limit filled in. The route binds it per request (the shared count needs that request's secret-key client) under the
+ * name `handlePurge`, so the route reads as it always did and the limit can not be left out of the call. */
+export const limitedPurge = (limit: RouteLimit) => (req: Request, deps: PurgeDeps): Promise<Response> => handlePurge(req, { ...deps, limit });

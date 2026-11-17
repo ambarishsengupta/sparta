@@ -5,7 +5,7 @@ import { useRef, useState, type SubmitEvent } from 'react';
 import { MIN_PW_LENGTH, finishSignIn, validateAuth, type AuthErrors, type AuthMode } from '../../lib/auth-form';
 import { requestPasswordReset, signInWithEmail, signUpWithEmail, type Outcome } from '../../lib/supabase/auth-actions';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
-import { messageOf } from '../../lib/supabase/errors';
+import { SIGN_IN_FAILURE, showRejection } from '../../lib/supabase/errors';
 
 const COPY = {
   'sign-up': { title: 'Create your account', button: 'Create account' },
@@ -29,7 +29,7 @@ export function AuthForm({ mode, next, notice }: { mode: AuthMode; next?: string
 
   function submit(e: SubmitEvent) {
     e.preventDefault();
-    send().catch((err: unknown) => { setBusy(false); setFailure(messageOf(err)); }); // a rejection is shown, never left unhandled
+    send().catch(showRejection(setBusy, setFailure, mode === 'sign-in' ? SIGN_IN_FAILURE : true)); // a rejection is shown, never left unhandled
   }
   async function send() {
     setFailure(null);

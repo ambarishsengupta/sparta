@@ -1,6 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EventLog, createItemLogged } from '../../lib/events';
 import { attachmentOf, checkPaid, emptyPaid, formFromCatalogue } from '../../lib/catalogue';
 import type { CatalogueItem, PaidValues } from '../../lib/catalogue';
@@ -94,10 +94,17 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
     if (problem) return setFailure(problem); // stay on the form: nothing typed is lost
     router.push('/');
   };
+  const removing = useRef(false); // true from the confirming press until the delete has answered: a second press does nothing
+  const [removingNow, setRemovingNow] = useState(false); // the same, for the confirm button
   const remove = async () => {
-    setDeleting(false);
-    if (!itemId) return;
+    if (removing.current) return;
+    if (!itemId) return setDeleting(false);
+    removing.current = true;
+    setRemovingNow(true);
     const problem = await attempt(() => repo!.items.remove(itemId));
+    removing.current = false;
+    setRemovingNow(false);
+    setDeleting(false);
     if (problem) return setFailure(problem);
     router.push('/');
   };
@@ -154,7 +161,7 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
         <button type="button" onClick={() => (catalogueStart ? catalogueStart.onCancel() : router.push('/'))}>Cancel</button>
         {itemId && canDeleteItems() && <button type="button" className="danger" onClick={() => setDeleting(true)}>Delete item</button>}
       </div>
-      {deleting && <ConfirmStep label="Confirm deleting this item" question="Delete this item permanently?" confirmLabel="Delete item permanently" onConfirm={() => void remove()} onCancel={() => setDeleting(false)} />}
+      {deleting && <ConfirmStep label="Confirm deleting this item" question="Delete this item permanently?" confirmLabel="Delete item permanently" onConfirm={() => void remove()} onCancel={() => setDeleting(false)} busy={removingNow} cancelWhileBusy={false} />}
     </form>
   );
 }

@@ -52,3 +52,13 @@ export async function attempt(change: () => Promise<unknown>): Promise<string | 
 
 /** The sentence for a screen: the repository's own when it has one, else the generic one. */
 export const messageOf = (e: unknown, write = true): string => asRepositoryError(e, write).message;
+
+/** The sentence for a sign-in that threw: sign-in saves nothing, and it is not a load either. */
+export const SIGN_IN_FAILURE = 'Something went wrong. Please reload the page and try again.';
+
+/** The rejection path of a form's submit: the busy flag is reset and the sentence is shown. One helper for every form, so none holds its own copy. `how` is true for a write (the default), false for a read, or the
+ * form's own fixed sentence (sign-in, export: they save nothing, and what threw may not be a request at all, so no kind-based sentence fits). */
+export const showRejection = (setBusy: (busy: boolean) => void, setFailure: (message: string) => void, how: boolean | string = true) => (err: unknown): void => {
+  setBusy(false);
+  setFailure(typeof how === 'string' ? how : messageOf(err, how));
+};

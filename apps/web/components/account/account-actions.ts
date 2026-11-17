@@ -10,7 +10,7 @@ export type Step = { ok: true } | { ok: false; message: string };
 // ---- export -------------------------------------------------------------------------------------------------------------
 
 export type ExportResult = { ok: true; text: string; filename: string } | { ok: false; message: string };
-const EXPORT_FAILURE: Record<FailureKind, string> = {
+export const EXPORT_FAILURE: Record<FailureKind, string> = {
   network: 'Could not reach the server, so the export was not made. Check your connection and try again.',
   session: 'Your session has ended. Sign in again to export your data.',
   refused: 'Your account is not allowed to export data.',

@@ -3,7 +3,7 @@ import { OCCASIONS } from '@sparta/taxonomy';
 import { useRef, useState, type SubmitEvent } from 'react';
 import { countryCode, currencyFor, hemisphereFor, OTHER_COUNTRY, startPage, validateOnboarding, type OnboardingErrors, type Option, type StartChoice } from '../../lib/onboarding';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
-import { messageOf } from '../../lib/supabase/errors';
+import { showRejection } from '../../lib/supabase/errors';
 import { completeOnboarding } from '../../lib/supabase/consent-actions';
 
 const err = (id: string, text?: string) => text && <p id={id} className="error" role="alert">{text}</p>;
@@ -32,7 +32,7 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
 
   function submit(e: SubmitEvent) {
     e.preventDefault();
-    complete().catch((err: unknown) => { setBusy(false); setFailure(messageOf(err)); }); // a rejection is shown, never left unhandled
+    complete().catch(showRejection(setBusy, setFailure)); // a rejection is shown, never left unhandled
   }
   async function complete() {
     setFailure(null);

@@ -586,6 +586,9 @@ isOneToOne: false
 "purge_receipt_jobs":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"rate_limit_hit":
+{ Args: { "p_bucket": string,"p_max": number,"p_window_seconds": number }; Returns: boolean
+                           },
 "reap_stuck_jobs":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -1045,6 +1048,20 @@ isOneToOne: false
                   }
                   Update: {
                     "accepted_at"?: string | null,"email"?: string,"invited_at"?: string,"note"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"rate_limit_windows": {
+                  Row: {
+                    "bucket": string,"hits": number,"window_start": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bucket": string,"hits": number,"window_start": string
+                  }
+                  Update: {
+                    "bucket"?: string,"hits"?: number,"window_start"?: string
                   }
                   Relationships: [
                     

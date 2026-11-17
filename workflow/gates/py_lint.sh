@@ -4,7 +4,7 @@
 # Uses the virtualenv python named by SPARTA_VENV_PYTHON in workflow/local.env (git-ignored); without it (CI, a fresh clone) prints SKIPPED
 # and exits 0, like worker_tests, so a strict gate fails the stage. A ruff that fails, or that is not installed, FAILS the stage
 # (repo_lint RL14): its exit status is used and its error output is kept. Hard time limit 120 seconds. No autofix: ruff is never given --fix.
-set -uo pipefail
+set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 2
 
 PY="${SPARTA_VENV_PYTHON:-}"
@@ -21,8 +21,8 @@ if ! "$PY" -m ruff --version >/dev/null 2>&1; then
 fi
 limited() { if command -v timeout >/dev/null 2>&1; then timeout 120 "$@"; else perl -e 'alarm shift; exec @ARGV' 120 "$@"; fi; }
 export PYTHONDONTWRITEBYTECODE=1
-limited "$PY" -m ruff check --config workflow/gates/ruff.toml --no-cache --ignore-noqa --output-format concise "$@" services jobs ml workflow </dev/null
-rc=$?
+rc=0
+limited "$PY" -m ruff check --config workflow/gates/ruff.toml --no-cache --ignore-noqa --output-format concise "$@" services jobs ml workflow </dev/null || rc=$?
 if [ "$rc" -eq 1 ]; then
   echo "py_lint: FAIL, ruff exited with status 1 (findings above are new: fix them; do not add them to workflow/gates/ruff.toml)."
   exit 1

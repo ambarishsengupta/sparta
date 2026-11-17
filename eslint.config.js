@@ -1,5 +1,7 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import regexp from 'eslint-plugin-regexp';
 
 // Sparta lint rules (WO-0123, audit of 2026-11-15). Read docs/LINT-RULES.md before changing this file.
 //
@@ -55,6 +57,10 @@ const SUPABASE_FACTORIES = {
 const NETWORK_GLOBALS = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map((name) => ({
   name, message: 'No direct network call here. The engine packages never reach the network; the app does it only in the three files listed in eslint.config.js.',
 }));
+
+// WO-0129: the recommended rule sets of the two new plugins, with every rule forced to 'error' (the project has no warnings).
+// Only the plugin's own rules (a recommended set may also switch on a core rule: that would be a new rule that is not the plugin's).
+const asErrors = (rules, prefix) => Object.fromEntries(Object.entries(rules).filter(([name]) => name.startsWith(prefix)).map(([name, setting]) => [name, ['error', ...(Array.isArray(setting) ? setting.slice(1) : [])]]));
 
 export default tseslint.config(
   {
@@ -192,5 +198,20 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'error',
       '@typescript-eslint/no-unsafe-return': 'error',
     },
+  },
+
+  // ---- 5. WO-0129: linters that came with a new development dependency (eslint-plugin-jsx-a11y 6.10.2 could not be installed: see docs/LINT-RULES.md) ----
+  {
+    // Hooks mistakes: stale closures, missing effect dependencies, state set in render (React compiler rules of react-hooks 7).
+    files: [`${WEB}/**/*.{ts,tsx}`],
+    ignores: TESTS,
+    plugins: { 'react-hooks': reactHooks },
+    rules: asErrors(reactHooks.configs.flat['recommended-latest'].rules, 'react-hooks/'),
+  },
+  {
+    // Slow or ambiguous regular expressions (the class of the R2c legal-renderer finding), in all source.
+    files: ['**/*.{js,mjs,cjs,ts,tsx}'],
+    plugins: { regexp },
+    rules: asErrors(regexp.configs['flat/recommended'].rules, 'regexp/'),
   },
 );

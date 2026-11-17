@@ -118,3 +118,5 @@ WO-0149,"WO-0149: build guide, and lint rules from the run of 15 and 16 November
 WO-0150,WO-0150: name the database in the last three untyped clients,R8,Release 1 (MVP),Delivery agents,Done
 WO-0151,WO-0151: the integration suites leave no rows behind,R8,Release 1 (MVP),Delivery agents,Done
 X-DOCS2,"LLD 325, 322 and HLD 195: consumers now read catalog.sources id and name (WO-0130 part 4) and vendors (WO-0112); the SA signs the wording",R8,Release 1 (MVP),Solution architect,Todo
+WO-0152,WO-0152: form failures say the right thing; delete cannot be pressed twice; vendor live guard tested,R8,Release 1 (MVP),Delivery agents,In Progress
+WO-0153,WO-0153: lint rules: no fetch-wrapper imports; typed Supabase factory calls,R8,Release 1 (MVP),Delivery agents,Todo

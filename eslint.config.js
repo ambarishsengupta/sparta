@@ -119,13 +119,6 @@ export default tseslint.config(
     },
   },
   {
-    // The three modules that still hold an untyped Supabase client (WO-0149). Typing them needs real changes: repository.ts builds its
-    // rows as loose records (16 type errors), backend.ts hands its client to repository.ts, and admin-catalog.ts sends null for arguments
-    // the generated types call non-null. WO-0150 types them and deletes this block. The list may only shrink: lint_rules.test.ts pins it.
-    files: [`${WEB}/lib/supabase/repository.ts`, `${WEB}/lib/supabase/backend.ts`, `${WEB}/lib/server/admin-catalog.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV] },
-  },
-  {
     // The configuration modules: the only readers of process.env, and only of NEXT_PUBLIC_ names.
     files: [`${WEB}/lib/supabase/config.ts`, `${WEB}/lib/engine-config.ts`, `${WEB}/lib/pilot-config.ts`],
     rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT] },

@@ -90,9 +90,9 @@ describe('the suggestion path reaches only the repository modules of lib/supabas
     const text = readFileSync(join(root, 'lib/supabase/repository.ts'), 'utf8');
     expect([...text.matchAll(/^import (.*) from '@supabase\/supabase-js';$/gm)].map((m) => m[1])).toEqual(['type { SupabaseClient }']);
   });
-  it('backend.ts, the one module the network test leaves out by name, imports exactly the session client, the gate state and the repositories', () => {
+  it('backend.ts, the one module the network test leaves out by name, imports exactly the session client, the gate state, the repositories and the generated types (a type-only import, WO-0150)', () => {
     expect(importsOf(join(root, 'lib/supabase/backend.ts')).sort()).toEqual(
-      ['../local-repository', '../repository', './browser', './config', './errors', './errors', './gate', './gate-state', './repository', '@supabase/supabase-js'].sort());
+      ['../local-repository', '../repository', './browser', './config', './database.types', './errors', './errors', './gate', './gate-state', './repository', '@supabase/supabase-js'].sort());
   });
   it('only the use-repository hook imports backend.ts', () => {
     const users = all.filter((f) => /\.tsx?$/.test(f) && !f.endsWith('.test.ts') && importsOf(f).some((i) => /\/backend$/.test(i)));

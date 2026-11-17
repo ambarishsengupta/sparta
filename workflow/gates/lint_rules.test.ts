@@ -15,6 +15,9 @@ const [COMPONENT, LIB, ROUTE, WEB_TEST] = ['apps/web/components/Nav.tsx', 'apps/
 const [ENGINE, ENGINE_TEST, SCRIPT] = ['packages/rules/src/season.ts', 'packages/rules/src/season.test.ts', 'supabase/scripts/gen-seed.ts'] as const;
 const SERVER_ONLY_VAR = ['SUPABASE', 'SECRET', 'KEY'].join('_');   // assembled: the secret scans read the bare name as a finding
 
+const WRAPPERS = ['node-fetch', 'cross-fetch', 'ofetch', 'axios', 'ky', 'got'] as const;
+const FACTORIES = ['createBrowserClient', 'createServerClient', 'createClient'] as const;
+
 const CASES: [name: string, path: string, code: string, rule: string][] = [
   ['a component reads a server-only variable', COMPONENT, `export const k = process.env.${SERVER_ONLY_VAR};\n`, 'no-restricted-syntax'],
   ['a component reads any environment variable', COMPONENT, 'export const k = process.env.NEXT_PUBLIC_DATA_BACKEND;\n', 'no-restricted-syntax'],
@@ -44,6 +47,16 @@ const CASES: [name: string, path: string, code: string, rule: string][] = [
   // WO-0129: one sample per new plugin. eslint-plugin-jsx-a11y 6.10.2 has no sample because npm refuses it next to ESLint 10 (docs/LINT-RULES.md).
   ['an effect reads a prop that is not in its dependency list (eslint-plugin-react-hooks)', COMPONENT, "import { useEffect, useState } from 'react';\nexport function C({ n }: { n: number }) {\n  const [v, setV] = useState(0);\n  useEffect(() => { setV(n); }, []);\n  return <i>{v}</i>;\n}\n", 'react-hooks/exhaustive-deps'],
   ['a regular expression that backtracks exponentially (eslint-plugin-regexp)', LIB, "export const words = (s: string): boolean => /^(\\w+\\s?)*$/.test(s);\n", 'regexp/no-super-linear-backtracking'],
+  // WO-0153: a fetch wrapper under an app path and an engine path (one sample per package), and an untyped Supabase factory call.
+  ...WRAPPERS.flatMap((pkg) => [
+    [`a component imports ${pkg}`, COMPONENT, `import w from '${pkg}';\nexport const f = w;\n`, '@typescript-eslint/no-restricted-imports'],
+    [`a route handler imports ${pkg}`, ROUTE, `import w from '${pkg}';\nexport const f = w;\n`, '@typescript-eslint/no-restricted-imports'],
+    [`the secret-key module imports ${pkg}`, 'apps/web/lib/server/admin.ts', `import w from '${pkg}';\nexport const f = w;\n`, '@typescript-eslint/no-restricted-imports'],
+    [`the engine imports ${pkg}`, ENGINE, `import w from '${pkg}';\nexport const f = w;\n`, '@typescript-eslint/no-restricted-imports'],
+  ] as [string, string, string, string][]),
+  ...FACTORIES.map((fn): [string, string, string, string] => [`a call of ${fn} without the Database type argument`, 'apps/web/lib/supabase/browser.ts', `export const c = ${fn}('u', 'k');\n`, 'no-restricted-syntax']),
+  ['a component imports a subpath of axios', COMPONENT, "import a from 'axios/lib/core/Axios';\nexport const f = a;\n", '@typescript-eslint/no-restricted-imports'],
+  ['an untyped factory call in the secret-key module', 'apps/web/lib/server/admin.ts', "export const c = createClient('u', 'k');\n", 'no-restricted-syntax'],
 ];
 
 describe('the project lint rules fire (eslint.config.js, WO-0123)', () => {
@@ -94,6 +107,48 @@ describe('the project lint rules fire (eslint.config.js, WO-0123)', () => {
     // a test file may build loose clients
     expect(await rulesFor(WEB_TEST, untyped)).toEqual([]);
   }, 120_000);
+
+  it('a typed factory call passes; a fetch wrapper is refused in every app and engine source file; the factory selector is on in every app source file (WO-0153)', async () => {
+    const typed = "import { createBrowserClient } from '@supabase/ssr';\nimport type { Database } from './database.types';\nexport const c = createBrowserClient<Database>('u', 'k');\n";
+    expect(await rulesFor('apps/web/lib/supabase/browser.ts', typed)).toEqual([]);
+    // ESLint's computed configuration of every tracked source file (tests and test-support aside): the factory selector at error in the
+    // web app, and the wrapper names in the import restriction of the web app and of the engine packages (no file without it)
+    const SELECTOR = "CallExpression[callee.name=/^(createBrowserClient|createServerClient|createClient)$/]:not([typeArguments])";
+    const tracked = (glob: string[]): string[] => execSync(`git ls-files ${glob.map((g) => `'${g}'`).join(' ')}`, { encoding: 'utf8' }).split('\n')
+      .filter((f) => f && !/\.test\.tsx?$/.test(f) && !f.startsWith('apps/web/test-support/') && !f.includes('/fixtures/'));
+    const web = tracked(['apps/web/**/*.ts', 'apps/web/**/*.tsx']);
+    const engine = tracked(['packages/*/src/*.ts', 'packages/*/src/**/*.ts']);
+    expect(web.length).toBeGreaterThan(100);
+    expect(engine.length).toBeGreaterThan(5);
+    const rulesOf = async (f: string): Promise<Record<string, unknown>> => (await eslint.calculateConfigForFile(f) as { rules?: Record<string, unknown> } | undefined)?.rules ?? {};
+    const isError = (r: unknown): r is unknown[] => Array.isArray(r) && (r[0] === 2 || r[0] === 'error');
+    const noSelector: string[] = [];
+    const noWrappers: string[] = [];
+    const wrappersListed = (r: unknown): boolean => {
+      if (!isError(r)) return false;
+      const opts = r.slice(1) as { paths?: (string | { name: string })[]; patterns?: { group?: string[] }[] }[];
+      const paths = opts.flatMap((o) => (o.paths ?? []).map((x) => (typeof x === 'string' ? x : x.name)));
+      const groups = opts.flatMap((o) => (o.patterns ?? []).flatMap((p) => p.group ?? []));
+      return WRAPPERS.every((w) => paths.includes(w) && groups.includes(`${w}/*`));   // the six exact paths and the six subpath patterns
+    };
+    for (const f of [...web, ...engine]) {
+      const rules = await rulesOf(f);
+      if (f.startsWith('apps/web/')) {
+        const rule = rules['no-restricted-syntax'];
+        if (!(isError(rule) && rule.slice(1).some((o) => typeof o === 'object' && o !== null && (o as { selector?: unknown }).selector === SELECTOR))) noSelector.push(f);
+      }
+      if (!wrappersListed(rules['@typescript-eslint/no-restricted-imports'])) noWrappers.push(f);
+    }
+    expect(noSelector).toEqual([]);
+    expect(noWrappers).toEqual([]);
+    expect(readFileSync('eslint.config.js', 'utf8')).toContain(SELECTOR);
+    // exact names only: a local module or another package whose name holds a wrapper name is not refused
+    expect(await rulesFor(COMPONENT, "import k from './got';\nexport const f = k;\n")).not.toContain('@typescript-eslint/no-restricted-imports');
+    expect(await rulesFor(COMPONENT, "import k from 'kysely';\nexport const f = k;\n")).not.toContain('@typescript-eslint/no-restricted-imports');
+    expect(await rulesFor(WEB_TEST, "import axios from 'axios';\nexport const f = axios;\n")).toEqual([]);
+    // a test file may build loose clients and import anything
+    expect(await rulesFor(WEB_TEST, "import { createClient } from '@supabase/supabase-js';\nexport const c = createClient('u', 'k');\n")).toEqual([]);
+  }, 180_000);
 
   it('the baseline exists, names only the new plugins\' rules, and holds no boundary rule (those have no exceptions)', () => {
     expect(existsSync('eslint-suppressions.json')).toBe(true);

@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
@@ -65,21 +66,30 @@ describe('the project lint rules fire (eslint.config.js, WO-0123)', () => {
     expect(await rulesFor(WEB_TEST, "import { describe } from 'vitest';\ndescribe.skipIf(true)('x', () => {});\n")).toEqual([]);
   }, 60_000);
 
-  it('a client that names the database passes, and only the three listed modules may still hold an untyped one (WO-0149; the list may only shrink)', async () => {
+  it('a client that names the database passes, and no module may hold an untyped one (WO-0150 emptied the list of exceptions; it may not grow)', async () => {
     const typed = "import type { SupabaseClient } from '@supabase/supabase-js';\nimport type { Database } from './supabase/database.types';\nexport type C = Pick<SupabaseClient<Database>, 'auth' | 'schema'>;\n";
     expect(await rulesFor(LIB, typed)).toEqual([]);
     const untyped = "import type { SupabaseClient } from '@supabase/supabase-js';\nexport type C = Pick<SupabaseClient, 'auth'>;\n";
     const config = readFileSync('eslint.config.js', 'utf8');
-    const block = /still hold an untyped Supabase client[\s\S]*?files: \[([^\]]*)\]/.exec(config)?.[1] ?? '';
-    const listed = [...block.matchAll(/\$\{WEB\}\/([^`]+)`/g)].map((m) => `apps/web/${m[1]!}`).sort();
-    expect(listed).toEqual(['apps/web/lib/server/admin-catalog.ts', 'apps/web/lib/supabase/backend.ts', 'apps/web/lib/supabase/repository.ts']);
-    for (const p of listed) {
+    // the list of exceptions is empty: ESLint's computed configuration of EVERY tracked web-app source file (tests and test-support aside)
+    // holds the untyped-client selector at error, so an exception added for any module, in any wording, fails here
+    const SELECTOR = "TSTypeReference[typeName.name='SupabaseClient']:not([typeArguments])";
+    const sources = execSync("git ls-files 'apps/web/**/*.ts' 'apps/web/**/*.tsx'", { encoding: 'utf8' }).split('\n')
+      .filter((f) => f && !/\.test\.tsx?$/.test(f) && !f.startsWith('apps/web/test-support/'));
+    expect(sources.length).toBeGreaterThan(100);
+    const without: string[] = [];
+    for (const f of sources) {
+      const rule: unknown = (await eslint.calculateConfigForFile(f) as { rules?: Record<string, unknown> } | undefined)?.rules?.['no-restricted-syntax'];
+      const on = Array.isArray(rule) && (rule[0] === 2 || rule[0] === 'error') && rule.slice(1).some((o: unknown) => typeof o === 'object' && o !== null && (o as { selector?: unknown }).selector === SELECTOR);
+      if (!on) without.push(f);
+    }
+    expect(without).toEqual([]);
+    expect(config).toContain(SELECTOR);
+    // the three modules WO-0150 typed refuse an untyped client like every other library module
+    for (const p of ['apps/web/lib/supabase/repository.ts', 'apps/web/lib/supabase/backend.ts', 'apps/web/lib/server/admin-catalog.ts']) {
       expect(existsSync(p), p).toBe(true);
-      expect(await rulesFor(p, untyped), p).not.toContain('no-restricted-syntax');
-      // the exception covers the client type only: every other boundary rule still fires in these files
-      expect(await rulesFor(p, 'export const k = process.env.NEXT_PUBLIC_DATA_BACKEND;\n'), p).toContain('no-restricted-syntax');
-      // and each listed file really still needs it (an entry nobody needs must be deleted)
-      expect(readFileSync(p, 'utf8'), p).toMatch(/SupabaseClient(?!<)/);
+      expect(await rulesFor(p, untyped), p).toContain('no-restricted-syntax');
+      expect(readFileSync(p, 'utf8').replace(/^import .*$/gm, ''), p).not.toMatch(/SupabaseClient(?!<)/); // the import line names the type; every use must name the database
     }
     // a test file may build loose clients
     expect(await rulesFor(WEB_TEST, untyped)).toEqual([]);

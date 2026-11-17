@@ -14,6 +14,10 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 2
 
+# Tools that change their output when they see an AI agent (the Supabase CLI writes JSON then, text otherwise) must behave here as on a
+# CI runner, so the gate clears the agent-detection variables first: a run inside a Claude session then shows what CI will show.
+unset CLAUDECODE AI_AGENT CLAUDE_CODE_ENTRYPOINT
+
 # check_goals.sh skips the goal whose predicate is this script, so it cannot recurse.
 export SPARTA_GATE_ACTIVE=1
 

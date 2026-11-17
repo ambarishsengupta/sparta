@@ -23,8 +23,12 @@ limited() { if command -v timeout >/dev/null 2>&1; then timeout 120 "$@"; else p
 export PYTHONDONTWRITEBYTECODE=1
 limited "$PY" -m ruff check --config workflow/gates/ruff.toml --no-cache --ignore-noqa --output-format concise "$@" services jobs ml workflow </dev/null
 rc=$?
+if [ "$rc" -eq 1 ]; then
+  echo "py_lint: FAIL, ruff exited with status 1 (findings above are new: fix them; do not add them to workflow/gates/ruff.toml)."
+  exit 1
+fi
 if [ "$rc" -ne 0 ]; then
-  echo "py_lint: FAIL, ruff exited with status ${rc} (findings above are new: fix them; do not add them to workflow/gates/ruff.toml)."
+  echo "py_lint: FAIL, ruff exited with status ${rc} (a crash or a time-out; its output is above); nothing was checked."
   exit 1
 fi
 echo "py_lint: PASS (ruff F, B, S over services, jobs, ml, workflow; the known findings are listed in workflow/gates/ruff.toml)"

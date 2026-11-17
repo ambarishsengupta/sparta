@@ -3,5 +3,72 @@ submissions/**/data/
 submissions/D2/out/
 submissions/**/raw/
 
-# Fashion-MNIST CSVs for the recommendation engine (size and licence)
+# Fashion-MNIST files for the recommendation engine (size and licence)
 data/recommendation-engine/mnist/
+
+# Link to the H&M files and photographs (size and competition licence); never commit the link or its target
+data/recommendation-engine/hm
+data/recommendation-engine/hm/
+
+# Trained model files and H&M-derived lists are not committed; they live in a private artifact location pinned by models.manifest.json (LLD 7.8)
+services/worker/models/garment-cnn-v2.onnx
+packages/rules/data/pairing-prior-v*.json
+packages/rules/data/unlock-candidates.json
+
+# Local dataset paths (SPARTA_DATA_ROOT_HM, SPARTA_DATA_ROOT_MNIST); the template workflow/local.env.example is committed
+workflow/local.env
+
+# macOS folder metadata
+.DS_Store
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Node / TypeScript build output and local env (R0)
+node_modules/
+dist/
+.env.local
+coverage/
+*.tsbuildinfo
+
+# Agent worktrees
+.claude/
+data/recommendation-engine/artifacts/
+
+# Sync-conflict duplicate copies (e.g. "package 2.json") created by cloud sync
+* [0-9].*
+* [0-9]
+
+# Local caches and evaluation photos (LLD 13.4)
+data/recommendation-engine/hm-cache/
+data/recommendation-engine/team-photos/
+
+# Python virtualenvs and training caches for the offline model scripts (R5)
+.venv/
+venv*/
+ml/recommendation-engine/garment/.cache/
+
+# Local-only helper that sets the worker database password from an env var
+supabase/scripts/set-worker-password.sh
+
+# Worker service (WO-0072): env files with the database password and token, caches, local model downloads
+services/worker/.env
+services/worker/.env.*
+!services/worker/.env.example
+services/worker/.pytest_cache/
+services/worker/.u2net/
+.vitest/
+
+# Local-only helper that sets the collector database password from an env var (WO-0083)
+supabase/scripts/set-collector-password.sh
+
+# H&M demo (WO-0120): anything the loader or the demo derives from the H&M folder stays local; never commit it
+workflow/demo/hm/out/
+# WO-0121: screenshots that show an H&M photograph stay local
+workflow/evidence/Demo/screenshots/hm-*
+
+# Env files anywhere (WO-0123): only the *.example templates are tracked
+.env
+.env.*
+!.env.example

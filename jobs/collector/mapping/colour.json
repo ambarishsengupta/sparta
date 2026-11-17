@@ -1,0 +1,368 @@
+{
+ "comment": "Order of lookup: family names and retail synonyms (to the family's first swatch, the reference RGB), then CSS names, then a hex code. 'multi' words mark a multicolour item.",
+ "families": {
+  "Black": {
+   "rgb": [
+    0,
+    0,
+    0
+   ],
+   "names": [
+    "black",
+    "jet black",
+    "onyx",
+    "ebony"
+   ]
+  },
+  "White": {
+   "rgb": [
+    255,
+    255,
+    255
+   ],
+   "names": [
+    "white",
+    "off white",
+    "off-white",
+    "ivory",
+    "cream",
+    "ecru",
+    "snow",
+    "optic white"
+   ]
+  },
+  "Grey": {
+   "rgb": [
+    128,
+    128,
+    128
+   ],
+   "names": [
+    "grey",
+    "gray",
+    "charcoal",
+    "slate",
+    "silver",
+    "graphite",
+    "heather",
+    "ash",
+    "anthracite",
+    "gunmetal",
+    "stone grey"
+   ]
+  },
+  "Navy": {
+   "rgb": [
+    31,
+    42,
+    68
+   ],
+   "names": [
+    "navy",
+    "navy blue",
+    "midnight",
+    "midnight blue",
+    "indigo",
+    "ink"
+   ]
+  },
+  "Blue": {
+   "rgb": [
+    30,
+    90,
+    168
+   ],
+   "names": [
+    "blue",
+    "royal blue",
+    "sky blue",
+    "light blue",
+    "cobalt",
+    "denim blue",
+    "azure",
+    "cyan",
+    "ice blue",
+    "powder blue"
+   ]
+  },
+  "Teal": {
+   "rgb": [
+    0,
+    128,
+    128
+   ],
+   "names": [
+    "teal",
+    "turquoise",
+    "aqua",
+    "petrol",
+    "peacock"
+   ]
+  },
+  "Green": {
+   "rgb": [
+    46,
+    139,
+    87
+   ],
+   "names": [
+    "green",
+    "emerald",
+    "forest green",
+    "bottle green",
+    "mint",
+    "sage",
+    "lime",
+    "jade"
+   ]
+  },
+  "Olive": {
+   "rgb": [
+    107,
+    107,
+    47
+   ],
+   "names": [
+    "olive",
+    "olive green",
+    "army green",
+    "moss",
+    "military green"
+   ]
+  },
+  "Khaki": {
+   "rgb": [
+    195,
+    176,
+    145
+   ],
+   "names": [
+    "khaki",
+    "sand",
+    "stone",
+    "taupe",
+    "camel",
+    "tan",
+    "mushroom",
+    "fawn"
+   ]
+  },
+  "Beige": {
+   "rgb": [
+    232,
+    220,
+    194
+   ],
+   "names": [
+    "beige",
+    "oatmeal",
+    "natural",
+    "nude",
+    "biscuit",
+    "buff",
+    "wheat"
+   ]
+  },
+  "Brown": {
+   "rgb": [
+    92,
+    64,
+    51
+   ],
+   "names": [
+    "brown",
+    "chocolate",
+    "coffee",
+    "chestnut",
+    "walnut",
+    "mocha",
+    "cognac",
+    "espresso",
+    "rust"
+   ]
+  },
+  "Maroon": {
+   "rgb": [
+    128,
+    0,
+    0
+   ],
+   "names": [
+    "maroon",
+    "burgundy",
+    "wine",
+    "oxblood",
+    "claret",
+    "bordeaux",
+    "plum"
+   ]
+  },
+  "Red": {
+   "rgb": [
+    214,
+    40,
+    40
+   ],
+   "names": [
+    "red",
+    "scarlet",
+    "crimson",
+    "cherry",
+    "brick",
+    "coral"
+   ]
+  },
+  "Orange": {
+   "rgb": [
+    242,
+    140,
+    40
+   ],
+   "names": [
+    "orange",
+    "tangerine",
+    "amber",
+    "burnt orange",
+    "apricot"
+   ]
+  },
+  "Yellow": {
+   "rgb": [
+    247,
+    208,
+    56
+   ],
+   "names": [
+    "yellow",
+    "mustard",
+    "gold",
+    "lemon",
+    "sunflower",
+    "saffron"
+   ]
+  },
+  "Pink": {
+   "rgb": [
+    244,
+    166,
+    192
+   ],
+   "names": [
+    "pink",
+    "rose",
+    "blush",
+    "fuchsia",
+    "salmon",
+    "magenta",
+    "peach"
+   ]
+  },
+  "Purple": {
+   "rgb": [
+    106,
+    61,
+    154
+   ],
+   "names": [
+    "purple",
+    "violet",
+    "lavender",
+    "lilac",
+    "mauve",
+    "aubergine"
+   ]
+  }
+ },
+ "multi_words": [
+  "multi",
+  "multicolour",
+  "multicolor",
+  "multi-colour",
+  "multi-color",
+  "assorted",
+  "mixed"
+ ],
+ "css": {
+  "aliceblue": "#F0F8FF",
+  "antiquewhite": "#FAEBD7",
+  "aquamarine": "#7FFFD4",
+  "azure": "#F0FFFF",
+  "bisque": "#FFE4C4",
+  "blueviolet": "#8A2BE2",
+  "burlywood": "#DEB887",
+  "cadetblue": "#5F9EA0",
+  "chartreuse": "#7FFF00",
+  "coral": "#FF7F50",
+  "cornflowerblue": "#6495ED",
+  "cornsilk": "#FFF8DC",
+  "darkblue": "#00008B",
+  "darkcyan": "#008B8B",
+  "darkgoldenrod": "#B8860B",
+  "darkgreen": "#006400",
+  "darkkhaki": "#BDB76B",
+  "darkmagenta": "#8B008B",
+  "darkolivegreen": "#556B2F",
+  "darkorange": "#FF8C00",
+  "darkred": "#8B0000",
+  "darksalmon": "#E9967A",
+  "darkseagreen": "#8FBC8F",
+  "darkslateblue": "#483D8B",
+  "darkslategray": "#2F4F4F",
+  "darkturquoise": "#00CED1",
+  "darkviolet": "#9400D3",
+  "deeppink": "#FF1493",
+  "dodgerblue": "#1E90FF",
+  "firebrick": "#B22222",
+  "forestgreen": "#228B22",
+  "gainsboro": "#DCDCDC",
+  "goldenrod": "#DAA520",
+  "greenyellow": "#ADFF2F",
+  "hotpink": "#FF69B4",
+  "indianred": "#CD5C5C",
+  "lawngreen": "#7CFC00",
+  "lightcoral": "#F08080",
+  "lightgreen": "#90EE90",
+  "lightpink": "#FFB6C1",
+  "lightsalmon": "#FFA07A",
+  "lightseagreen": "#20B2AA",
+  "lightskyblue": "#87CEFA",
+  "lightslategray": "#778899",
+  "lightsteelblue": "#B0C4DE",
+  "limegreen": "#32CD32",
+  "linen": "#FAF0E6",
+  "mediumblue": "#0000CD",
+  "mediumpurple": "#9370DB",
+  "mediumseagreen": "#3CB371",
+  "mediumvioletred": "#C71585",
+  "mistyrose": "#FFE4E1",
+  "moccasin": "#FFE4B5",
+  "navajowhite": "#FFDEAD",
+  "oldlace": "#FDF5E6",
+  "olivedrab": "#6B8E23",
+  "orangered": "#FF4500",
+  "orchid": "#DA70D6",
+  "palegreen": "#98FB98",
+  "palevioletred": "#DB7093",
+  "papayawhip": "#FFEFD5",
+  "peachpuff": "#FFDAB9",
+  "peru": "#CD853F",
+  "powderblue": "#B0E0E6",
+  "rosybrown": "#BC8F8F",
+  "royalblue": "#4169E1",
+  "saddlebrown": "#8B4513",
+  "sandybrown": "#F4A460",
+  "seagreen": "#2E8B57",
+  "seashell": "#FFF5EE",
+  "sienna": "#A0522D",
+  "skyblue": "#87CEEB",
+  "slateblue": "#6A5ACD",
+  "slategray": "#708090",
+  "springgreen": "#00FF7F",
+  "steelblue": "#4682B4",
+  "thistle": "#D8BFD8",
+  "tomato": "#FF6347",
+  "wheat": "#F5DEB3",
+  "whitesmoke": "#F5F5F5",
+  "yellowgreen": "#9ACD32"
+ }
+}

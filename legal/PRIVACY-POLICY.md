@@ -2,8 +2,8 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.3 (draft for the academic pilot) |
-| Date | 2026-10-29 |
+| Version | 0.4 (draft for the academic pilot) |
+| Date | 2026-11-04 |
 | Applies to | The Sparta pilot (3 months), consumer app and vendor portal |
 | Review status | Written by the project team with AI assistance. **Not reviewed by a lawyer.** A professional review is required before any public or commercial launch. |
 
@@ -47,7 +47,7 @@ We **do not** collect your contacts, your precise location, payment card details
 
 We do not sell your data, show you advertising, or let vendors contact you. We do not use your data to train AI or machine-learning models. If a later phase wants to, we will ask you again with a new notice, and you can say no and leave.
 
-**Suggestions.** Outfit suggestions are made automatically from your own items by fixed style rules and a scoring step that run in your browser. For items you add by photo, a small image program on our worker computer looks at the cut-out picture and suggests a category, and makes the 32 shape numbers used to put similar items first when you swap one. That program was trained before the pilot on a public set of garment pictures (Fashion-MNIST) and tested on photos of the team's own clothes, not on anything from participants. Suggestions are never decisions about you: nothing changes unless you accept them, and the same items always give the same suggestions. We may adjust the style rules by hand after reading overall counts of accepted and rejected suggestions.
+**Suggestions.** Outfit suggestions are made automatically from your own items by fixed style rules and a scoring step that run in your browser. For items you add by photo, a small image program on our worker computer looks at the cut-out picture and suggests a category, and makes a short list of numbers (32 or 64) used to put similar items first when you swap one. That program was trained before the pilot on public sets of garment pictures (Fashion-MNIST and, if cleared for the pilot, a retail dataset published by H&M for research) and tested on photos of the team's own clothes, not on anything from participants. If cleared for the pilot, a small table made from public purchase counts in that dataset, and a short list of common clothing combinations taken from the same counts, can help order suggestions and the things we suggest you add; neither contains information about any person. In your browser, you can also ask for outfits built around one item you own, and for a short list of things that would make the most new outfits from your wardrobe; both work only on your own items and send nothing. Suggestions are never decisions about you: nothing changes unless you accept them, and the same items always give the same suggestions. We may adjust the style rules by hand after reading overall counts of accepted and rejected suggestions.
 
 **Why taking part means sharing.** The point of the pilot is to find out whether group data from real wardrobes is useful to vendors. Without it there is nothing to test, so sharing is part of taking part and cannot be switched off while you are in the pilot. The full product, if it ever exists, is planned to let each user turn sharing off.
 

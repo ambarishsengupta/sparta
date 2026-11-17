@@ -1,0 +1,13 @@
+{
+ "path": "services/worker/models/garment-cnn-v1.onnx",
+ "bytes": 105626,
+ "sha256": "fcd2da1fdfc6701fc8ecf70e500ccc1db7581b3413a7033ec73a47685c2083fc",
+ "opset": 17,
+ "outputs": [
+  "scores",
+  "shape"
+ ],
+ "check_pictures": 100,
+ "max_abs_difference": 1.049041748046875e-05,
+ "tolerance": 0.0001
+}

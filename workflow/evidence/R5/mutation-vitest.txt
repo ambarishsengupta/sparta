@@ -1,0 +1,3 @@
+vitest mutant: one byte appended to a copy of the ONNX file -> model_card.test.ts FAILS (1 of 2 tests failed)
+vitest mutant: first hex digit of the card ONNX SHA-256 line changed in a copy -> model_card.test.ts FAILS (1 of 2 tests failed)
+(both run in scratch copies outside the repo; unmutated repo copy: 2 passed)

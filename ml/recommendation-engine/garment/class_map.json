@@ -1,0 +1,12 @@
+{
+  "0": { "name": "T-shirt/top", "category": "Tops", "sub_type": "T-shirt" },
+  "1": { "name": "Trouser", "category": "Bottoms", "sub_type": "Trousers" },
+  "2": { "name": "Pullover", "category": "Tops", "sub_type": "Sweater" },
+  "3": { "name": "Dress", "category": null, "sub_type": null },
+  "4": { "name": "Coat", "category": "Outerwear", "sub_type": "Coat" },
+  "5": { "name": "Sandal", "category": "Footwear", "sub_type": "Sandals" },
+  "6": { "name": "Shirt", "category": "Tops", "sub_type": "Shirt" },
+  "7": { "name": "Sneaker", "category": "Footwear", "sub_type": "Sneakers" },
+  "8": { "name": "Bag", "category": "Accessories", "sub_type": "Bag" },
+  "9": { "name": "Ankle boot", "category": "Footwear", "sub_type": "Boots" }
+}

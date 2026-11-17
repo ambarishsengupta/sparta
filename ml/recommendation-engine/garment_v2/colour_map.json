@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "source": "LLD 7.8 (colour check) and 7.9 (colour key), as updated by work order WO-0010 (R4). A draft for the style specialist to confirm (FOI-11).",
+  "master_to_family": {
+    "Black": "Black",
+    "White": "White",
+    "Grey": "Grey",
+    "Beige": "Beige",
+    "Brown": "Brown",
+    "Red": "Red",
+    "Orange": "Orange",
+    "Yellow": "Yellow",
+    "Pink": "Pink",
+    "Green": "Green",
+    "Blue": "Blue",
+    "Yellowish Green": "Green",
+    "Bluish Green": "Teal",
+    "Turquoise": "Teal",
+    "Lilac Purple": "Purple",
+    "Khaki green": "Khaki"
+  },
+  "rules": [
+    {
+      "if": { "perceived_colour_master_name": "Blue", "perceived_colour_value_name": "Dark" },
+      "family": "Navy"
+    },
+    {
+      "if": { "perceived_colour_master_name": "Red", "colour_group_name": "Dark Red" },
+      "family": "Maroon"
+    },
+    {
+      "if": { "perceived_colour_master_name": "Khaki green", "colour_group_name": "Greenish Khaki" },
+      "family": "Olive"
+    }
+  ],
+  "excluded_masters": ["Metal", "Mole", "Unknown", "undefined"],
+  "notes": [
+    "The column perceived_colour_master_name is looked up in master_to_family; the rules then override the result when every condition of a rule holds (the rules do not overlap).",
+    "A master name that is excluded or missing from master_to_family has no family, and the article is left out of the prior.",
+    "Maroon: the work order says Dark Red; LLD 7.8 says Red with perceived colour value Dark. This file follows the work order (colour_group_name Dark Red, master Red). PRIOR_CARD.md gives the counts of both readings."
+  ]
+}

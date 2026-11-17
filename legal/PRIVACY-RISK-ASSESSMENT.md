@@ -2,11 +2,11 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 0.2 (draft for the academic pilot) |
-| Date | 2026-10-22 |
+| Version | 0.3 (draft for the academic pilot) |
+| Date | 2026-11-04 |
 | Type | Lightweight data protection impact assessment, written by the project team with AI assistance |
 | Review status | **Not reviewed by a lawyer or privacy professional.** Intended to support a professional review before any public or commercial launch. |
-| Scope | The pilot as described in BRD v1.2, FDD v1.3, HLD v1.2 and LLD v1.2 |
+| Scope | The pilot as described in BRD v1.4, FDD v1.5, HLD v1.4 and LLD v1.4 |
 
 ## 1. The processing in brief
 
@@ -26,7 +26,7 @@
 - Vendors receive group figures, never rows about individuals.
 - Participants are adults, are invited, are told what the study is, and can leave at any time with their data deleted.
 - The data is not used to train models, for advertising, or for any purpose outside the notice.
-- A small image model reads item photos on the worker computer to suggest a category. It was trained on a public dataset (Fashion-MNIST) and tested on photos of the team's own clothes, not on participant data. It runs in the same job and on the same computer as background removal, so it adds no new recipient or transfer. The 32 shape numbers it makes for a photo item are the participant's own data and are deleted with the item.
+- A small image model reads item photos on the worker computer to suggest a category. It was trained on public datasets (Fashion-MNIST and, subject to the licence check in BRD OI-5, H&M product photographs) and tested on photos of the team's own clothes, not on participant data. It runs in the same job and on the same computer as background removal, so it adds no new recipient or transfer. The 32 or 64 look numbers it makes for a photo item are the participant's own data and are deleted with the item. If cleared for the pilot (BRD OI-5), a small pairing table and a short list of common clothing combinations, both built offline from public H&M purchase counts, reorder suggestions and the 'things to add' in the browser; it holds no row about any person, the H&M files are not stored in the app, and because the browser loads the table any user of the app can download it. Complete the look and Wardrobe unlock run in the browser on the participant's own items and send nothing.
 
 ## 3. Risks and controls
 

@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'release/**'
+
+# WO-0123: the workflow token can only read the repository.
+permissions:
+  contents: read
+
+# WO-0127: the job runs the same strict gate that a merge needs on a developer machine (workflow rule 12): the local Supabase stack and the
+# Python virtualenv are built inside the job, so the database, worker and collector tests really run. No secret is read from GitHub: the
+# stack's keys are generated in the job and never leave it. Every action is pinned to a commit (repo_lint RL08); the version is in the comment.
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # A runner can never hold the licensed dataset folders (H&M, team photos). Checks that need them state that and do not run here.
+      SPARTA_NO_LOCAL_DATASETS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            ml/recommendation-engine/requirements.txt
+            services/worker/requirements.txt
+            services/worker/requirements-dev.txt
+            jobs/collector/requirements.txt
+      # The CLI version is fixed: apps/web/lib/supabase/database.types.ts was generated with it, and the types_drift stage compares byte for byte.
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 3.0.0
+      - run: npm ci
+      - name: Python virtualenv, outside the repository
+        run: |
+          python -m venv "$RUNNER_TEMP/sparta-venv"
+          "$RUNNER_TEMP/sparta-venv/bin/python" -m pip install --disable-pip-version-check -r ml/recommendation-engine/requirements.txt -r services/worker/requirements-dev.txt -r services/worker/requirements.txt -r jobs/collector/requirements.txt
+          echo "SPARTA_VENV_PYTHON=$RUNNER_TEMP/sparta-venv/bin/python" >> "$GITHUB_ENV"
+          # the goal check of R5a reads the interpreter from workflow/local.env (git-ignored), so the job writes that one line
+          printf 'SPARTA_VENV_PYTHON=%s\n' "$RUNNER_TEMP/sparta-venv/bin/python" > workflow/local.env
+      - name: Local Supabase stack
+        run: supabase start
+      - name: Local-only role password helpers
+        run: bash workflow/gates/ci_role_password_scripts.sh
+      - name: Gate (strict)
+        run: GATE_STRICT=1 bash workflow/gates/gate.sh
+      - name: Stop the stack
+        if: always()
+        run: supabase stop --no-backup

@@ -1,0 +1,27 @@
+{
+  "name": "sparta",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p apps/web/tsconfig.json --noEmit --incremental false",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "lint:repo": "python3 workflow/gates/repo_lint.py",
+    "gate": "bash workflow/gates/gate.sh",
+    "db:seed": "tsx supabase/scripts/gen-seed.ts",
+    "test:db": "vitest run workflow/gates/db_tests.test.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "fast-check": "4.10.2",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.1.0"
+  }
+}

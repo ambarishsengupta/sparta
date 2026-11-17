@@ -1,0 +1,30 @@
+# WO-0106 notes: vendor gaps and reports (REDUCED SCOPE of the cull of 2026-11-12: no print stylesheet, no print-preview evidence)
+
+## What was built (no migration; no change outside apps/web and this folder)
+- `/vendor/gaps` (`components/vendor/Gaps.tsx`, `lib/vendor/gaps.ts`): dimension select (the seven dimensions, default category x colour family), the four filters through the SAME reducer (`filterReducer`) and a new shared `FilterBar` (extracted from the dashboard, which now uses it with identical markup),
+  ranked table (owning users, users with it on the wishlist, gap score to one decimal) with "no visible ownership" rows after the scored ones and a hidden owner count as "Not enough users to display", never 0. One call per change of dimension or filter, `p_top_n` 50.
+  A segment seen without the filter and missing with it is a row of "Not enough users to display" (same idea as the dashboard, through the exported `withBase`); only said when the unfiltered answer was not cut at 50 (otherwise a segment pushed out of the top 50 would be wrongly called hidden).
+- `/vendor/reports` (list, newest first, link per report) and `/vendor/reports/[id]` (`components/vendor/Reports.tsx`, `lib/vendor/reports.ts`): the payload of CC6 on screen: notes (contributing users, rounding and the threshold, pilot period from the cube's first and last month, last run), top gaps (same table as the gaps page), rising wishlist segments (bars of the increase with "from to"), condition spectrum per category (band bars, a category with no visible share is one suppressed cell).
+  The id is checked as a uuid BEFORE any call (`openReport`); an unreviewed, unknown or malformed id is the same "Report not found." (an unreviewed one returns no row from the function). A payload that does not have the CC6 shape shows the fixed "unexpected" sentence, never half a report.
+  `vendor_report_opened` is recorded once per opening: only when a report is shown, guarded by the id in a ref (not per render, not for "not found").
+- Tests: `lib/vendor/gaps.test.ts` (ranking, loading and hidden logic with a counting fake client, uuid check with six malformed ids, payload parser), `components/vendor/gaps-reports.test.ts` (markup of every state through the view components, a11y regex suite, source tests: event guard, no print stylesheet, no `dangerouslySetInnerHTML`, no arithmetic),
+  `lib/vendor/reports.int.test.ts` (real stack, skipped with a printed line unless the demo insights are loaded: the reviewed report is listed and opens with a payload of the right shape and multiples of 5; an unreviewed report, an unknown uuid and a malformed id are "no report" and the malformed one is never sent (no log row); ranking and filter-hides-segments on real data; a consumer is refused by every call).
+  A throwaway vendor user is created in the test (role and membership of the seeded demo vendor by SQL as postgres, generated password in memory, deleted afterwards with its log rows; the unreviewed report row is inserted by SQL and deleted afterwards).
+- Existing code touched: `Dashboard.tsx` (uses `FilterBar`, 3 lines added, 12 removed; its markup tests pass unchanged) and `lib/vendor/dashboard.ts` (`withBase` exported). No existing assertion changed.
+
+## Checks
+- Unit and component: `vitest run apps/web/lib/vendor apps/web/components/vendor`: all pass (56 tests in the four files of the scratch harness: the two new unit files, the dashboard and the portal tests). Real stack after the seed: 8 of 8 (4 new, 4 dashboard). In the gate the two real-stack files print SKIPPED (the seed is never run by a gate).
+- Mutants: `WO-0106-mutation.md` (5 killed, 1 equivalent survivor explained).
+- Counted lines: about 538 (265 source, 273 tests), estimate before building about 400 (target 330, flag line 450): over the flag line because the three route pages, the shared FilterBar and the real-stack test took more than planned; under R7's 650 limit.
+
+## Evidence (workflow/evidence/R7/screenshots/, 1280px, light scheme, built app `next start` on port 3106, throwaway vendor of the seeded demo vendor, deleted afterwards)
+`WO-0106-1280-gaps-ranked.jpg` (default view: two scored rows, three "no visible ownership"), `...gaps-filter-hides-segments.jpg` (Size = Letter:M: every segment "Not enough users to display"), `...gaps-filter-replaced-by-season.jpg` (Season = Multi-season: Size back to Any),
+`...reports-list.jpg`, `...report-top.jpg` (notes, top gaps, rising segments), `...report-condition-spectrum.jpg`, `...report-unreviewed-not-found.jpg` (an unreviewed copy of the report inserted by SQL: "Report not found."). After the report opened, the browser's event log held one `vendor_report_opened`.
+Transcript: signed in as the throwaway vendor; opened /vendor/gaps, set Size, then Season; /vendor/reports, followed the link (by script: a pointer click on the wrapped link text missed once), scrolled the report; opened the unreviewed id. 375px and print not taken (cull). The reports list first rendered in a narrow column with a centred caption; fixed (wide wrapper, the chart table caption style) and re-shot.
+Cleanup: server stopped, `apps/web/.next` and `.vitest` removed (no `.env.local` ever existed; keys only in process env), seed removed with `--remove` (counts all 0), user, invitation and query-log rows deleted, viewport reset, scratch copy removed.
+
+## Decisions and flags
+- No page-level CSS module was needed; row-header cells of the tables keep the global `th` look (black underline against the grey cell rules), as in the dashboard's trend tables. A critic may want that rule softened in `vendor-charts.module.css` (read-only here).
+- Gaps default dimension is category x colour family (what the report uses). `gap_score` is shown with `toFixed(1)` (formatting only).
+- The design-critic pass over the whole portal (WO-0103 to 0106) is not part of this maker's report.
+- Row 837 of `ops.vendor_query_log` (a `coverage` call from before this work, see WO-0112 note 8) is left in place; row 838, made by the existing `vendor.int.test.ts` when I ran the vendor suites, was deleted. The gate resets the database anyway.

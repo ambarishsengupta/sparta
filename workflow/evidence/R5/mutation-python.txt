@@ -1,0 +1,15 @@
+BASELINE (unmutated copy): pass OK (skipped=1)
+M1 export outputs swapped (shape, scores): KILLED (3): test_evaluate_on_a_tiny_synthetic_idx_pair, test_onnx_matches_pytorch_and_keeps_output_order, test_two_outputs_ten_scores_and_thirty_two_numbers
+M2 weight count change (first block 16->24 channels): KILLED (6): test_evaluate_on_a_tiny_synthetic_idx_pair, test_onnx_matches_pytorch_and_keeps_output_order, test_built_card_carries_the_real_onnx_hash_and_refuses_a_stale_export, test_two_outputs_ten_scores_and_thi
+M3 card prints a wrong ONNX hash: KILLED (2): test_built_card_carries_the_real_onnx_hash_and_refuses_a_stale_export, test_card_has_the_required_sections_and_the_honest_status
+M4 test split used for validation: KILLED (2): test_training_never_touches_the_test_split, test_training_data_comes_from_the_train_split_only
+M5 CSV file read by training code: KILLED (2): test_training_data_comes_from_the_train_split_only, test_csv_files_are_never_read
+M6 split not stratified: KILLED (2): test_split_is_54000_6000_stratified_seeded_and_disjoint, test_training_data_comes_from_the_train_split_only
+M7 data hash check skipped: KILLED (1): test_data_hashes_must_equal_the_readme
+M8 confusion matrix transposed: KILLED (1): test_evaluate_on_a_tiny_synthetic_idx_pair
+M9 label smoothing removed: KILLED (1): test_train_uses_adam_and_label_smoothing_keeps_best_weights_and_respects_the_time_box
+M10 time-box ignored: KILLED (1): test_train_uses_adam_and_label_smoothing_keeps_best_weights_and_respects_the_time_box
+M11 augmentation unseeded: KILLED (1): test_augment_keeps_shape_and_range_and_is_seeded
+M12 export without dynamic batch axis: KILLED (2): test_evaluate_on_a_tiny_synthetic_idx_pair, test_onnx_matches_pytorch_and_keeps_output_order
+M13 evaluate skips the shared preprocessing scale: KILLED (1): test_evaluate_on_a_tiny_synthetic_idx_pair
+M14 stale ONNX accepted by card builder: KILLED (1): test_built_card_carries_the_real_onnx_hash_and_refuses_a_stale_export

@@ -1,0 +1,100 @@
+Command: npm ci && npm run build -w apps/web && WO_ID=WO-0012 GATE_BASE=$(git rev-parse HEAD) GATE_WO=workflow/work-orders/R4.md bash workflow/gates/gate.sh
+GATE_BASE was 011da97b7edcf74029815f1624ad8f03c4dd2992. Whole chain exit code: 0. Output below is the real, unedited output.
+
+
+added 160 packages, and audited 164 packages in 4s
+
+47 packages are looking for funding
+  run `npm fund` for details
+
+11 moderate severity vulnerabilities
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> @sparta/web@0.0.0 build
+> next build --webpack
+
+▲ Next.js 16.4.5 (webpack)
+✓ Running next.config.ts took 895ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1711ms
+  Running TypeScript ...
+  Finished TypeScript in 1150ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/5) ...
+  Generating static pages using 7 workers (1/5) 
+  Generating static pages using 7 workers (2/5) 
+  Generating static pages using 7 workers (3/5) 
+✓ Generating static pages using 7 workers (5/5) in 232ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /items/[id]
+├ ○ /items/new
+└ ○ /outfits
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+=== GATE: typecheck ===
+
+> typecheck
+> tsc -p tsconfig.json
+
+--- typecheck: PASS
+=== GATE: test ===
+
+> test
+> vitest run
+
+
+ RUN  v5.1.0 /Users/ambarish/Documents/Claude/Sparta/sparta
+
+
+ Test Files  34 passed (34)
+      Tests  672 passed (672)
+   Start at  10:10:42
+   Duration  8.38s (tests 88%, transform 8%, import 3%)
+
+--- test: PASS
+=== GATE: lint ===
+
+> lint
+> eslint .
+
+--- lint: PASS
+=== GATE: manifest_check ===
+garment-cnn-v2.onnx: ok, not built (status "not-built", no hash pinned)
+pairing-prior-v1.json: ok, not built (status "not-built", no hash pinned)
+unlock-candidates.json: ok, not built (status "not-built", no hash pinned)
+manifest_check: PASS (/Users/ambarish/Documents/Claude/Sparta/sparta/models.manifest.json)
+--- manifest_check: PASS
+=== GATE: secret_scan ===
+secret_scan: PASS (no secrets found in 243 candidate files)
+--- secret_scan: PASS
+=== GATE: release_map ===
+defined: 99 FR, 8 NFR, 51 BR (40 Must); releases parsed: R0, R1, R2, R3, R4, R5, R6, R7, R8; FDD 16 events: 15
+release_map: PASS
+--- release_map: PASS
+=== GATE: check_goals ===
+skipped   workflow/goals/R0-gate-green.md (the gate is already running; predicate: bash workflow/gates/gate.sh >/dev/null 2>&1)
+holding   workflow/goals/R0-manifest-not-built.md
+holding   workflow/goals/R1-engine-tests.md
+holding   workflow/goals/R1-review-pack.md
+check_goals: 4 goal file(s), none violated
+--- check_goals: PASS
+=== GATE: scope_check ===
+scope_check: PASS (all changed paths are inside the In scope list)
+--- scope_check: PASS
+GATE: PASS

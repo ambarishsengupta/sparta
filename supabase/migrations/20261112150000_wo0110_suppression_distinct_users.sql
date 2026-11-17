@@ -1,0 +1,111 @@
+-- WO-0110 (R7a fix loop 1) migration 1: analytics.run_aggregation() measures the hidden remainder of LLD 5.3 step 2 in DISTINCT users.
+-- Defect (Opus checker): the old rule summed `users` over the hidden children of a parent, which counts a person once per child. 20 users with a black
+-- Activewear item and 5 other users with a navy and a red one gave 5 + 5 = 10 (not under 10), so both stayed hidden while only 5 users were hidden and
+-- 25 - 20 recovered them. Now the remainder is the number of distinct users of the parent who have no fact in any VISIBLE child of that sibling set
+-- (hidden children, and for condition bands also Unrated), read from analytics_private.facts, which still holds the run's facts at this point.
+-- Everything else is unchanged: grants, security definer, search_path = '', the 'only one hidden child' trigger and the choice of the smallest sibling.
+create or replace function analytics.run_aggregation() returns bigint
+language plpgsql security definer set search_path = '' as $$
+declare
+  c_lock constant bigint := 7099001;                         -- advisory lock key of the aggregation run
+  v_dims constant text[] := array['category', 'colour_family', 'fit', 'brand', 'category, colour_family', 'category, fit', 'category, brand'];
+  v_filters constant text[] := array['', 'size', 'season', 'price_band', 'region'];
+  v_attrs constant text[] := array['d_category', 'd_colour_family', 'd_fit', 'd_brand', 'f_size', 'f_season', 'f_price_band', 'f_region', 'condition_band'];
+  v_start timestamptz := clock_timestamp();
+  v_run bigint; v_salt text; v_min int; v_users int; v_items int; v_supp int; v_pass int := 0; v_new int; v_n int;
+  v_sets text; v_on text; v_fm text; v_code text; a text; y text;
+begin
+  if not pg_try_advisory_xact_lock(c_lock) then
+    raise exception 'aggregation_running' using errcode = '55P03';
+  end if;
+  insert into ops.aggregate_runs (started_at) values (v_start) returning id into v_run;
+  begin
+    select case when s.value ~ '^[0-9]{1,9}$' then s.value::int end into v_min from ops.settings s where s.key = 'min_group_size';
+    if v_min is null or v_min <= 0 or v_min % 5 <> 0 then raise exception 'invalid_min_group_size'; end if;
+
+    v_salt := encode(extensions.gen_random_bytes(16), 'hex');   -- in memory only, never stored
+    perform analytics_private.build_facts(v_salt);               -- a separate statement: build_facts truncates facts
+    select count(distinct f.user_hash), count(*) filter (where f.kind = 'owned') into v_users, v_items from analytics_private.facts f;
+
+    -- LLD 5.2: seven dimension groups x five filter choices, then the condition spectrum (owned and rated only)
+    truncate analytics_private.cube_stage;
+    select string_agg('(' || concat_ws(', ', d, nullif(f, '')) || ')', ', ') into v_sets from unnest(v_dims) d cross join unnest(v_filters) f;
+    execute 'insert into analytics_private.cube_stage (kind, period, d_category, d_colour_family, d_fit, d_brand, f_size, f_season, f_price_band, f_region, users, events) '
+      || 'select kind, period, category, colour_family, fit, brand, size, season, price_band, region, count(distinct user_hash), count(*) '
+      || 'from analytics_private.facts group by kind, period, grouping sets (' || v_sets || ')';
+    insert into analytics_private.cube_stage (kind, period, d_category, condition_band, users, events)
+      select 'owned', f.period, f.category, f.condition_band, count(distinct f.user_hash), count(*)
+      from analytics_private.facts f where f.kind = 'owned' and f.condition_band <> 'Unrated' group by f.period, f.category, f.condition_band;
+
+    -- LLD 5.3 step 1: mark rows under the minimum group size
+    drop table if exists pg_temp.run_marks;
+    create temp table run_marks (t tid primary key);
+    insert into pg_temp.run_marks select s.ctid from analytics_private.cube_stage s where s.users < v_min;
+
+    -- LLD 5.3 step 2: complementary suppression. A child of a row has the same kind and period and the row's attributes plus exactly one more (a filter
+    -- value, a finer dimension group or a condition band); each added attribute gives its own set of siblings. Repeat until no row is newly marked.
+    loop
+      v_pass := v_pass + 1;
+      if v_pass > 1000 then raise exception 'suppression_did_not_converge'; end if;
+      v_new := 0;
+      foreach a in array v_attrs loop
+        v_on := 'p.kind = c.kind and p.period = c.period';
+        v_fm := '';                                              -- the parent's own attributes, tested on the facts (fact column = name without d_ or f_)
+        foreach y in array v_attrs loop
+          if y <> a then
+            v_on := v_on || format(' and coalesce(p.%1$s, chr(1)) = coalesce(c.%1$s, chr(1))', y);
+            v_fm := v_fm || format(' and (p.%1$s is null or f.%2$s = p.%1$s)', y, regexp_replace(y, '^[df]_', ''));
+          end if;
+        end loop;
+        execute format($q$
+          with sib as (
+            select p.ctid as pt, c.ctid as ct, c.%1$s as cv, c.users, (m.t is not null) as hid
+            from analytics_private.cube_stage p
+            join analytics_private.cube_stage c on c.%1$s is not null and p.%1$s is null and %2$s
+            left join pg_temp.run_marks m on m.t = c.ctid
+            where not exists (select 1 from pg_temp.run_marks pm where pm.t = p.ctid)
+          ), grp as (
+            select pt, count(*) filter (where hid) as nh, coalesce(array_agg(cv) filter (where not hid), '{}') as vis
+            from sib group by pt having count(*) filter (where hid) >= 1
+          ), need as (                                           -- remainder = distinct users of the parent outside every visible child of this set
+            select g.pt from grp g where g.nh = 1 or (
+              select count(distinct f.user_hash) from analytics_private.facts f join analytics_private.cube_stage p on p.ctid = g.pt
+              where f.kind = p.kind and f.period = p.period %4$s and not (f.%5$s = any (g.vis))) < %3$s
+          ), pick as (
+            select distinct on (s.pt) s.ct from sib s join need n on n.pt = s.pt where not s.hid order by s.pt, s.users, s.ct
+          )
+          insert into pg_temp.run_marks select ct from pick on conflict do nothing $q$, a, v_on, v_min, v_fm, regexp_replace(a, '^[df]_', ''));
+        get diagnostics v_n = row_count;
+        v_new := v_new + v_n;
+      end loop;
+      exit when v_new = 0;
+    end loop;
+    select count(*) into v_supp from pg_temp.run_marks;
+    delete from analytics_private.cube_stage s using pg_temp.run_marks m where m.t = s.ctid;
+    drop table pg_temp.run_marks;
+
+    -- LLD 5.3 steps 3 and 4: round to the nearest 5, keep users_floor, and count the rows that round to 0 as suppressed
+    select v_supp + count(*) filter (where round(s.users / 5.0) * 5 = 0 or round(s.events / 5.0) * 5 = 0) into v_supp from analytics_private.cube_stage s;
+    -- LLD 5.3 step 5: replace the published cube, then empty the staging and fact tables
+    delete from analytics.cube;
+    insert into analytics.cube (run_id, kind, period, d_category, d_colour_family, d_fit, d_brand, f_size, f_season, f_price_band, f_region, condition_band,
+                                users_rounded, events_rounded, users_floor)
+      select v_run, s.kind, s.period, s.d_category, s.d_colour_family, s.d_fit, s.d_brand, s.f_size, s.f_season, s.f_price_band, s.f_region, s.condition_band,
+             (round(s.users / 5.0) * 5)::int, (round(s.events / 5.0) * 5)::int, (floor(s.users / 5.0) * 5)::int
+      from analytics_private.cube_stage s
+      where round(s.users / 5.0) * 5 > 0 and round(s.events / 5.0) * 5 > 0;
+    truncate analytics_private.cube_stage;
+    truncate analytics_private.facts;
+    update ops.aggregate_runs set status = 'ok', finished_at = clock_timestamp(), users_included = v_users, items_included = v_items, rows_suppressed = v_supp,
+      duration_ms = (extract(epoch from clock_timestamp() - v_start) * 1000)::int where id = v_run;
+  exception when others then
+    -- the subtransaction is rolled back: the previous cube and the fact tables are as they were. Only a fixed code is kept, never the message text.
+    v_code := case when sqlerrm in ('invalid_min_group_size', 'suppression_did_not_converge', 'invalid_salt') then sqlerrm else 'run_failed' end;
+    truncate analytics_private.cube_stage;
+    truncate analytics_private.facts;
+    update ops.aggregate_runs set status = 'error', error_code = v_code, finished_at = clock_timestamp(),
+      duration_ms = (extract(epoch from clock_timestamp() - v_start) * 1000)::int where id = v_run;
+  end;
+  return v_run;
+end $$;
+revoke execute on function analytics.run_aggregation() from public, anon, authenticated, service_role;

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "source": "LLD 7.8 (the twenty H&M product types of garment model version 2) and FDD 14.3 (second table); slot assignment for the pairing prior from LLD 7.9. A draft for the style specialist to confirm (FOI-10, FOI-11).",
+  "types": {
+    "T-shirt": { "category": "Tops", "sub_type": "T-shirt", "prior_slot": "Top" },
+    "Polo shirt": { "category": "Tops", "sub_type": "Polo", "prior_slot": "Top" },
+    "Shirt": { "category": "Tops", "sub_type": "Shirt", "prior_slot": "Top" },
+    "Sweater": { "category": "Tops", "sub_type": "Sweater", "prior_slot": "Top" },
+    "Cardigan": { "category": "Tops", "sub_type": "Cardigan", "prior_slot": "Layer" },
+    "Hoodie": { "category": "Tops", "sub_type": "Hoodie", "prior_slot": "Top" },
+    "Trousers": { "category": "Bottoms", "sub_type": "Trousers", "prior_slot": "Bottom" },
+    "Shorts": { "category": "Bottoms", "sub_type": "Shorts", "prior_slot": "Bottom" },
+    "Jacket": { "category": "Outerwear", "sub_type": "Jacket", "prior_slot": "Layer" },
+    "Blazer": { "category": "Outerwear", "sub_type": "Blazer", "prior_slot": "Layer" },
+    "Coat": { "category": "Outerwear", "sub_type": "Coat", "prior_slot": "Layer" },
+    "Sneakers": { "category": "Footwear", "sub_type": "Sneakers", "prior_slot": "Footwear" },
+    "Boots": { "category": "Footwear", "sub_type": "Boots", "prior_slot": "Footwear" },
+    "Other shoe": { "category": "Footwear", "sub_type": null, "prior_slot": "Footwear" },
+    "Bag": { "category": "Accessories", "sub_type": "Bag", "prior_slot": null },
+    "Hat/beanie": { "category": "Accessories", "sub_type": "Cap", "prior_slot": null },
+    "Cap/peaked": { "category": "Accessories", "sub_type": "Cap", "prior_slot": null },
+    "Scarf": { "category": "Accessories", "sub_type": "Scarf", "prior_slot": null },
+    "Tie": { "category": "Accessories", "sub_type": "Tie", "prior_slot": null }
+  },
+  "denim": {
+    "product_type_name": "Trousers",
+    "garment_group_name": "Trousers Denim",
+    "category": "Bottoms",
+    "sub_type": "Jeans",
+    "prior_slot": "Bottom"
+  },
+  "notes": [
+    "Nineteen product_type_name keys plus the denim rule make the twenty types of LLD 7.8 (Trousers Denim is the twentieth, Jeans).",
+    "An article whose product_type_name is not a key above has no sub-type (no suggestion, FDD 14.3).",
+    "sub_type null (Other shoe) means Footwear with no Sparta sub-type (FDD 14.3); such articles are not used by the pairing prior because every prior key must be a Sparta sub-type (LLD 7.9).",
+    "prior_slot is the slot used to form pairs in LLD 7.9. Cardigan is Layer there, although the slot map of FDD 14.1 lets it fill Top or Layer; Sweater and Hoodie are Top.",
+    "prior_slot null means the sub-type fills no top, bottom, layer or footwear slot, so it forms no pair."
+  ]
+}

@@ -3,12 +3,12 @@
 | Field | Value |
 | --- | --- |
 | Document | Functional Design Document |
-| Version | 1.4 (adds the recommendation engine; amends 1.3) |
-| Date | 2026-10-29 |
+| Version | 1.5 (adds the learned layer, Complete the look and Wardrobe unlock to the recommendation engine; amends 1.4) |
+| Date | 2026-11-04 |
 | Product owner | Ambarish Sengupta |
 | Taxonomy and outfit rules | Arpan Shah (style specialist) |
 | Technical review | C. Prashanth (SA) |
-| Traces to | BRD v1.3 (requirement IDs BR-xx) |
+| Traces to | BRD v1.4 (requirement IDs BR-xx) |
 | Status | Final |
 
 ## 1. Purpose and how to read this document
@@ -137,6 +137,9 @@ Sign-up and the first login run in this order: sign-up with an invited email add
 | FR-57 | Logged outfits are stored only for the user's own history. They are not used to compute wear counts, and they are excluded from every vendor aggregate. | BR-15 | Could |
 | FR-58 | **Same inputs, same suggestions.** For the same wardrobe, occasion and date the engine returns the same suggestions in the same order. In the pilot it uses only the user's active items, the flags and ratings the user has set on them (favourite, condition, occasion and season tags), and the hemisphere in the profile. It does not learn from accepted or rejected suggestions, outfit logs, plans or purchases. | BR-52, BR-53 | Must |
 | FR-59 | **Private by construction.** Suggestions are ranked in the user's browser from the user's own items. No wardrobe data is sent anywhere to produce a suggestion. | BR-50, BR-55 | Must |
+| FR-59a | **Complete the look.** From any active item the user can choose "Build outfits around this", pick an occasion, and the engine proposes up to three outfits that include that item, with the same rules, reasons, swaps and accept or reject choices as FR-52 and FR-53. The chosen item stays in its slot; the swap sheet lists choices for the other slots only. If no valid outfit exists, FR-54 applies. | BR-57 | Should |
+| FR-59b | **Wardrobe unlock.** After the user has asked for suggestions, the app can show up to three things to add ("A navy chino would give you 6 more outfits"). Each is a sub-type and colour family from the fixed list in 14.5, at most one per sub-type (in its best colour). The list is the style specialist's fallback list unless the H&M-derived list is switched on (FR-59c). They are ordered by how many new valid outfits each creates (the number shown is exactly that count, 14.5), then by fit with the wardrobe, the pairing prior if it is on, and name. Each can be added to the wishlist in one tap; that entry is marked as coming from Wardrobe unlock, is left out of every vendor wishlist figure, gap score and trend (FR-74, FR-81), and is counted in an analytics event (section 16). It shows attributes only: no product photograph, price or store. Nothing is sent anywhere to compute it. | BR-58, BR-59 | Should |
+| FR-59c | **Learned parts can be switched off.** Four learned parts each have one configuration switch: the garment model version 2 (14.3; worker `GARMENT_MODEL_VERSION`, 1 or 2, default 1), the look embedding in swap order (14.2; web `NEXT_PUBLIC_EMBEDDING_SWAP_ENABLED`, default off), the pairing prior (14.2; web `NEXT_PUBLIC_PAIRING_PRIOR_ENABLED`, default off) and the H&M-derived Wardrobe unlock list (14.5; web `NEXT_PUBLIC_UNLOCK_LIST`, `fallback` or `hm`, default `fallback`). With all four off, every function in section 14 still works, using the rules, the base ranking weights (14.2), sub-type matching and the style specialist's fallback unlock list. | BR-56 | Must |
 
 ## 9. Settings, privacy and data rights
 
@@ -171,7 +174,7 @@ All figures use only users covered by the pilot notice and only segments with 10
 | --- | --- | --- | --- |
 | FR-72 | Ownership mix | Share of users owning at least one item in each category, colour family, fit and brand. Bar charts with a segment selector. | BR-30 |
 | FR-73 | Purchase trend | Number of purchases per month, by category and brand. A weekly view is deferred until after the pilot, because weeks inside a month would need their own suppression rules. | BR-30 |
-| FR-74 | Wishlist trend | Number of users adding wishlist items over time, by category and brand. | BR-30 |
+| FR-74 | Wishlist trend | Number of users adding wishlist items over time, by category and brand. Entries created by Wardrobe unlock (FR-59b) are not counted. | BR-30 |
 | FR-75 | Gaps | Segments where wishlist demand is high and ownership is low, ranked by gap score (FR-81), with the contributing user counts. | BR-31 |
 | FR-76 | Condition spectrum | For each category, the share of owned items in each condition band. A high share in the worn bands points to replacement demand. Each band is a segment under FR-80: a band with fewer than 10 users shows "Not enough users to display" (never 0%), shares are computed over the bands shown, and items without a condition rating are left out. | BR-14 |
 | FR-77 | Filters | Size, season, price band or region, one filter at a time; choosing a second filter replaces the first. A filter that makes any segment fall under 10 users hides that segment and shows "Not enough users to display". | BR-34 |
@@ -206,7 +209,7 @@ Required: `sku, name, brand, category, sub_type, primary_colour, price, currency
 | ID | Rule | Traces to |
 | --- | --- | --- |
 | FR-80 | A segment (a combination of category, colour family, fit, brand, size and so on) is shown only if at least 10 contributing users are in it. Otherwise it is suppressed. | BR-26, BR-33 |
-| FR-81 | **Gap score** for a segment = wishlist users divided by owning users. Wishlist users are the distinct contributing users with at least one open wishlist entry in the segment; owning users are the distinct contributing users with at least one active item in it. The score uses only the rounded counts that pass FR-80 and FR-82, never a suppressed value. If the owning count is zero or suppressed, no score is shown and the segment is labelled "no visible ownership"; it is shown only if its wishlist count meets FR-80. | BR-31 |
+| FR-81 | **Gap score** for a segment = wishlist users divided by owning users. Wishlist users are the distinct contributing users with at least one open wishlist entry in the segment, not counting entries created by Wardrobe unlock (FR-59b); owning users are the distinct contributing users with at least one active item in it. The score uses only the rounded counts that pass FR-80 and FR-82, never a suppressed value. If the owning count is zero or suppressed, no score is shown and the segment is labelled "no visible ownership"; it is shown only if its wishlist count meets FR-80. | BR-31 |
 | FR-82 | Counts are rounded to the nearest 5 before display (confirmed by the product owner), and totals are computed from the unrounded values. Differences between filtered views that could reveal a small group are suppressed. | BR-26 |
 | FR-83 | Aggregates are computed by a scheduled job on an anonymised copy of the data that contains no names, emails, images, receipts or free-text notes. The job runs nightly during the pilot (confirmed by the product owner). | BR-25, BR-27, BR-33 |
 | FR-84 | Condition is aggregated as band shares only, and wear logs are excluded. | BR-14, BR-15 |
@@ -252,11 +255,11 @@ Required: `sku, name, brand, category, sub_type, primary_colour, price, currency
 | Barcode | Text (digits) | No | EAN, UPC or other GTIN, saved from a barcode scan or typed in (FR-26). Used only for catalogue lookup |
 | Status | System field | Yes | Active or Archived. An archived item also records a reason: sold, donated, discarded or lost (FR-15). |
 | Origin | System field | Yes | Catalogue, Manual, Photo, Receipt, Vendor feed |
-| Shape features | System field: 32 numbers and the model version | No | Made by the garment model for photo items (section 14.3). Not shown to the user. Used only to order swap choices (section 14.2). Never part of any aggregate. |
+| Shape features | System field: 32 numbers (version 1) or 64 numbers (version 2: the look embedding) and the model version | No | Made by the garment model for photo items (section 14.3). Not shown to the user. Used only to order swap choices (section 14.2). Never part of any aggregate. |
 
 ## 14. Recommendation engine
 
-The engine works in two stages. **Hard rules** (R1 and R2 in 14.1, and the slot structure: a top, a bottom and footwear) decide which outfits are allowed; an outfit that breaks one is never shown. **Ranking** (14.2) scores the other rules (R3 to R6) and the rest, and orders the allowed outfits and the swap choices. A small image model (14.3) helps photo items get the right category, and gives swap choices a sense of shape. 14.4 says how the engine is checked.
+The engine works in two stages. **Hard rules** (R1 and R2 in 14.1, and the slot structure: a top, a bottom and footwear) decide which outfits are allowed; an outfit that breaks one is never shown. **Ranking** (14.2) scores the other rules (R3 to R6) and the rest, and orders the allowed outfits and the swap choices. An image model (14.3) helps photo items get the right category, and a look embedding from the same model gives swap choices a sense of how garments look. A pairing prior built from public purchase data (14.2) nudges the order of outfits that already pass the rules. 14.4 says how the engine is checked, and 14.5 describes Complete the look and Wardrobe unlock.
 
 The engine is built before the pilot opens, from the style specialist's rules and from public data. It does not learn from participants (BR-52, FR-58).
 
@@ -288,7 +291,7 @@ Rules work on item attributes and never on photos or shape features. A suggestio
 
 ### 14.2 Ranking and swap order
 
-**Score.** Each outfit that passes 14.1 gets a score from 0 to 1, the weighted sum of five parts:
+**Score.** Each outfit that passes 14.1 gets a score from 0 to 1, the weighted sum of the parts below. There are two weight sets, both data owned by the style specialist (FOI-9). With the pairing prior off, which is the default, the base set of five parts is used and the pairing part does not exist, so scores and order are exactly those of the rules-and-ranking engine without the learned layer. With the prior on, the set of six parts is used.
 
 | Part | What it measures |
 | --- | --- |
@@ -297,16 +300,27 @@ Rules work on item attributes and never on photos or shape features. A suggestio
 | Completeness | A layer in cool seasons, and a belt that matches the shoes where the wardrobe has one |
 | Condition | Items in the Falling apart band score lowest; items with no rating count as neutral |
 | Favourites | A small bonus for items the user has marked as favourite |
+| Pairing prior | How often garments of these types and colours were bought together, by the same customer on the same day, in public H&M purchase data, as a number from 0 to 1 (0.5 is neutral). It is a nudge: it can reorder outfits that already pass 14.1 and can never admit one (14.5). It is 0.5 for any type or colour combination the data covers too thinly. Only present when the prior is switched on. |
 
-The three best outfits are shown, applying R7 (variety) as they are picked. Ties are broken by item ID so that the result is stable (FR-58). The weights are data that the style specialist can change (LLD 9.5) and are checked on sample wardrobes before the pilot opens (FOI-9).
+| Part | Base weight (prior off, default) | Weight with the prior on |
+| --- | --- | --- |
+| Rule fit | 0.50 | 0.40 |
+| Pairing prior | not used | 0.15 |
+| Occasion fit | 0.20 | 0.15 |
+| Completeness | 0.10 | 0.10 |
+| Condition | 0.10 | 0.10 |
+| Favourites | 0.10 | 0.10 |
+| Total | 1.00 | 1.00 |
 
-**Swap order.** When the user swaps an item (FR-53), the choices are their other active items that keep the outfit valid. They are ordered by likeness to the item being replaced: first shape (for photo items, how alike the two garment pictures look, using the shape features from 14.3; for other items, whether the sub-type is the same), then closeness of colour, measured in CIELAB as in the similar-colour filter (FR-11).
+The three best outfits are shown, applying R7 (variety) as they are picked. Ties are broken by item ID so that the result is stable (FR-58). Both weight sets are data that the style specialist can change (LLD 9.5) and are checked on sample wardrobes before the pilot opens (FOI-9).
 
-**What the engine does not do in the pilot.** It does not learn which outfits a user likes, does not personalise from history, and does not use photos in ranking except through the shape features. After the pilot the team may adjust the rules and weights by hand after reading overall accept and reject counts; that is editing rules, not training a model (BR-52; Privacy Policy, section 3).
+**Swap order.** When the user swaps an item (FR-53), the choices are their other active items that keep the outfit valid. They are ordered by likeness to the item being replaced: first shape (for photo items, how alike the two garment pictures look, using the look embedding from 14.3 when that part is switched on, FR-59c; for other items, or when it is off, whether the sub-type is the same), then closeness of colour, measured in CIELAB as in the similar-colour filter (FR-11).
+
+**What the engine does not do in the pilot.** It does not learn which outfits a user likes, does not personalise from history, and does not use photos in ranking except through the look embedding. After the pilot the team may adjust the rules and weights by hand after reading overall accept and reject counts; that is editing rules, not training a model (BR-52; Privacy Policy, section 3).
 
 ### 14.3 Garment suggestion for photo items
 
-When an item is added by photo (FR-23), the worker runs the garment model on the cut-out. The model was trained before the pilot on Fashion-MNIST, a public set of 70,000 greyscale 28 by 28 pixel pictures in ten garment types. It returns its best guess and how sure it is, and 32 shape numbers used for swap order (14.2).
+When an item is added by photo (FR-23), the worker runs the garment model on the cut-out. There are two versions of the model, both trained before the pilot on public data. Version 1 uses Fashion-MNIST, 70,000 greyscale 28 by 28 pixel pictures in ten garment types. Version 2 uses H&M product photographs: about 14,600 full-colour photographs in twenty garment types, at most 1,500 per type. They are menswear articles, topped up for types with few of them from the Divided and Sport departments, which are partly womenswear (they hold, for example, dresses, skirts and ladies' denim), so some training pictures show women's garments; the model card says how many pictures come from each source. Version 2 replaces version 1 only if it passes the team-photo test in 14.4. Either returns its best guess, how sure it is, and a list of numbers used for swap order (14.2): 32 shape numbers for version 1, a 64-number look embedding for version 2.
 
 | Picture type the model knows | Category and sub-type suggested |
 | --- | --- |
@@ -321,10 +335,34 @@ When an item is added by photo (FR-23), the worker runs the garment model on the
 | Bag | Accessories: Bag |
 | Dress | No suggestion (not menswear) |
 
-The table is a draft for the style specialist to confirm (FOI-10). Rules:
+Version 2 knows these H&M product types (draft; the catalogue's denim trousers are a type of their own, Jeans):
+
+| Picture type the model knows | Category and sub-type suggested |
+| --- | --- |
+| T-shirt | Tops: T-shirt |
+| Polo shirt | Tops: Polo |
+| Shirt | Tops: Shirt |
+| Sweater | Tops: Sweater |
+| Cardigan | Tops: Cardigan |
+| Hoodie | Tops: Hoodie |
+| Trousers | Bottoms: Trousers |
+| Trousers Denim | Bottoms: Jeans |
+| Shorts | Bottoms: Shorts |
+| Jacket | Outerwear: Jacket |
+| Blazer | Outerwear: Blazer |
+| Coat | Outerwear: Coat |
+| Sneakers | Footwear: Sneakers |
+| Boots | Footwear: Boots |
+| Other shoe | Footwear, no sub-type |
+| Bag | Accessories: Bag |
+| Hat/beanie, Cap/peaked | Accessories: Cap |
+| Scarf | Accessories: Scarf |
+| Tie | Accessories: Tie |
+
+Vest tops, socks, underwear, swimwear and nightwear are not in version 2, so no suggestion is made for them. Both tables are drafts for the style specialist to confirm (FOI-10, FOI-11). Rules:
 
 - A suggestion is shown only when the model's confidence reaches a minimum set in the worker's configuration (starting at 60%, LLD 7.7). Below it, or for Dress, nothing is shown.
-- The model knows ten broad types. Many Sparta sub-types (Polo, Jeans, Blazer, Formal shoes, Watch, Belt and others) are not among them, so the suggestion may be the nearest broad type. It is always a starting point for the user to correct.
+- Version 1 knows ten broad types and version 2 knows twenty. Many Sparta sub-types are not among them (Polo, Jeans and Blazer for version 1; Formal shoes, Watch, Belt, Chinos and others for both versions), so the suggestion may be the nearest type the model knows. It is always a starting point for the user to correct.
 - The model never sets colour, size, fit, material, pattern, brand or price, and it is not used for anything except pre-filling the form (FR-23a) and ordering swap choices (14.2).
 - The shape numbers belong to the item: they are included in the user's export and are deleted with the item or the account. They are never shown to vendors or included in any aggregate.
 - The feature can be switched off in the worker's configuration. The app works the same without it.
@@ -333,11 +371,24 @@ The table is a draft for the style specialist to confirm (FOI-10). Rules:
 
 Before the pilot opens:
 
-- **Image model.** Accuracy on the 10,000 Fashion-MNIST test pictures (about 90% or more) with per-type results; accuracy on at least 100 photos of garments owned by team members, taken the way a user would. If the suggestion is right less than about 60% of the time on those photos, it is switched off for the pilot.
+- **Pairing prior.** Built from H&M purchase lines and tested on a time-based holdout: the prior must rank real same-day pairs (two articles in different slots, top, bottom, layer or footwear, bought together) above pairs of the same two slots in which the second article is replaced by one drawn by how often articles of that slot were bought in the test weeks, with an overall AUC of 0.60 or more, with the result per slot pair reported. Below 0.60 the prior is not shipped and stays switched off (FR-59c). Passing means it is better than chance at predicting what H&M customers bought together; it does not mean it measures style, which is why the style review below is still required.
+- **Image model (version 1).** Accuracy on the 10,000 Fashion-MNIST test pictures (about 90% or more) with per-type results; accuracy on at least 100 photos of garments owned by team members, taken the way a user would and labelled by the style specialist with the Sparta sub-type of each garment. If the suggestion is right less than about 60% of the time on those photos, it is switched off for the pilot.
 - **Rules and ranking.** On synthetic wardrobes, every suggestion passes R1, R2 and the slot structure, the same inputs give the same output (FR-58), and a thin wardrobe gets the "what is missing" message (FR-54).
 - **Style review.** The style specialist reviews at least 50 suggestions drawn from at least 5 synthetic wardrobes and marks each acceptable or not (about 80% or more acceptable).
+- **Image model (version 2).** Accuracy on H&M photographs held out by product (`product_code`, never in training; colour variants of one product share it), per type, and the same team photos as version 1, with each version scored on the sub-type it would suggest. At the confidence threshold that makes shown suggestions right about 80% of the time, version 2 is used only if it shows suggestions at least as often as version 1 and is right at least as often; otherwise version 1 stays.
+- **Complete the look and Wardrobe unlock.** On the synthetic wardrobes every outfit from Complete the look contains the chosen item and passes R1, R2 and the slot structure; every Wardrobe unlock item, once added, produces exactly the number of new outfits claimed, checked against an independent brute-force count; and results are the same on a second run (FR-58).
 
 During the pilot, the accept and reject events and the garment-suggestion events (section 16) show how the engine is doing.
+
+### 14.5 Complete the look and Wardrobe unlock
+
+These two functions are the pilot's standout feature. They add no new data about the user, and nothing is sent to compute them.
+
+**Complete the look (FR-59a).** The chosen item is fixed in its slot (a two-slot item such as a Suit fills both). The engine runs 14.1 and 14.2 for the remaining slots and shows up to three outfits, applying R7 so they differ. The reasons shown (R8) mention the chosen item. The function is offered only for items that fill the top, bottom, layer or footwear slots, not for accessories, underwear or socks. For sub-types that can fill the top or the layer slot (Sweater, Cardigan, Hoodie) both placements are tried and the best outfits from either are shown.
+
+**Wardrobe unlock (FR-59b).** The app has a fixed list of up to 40 menswear combinations of sub-type and colour family. By default it is the fallback list, written by the style specialist, which includes combinations the H&M types cannot express (for example Chinos, Joggers, Formal shoes and Sandals). If the H&M-derived list is switched on (FR-59c), the list is instead the combinations most often bought in the H&M purchase data (counts only; no purchase row and no article is in the list). For each combination the engine pretends the user owns one such item and counts the outfits containing it that pass 14.1 for the chosen occasion and season and whose rule fit (14.2) is at or above a threshold set by the style specialist (starting at 0.6), so that colour matters. The count is made against every eligible item in each slot, bounded at 20 items per slot chosen by a cheap pre-score, with the pretend item always included. Each sub-type appears at most once, in its best colour. The three combinations with the largest counts are kept (ties by rule fit with the wardrobe, then by pairing prior if it is on, then by name), and the number shown is exactly the count. The pretend items are never saved. Adding one to the wishlist uses the ordinary wishlist function (FR-34), with the sub-type and colour family filled in and no brand or price; the entry is marked as coming from Wardrobe unlock, is excluded from vendor wishlist figures, gap scores and trends, and is counted in an analytics event (section 16).
+
+**Why the pairing prior never decides.** Whether an outfit is allowed is decided only by 14.1. When switched on, the prior is one of six parts of the score and carries a weight of 0.15 (14.2). A thin or unusual wardrobe therefore gets valid suggestions even where the prior knows nothing.
 
 ## 15. Non-functional requirements (functional view)
 
@@ -356,7 +407,7 @@ NFR-1 and NFR-2 satisfy BR-13.
 
 ## 16. Analytics events (BR-44, for the success measures in BRD section 11)
 
-Events carry a pseudonymous user ID and no free text. They are recorded only for consumers who have joined the pilot (notice accepted and onboarding complete) and for vendors. Examples: `app_opened` (sent at most once per user per day), `item_added` (with origin), `wishlist_added`, `purchase_recorded`, `receipt_scanned`, `outfit_saved`, `outfit_suggestion_accepted`, `outfit_suggestion_rejected`, `garment_guess_shown`, `garment_guess_kept`, `garment_guess_changed`, `export_requested`, `vendor_dashboard_viewed`, `vendor_report_opened`, `feed_uploaded`. Sign-ups and account deletions are counted as daily totals with no user ID, and notice acceptance is read from the consent records. No event is generated for outfit logging beyond the log record itself. A user counts as active in a week if they have at least one event in that week; `app_opened` makes sure users who only view their wardrobe are counted. Weekly active share = active users in the week / registered users who have accepted the pilot notice and completed onboarding. Suggestion acceptance = accepted / (accepted + rejected) suggestion events. Photo suggestion kept share = `garment_guess_kept` / `garment_guess_shown`.
+Events carry a pseudonymous user ID and no free text. They are recorded only for consumers who have joined the pilot (notice accepted and onboarding complete) and for vendors. Examples: `app_opened` (sent at most once per user per day), `item_added` (with origin), `wishlist_added` (with origin, which includes `unlock` for entries made from Wardrobe unlock), `purchase_recorded`, `receipt_scanned`, `outfit_saved`, `outfit_suggestion_accepted`, `outfit_suggestion_rejected`, `garment_guess_shown`, `garment_guess_kept`, `garment_guess_changed`, `export_requested`, `vendor_dashboard_viewed`, `vendor_report_opened`, `feed_uploaded`. Sign-ups and account deletions are counted as daily totals with no user ID, and notice acceptance is read from the consent records. No event is generated for outfit logging beyond the log record itself. A user counts as active in a week if they have at least one event in that week; `app_opened` makes sure users who only view their wardrobe are counted. Weekly active share = active users in the week / registered users who have accepted the pilot notice and completed onboarding. Suggestion acceptance = accepted / (accepted + rejected) suggestion events. Photo suggestion kept share = `garment_guess_kept` / `garment_guess_shown`. The suggestion events also carry `engine_config`, a short string giving the state of the four learned-part switches (FR-59c) and the name of the weight set (14.2), so that acceptance before and after a switch can be told apart. Wishlist events with origin `unlock` are excluded from vendor wishlist figures.
 
 ## 17. Acceptance criteria (selected)
 
@@ -372,6 +423,9 @@ Events carry a pseudonymous user ID and no free text. They are recorded only for
 | FR-53 | Given a user swaps an item in a suggestion, then every choice offered keeps the outfit valid, and the most similar item is listed first. |
 | FR-23a | Given a photo of sneakers is added and the model is confident, then Footwear and Sneakers are pre-filled and labelled as suggested. Given the model is not confident, then the form is empty and no error is shown. Given the user changes the suggestion, then the item saves with the user's value. |
 | FR-59 | Given a user asks for suggestions, then the only requests made are reads of the user's own items and lookups; no request carries wardrobe data to produce a suggestion. |
+| FR-59a | Given a user chooses Build outfits around this on an item and an occasion, then every outfit shown contains that item in its slot and passes R1, R2 and the slot structure; given the item does not suit the occasion or season, then the app says so instead of showing outfits. |
+| FR-59b | Given a user's wardrobe and an occasion, then each Wardrobe unlock item, once added to the wardrobe as that sub-type and colour family, creates exactly the number of new outfits claimed; no product photograph, price or store is shown; and no request carries wardrobe data. |
+| FR-59c | Given all four learned parts are switched off (garment model 1, embedding swap off, pairing prior off, unlock list `fallback`), then suggestions, swap choices, Complete the look and Wardrobe unlock still work using the base weights and the fallback unlock list, and the scores equal those of the engine without the learned layer. |
 | FR-56, FR-57 | Given a user never logs outfits, then no prompt, reminder or counter appears at any time. Given a user logs outfits, then no vendor view or wear count changes. |
 | FR-93 | Given two vendors have uploaded feeds, when vendor A opens the feed screen, then only A's rows and items are visible. |
 | FR-8, FR-9 | Given an email that is not on the invitation list, when it tries to sign up, then it is refused. Given an invited user declares a country that is not on the supported list, then the app is blocked and only data export and Leave the pilot (account deletion) are offered. |
@@ -397,3 +451,5 @@ Technology choices, data model, API design and deployment are in the HLD and LLD
 | FOI-8 | Confirm the draft slot map in section 14.1, including the slots for the draft Activewear sub-types (section 13). | Arpan Shah |
 | FOI-9 | Set the ranking weights (14.2) and review at least 50 sample suggestions (14.4) before the pilot opens. | Arpan Shah |
 | FOI-10 | Confirm the table in 14.3 that maps each picture type the model knows to a Sparta category and sub-type, and that Dress gives no suggestion. | Arpan Shah |
+| FOI-11 | Confirm the version 2 table in 14.3 (types, sub-types, and Jeans only where the article is trousers in the denim garment group), the colour map from H&M colours to Sparta colour families (including Khaki green as Olive where the colour group is Greenish Khaki and as Khaki otherwise, and Dark Blue and Dark Red as Navy and Maroon), the fallback list of Wardrobe unlock combinations that the style specialist writes (14.5), and the H&M-derived list if it is ever switched on. | Arpan Shah |
+| FOI-12 | Closed once BRD OI-5 is closed: the H&M-trained parts (version 2 model, look embedding, pairing prior, H&M unlock list) go into the pilot build only after the data-licence check. Until then the pilot uses version 1 and the rules. | Product owner |

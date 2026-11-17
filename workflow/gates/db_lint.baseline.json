@@ -1,0 +1,4 @@
+{
+  "_comment": "Known findings of `supabase db lint --level warning` (WO-0123). Each has a work order. A finding that is not here fails the gate; an entry the linter no longer reports must be deleted. Emptied by WO-0128.",
+  "baseline": []
+}

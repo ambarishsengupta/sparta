@@ -3,10 +3,10 @@
 | Field | Value |
 | --- | --- |
 | Document | Business Requirements Document |
-| Version | 1.3 (adds the pilot recommendation engine; amends 1.2) |
-| Date | 2026-10-29 |
+| Version | 1.4 (adds H&M photographs and purchase history to the recommendation engine; amends 1.3) |
+| Date | 2026-11-04 |
 | Product owner | Ambarish Sengupta |
-| Status | Final, with the 1.3 amendment awaiting review by the solution architect |
+| Status | Final, with the 1.3 and 1.4 amendments awaiting review by the solution architect, and the data-licence check in OI-5 |
 | Related documents | FDD, HLD, LLD; legal pack in `legal`; ANCP D1 project charter (`docs/ANCP_TM_D1_v1.pdf`) |
 
 ## 1. Purpose
@@ -41,7 +41,7 @@ This creates a chicken-and-egg problem. Users need a catalogue to get started. V
 - Wardrobe: view, organise and edit everything the user owns.
 - Item entry by manual form, photo upload with background removal, receipt scan with OCR, and catalogue or barcode lookup.
 - Outfit builder and a recommendation engine for menswear outfits (section 7.5). Style rules (season, occasion, colour, layering, footwear) decide which outfits are allowed, a ranking step orders them, and a small image model suggests a category and sub-type when an item is added by photo.
-- Building and testing that engine before the pilot opens, using public data (the Fashion-MNIST dataset) and photos owned by the team.
+- Building and testing that engine before the pilot opens, using public data and photos owned by the team: the Fashion-MNIST pictures, and the H&M product photographs and purchase history that the team holds (section 7.5). The data is used offline to train the engine's models. No H&M photograph is shown to users or stored in the app.
 - Purchase history with receipts, wishlist and outfit/purchase planning.
 - Invitation-only sign-up (email or Google sign-in; Apple sign-in after the pilot) for adults in the supported countries (initially India), acceptance of the Terms of Use and Privacy Policy, a first-login pilot notice that users must accept to join the study, a **Leave the pilot** button, data export and deletion.
 - The pilot legal pack in `legal`: privacy policy, terms of use, vendor pilot agreement, incident response plan, privacy risk assessment and data sourcing policy.
@@ -149,9 +149,16 @@ The pilot and the shipped product use different consent settings. The pilot need
 
 ### 7.5 Recommendation engine
 
-The engine recommends outfits. It has two stages: the occasion and season rules decide which outfits are allowed, and a ranking step, which also scores colour, pattern, layering and footwear, orders the allowed ones. A small image model helps with items added by photo.
+The engine recommends outfits. It has two stages: the occasion and season rules decide which outfits are allowed, and a ranking step, which also scores colour, pattern, layering and footwear, orders the allowed ones. Image models help with items added by photo, and a small pairing table built from public purchase data nudges the order of outfits that already pass the rules (BR-56).
 
-What can and cannot be learned before the pilot has data: Fashion-MNIST is a public set of 70,000 small greyscale pictures of single garments, labelled with ten garment types. It can teach a model to recognise what kind of garment a photo shows. It says nothing about which garments go well together. Until there is real data, how well clothes go together comes from the style rules and ranking weights owned by the style specialist, and the pilot does not learn from participants (BR-28, BR-52).
+What the public data can and cannot teach before the pilot has data:
+
+- **Fashion-MNIST** is 70,000 small greyscale pictures of single garments in ten broad types. It teaches a model the broad type of a garment and works as a baseline. It says nothing about which garments go well together.
+- **The H&M files** are 105,100 full-colour product photographs for 105,542 catalogue articles (12,553 of them menswear), with type, colour and department for each article, and 31.8 million purchase lines from H&M customers. The photographs teach a finer set of about twenty garment types and a "look" embedding that says how alike two garments look. The purchase lines show which garment types and colours the same customer bought on the same day.
+- **What the H&M purchase lines are not.** Buying two things on the same day is a weak, commercial signal of what goes together; it is not proof that anyone wore them together. H&M customers are mostly European, and the catalogue is mostly womenswear (12,553 of 105,542 articles are menswear). So the pairing signal is a small, reviewed nudge to ranking (BR-56, BR-60) and the style rules stay in charge. How well clothes go together is still owned by the style specialist.
+- **No participant data.** The pilot does not learn from participants (BR-28, BR-52). H&M customers are not participants.
+
+The standout feature the pilot offers is built on this: **Complete the look** (build outfits around one item the user already owns, BR-57) and **Wardrobe unlock** (the one or two things that would create the most new outfits from the wardrobe the user has, BR-58).
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
@@ -161,6 +168,11 @@ What can and cannot be learned before the pilot has data: Fashion-MNIST is a pub
 | BR-53 | Users stay in control: they can accept, swap or reject any suggestion, and the same wardrobe, occasion and date always give the same suggestions. | Must |
 | BR-54 | The quality of the engine is checked before the pilot opens (section 11) and measured during it from the suggestion accept and reject events (BR-44). | Must |
 | BR-55 | The engine runs within the free hosting budget (BR-42): suggestions are ranked in the user's browser, and the image model runs in the existing worker. | Must |
+| BR-56 | The engine has a learned layer built offline from public data: a garment model trained on H&M photographs, a look embedding from the same model, a pairing prior from H&M purchases, and a list of common combinations from H&M purchases for Wardrobe unlock. The learned layer only orders outfits that already pass the hard rules (occasion, season, required pieces); it never admits one. Each of the four learned parts (garment model version 2, look embedding in swap order, pairing prior, H&M unlock list) has its own switch (FDD FR-59c), and with all four off the engine works from the rules alone and Wardrobe unlock uses a fallback list written by the style specialist. | Must |
+| BR-57 | **Complete the look.** From any item in the wardrobe, the user can ask for outfits built around that item and receives up to three, with the same rules, reasons and accept, swap and reject choices as BR-50 and BR-53. | Should |
+| BR-58 | **Wardrobe unlock.** The app shows up to three items (a sub-type and a colour family, from a fixed list of common menswear combinations written by the style specialist, or drawn from H&M purchases if that list is switched on) that would create the most new valid outfits from the user's wardrobe, and lets the user add any of them to the wishlist in one tap. It uses attributes only: no product photograph, price or store. A wishlist entry made this way is marked as coming from Wardrobe unlock and is left out of every vendor wishlist figure and gap score (BR-30, BR-31), so the app's own suggestions do not create vendor demand signals; such entries are counted in an analytics event (BR-44). | Should |
+| BR-59 | H&M photographs, purchase lines, customer IDs and article IDs are used only offline, on team machines, to train and test models. They are not committed, not stored in the database, storage or worker image, not shown to users or vendors, and not redistributed. Only trained model files and small aggregated tables with no row about a person or an article go into the product, and only after the data-licence check in OI-5. | Must |
+| BR-60 | Each learned part must earn its place before the pilot opens: the pairing prior must beat chance on a time-based holdout of H&M purchases with an overall AUC of at least 0.60 (FDD section 14.4), and the H&M-trained garment model must do at least as well as the Fashion-MNIST one on photos of team-owned garments (the test in FDD section 14.4). A part that does not is switched off or dropped. | Must |
 
 ## 8. Constraints
 
@@ -184,6 +196,7 @@ What can and cannot be learned before the pilot has data: Fashion-MNIST is a pub
   - Store product attributes and a link back to the source. Do not copy or redistribute product images.
   - Remove a source's data quickly if the source asks.
 - Even a free, invitation-only pilot that offers vendor insights could be read as commercial use. A professional legal review must confirm the position before any public, commercial or wider launch, including any paid vendor tier (OI-3). This is noted as risk RK-3.
+- **Engine training data.** The H&M files come from a Kaggle competition whose rules allow non-commercial research and education use. The team's position is that the pilot is a free, invitation-only academic proof of concept; that the files are used only offline to train models (BR-59); that no photograph, purchase row or ID reaches the product; and that only model weights and small aggregate tables, which contain no row of H&M data, are shipped. Whether a model trained on the files may run in a pilot that also offers vendor insights is not settled. It must be confirmed (OI-5) before the H&M-trained parts go into the pilot build. If it is not confirmed, the pilot ships with the Fashion-MNIST garment model (MIT licence) and the rules alone (BR-56). The same applies to Kaggle's expectation that raw files are deleted when the course ends: the raw files are deleted then; shipped model files and aggregate tables are the only things kept.
 - The team has drafted a legal pack (privacy policy, terms, vendor agreement, incident plan, privacy risk assessment, data sourcing policy) in `legal`. It was written with AI assistance and has not been reviewed by a lawyer; `legal/LEGAL-REVIEW.md` records each finding and how it was handled.
 - Collection follows `legal/DATA-SOURCING-POLICY.md`: ask first where possible, attributes only, `robots.txt`, rate limits, a source register and a 2-working-day takedown.
 
@@ -192,7 +205,7 @@ What can and cannot be learned before the pilot has data: Fashion-MNIST is a pub
 - Enough men can be recruited through the team's networks to reach about 100 users.
 - At least one vendor is willing to receive the dashboard and report and to give feedback.
 - Several storefronts allow data collection, and their product pages expose the attributes the taxonomy needs.
-- The Fashion-MNIST files (60,000 training and 10,000 test pictures, published by Zalando Research under the MIT licence) are held by the team in `data/recommendation-engine/mnist` and are not committed to the repository.
+- The Fashion-MNIST files (60,000 training and 10,000 test pictures, in CSV and in the original IDX format; published by Zalando Research under the MIT licence) are held by the team in `data/recommendation-engine/mnist`. The H&M files (articles, customers, transactions and 105,100 product photographs) are held by the team and reached through `data/recommendation-engine/hm`. Neither is committed to the repository.
 - The style specialist has time to set the ranking weights and review sample suggestions before the pilot opens.
 - Free tiers of the chosen hosting and database services stay available and sufficient for the pilot.
 - The product owner, delivery team and SA (C. Prashanth) are available for reviews within a few days of a request.
@@ -212,13 +225,14 @@ None of these is a hard gate. They define what "working" looks like and guide de
 | Quality | Segments shown meet the minimum group size, with no individual data exposed | 100% |
 | Recommendations | Share of outfit suggestions that users accept (accepted / accepted + rejected) | Tracked from launch; target set after the first month |
 | Photo suggestion | Share of photo-added items where the user keeps the suggested category | Tracked from launch; target set after the first month |
-| Engine quality before launch | Image model accuracy on the 10,000 Fashion-MNIST test pictures; accuracy on photos of team-owned garments; share of sample suggestions the style specialist judges acceptable (FDD section 14.4) | About 90% or more on the test pictures; team-photo result reported; about 80% or more judged acceptable |
+| Engine quality before launch | Garment model accuracy on the 10,000 Fashion-MNIST test pictures (version 1) and on held-out H&M photographs and team-owned garments (version 2); pairing prior AUC on a time-based holdout of H&M purchases; share of sample suggestions the style specialist judges acceptable (FDD section 14.4) | About 90% or more on the Fashion-MNIST test pictures; version 2 at least as good as version 1 on team photos; pairing AUC of 0.60 or more; about 80% or more judged acceptable |
 
 ## 12. Pilot timeline (relative)
 
 | Weeks | Focus |
 | --- | --- |
-| 1-2 | Requirements, architecture, seed catalogue collection, core app (accounts, catalogue, wardrobe). Train and test the image model on Fashion-MNIST (in parallel with the app). |
+| 1-2 | Requirements, architecture, seed catalogue collection, core app (accounts, catalogue, wardrobe). |
+| 1-5 | Train and test the garment models (Fashion-MNIST baseline, then the H&M photograph model) and build the pairing table and unlock list from H&M purchases, in parallel with the app (LLD M0). |
 | 3-4 | Item entry methods, purchases, wishlist, outfit builder, consent flow. Start recruiting. |
 | 5-6 | Recommendation engine (rules, ranking, swap order) and its pre-launch checks, receipt OCR, aggregation pipeline, vendor dashboard. Pilot opens. |
 | 7-10 | Pilot running, vendor onboarding, fixes, feedback. |
@@ -239,6 +253,8 @@ Dates will be fixed in the delivery plan, aligned with the ANCP deadlines.
 | RK-7 | No professional legal review during the pilot. | Invitation-only, adults only, supported countries only; the legal pack and review log; incident plan; a professional review is required before any public or commercial launch (OI-3). |
 | RK-8 | The image model is trained on small, greyscale, studio-style product pictures and may do poorly on phone photos of real clothes (for example white, folded or patterned items). | The result is only a suggestion, shown above a confidence threshold; tested on team-owned photos before launch; switched off if results are poor (LLD 7.7); the app works without it. |
 | RK-9 | Fashion-MNIST holds no information about which clothes go together, so outfit quality rests on the style rules until there is data to learn from, and suggestions may feel generic. | The style specialist owns the rules and weights and reviews sample suggestions before launch; acceptance and rejection are measured; learning from participant data waits for a new notice (OI-4). |
+| RK-10 | The H&M files are released under competition rules for non-commercial research and education, and the photographs are H&M's. Training models on them for a pilot that also offers vendor insights may fall outside those rules. | Offline use only, nothing redistributed (BR-59); only model weights and small aggregate tables ship; a switch for every learned part and a Fashion-MNIST and rules-only fallback (BR-56); the check in OI-5 before the H&M-trained parts ship. The version 2 training photographs include articles from the Divided and Sport departments, which are partly womenswear, so some H&M photographs of women's garments are used for training (FDD 14.3). |
+| RK-11 | Same-day purchases are not a style judgement, and H&M customers are mostly European and the catalogue is mostly womenswear, so the pairing prior may mislead for Indian men's wardrobes. | The prior is one part of six with a weight of 0.15 when switched on, and is absent from the base weights used when it is off (FDD 14.2), only reorders allowed outfits, uses menswear articles only, must beat chance on a holdout (BR-60), and is reviewed by the style specialist on sample wardrobes (FDD 14.4). |
 
 ## 14. Decisions log
 
@@ -254,6 +270,7 @@ Dates will be fixed in the delivery plan, aligned with the ANCP deadlines.
 | Vendor pilot receives dashboard, gap report and feed upload | Product owner |
 | Outfit recommendations from a recommendation engine: team-curated style rules decide what is allowed, a ranking step orders it, and an image model trained on public Fashion-MNIST data helps with photo items | Product owner (29 October 2026) |
 | The engine is built before the pilot on public data; no participant data trains, tunes or personalises any machine-learning model in the pilot | Follows BR-28; confirmed with the engine decision above |
+| Engine models may also be trained offline on the H&M photographs and purchase history; a Complete the look function and a Wardrobe unlock function are added; the H&M-trained parts ship only after the data-licence check (OI-5) | Product owner (3 November 2026) |
 | Free or under about $20 a month hosting | Product owner |
 | Technology choices delegated to the architecture documents; C. Prashanth is the SA | Product owner |
 | Arpan Shah is the style specialist (taxonomy and outfit rules) | Product owner |
@@ -275,7 +292,7 @@ The ANCP D1 charter (`docs/ANCP_TM_D1_v1.pdf`) is a submitted course document an
 | Vendor product feeds | Out of scope | Feed upload is in scope (BR-32) |
 | Vendor payments | Vendors pay for dashboards and promotions (stakeholder map) | Vendors take part free; no payments or billing in the pilot (section 4.2) |
 | Dates | MVP live 21 October, data freeze 30 October, term ends 20 November 2026 | A 3-month pilot on a relative timeline; dates set in the delivery plan (section 12) |
-| Models and course data | Gap-ranking and forecasting models built on pilot data; pseudonymised, aggregated extracts in the course repository | No participant data is used to train AI or machine-learning models (BR-28). Course work, including the academic report and the charter's course-repository extracts, uses only public data and aggregated pilot figures (group figures built under the same rules as vendor outputs, and overall pilot statistics), with no row about an individual participant (Privacy Policy, section 4). These extracts are kept out of the public code repository, which holds no personal data (BR-43). The recommendation engine's image model is trained on the public Fashion-MNIST dataset, not on participant data (BR-52). |
+| Models and course data | Gap-ranking and forecasting models built on pilot data; pseudonymised, aggregated extracts in the course repository | No participant data is used to train AI or machine-learning models (BR-28). Course work, including the academic report and the charter's course-repository extracts, uses only public data and aggregated pilot figures (group figures built under the same rules as vendor outputs, and overall pilot statistics), with no row about an individual participant (Privacy Policy, section 4). These extracts are kept out of the public code repository, which holds no personal data (BR-43). The recommendation engine's garment models and pairing table are trained on public data (Fashion-MNIST, and the H&M photographs and purchase history subject to OI-5), not on participant data (BR-52, BR-59). |
 
 ## 15. Open items
 
@@ -285,6 +302,7 @@ The ANCP D1 charter (`docs/ANCP_TM_D1_v1.pdf`) is a submitted course document an
 | OI-2 | Closed for the pilot. The consent wording and the "acceptance required" model are covered by the legal pack and the privacy risk assessment. | Product owner |
 | OI-3 | Before any public, commercial or wider launch, have a professional review the legal pack, the consent model, the scraping position and the name. | Product owner |
 | OI-4 | Whether participant data may be used to improve the recommendation engine after the pilot. That would be a new purpose and needs a new notice and acceptance (BR-28; FDD FR-5). Until decided, the engine does not learn from participants. | Product owner |
+| OI-5 | Confirm that models trained on the H&M files (garment model version 2, look embedding, pairing prior) may be used in the pilot, and that the trained files and aggregate tables may be published in the open-source release or must be kept out of it. Owner: product owner with C. Prashanth, and a professional review before any public or commercial use (OI-3). Until confirmed: the pilot uses Fashion-MNIST and rules only, with the style specialist's fallback unlock list (BR-56). The trained files are not committed and are not in the public repository. They are kept in a private location and fetched at build time by a pinned hash, and the garment model file stays on the worker only. Anything the browser loads (the pairing prior and the unlock list) can be downloaded by any user of the app, so keeping it out of the open-source release is not the same as keeping it secret; this is part of what the check must cover. | Product owner |
 
 ## 16. Glossary
 
@@ -296,5 +314,10 @@ The ANCP D1 charter (`docs/ANCP_TM_D1_v1.pdf`) is a submitted course document an
 | Vendor | A brand, manufacturer or retailer receiving aggregate insights. |
 | PWA | Progressive web app, a website that installs and behaves like an app. |
 | Recommendation engine | The part of the app that proposes outfits: style rules decide what is allowed, a ranking step orders it (section 7.5; FDD section 14). |
-| Garment model | A small image model, trained on the public Fashion-MNIST dataset, that guesses what kind of garment a photo shows (FDD section 14.3). |
-| Fashion-MNIST | A public dataset from Zalando Research of 70,000 greyscale 28 by 28 pixel pictures in ten garment types, used here to train the garment model. |
+| Garment model | A small image model that guesses what kind of garment a photo shows (FDD section 14.3). Version 1 is trained on the public Fashion-MNIST dataset and knows ten broad types; version 2 is trained on H&M product photographs and knows twenty types. |
+| Fashion-MNIST | A public dataset from Zalando Research of 70,000 greyscale 28 by 28 pixel pictures in ten garment types, used here to train version 1 of the garment model. |
+| H&M files | The Kaggle H&M Personalized Fashion Recommendations files held by the team: catalogue articles, customers, purchase lines and product photographs. Used offline only (BR-59). |
+| Pairing prior | A small table, built from H&M purchases, of how often garment types and colours were bought together. It nudges the order of outfits that already pass the rules (BR-56). |
+| Look embedding | A short list of numbers produced by the garment model that says how alike two garments look. Used to order swap choices. |
+| Complete the look | Outfits built around one item the user chooses (BR-57). |
+| Wardrobe unlock | A suggestion of what to add so the wardrobe makes the most new outfits (BR-58). |

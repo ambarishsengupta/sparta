@@ -35,11 +35,11 @@ async function adminId(request: Request, d: AdminDeps, mutating: boolean): Promi
   const role = await d.caller.schema('app').rpc('current_role');
   if (role.error) return fail('server_error');
   if (role.data !== 'admin') return fail('forbidden');
-  // The per-process brake and the shared count run only now, for a VERIFIED administrator: a caller with no session (the proxy lets /api/admin through without one) or
-  // without the role must not be able to use up a budget the real administrator needs.
-  if (d.limit && !d.limit.brake()) return fail('rate_limited');
-  // Counted per verified administrator, before the audit row and before anything is read or written. An unreadable count closes the route (503).
+  // The shared count and the per-process brake run only now, for a VERIFIED administrator (a caller with no session or without the role must not use up a budget the real
+  // administrator needs), and in this order: the administrator's own count FIRST, so a call the database would refuse uses no brake slot and one administrator can not fill the
+  // brake for the others (the same order as the purge route). An unreadable count closes the route (503) with no side effect; both run before the audit row and before anything is read or written.
   if (d.limit) { try { if (!(await d.limit.count(`admin:${who.data.user.id}`))) return fail('rate_limited'); } catch { return fail('unavailable'); } }
+  if (d.limit && !d.limit.brake()) return fail('rate_limited');
   return who.data.user.id;
 }
 // The generated type of p_target is `string | undefined`, but the SQL parameter takes null (a list or create has no target), so null is still sent.

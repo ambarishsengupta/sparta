@@ -77,6 +77,53 @@ describe('ConfirmStep', () => {
   });
 });
 
+describe('ConfirmStep cancelWhileBusy={false} (the delete cannot be called off)', () => {
+  it('while busy, Cancel is aria-disabled and does nothing, and Escape does nothing; when not busy both cancel', () => {
+    const p = props();
+    const el = mount(ConfirmStep, { ...p, busy: true, cancelWhileBusy: false }).render();
+    const cancel = button(el, 'Cancel');
+    expect(cancel.props['aria-disabled']).toBe(true);
+    expect(cancel.props.disabled).toBeUndefined();
+    (cancel.props.onClick as (() => void) | undefined)?.();
+    const ev = key(findAll(el, (e) => e.props.role === 'group')[0]!, 'Escape');
+    expect(p.onCancel).not.toHaveBeenCalled();
+    expect(ev.preventDefault).not.toHaveBeenCalled();
+    const idle = props();
+    const el2 = mount(ConfirmStep, { ...idle, busy: false, cancelWhileBusy: false }).render();
+    expect(button(el2, 'Cancel').props['aria-disabled']).toBeUndefined();
+    (button(el2, 'Cancel').props.onClick as () => void)();
+    key(findAll(el2, (e) => e.props.role === 'group')[0]!, 'Escape');
+    expect(idle.onCancel).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('ConfirmStep busy (WO-0152): a second press of the red button does nothing while the delete runs', () => {
+  it('busy: aria-disabled and aria-busy, same visible label, still a focusable button; a press does nothing; Cancel still works', () => {
+    const p = props();
+    const el = mount(ConfirmStep, { ...p, busy: true }).render();
+    const red = button(el, 'Delete thing');
+    expect(red.props.disabled).toBeUndefined();   // not the disabled attribute: the button keeps focus and is announced
+    expect(red.props['aria-disabled']).toBe(true);
+    expect(red.props['aria-busy']).toBe(true);
+    (red.props.onClick as (() => void) | undefined)?.();
+    (red.props.onClick as (() => void) | undefined)?.();
+    expect(p.onConfirm).not.toHaveBeenCalled();
+    (button(el, 'Cancel').props.onClick as () => void)();
+    expect(p.onCancel).toHaveBeenCalledTimes(1);
+    const page = renderToStaticMarkup(el as ReactElement);
+    expect(page).toMatch(/<button type="button" class="danger" aria-disabled="true" aria-busy="true">Delete thing<\/button>/);
+    expect(a11yProblems(page)).toEqual([]);
+  });
+  it('not busy: no aria-disabled and no aria-busy, and the press confirms', () => {
+    const p = props();
+    const red = button(mount(ConfirmStep, p).render(), 'Delete thing');
+    expect(red.props['aria-disabled']).toBeUndefined();
+    expect(red.props['aria-busy']).toBeUndefined();
+    (red.props.onClick as () => void)();
+    expect(p.onConfirm).toHaveBeenCalledTimes(1);
+  });
+});
+
 const flushAll = async (c: ReturnType<typeof mount>) => { c.render(); c.flush(); for (let i = 0; i < 10; i++) await Promise.resolve(); c.render(); c.flush(); for (let i = 0; i < 10; i++) await Promise.resolve(); };
 const steps = (el: unknown) => findAll(el, (e) => e.type === ConfirmStep);
 
@@ -125,5 +172,62 @@ describe('Delete a purchase (ItemPurchases): two presses, a cancel path, and no 
     expect(removePurchase).toHaveBeenCalledWith('p1');
     expect(focus).toHaveBeenCalledTimes(1);   // the row's own Delete button is gone: focus goes to the section heading, which can take focus
     expect(steps(c.render())).toHaveLength(0);
+  });
+});
+
+describe('Delete while a delete runs (WO-0152): the second press does nothing in both callers', () => {
+  const hold = () => { let release: () => void = () => undefined; const gate = new Promise<undefined>((r) => { release = () => r(undefined); }); return { gate, release }; };
+  it('ItemForm: the step stays open and busy while the delete runs; a second confirm deletes nothing more', async () => {
+    const { gate, release } = hold();
+    remove.mockImplementationOnce(() => gate);
+    const c = mount(ItemForm, { itemId: 'i1' });
+    await flushAll(c);
+    (button(c.render(), 'Delete item').props.onClick as () => void)();
+    const confirm = steps(c.render())[0]!.props.onConfirm as () => void;
+    confirm();
+    expect(steps(c.render())[0]!.props.busy).toBe(true);
+    expect(steps(c.render())[0]!.props.cancelWhileBusy).toBe(false);
+    expect(steps(c.render())).toHaveLength(1);
+    confirm();
+    await Promise.resolve();
+    expect(remove).toHaveBeenCalledTimes(1);
+    release();
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith('/');
+    expect(steps(c.render())).toHaveLength(0);
+  });
+  it('ItemPurchases: the step stays open and busy while the delete runs; a second confirm deletes nothing more', async () => {
+    const { gate, release } = hold();
+    removePurchase.mockImplementationOnce(() => gate);
+    const c = mount(ItemPurchases, { itemId: 'i1' });
+    await flushAll(c);
+    (findAll(c.render(), (e) => e.type === 'button' && e.props['aria-label'] === 'Delete the purchase of 2026-11-01')[0]!.props.onClick as () => void)();
+    const confirm = steps(c.render())[0]!.props.onConfirm as () => void;
+    confirm();
+    expect(steps(c.render())[0]!.props.busy).toBe(true);
+    expect(steps(c.render())[0]!.props.cancelWhileBusy).toBe(false);
+    expect(steps(c.render())).toHaveLength(1);
+    confirm();
+    await Promise.resolve();
+    expect(removePurchase).toHaveBeenCalledTimes(1);
+    release();
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    expect(removePurchase).toHaveBeenCalledTimes(1);
+    expect(steps(c.render())).toHaveLength(0);
+  });
+  it('ItemForm: a delete that fails closes the step, shows the failure, keeps the Delete item opener on the page and does not leave', async () => {
+    remove.mockImplementationOnce(async () => { throw new Error('internal detail'); });
+    const c = mount(ItemForm, { itemId: 'i1' });
+    await flushAll(c);
+    (button(c.render(), 'Delete item').props.onClick as () => void)();
+    (steps(c.render())[0]!.props.onConfirm as () => void)();
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    expect(steps(c.render())).toHaveLength(0);
+    const alert = textOf(findAll(c.render(), (e) => e.type === 'p' && e.props.role === 'alert')[0]);
+    expect(alert).toMatch(/^Something went wrong, so your change was not saved\./);
+    expect(alert).not.toContain('internal detail');
+    expect(button(c.render(), 'Delete item')).toBeDefined();   // the opener: ConfirmStep's cleanup (tested above) puts focus back on it
+    expect(push).not.toHaveBeenCalled();
   });
 });

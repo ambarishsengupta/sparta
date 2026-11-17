@@ -2,6 +2,7 @@
 
 Added by WO-0123 after the audit of 2026-11-15 (`workflow/work-orders/Audit.md`). Workflow rule 12 makes them binding.
 WO-0149 (2026-11-16) added three rules from the run of 15 and 16 November: the untyped database client, work-order scope lines (RL13) and gate scripts that hide a tool's errors (RL14). `docs/BUILD-GUIDE.md` tells the story behind each.
+WO-0153 (2026-11-18) added two rules: no fetch-wrapper imports and typed Supabase factory calls (follow-ups 7 and 14 of `workflow/STATE.md`).
 WO-0129 (2026-11-17) added the linters that needed a new development dependency (audit finding A12): React hooks mistakes, slow regular expressions and, for Python, ruff. The product owner approved the four dependencies on 2026-11-16, each pinned to an exact version.
 
 ## How it works
@@ -44,6 +45,8 @@ WO-0129 (2026-11-17) added the linters that needed a new development dependency 
 | `no-floating-promises`, `no-misused-promises`, `return-await`, `await-thenable` | app and packages | A promise whose failure nobody handles |
 | `no-unsafe-*` (five rules) | app and packages, not tests | Using a value of type `any` (a database row, parsed JSON) before narrowing it |
 | `no-restricted-syntax` (untyped client) | web app, not tests | Naming `SupabaseClient` without `<Database>`: through an untyped client every row is an unchecked value and a renamed column still compiles (audit finding A6). Three modules are still excepted by a list in `eslint.config.js` that `lint_rules.test.ts` pins; WO-0150 empties it |
+| `no-restricted-imports` (fetch wrappers) | web app and engine packages, not tests | Importing `node-fetch`, `cross-fetch`, `ofetch`, `axios`, `ky` or `got` (also their subpaths). The no-network rule reads the `fetch` global and the regex scan reads the name `fetch`, so a wrapper package with a hyphen or a different name dodged both (WO-0153, follow-up 7). Flat config replaces a rule's options per block, so each block that restricts imports builds its options with `restrictImports(...)` in `eslint.config.js`; the secret-key module, which used to switch the rule off, now keeps this restriction alone. Test files, `test-support` and `fixtures` are not covered |
+| `no-restricted-syntax` (untyped factory) | web app, not tests | A call of `createBrowserClient`, `createServerClient` or `createClient` without `<Database>`: it compiles and gives an untyped client (WO-0153, follow-up 14; the untyped-client rule above catches only `SupabaseClient` type references). The selector is in the list of every web-app block, and `lint_rules.test.ts` checks ESLint's computed configuration of every tracked web-app source file |
 | `no-console`, `no-alert`, `no-eval`, `no-implied-eval`, `no-new-func`, `no-script-url` | app (first two also in packages) | Console output, native dialogs, running text as code |
 
 ## Linters added by WO-0129 (new development dependencies)

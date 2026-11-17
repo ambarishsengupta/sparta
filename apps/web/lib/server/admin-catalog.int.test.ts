@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { deleteRateWindows } from '../../test-support/ops-rows';
 import { adminFor } from '../../test-support/purge';
 import { cleanup, discover, lockStack, makeReady, newClient, provisionUser, sql } from '../../test-support/stack';
 import { createSource, decideReview, takeDownSource, updateSource } from './admin-catalog';
@@ -61,7 +62,7 @@ describe.skipIf(!stack)('admin catalogue routes against the real stack', () => {
     try {
       q(`delete from ops.admin_audit_log where admin_id = :'a'; delete from catalog.sources where name like :'p'`, { a: ids.admin, p: `IT%${run}%` });
       await cleanup(stack!, Object.values(email), mailIds);
-    } finally { unlock?.(); }
+    } finally { try { deleteRateWindows([`admin:${ids.admin}`]); } finally { unlock?.(); } }   // the shared limit counted the admin's calls in the bucket named after the admin
   });
 
   const MATRIX: [string, (as: keyof typeof who) => Promise<{ status: number }>][] = [

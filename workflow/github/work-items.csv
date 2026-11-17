@@ -91,7 +91,7 @@ WO-0126,WO-0126: generated database types and no unchecked value from the databa
 WO-0127,WO-0127: CI runs the full gate; pin actions and the base image,R8,Release 1 (MVP),Delivery agents,Done
 WO-0128,"WO-0128: empty the database lint baseline (search_path, casts, temporary table)",R8,Release 1 (MVP),Delivery agents,Done
 WO-0129,"WO-0129: linters that need a new development dependency (ruff, react-hooks, jsx-a11y, regexp)",R8,Release 1 (MVP),Delivery agents,In Progress
-WO-0130,"WO-0130: hosting hardening found by the audit (CSP nonce, shared rate limits, fail-closed configuration)",R8,Release 1 (MVP),Delivery agents,In Progress
+WO-0130,"WO-0130: hosting hardening found by the audit (CSP nonce, shared rate limits, fail-closed configuration)",R8,Release 1 (MVP),Delivery agents,Done
 X-HIST,Decide whether to rewrite Git history for the D3 notebook (after WO-0124),R8,Release 1 (MVP),Product owner,Todo
 X-CR1,"Approve change request CR-001: womenswear, and men and women as the audience (docs/CR-001-womenswear.md)",R8,Release 1 (MVP),Product owner,Todo
 X-STYLE-W,"Name the womenswear style specialist (CR-001, decision D5)",R8,Release 1 (MVP),Product owner,Todo
@@ -116,3 +116,7 @@ X-LINT1,"Review the lint exemption that lets app/hm-image/[id]/route.ts import l
 WO-0148,WO-0148: strict_tests runs the live seed checks on their own (blocks merges),R8,Release 1 (MVP),Delivery agents,Done
 WO-0149,"WO-0149: build guide, and lint rules from the run of 15 and 16 November",R8,Release 1 (MVP),Delivery agents,Done
 WO-0150,WO-0150: name the database in the last three untyped clients,R8,Release 1 (MVP),Delivery agents,Done
+WO-0151,WO-0151: the integration suites leave no rows behind,R8,Release 1 (MVP),Delivery agents,Done
+X-DOCS2,"LLD 325, 322 and HLD 195: consumers now read catalog.sources id and name (WO-0130 part 4) and vendors (WO-0112); the SA signs the wording",R8,Release 1 (MVP),Solution architect,Todo
+WO-0152,WO-0152: form failures say the right thing; delete cannot be pressed twice; vendor live guard tested,R8,Release 1 (MVP),Delivery agents,Done
+WO-0153,WO-0153: lint rules: no fetch-wrapper imports; typed Supabase factory calls,R8,Release 1 (MVP),Delivery agents,Done

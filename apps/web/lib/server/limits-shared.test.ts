@@ -198,12 +198,24 @@ describe('the admin routes: the limit holds across two handler instances, per ad
     expect((await listSources(new Request('http://web.test/api/admin/sources'), { caller: adminCaller, admin: adminClient, limit: routeLimit(brake, db.rpc, ADMIN_LIMIT) })).status).toBe(200);
     expect(w.touched).toEqual([]);
   });
-  it('once verified, the per-process brake refuses an administrator with 429 before the database is asked', async () => {
+  it('once verified, the per-process brake refuses an administrator with 429, after the administrator\'s own count was asked first', async () => {
     const db = fakeDatabase(); const w = adminWorld(db);
     const limit = routeLimit(() => false, db.rpc, ADMIN_LIMIT);
     const caller = { auth: { getUser: async () => ({ data: { user: { id: UID } }, error: null }) }, schema: () => ({ rpc: async () => ({ data: 'admin', error: null }) }) } as unknown as SupabaseClient;
     expect((await listSources(new Request('http://web.test/api/admin/sources'), { caller, admin: {} as SupabaseClient, limit })).status).toBe(429);
-    expect(db.asked).toEqual([]); expect(w.touched).toEqual([]);
+    expect(db.asked).toEqual([`admin:${UID}`]); expect(w.touched).toEqual([]);
+  });
+  it('one verified administrator flooding far past the brake does not lock out a second verified administrator (calls their own limit refuses use no brake slot)', async () => {
+    const db = fakeDatabase();
+    const brake = makeLimiter(ADMIN_BRAKE.max, ADMIN_BRAKE.windowMs);
+    const OTHER = '22222222-2222-4222-8222-222222222222';
+    const adminClient = { schema: () => ({ rpc: async () => ({ data: 1, error: null }), from: () => ({ select: () => ({ order: async () => ({ data: [], error: null }) }) }) }) } as unknown as SupabaseClient;
+    const as = (id: string) => ({ auth: { getUser: async () => ({ data: { user: { id } }, error: null }) }, schema: () => ({ rpc: async () => ({ data: 'admin', error: null }) }) }) as unknown as SupabaseClient;
+    const call = (id: string) => listSources(new Request('http://web.test/api/admin/sources'), { caller: as(id), admin: adminClient, limit: routeLimit(brake, db.rpc, ADMIN_LIMIT) });
+    const statuses: Record<number, number> = {};
+    for (let i = 0; i < 400; i++) { const s = (await call(UID)).status; statuses[s] = (statuses[s] ?? 0) + 1; }
+    expect(statuses).toEqual({ 200: ADMIN_LIMIT.max, 429: 400 - ADMIN_LIMIT.max });
+    expect((await call(OTHER)).status).toBe(200);
   });
   it('a caller who is not an administrator is refused (403) before anything is counted', async () => {
     const db = fakeDatabase(); const w = adminWorld(db, 'consumer');

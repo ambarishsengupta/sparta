@@ -37,6 +37,8 @@ insert into analytics.cube (run_id, kind, period, d_category, users_rounded, eve
 create function pg_temp.call(p_uid uuid, p_role text, p_sql text) returns text language sql as $f$ select case when r like 'err=%' then r else 'ok' end from (select pg_temp.val_as(p_uid, p_role, p_sql) r) q $f$;
 create function pg_temp.vv(p_sql text) returns text language sql as $f$ select pg_temp.val_as(pg_temp.u(1), 'authenticated', p_sql) $f$;
 create function pg_temp.nlog() returns bigint language sql stable as $f$ select count(*) from ops.vendor_query_log $f$;
+-- rows other tests (or a web test run) left in the table are not this file's business: test 15 compares the count taken here with the count after the refused calls and the first successful build_report call
+create temp table nlog0 as select pg_temp.nlog() as n;
 
 -- ======== 1. the table: columns, row level security, no client grant ===================================================================
 select is((select string_agg(column_name::text, ',' order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'reports'),
@@ -61,10 +63,10 @@ select is(pg_temp.val_as(pg_temp.u(4), 'authenticated', 'select analytics.build_
 select is(pg_temp.val_as(null, 'anon', 'select analytics.build_report(current_date)'), 'err=42501: permission denied for schema analytics', 'anon can not call build_report');
 select is((select count(*) from ops.reports), 0::bigint, 'the refused calls wrote no report');
 select is(pg_temp.val_as(null, 'service_role', 'select analytics.build_report(null)'), 'err=P0001: unsupported_period', 'a null period raises unsupported_period');
-select is(pg_temp.nlog(), 0::bigint, 'build_report runs no vendor checks and writes no query log row');
 
 -- ======== 3. the payload ===============================================================================================================
 select pg_temp.val_as(null, 'service_role', format('select analytics.build_report(%L)', pg_temp.mo(0) + 16)) as r1 \gset
+select is(pg_temp.nlog() - (select n from nlog0), 0::bigint, 'build_report, refused or answered, runs no vendor checks and writes no query log row');
 select is((select count(*) from ops.reports), 1::bigint, 'service_role built one report');
 select is((select period from ops.reports where id = :'r1'::uuid), pg_temp.mo(0), 'the period is normalised to the first of the month');
 select ok((select reviewed_at is null and reviewed_by is null from ops.reports where id = :'r1'::uuid), 'a new report is unreviewed');

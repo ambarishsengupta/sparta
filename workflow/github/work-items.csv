@@ -91,7 +91,7 @@ WO-0126,WO-0126: generated database types and no unchecked value from the databa
 WO-0127,WO-0127: CI runs the full gate; pin actions and the base image,R8,Release 1 (MVP),Delivery agents,Done
 WO-0128,"WO-0128: empty the database lint baseline (search_path, casts, temporary table)",R8,Release 1 (MVP),Delivery agents,Done
 WO-0129,"WO-0129: linters that need a new development dependency (ruff, react-hooks, jsx-a11y, regexp)",R8,Release 1 (MVP),Delivery agents,In Progress
-WO-0130,"WO-0130: hosting hardening found by the audit (CSP nonce, shared rate limits, fail-closed configuration)",R8,Release 1 (MVP),Delivery agents,In Progress
+WO-0130,"WO-0130: hosting hardening found by the audit (CSP nonce, shared rate limits, fail-closed configuration)",R8,Release 1 (MVP),Delivery agents,Done
 X-HIST,Decide whether to rewrite Git history for the D3 notebook (after WO-0124),R8,Release 1 (MVP),Product owner,Todo
 X-CR1,"Approve change request CR-001: womenswear, and men and women as the audience (docs/CR-001-womenswear.md)",R8,Release 1 (MVP),Product owner,Todo
 X-STYLE-W,"Name the womenswear style specialist (CR-001, decision D5)",R8,Release 1 (MVP),Product owner,Todo

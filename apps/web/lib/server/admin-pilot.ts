@@ -5,6 +5,9 @@ import { fail, ok, UUID, type ErrorCode, type StorageLike } from './api';
 import type { RouteLimit } from './limits';
 import { originAllowed, purgeUserFolders } from './purge';
 
+// app.write_admin_audit takes a null target, but the generated type says string (the generator types nullable function arguments as required, WO-0150): one narrow cast at the call
+const NO_TARGET = null as string | null;
+
 /** The admin end-of-pilot routes of LLD 6 (WO-0160, FR-69, BR-45): `/api/admin/settings`, `/api/admin/pilot/preview` and `/api/admin/pilot/end`.
  * `caller` is the person's own session client (who they are, their role); `createAdmin` builds the secret-key client and is called ONLY after the caller is
  * known to be an administrator, so no other caller ever causes the key to be read. The pilot settings and the deletion of participants are reached only through
@@ -62,7 +65,7 @@ async function pilotAdmin(request: Request, d: PilotDeps, mutating: boolean): Pr
 
 // The generated type of p_target is `string | undefined`, but the SQL parameter takes null (a read has no target), so null is still sent.
 const auditRow = async (admin: Admin, id: string, action: string): Promise<boolean> =>
-  !(await admin.schema('app').rpc('write_admin_audit', { p_admin: id, p_action: action, p_target: null as unknown as string })).error;
+  !(await admin.schema('app').rpc('write_admin_audit', { p_admin: id, p_action: action, p_target: NO_TARGET as string })).error;
 
 /** The code an end-of-pilot database function's refusal maps to; anything unknown is a plain server error and nothing of the database's text is passed on. */
 const refusal = (e: { message?: string; code?: string }): ErrorCode => {

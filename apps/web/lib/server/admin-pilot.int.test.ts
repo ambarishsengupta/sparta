@@ -33,7 +33,9 @@ function onBackend(id: string): string[] {
 interface Answer { error: { code: string }; pilot_end_date: string | null; pilot_outcome: string | null; consumers_to_delete: number; unused_invitations: number; vendor_users: number;
   deleted: number; remaining: number; done: boolean; stuck: boolean; purge_failed: number; vendors: { vendor_users_deleted: number } | null }
 
-describe.skipIf(!stack)('admin end-of-pilot routes against the real stack', () => {
+describe('admin end-of-pilot routes against the real stack', () => {
+  // never skipped: without the local stack this suite fails with the reason (the strict gate and CI always have the stack)
+  beforeAll(() => { if (!stack) throw new Error('the local Supabase stack is not running: start it with `supabase start`'); });
   const run = randomUUID().slice(0, 8);
   const email = { admin: `it-${run}-padm@example.test`, ann: `it-${run}-pann@example.test`, bob: `it-${run}-pbob@example.test`, vic: `it-${run}-pvic@example.test` };
   const pw = randomBytes(12).toString('base64url');

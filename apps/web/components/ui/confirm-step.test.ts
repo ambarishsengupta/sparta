@@ -13,11 +13,13 @@ const { push, remove, removePurchase } = vi.hoisted(() => ({ push: vi.fn(), remo
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 const ITEM = { id: 'i1', name: 'Shirt', category: 'Tops', subType: 'Shirt', hex: '#336699', fit: null, pattern: null, material: null, seasons: [], occasions: [], favourite: false, neverWorn: false, condition: null, status: 'active', archiveReason: null, photoId: null };
 const PURCHASE = { id: 'p1', itemId: 'i1', date: '2026-11-01', store: null, price: 10, currency: 'USD', quantity: 1, notes: null, createdAt: '', itemName: 'Shirt', category: null, brand: null };
+const PURCHASE_2 = { ...PURCHASE, id: 'p2', date: '2026-11-02' };
+const purchaseRows = { list: [PURCHASE] }; // what the item's purchases are; a test sets it and afterEach puts it back
 vi.mock('../use-repository', () => ({
-  useRepository: () => ({ items: { get: async () => ITEM, remove }, purchases: { forItem: async () => [PURCHASE], remove: removePurchase }, catalogue: {} }),
+  useRepository: () => ({ items: { get: async () => ITEM, remove }, purchases: { forItem: async () => purchaseRows.list, remove: removePurchase }, catalogue: {} }),
 }));
 vi.mock('../purchases/use-prices', () => ({ usePrices: () => ({ currency: 'USD', rates: null }) }));
-afterEach(() => { push.mockClear(); remove.mockClear(); removePurchase.mockClear(); vi.unstubAllGlobals(); });
+afterEach(() => { purchaseRows.list = [PURCHASE]; push.mockClear(); remove.mockClear(); removePurchase.mockClear(); vi.unstubAllGlobals(); });
 
 const props = () => ({ label: 'Confirm deleting this thing', question: 'Delete this thing?', confirmLabel: 'Delete thing', onConfirm: vi.fn(), onCancel: vi.fn() });
 const button = (el: unknown, name: string) => findAll(el, (e) => e.type === 'button' && textOf(e) === name)[0]!;
@@ -215,6 +217,34 @@ describe('Delete while a delete runs (WO-0152): the second press does nothing in
     for (let i = 0; i < 10; i++) await Promise.resolve();
     expect(removePurchase).toHaveBeenCalledTimes(1);
     expect(steps(c.render())).toHaveLength(0);
+  });
+  it('ItemPurchases: while a delete runs the other rows\' Delete buttons are aria-disabled and open nothing; afterwards they work again', async () => {
+    const { gate, release } = hold();
+    removePurchase.mockImplementationOnce(() => gate);
+    purchaseRows.list = [PURCHASE, PURCHASE_2];
+    const c = mount(ItemPurchases, { itemId: 'i1' });
+    await flushAll(c);
+    const del = (date: string) => findAll(c.render(), (e) => e.type === 'button' && e.props['aria-label'] === `Delete the purchase of ${date}`)[0]!;
+    expect(del('2026-11-02').props['aria-disabled']).toBeUndefined();
+    (del('2026-11-01').props.onClick as () => void)();
+    (steps(c.render())[0]!.props.onConfirm as () => void)();
+    expect(steps(c.render())[0]!.props.busy).toBe(true);
+    expect(del('2026-11-02').props['aria-disabled']).toBe(true);
+    expect(del('2026-11-02').props.disabled).toBeUndefined();   // aria-disabled, not disabled: the button keeps focus and is announced
+    (del('2026-11-02').props.onClick as () => void)();
+    expect(steps(c.render())).toHaveLength(1);
+    expect(steps(c.render())[0]!.props.question).toBe('Delete this purchase?');
+    const rowsNow = findAll(c.render(), (e) => e.type === 'li');
+    expect(rowsNow).toHaveLength(2);
+    expect(steps(rowsNow[0]).map((x) => x.props.label)).toEqual(['Confirm deleting the purchase of 2026-11-01']);   // the step stays under the purchase being deleted ...
+    expect(steps(rowsNow[1])).toHaveLength(0);                                                                       // ... and does not move to the other one
+    release();
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    expect(removePurchase).toHaveBeenCalledTimes(1);
+    expect(steps(c.render())).toHaveLength(0);
+    expect(del('2026-11-02').props['aria-disabled']).toBeUndefined();
+    (del('2026-11-02').props.onClick as () => void)();
+    expect(steps(c.render())).toHaveLength(1);   // idle again: the other row's Delete opens its step
   });
   it('ItemForm: a delete that fails closes the step, shows the failure, keeps the Delete item opener on the page and does not leave', async () => {
     remove.mockImplementationOnce(async () => { throw new Error('internal detail'); });

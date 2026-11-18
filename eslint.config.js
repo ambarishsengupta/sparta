@@ -66,6 +66,13 @@ const FETCH_WRAPPERS = {
   paths: FETCH_WRAPPER_NAMES.map((name) => ({ name, message: FETCH_WRAPPER_MESSAGE })),
   patterns: [{ group: FETCH_WRAPPER_NAMES.map((name) => `${name}/*`), message: FETCH_WRAPPER_MESSAGE }],
 };
+// WO-0154: no-restricted-imports sees static imports only, so require('axios') and import('axios') (also a subpath, as a string literal) are named here. Every block that sets no-restricted-syntax lists these two,
+// because flat config replaces a rule's options per block. A computed argument (require(name)) or a template literal is not seen.
+const FETCH_WRAPPER_CALLED = String.raw`/^(${FETCH_WRAPPER_NAMES.join('|')})(\/.*)?$/`;
+const DYNAMIC_FETCH_WRAPPER = [
+  { selector: `CallExpression[callee.name='require'][arguments.0.value=${FETCH_WRAPPER_CALLED}]`, message: FETCH_WRAPPER_MESSAGE },
+  { selector: `ImportExpression[source.value=${FETCH_WRAPPER_CALLED}]`, message: FETCH_WRAPPER_MESSAGE },
+];
 // Flat config replaces a rule's options per block, so every block that restricts imports builds its options with this: it joins the `paths` and `patterns` of its parts.
 const restrictImports = (...parts) => ['error', { paths: parts.flatMap((p) => p.paths ?? []), patterns: parts.flatMap((p) => p.patterns ?? []) }];
 const NETWORK_GLOBALS = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map((name) => ({
@@ -127,7 +134,7 @@ export default tseslint.config(
       'no-console': 'error',
       'no-alert': 'error',
       'no-script-url': 'error',
-      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY],
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER],
       'no-restricted-globals': ['error', ...NETWORK_GLOBALS],
       '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, SUPABASE_FACTORIES, FETCH_WRAPPERS),
     },
@@ -135,12 +142,12 @@ export default tseslint.config(
   {
     // The configuration modules: the only readers of process.env, and only of NEXT_PUBLIC_ names.
     files: [`${WEB}/lib/supabase/config.ts`, `${WEB}/lib/engine-config.ts`, `${WEB}/lib/pilot-config.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER] },
   },
   {
     // The two readers of server-only variables (LLD 6): the secret-key module and the worker route.
     files: [`${WEB}/lib/server/admin.ts`, `${WEB}/lib/server/hm-demo.ts`, `${WEB}/app/api/worker/signed-urls/route.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER] },
   },
   {
     // Who may import lib/server: the route handlers and lib/server itself. They still may not build other Supabase clients.
@@ -170,6 +177,7 @@ export default tseslint.config(
     ignores: TESTS,
     rules: {
       'no-console': 'error',
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...DYNAMIC_FETCH_WRAPPER],
       'no-restricted-globals': ['error', ...NETWORK_GLOBALS, { name: 'process', message: 'The engine runs in the browser: no process, no environment.' }],
       '@typescript-eslint/no-restricted-imports': restrictImports({ patterns: [
         { group: ['node:*', 'fs', 'path', 'crypto', 'child_process', 'os', 'http', 'https'], message: 'The engine runs in the browser: no Node modules.' },

@@ -193,5 +193,12 @@ Note (2026-11-18): built (Sonnet maker; Opus Spec QC PASS with two medium findin
 Instructions: (a) when a label is already shown for another code in the same table, show the code-shaped guess (or the label with the code) for the later one, so every shown segment is unique; test with two codes sharing a label; (b) one rule in app/globals.css for `button[aria-disabled="true"]` (reduced emphasis, not-allowed cursor) in the existing style, with a source test like the other style tests if there is one; (c) a test that a filterOptions rejection after unmount changes nothing; (d) a test that two results for the same report id record vendor_report_opened once.
 Completion conditions: each of (a), (c), (d) has a test that fails when the change is undone (break-check); (b) is shown by a test or by the CSS source check; `npx vitest run apps/web` in full passes; gate green with GATE_STRICT=1.
 ---
+# Work Order WO-0157: the two low items of the WO-0156 check
+Action: execute. Owner: Frontend maker. Checker: Spec QC.
+In scope: apps/web/components/vendor/**
+Note: (a) no test fails if GapsView stops passing `code` to GapsTable (the duplicate keys would come back silently; the existing key test calls GapsTable directly); (b) trendLabels names segments per table, so with two codes sharing a label one brand can show its label in the purchase table and its guess in the wishlist table, or change after a filter.
+Instructions: (a) read the keys from the GapsTable element that GapsView returns (as the mix test reads them from DashboardView's BarList) and show the test fails when `code: r.segment` is removed; (b) build the shown names once over the union of the purchase and wishlist trend segments (in segment order) and use the same map for both tables, with a test that a brand shows the same name in both tables when their segment sets differ.
+Completion conditions: both tests fail when their change is undone (break-checks); `npx vitest run apps/web` in full passes; gate green with GATE_STRICT=1.
+---
 ## Owner item X-HIST (not a work order)
 Decide whether to rewrite the public Git history so the five H&M purchase rows of the D3 notebook leave GitHub, after WO-0124 has cleaned the tree. It needs a forced push of `main` (rule 3: the owner's explicit yes) and everyone with a clone must fetch again. The alternative is to accept the old commits as they are and record that in legal finding 20. Ask the professor whether H&M minds five public rows of the public Kaggle file.

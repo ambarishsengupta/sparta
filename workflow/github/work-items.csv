@@ -122,4 +122,4 @@ WO-0152,WO-0152: form failures say the right thing; delete cannot be pressed twi
 WO-0153,WO-0153: lint rules: no fetch-wrapper imports; typed Supabase factory calls,R8,Release 1 (MVP),Delivery agents,Done
 WO-0154,"WO-0154: follow-ups of WO-0152 and WO-0153 (purchase rows during a delete, live-guard tests, require and import of fetch wrappers)",R8,Release 1 (MVP),Delivery agents,Done
 WO-0155,"WO-0155: the vendor pages show brand labels, not codes",R8,Release 1 (MVP),Delivery agents,Done
-WO-0156,WO-0156: the low items of the WO-0154 and WO-0155 checks,R8,Release 1 (MVP),Delivery agents,In Progress
+WO-0156,WO-0156: the low items of the WO-0154 and WO-0155 checks,R8,Release 1 (MVP),Delivery agents,Done

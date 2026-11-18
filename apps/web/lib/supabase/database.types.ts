@@ -549,6 +549,9 @@ isOneToOne: false
 "admin_end_pilot_preview":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"admin_end_pilot_vendors":
+{ Args: { "p_admin": string,"p_limit": number }; Returns: Json
+                           },
 "admin_set_pilot_end":
 { Args: { "p_admin": string,"p_end_date": string,"p_outcome": string }; Returns: Json
                            },

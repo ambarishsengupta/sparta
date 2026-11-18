@@ -9,7 +9,7 @@ import { filterReducer, type FilterAction } from '../../lib/vendor/filter-state'
 import { loadFailed, type BandShare, type Coverage, type FilterOption, type Insight } from '../../lib/vendor/insights';
 import { BandShareBar, BarList, TrendTable } from '../ui/vendor';
 import styles from '../ui/vendor/vendor-charts.module.css';
-import { segmentLabel, trendLabels } from './brand-label';
+import { segmentLabel, shownNames, trendLabels, unionSegments } from './brand-label';
 import { FilterBar, NAMES } from './FilterBar';
 
 type Slot<T> = Insight<T> | null; // null: still loading
@@ -55,7 +55,8 @@ export function DashboardView({ s, header, mix, trends, spectrum, brands, onPick
   const select = (label: string, value: string, values: readonly string[], onChange: (v: string) => void) => (
     <label className={styles.control}>{label}<select value={value} onChange={(e) => onChange(e.target.value)}>{values.map((v) => <option key={v} value={v}>{NAMES[v] ?? v}</option>)}</select></label>
   );
-  const view = (title: string, data: Slot<TrendView>) => data?.ok && (data.data.segments.length ? <TrendTable caption={title} data={trendLabels(s.trendDim, data.data, brands)} /> : <p className="muted">Nothing to show for this view.</p>);
+  const names = shownNames(s.trendDim, unionSegments(trends.purchase?.ok ? trends.purchase.data : undefined, trends.wishlist?.ok ? trends.wishlist.data : undefined), brands);   // one name per brand for both tables
+  const view = (title: string, data: Slot<TrendView>) => data?.ok && (data.data.segments.length ? <TrendTable caption={title} data={trendLabels(s.trendDim, data.data, brands, names)} /> : <p className="muted">Nothing to show for this view.</p>);
 
   return (
     <div className="wide">

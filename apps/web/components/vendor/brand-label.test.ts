@@ -8,6 +8,7 @@ import { brandLabel, segmentLabel, trendLabels } from './brand-label';
 import { DashboardView, type ViewProps } from './Dashboard';
 import { GapsTable, GapsView, type GapsViewProps } from './Gaps';
 import { BarList, type BarRow } from '../ui/vendor/BarList';
+import { TrendTable } from '../ui/vendor';
 
 // WO-0125 step 9: the vendor functions return a brand as its code. The screen shows it without `demo-` and with capitalised words (the label is not in the answer).
 const html = (el: ReactElement) => renderToStaticMarkup(el).replace(/class="_([a-z]+)_[0-9a-f]+"/g, 'class="$1"');
@@ -168,5 +169,70 @@ describe('the mix and Gaps tables with two codes that share a label (WO-0156)', 
     const segs = ['1', '2', '3', '4', '5', 'c'];
     const out = trendLabels('brand', pivot([], segs.map((segment) => ({ period: '2026-11-01', segment, users_rounded: 1, events_rounded: 1 })), 'events_rounded'), labels);
     expect(out.segments).toEqual(['A', 'C', 'A (c)', 'c', 'c (2)', 'c (3)']);
+  });
+});
+
+// WO-0157: the element trees the views return are read, the components are not rendered.
+const elementsOf = <P,>(root: unknown, type: unknown): { props: P }[] => {
+  const out: { props: P }[] = [];
+  const walk = (n: unknown): void => {
+    if (Array.isArray(n)) return n.forEach(walk);
+    if (typeof n !== 'object' || n === null || !('props' in n)) return;
+    const e = n as { type: unknown; props: P & { children?: unknown } };
+    if (e.type === type) out.push(e);
+    walk(e.props.children);
+  };
+  walk(root);
+  return out;
+};
+const keysOf = (root: unknown, tag: string): string[] => {
+  const out: string[] = [];
+  const walk = (n: unknown): void => {
+    if (Array.isArray(n)) return n.forEach(walk);
+    if (typeof n !== 'object' || n === null || !('props' in n)) return;
+    const e = n as { type: unknown; key: string | null; props: { children?: unknown } };
+    if (e.type === tag && e.key !== null) out.push(e.key);
+    walk(e.props.children);
+  };
+  walk(root);
+  return out;
+};
+
+describe('GapsView passes the code to GapsTable (WO-0157)', () => {
+  it('the rows of the GapsTable element GapsView returns have distinct keys when two codes share a label', () => {
+    const same = new Map([['demo-a', 'Same'], ['demo-b', 'Same']]);
+    const row = (segment: string): GapRow => ({ segment, owner_users_rounded: 10, wishlist_users_rounded: 30, gap_score: 3, label: null });
+    const tree = GapsView({ dim: 'brand', filter: null, options: ok([]), brands: same, data: ok({ rows: [row('demo-a'), row('demo-b')], hidden: [] }), onDim: () => {}, onFilter: () => {} });
+    const tables = elementsOf<Parameters<typeof GapsTable>[0]>(tree, GapsTable);
+    expect(tables).toHaveLength(1);
+    const props = tables[0]!.props;
+    expect(props.rows.map((r) => r.segment)).toEqual(['Same', 'Same']);
+    expect(props.rows.map((r) => r.code)).toEqual(['demo-a', 'demo-b']);
+    const keys = keysOf(GapsTable(props), 'tr');
+    expect(keys).toHaveLength(2);
+    expect(new Set(keys).size).toBe(2);
+  });
+});
+
+describe('one brand shows one name in both trend tables (WO-0157)', () => {
+  const same = new Map([['demo-a', 'Same'], ['demo-b', 'Same']]);
+  const seg = (segment: string) => ({ period: '2026-11-01', segment, users_rounded: 1, events_rounded: 5 });
+  const names = (purchase: string[], wishlist: string[]): string[][] => {
+    const tree = DashboardView({
+      s: { ...INITIAL, trendDim: 'brand' }, header: { coverage: ok({ users_rounded: 150, last_run_at: null }), options: ok([]) }, brands: same, mix: ok([]),
+      trends: { purchase: ok(pivot([], purchase.map(seg), 'events_rounded')), wishlist: ok(pivot([], wishlist.map(seg), 'users_rounded')) }, spectrum: ok([]), onPick: () => {}, onFilter: () => {},
+    });
+    return elementsOf<Parameters<typeof TrendTable>[0]>(tree, TrendTable).map((t) => t.props.data.segments);
+  };
+  it('demo-b is the same name in both tables when the segment sets differ', () => {
+    // purchase holds only demo-b (it would take the label alone); wishlist holds demo-a and demo-b (demo-b would take the guess there)
+    const [purchase, wishlist] = names(['demo-b'], ['demo-a', 'demo-b']);
+    // the union in segment order is demo-b, demo-a: demo-b takes the label in both tables, demo-a the guess
+    expect(purchase).toEqual(['Same']);
+    expect(wishlist).toEqual(['A', 'Same']);
+  });
+  it('the names are unique across the union, and a table with a brand the other lacks still shows it', () => {
+    const [purchase, wishlist] = names(['demo-a'], ['demo-b']);
+    expect(purchase![0]).not.toBe(wishlist![0]);
   });
 });

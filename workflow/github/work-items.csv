@@ -124,8 +124,8 @@ WO-0154,"WO-0154: follow-ups of WO-0152 and WO-0153 (purchase rows during a dele
 WO-0155,"WO-0155: the vendor pages show brand labels, not codes",R8,Release 1 (MVP),Delivery agents,Done
 WO-0156,WO-0156: the low items of the WO-0154 and WO-0155 checks,R8,Release 1 (MVP),Delivery agents,Done
 WO-0157,WO-0157: the two low items of the WO-0156 check,R8,Release 1 (MVP),Delivery agents,Done
-WO-0158,WO-0158: end of the pilot in the database: the end-date setter and the participant deletion batch,R8a,Release 1 (MVP),Delivery agents,In Progress
-WO-0159,WO-0159: end of the pilot in the database: the close outcome ends vendor access,R8a,Release 1 (MVP),Delivery agents,Todo
+WO-0158,WO-0158: end of the pilot in the database: the end-date setter and the participant deletion batch,R8a,Release 1 (MVP),Delivery agents,Done
+WO-0159,WO-0159: end of the pilot in the database: the close outcome ends vendor access,R8a,Release 1 (MVP),Delivery agents,In Progress
 WO-0160,WO-0160: the admin end-of-pilot settings and action,R8a,Release 1 (MVP),Delivery agents,Todo
 WO-0161,WO-0161: the end-of-pilot banner,R8a,Release 1 (MVP),Delivery agents,Todo
 WO-0162,WO-0162: the end-of-pilot notice email (housekeeping step 5),R8a,Release 1 (MVP),Delivery agents,Todo

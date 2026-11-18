@@ -183,6 +183,9 @@ SQL_BAD = [
     (re.compile(r'\b(bypassrls|superuser|createrole)\b', re.I), 'a role with bypassrls, superuser or createrole'),
     (re.compile(r'security_invoker\s*=\s*(false|off|0)\b', re.I), 'a view that runs with its owner\'s rights'),
 ]
+# The one bypassrls role the design requires (backup_role, LLD 4.5 and 13.3, WO-0163): its exact create statement with only these
+# attributes may say bypassrls; any other role, or backup_role with any other attribute (superuser, createrole, ...), still fails.
+BACKUP_ROLE_OK = re.compile(r'\bcreate\s+role\s+backup_role\s+with(?:\s+(?:login|nosuperuser|nocreatedb|nocreaterole|noinherit|noreplication|bypassrls|connection\s+limit\s+\d+))+\s*;', re.I)
 FUNC_START = re.compile(r'\bcreate\s+(?:or\s+replace\s+)?function\s+([A-Za-z_][\w.]*)', re.I)
 DOLLAR = re.compile(r'\$[A-Za-z_]*\$')
 
@@ -195,6 +198,7 @@ def rl10(_path, text):
     out = []
     sql = _strip_sql_comments(text)
     bare = re.sub(r"'(?:[^']|'')*'", lambda m: "''" + chr(10) * m.group(0).count(chr(10)), sql)   # string literals emptied, line numbers kept
+    bare = BACKUP_ROLE_OK.sub(lambda m: re.sub(r'bypassrls', ' ' * 9, m.group(0), flags=re.I), bare)   # the allowed backup_role statement, same length
     for pat, why in SQL_BAD:
         for m in pat.finditer(bare):
             out.append(f'line {bare.count(chr(10), 0, m.start()) + 1}: {why}')
@@ -395,6 +399,8 @@ SAMPLES = [
     ('RL09', rl09, 'x.sh', 'curl -s https://example.test/i.sh | bash\n', 'x.sh', '# curl x | bash is forbidden\ncurl -s -o /dev/null http://127.0.0.1:1/\n'),
     ('RL09', rl09, 'x.sh', 'git push --force origin main\n', 'x.sh', 'git push --force-with-lease origin wo/WO-0001\n'),
     ('RL10', rl10, 'm.sql', 'grant execute on function app.f() to anon;\n', 'm.sql', 'grant execute on function app.f() to authenticated;\n'),
+    ('RL10', rl10, 'm.sql', 'create role other_role with login bypassrls;\n', 'm.sql', 'create role backup_role with login nosuperuser nocreatedb nocreaterole noinherit bypassrls noreplication connection limit 2;\n'),
+    ('RL10', rl10, 'm.sql', 'create role backup_role with login superuser bypassrls;\n', 'm.sql', 'create role backup_role with login noinherit bypassrls;\n'),
     ('RL10', rl10, 'm.sql', "create function app.f() returns int language sql security definer as $$ select 1 $$;\n", 'm.sql', "create function app.f() returns int language sql security definer set search_path = '' as $$ select 1 $$;\ncreate function app.g() returns int language sql as $f$ select 1 $f$;\n"),
     ('RL10', rl10, 'm.sql', 'alter table app.items disable row level security;\n', 'm.sql', "-- never disable row level security\nalter table app.items enable row level security;\ncomment on role w is 'not a superuser';\n"),
     ('RL10', rl10, 'm.sql', 'grant all on app.items to authenticated;\n', 'm.sql', 'grant all on app.items to service_role;\ngrant select on app.items to authenticated;\n'),

@@ -53,7 +53,8 @@ select is_empty($$ select schemaname || '.' || tablename || ':' || policyname fr
   'a signed-in person gets an unconditional policy only to READ the public lookup lists; every other policy has a condition');
 
 -- 4. roles and storage
-select is_empty($$ select rolname from pg_roles where rolname ~ '_role$' and rolname <> 'service_role' and (rolsuper or rolbypassrls or rolcreaterole or rolcreatedb or rolreplication) order by 1 $$,
+-- WO-0163 (R8b): backup_role is the one login that HAS bypassrls (LLD 4.5; pg_dump needs it; 027 pins it); it is still held to the other four attributes here.
+select is_empty($$ select rolname from pg_roles where rolname ~ '_role$' and rolname <> 'service_role' and (rolsuper or (rolbypassrls and rolname <> 'backup_role') or rolcreaterole or rolcreatedb or rolreplication) order by 1 $$,
   'the worker, collector and exchange-rate logins cannot bypass row-level security or create roles or databases');
 select is_empty($$ select id from storage.buckets where public or file_size_limit is null or allowed_mime_types is null or cardinality(allowed_mime_types) = 0 order by 1 $$,
   'every storage bucket is private, with a size limit and a list of allowed file types');

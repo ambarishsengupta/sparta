@@ -1039,6 +1039,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"deletion_log": {
+                  Row: {
+                    "deleted_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "deleted_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "deleted_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"fx_rates": {
                   Row: {
                     "currency": string,"per_usd": number,"rate_date": string

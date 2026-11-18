@@ -124,3 +124,20 @@ WO-0154,"WO-0154: follow-ups of WO-0152 and WO-0153 (purchase rows during a dele
 WO-0155,"WO-0155: the vendor pages show brand labels, not codes",R8,Release 1 (MVP),Delivery agents,Done
 WO-0156,WO-0156: the low items of the WO-0154 and WO-0155 checks,R8,Release 1 (MVP),Delivery agents,Done
 WO-0157,WO-0157: the two low items of the WO-0156 check,R8,Release 1 (MVP),Delivery agents,Done
+WO-0158,WO-0158: end of the pilot in the database: the end-date setter and the participant deletion batch,R8a,Release 1 (MVP),Delivery agents,Todo
+WO-0159,WO-0159: end of the pilot in the database: the close outcome ends vendor access,R8a,Release 1 (MVP),Delivery agents,Todo
+WO-0160,WO-0160: the admin end-of-pilot settings and action,R8a,Release 1 (MVP),Delivery agents,Todo
+WO-0161,WO-0161: the end-of-pilot banner,R8a,Release 1 (MVP),Delivery agents,Todo
+WO-0162,WO-0162: the end-of-pilot notice email (housekeeping step 5),R8a,Release 1 (MVP),Delivery agents,Todo
+WO-0163,WO-0163: the read-only backup role and the deletion log,R8b,Release 1 (MVP),Delivery agents,Todo
+WO-0164,WO-0164: backup and restore rehearsal on the local stack,R8b,Release 1 (MVP),Delivery agents,Todo
+WO-0165,"WO-0165: load check at 500 users and 50,000 items on the local stack",R8b,Release 1 (MVP),Delivery agents,Todo
+WO-0166,WO-0166: email-delivery check against the local mail catcher,R8b,Release 1 (MVP),Delivery agents,Todo
+WO-0167,WO-0167: incident-plan practice drill on the local stack,R8b,Release 1 (MVP),Delivery agents,Todo
+WO-0168,WO-0168: end-to-end harness and the account and consent flows,R8c,Release 1 (MVP),Delivery agents,Todo
+WO-0169,"WO-0169: end-to-end: wardrobe, outfits and data rights",R8c,Release 1 (MVP),Delivery agents,Todo
+WO-0170,"WO-0170: end-to-end: vendor and admin flows, end of the pilot",R8c,Release 1 (MVP),Delivery agents,Todo
+WO-0171,WO-0171: accessibility pass on the main flows (WCAG 2.1 AA),R8c,Release 1 (MVP),Delivery agents,Todo
+WO-0172,WO-0172: the gate and CI run the end-to-end and accessibility suites,R8c,Release 1 (MVP),Delivery agents,Todo
+X-OLOI5,"Choose the email provider for the end-of-pilot notice (O-LOI5, R8 WO-0162)",R8,Release 1 (MVP),Product owner,Todo
+X-ODEP,"Approve the R8 development dependencies: Playwright, axe, and the age tool (O-DEP, WO-0164, WO-0168, WO-0171)",R8,Release 1 (MVP),Product owner,Todo

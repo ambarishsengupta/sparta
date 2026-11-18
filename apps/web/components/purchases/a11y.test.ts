@@ -58,4 +58,11 @@ describe('the new styles follow the design system (WO-0093)', () => {
     expect(css).toMatch(/input\[type='date'\]/);
     expect(css).toMatch(/\.totals dd \{[^}]*font-size: var\(--fs-h2\)/);
   });
+  it('a button that is aria-disabled looks locked, hover included (WO-0156): reduced emphasis, not-allowed cursor, existing tokens only', () => {
+    const rule = /button\[aria-disabled="true"\], button\[aria-disabled="true"\]:hover \{([^}]*)\}/.exec(css);
+    expect(rule).not.toBeNull();
+    expect(rule![1]).toMatch(/color: var\(--disabled\)/);
+    expect(rule![1]).toMatch(/border-color: var\(--disabled\)/);
+    expect(rule![1]).toMatch(/cursor: not-allowed/);
+  });
 });

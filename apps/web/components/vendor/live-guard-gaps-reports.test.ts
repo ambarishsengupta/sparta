@@ -62,6 +62,22 @@ describe('Gaps: the live guard drops a result that arrives after the view change
   });
 });
 
+describe('Gaps: a filterOptions rejection (WO-0156)', () => {
+  it('a rejection that arrives after the page was left changes nothing; while the page is open it shows the failure', async () => {
+    const gone = mount(Gaps as () => ReactElement, {});
+    gone.render(); gone.flush();
+    gone.unmount();
+    optionCalls[0]!.reject(new Error('options failed'));
+    await settle();
+    expect(gapsProps(gone).options).toBeNull();
+    const open = mount(Gaps as () => ReactElement, {});
+    open.render(); open.flush();
+    optionCalls[1]!.reject(new Error('options failed'));
+    await settle();
+    expect(gapsProps(open).options).toMatchObject({ ok: false });
+  });
+});
+
 describe('Gaps: the live guard holds for the brand label map (WO-0155)', () => {
   it('a map that arrives after the page was left changes nothing', async () => {
     const g = mount(Gaps as () => ReactElement, {});
@@ -109,6 +125,33 @@ describe('Reports: the live guard drops a result that arrives after the view cha
     await settle();
     expect(shown(r.render()).one).toBeNull();
     expect(opened).not.toHaveBeenCalled();
+  });
+  it('ReportPage: two results for the same report id record vendor_report_opened once (WO-0156)', async () => {
+    let id = 'same-id';
+    const r = mount((() => ReportPage({ id })) as () => ReactElement, {});
+    r.render(); r.flush();
+    reportCalls[0]!.resolve(detail('same-id'));
+    await settle();
+    expect(opened).toHaveBeenCalledTimes(1);
+    id = 'other-id';                                          // another report is asked for and has not answered
+    r.render(); r.flush();
+    id = 'same-id';                                           // back to the first: a second result for the id that was recorded last
+    r.render(); r.flush();
+    reportCalls[2]!.resolve(detail('same-id'));
+    await settle();
+    expect(shown(r.render()).one).toEqual(detail('same-id'));
+    expect(opened).toHaveBeenCalledTimes(1);                  // not a second opening (fails if every result is recorded)
+    id = 'other-id';
+    r.render(); r.flush();
+    reportCalls[3]!.resolve(detail('other-id'));
+    await settle();
+    expect(opened).toHaveBeenCalledTimes(2);                  // a different report is a new opening (fails if recorded once per mount)
+    id = 'same-id';
+    r.render(); r.flush();
+    reportCalls[4]!.resolve(detail('same-id'));
+    await settle();
+    expect(reportCalls.map((c) => c.arg)).toEqual(['same-id', 'other-id', 'same-id', 'other-id', 'same-id']);
+    expect(opened).toHaveBeenCalledTimes(3);                  // the current guard compares with the LAST recorded id only, so same-id after other-id is a new opening
   });
   it('ReportList: a list that arrives after the page was left changes nothing', async () => {
     const r = mount(ReportList as () => ReactElement, {});

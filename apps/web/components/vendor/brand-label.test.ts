@@ -6,7 +6,8 @@ import type { GapRow } from '../../lib/vendor/insights';
 import { NO_BRAND_LABELS } from '../../lib/vendor/brands';
 import { brandLabel, segmentLabel, trendLabels } from './brand-label';
 import { DashboardView, type ViewProps } from './Dashboard';
-import { GapsView, type GapsViewProps } from './Gaps';
+import { GapsTable, GapsView, type GapsViewProps } from './Gaps';
+import { BarList, type BarRow } from '../ui/vendor/BarList';
 
 // WO-0125 step 9: the vendor functions return a brand as its code. The screen shows it without `demo-` and with capitalised words (the label is not in the answer).
 const html = (el: ReactElement) => renderToStaticMarkup(el).replace(/class="_([a-z]+)_[0-9a-f]+"/g, 'class="$1"');
@@ -100,5 +101,72 @@ describe('the label map', () => {
     const g = html(createElement(GapsView, { dim: 'category_brand', filter: null, options: ok([]), brands: labels, data: ok({ rows: [{ segment: 'Tops / demo-h-and-m', owner_users_rounded: 10, wishlist_users_rounded: 30, gap_score: 3, label: null }], hidden: ['Shoes / demo-zor-vane'] }), onDim: () => {}, onFilter: () => {} }));
     expect(g).toContain('<th scope="row">Tops / H&amp;M</th>');
     expect(g).toContain('<th scope="row">Shoes / Zor Vane</th>');
+  });
+});
+
+// WO-0156: catalog.lk_brand.label is not unique; two codes with one label must not collide in the trend table.
+describe('two codes that share a label (WO-0156)', () => {
+  const labels = new Map([['demo-a', 'Same'], ['demo-b', 'Same']]);
+  const rows = [{ period: '2026-11-01', segment: 'demo-a', users_rounded: 1, events_rounded: 10 }, { period: '2026-11-01', segment: 'demo-b', users_rounded: 2, events_rounded: 20 }];
+  it('the first keeps the label, the later one shows the guess; both cells survive and the segments are unique', () => {
+    const out = trendLabels('brand', pivot([], rows, 'events_rounded'), labels);
+    expect(out.segments).toEqual(['Same', 'B']);
+    expect(new Set(out.segments).size).toBe(2);
+    expect(out.cells).toEqual({ 'Same\u00002026-11': 10, 'B\u00002026-11': 20 });
+  });
+  it('when the guess is taken too, the label with the code is shown; the brand part of category_brand collides the same way', () => {
+    const two = [{ ...rows[1]!, segment: 'demo-b' }, { ...rows[1]!, segment: 'b' }];
+    const out = trendLabels('brand', pivot([], two, 'events_rounded'), new Map([['demo-b', 'B'], ['b', 'B']]));
+    expect(out.segments).toEqual(['B', 'B (demo-b)']);   // 'b' sorts first and takes 'B'
+    expect(Object.keys(out.cells)).toHaveLength(2);
+    const cb = trendLabels('category_brand', pivot([], rows.map((r) => ({ ...r, segment: `Tops / ${r.segment}` })), 'events_rounded'), labels);
+    expect(cb.segments).toEqual(['Tops / Same', 'Tops / B']);
+  });
+});
+
+describe('the mix and Gaps tables with two codes that share a label (WO-0156)', () => {
+  const same = new Map([['demo-a', 'Same'], ['demo-b', 'Same']]);
+  // The keys of the rows as React gets them: the element tree is read, the components are not rendered.
+  const rowKeys = (root: unknown, tag: string): string[] => {
+    const out: string[] = [];
+    const walk = (n: unknown): void => {
+      if (Array.isArray(n)) return n.forEach(walk);
+      if (typeof n !== 'object' || n === null || !('props' in n)) return;
+      const e = n as { type: unknown; key: string | null; props: { children?: unknown } };
+      if (e.type === tag && e.key !== null) out.push(e.key);
+      walk(e.props.children);
+    };
+    walk(root);
+    return out;
+  };
+  it('mix: two rows with distinct keys, both shown as the label', () => {
+    const mix = ok(withHidden([{ segment: 'demo-a', users_rounded: 60 }, { segment: 'demo-b', users_rounded: 30 }], []));
+    const tree = DashboardView({ s: { ...INITIAL, mixDim: 'brand' }, header: { coverage: ok({ users_rounded: 150, last_run_at: null }), options: ok([]) }, brands: same, mix, trends: { purchase: null, wishlist: null }, spectrum: ok([]), onPick: () => {}, onFilter: () => {} });
+    const list = (function find(n: unknown): { props: { rows: BarRow[] } } | null {
+      if (Array.isArray(n)) { for (const x of n) { const f = find(x); if (f) return f; } return null; }
+      if (typeof n !== 'object' || n === null || !('props' in n)) return null;
+      const e = n as { props: { rows?: unknown; children?: unknown; name?: string } };
+      if (Array.isArray(e.props.rows) && e.props.name === 'Ownership mix by brand') return e as never;
+      return find(e.props.children);
+    })(tree);
+    const keys = rowKeys(BarList({ name: 'x', rows: list!.props.rows }), 'li');
+    expect(list!.props.rows.map((r) => r.label)).toEqual(['Same', 'Same']);
+    expect(keys).toHaveLength(2);
+    expect(new Set(keys).size).toBe(2);
+  });
+  it('gaps: two rows and two hidden rows with distinct keys, both shown as the label', () => {
+    const row = (segment: string): GapRow => ({ segment, owner_users_rounded: 10, wishlist_users_rounded: 30, gap_score: 3, label: null });
+    const m = html(createElement(GapsView, { dim: 'brand', filter: null, options: ok([]), brands: same, data: ok({ rows: [row('demo-a'), row('demo-b')], hidden: ['demo-c', 'demo-d'] }), onDim: () => {}, onFilter: () => {} }));
+    expect(m.match(/<th scope="row">Same<\/th>/g)).toHaveLength(2);
+    const keys = rowKeys(GapsTable({ caption: 'c', rows: [{ ...row('Same'), code: 'demo-a' }, { ...row('Same'), code: 'demo-b' }], hidden: ['Same', 'Same'] }), 'tr');
+    expect(keys).toHaveLength(4);
+    expect(new Set(keys).size).toBe(4);
+  });
+  it('the last-resort name is free too', () => {
+    // 'c' wants "A" (taken), the guess "C" (taken), "A (c)" (taken), "c" (taken), then "c (2)" (taken) and gets "c (3)"
+    const labels = new Map([['1', 'A'], ['2', 'C'], ['3', 'A (c)'], ['4', 'c'], ['5', 'c (2)'], ['c', 'A']]);
+    const segs = ['1', '2', '3', '4', '5', 'c'];
+    const out = trendLabels('brand', pivot([], segs.map((segment) => ({ period: '2026-11-01', segment, users_rounded: 1, events_rounded: 1 })), 'events_rounded'), labels);
+    expect(out.segments).toEqual(['A', 'C', 'A (c)', 'c', 'c (2)', 'c (3)']);
   });
 });

@@ -69,7 +69,7 @@ export function DashboardView({ s, header, mix, trends, spectrum, brands, onPick
         {select('Segment', s.mixDim, MIX_DIMS, (v) => onPick({ mixDim: v as DashState['mixDim'] }))}
         {mix === null ? <p role="status">Loading.</p> : mix.ok && <BarList name={`Ownership mix by ${NAMES[s.mixDim]!.toLowerCase()}`} max={cov.users_rounded || undefined} rows={mix.data.map((r) => {
           const pct = r.value === null ? null : share(r.value, cov.users_rounded);
-          return { label: segmentLabel(s.mixDim, r.segment, brands), value: r.value, text: r.value === null ? undefined : `${r.value} users${pct === null ? '' : ` / ${pct}%`}` };
+          return { id: r.segment, label: segmentLabel(s.mixDim, r.segment, brands), value: r.value, text: r.value === null ? undefined : `${r.value} users${pct === null ? '' : ` / ${pct}%`}` };
         })} />}
         <h2>Trends by month</h2>
         {select('By', s.trendDim, TREND_DIMS, (v) => onPick({ trendDim: v as DashState['trendDim'] }))}

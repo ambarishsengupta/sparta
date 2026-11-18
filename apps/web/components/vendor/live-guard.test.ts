@@ -8,7 +8,8 @@ import { Dashboard, type ViewProps } from './Dashboard';
 vi.mock('react', async (orig) => ({ ...(await orig<object>()), ...(await import('../../test-support/hook-shim')).hookStandIns }));
 vi.mock('../../lib/supabase/browser', () => ({ createBrowserSupabase: () => ({}) }));
 type Mix = { ok: true; data: { segment: string; value: number }[] };
-const { mixCalls, headerCalls } = vi.hoisted(() => ({ mixCalls: [] as { dim: string; resolve: (r: unknown) => void }[], headerCalls: [] as { resolve: (r: unknown) => void }[] }));
+const { mixCalls, headerCalls, brandCalls } = vi.hoisted(() => ({ mixCalls: [] as { dim: string; resolve: (r: unknown) => void }[], headerCalls: [] as { resolve: (r: unknown) => void }[], brandCalls: [] as { resolve: (r: unknown) => void }[] }));
+vi.mock('../../lib/vendor/brands', async (orig) => ({ ...(await orig<object>()), loadBrandLabels: () => new Promise((resolve) => { brandCalls.push({ resolve }); }) }));   // WO-0155
 vi.mock('../../lib/vendor/dashboard', async (orig) => ({
   ...(await orig<object>()),
   loadHeader: () => new Promise((resolve) => { headerCalls.push({ resolve }); }),
@@ -45,5 +46,30 @@ describe('Dashboard: the live guard drops a result that arrives after the view c
     headerCalls[0]!.resolve({ coverage: { ok: true, data: { users_rounded: 150, last_run_at: null } }, options: { ok: true, data: [] } });
     await settle();
     expect(props(d).header).toEqual({ coverage: null, options: null });
+  });
+});
+
+// WO-0155: the brand label map is loaded once per page, with the same guard.
+describe('Dashboard: the live guard holds for the brand label map', () => {
+  it('a map that arrives after the page was left changes nothing', async () => {
+    brandCalls.length = 0;
+    const d = mount(Dashboard, {});
+    d.render(); d.flush();
+    expect(brandCalls).toHaveLength(1);
+    d.unmount();
+    brandCalls[0]!.resolve(new Map([['demo-h-and-m', 'H&M']]));
+    await settle();
+    expect(props(d).brands?.size).toBe(0);
+  });
+  it('a map that arrives while the page is open is used, and is not loaded again when the view changes', async () => {
+    brandCalls.length = 0;
+    const d = mount(Dashboard, {});
+    d.render(); d.flush();
+    props(d).onPick({ mixDim: 'brand' });
+    d.render(); d.flush();
+    expect(brandCalls).toHaveLength(1);
+    brandCalls[0]!.resolve(new Map([['demo-h-and-m', 'H&M']]));
+    await settle();
+    expect(props(d).brands?.get('demo-h-and-m')).toBe('H&M');
   });
 });

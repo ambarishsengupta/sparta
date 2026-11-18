@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { a11yProblems } from '../../test-support/a11y';
 import { INSIGHT_SENTENCES, loadFailed } from '../../lib/vendor/insights';
 import { mount, settle } from '../../test-support/hook-shim';
-import { Dashboard, type ViewProps } from './Dashboard';
+import { Dashboard, DashboardView, type ViewProps } from './Dashboard';
 import { Gaps, type GapsViewProps } from './Gaps';
 import { ReportList, ReportListView, ReportPage, ReportView } from './Reports';
 
@@ -14,6 +14,7 @@ vi.mock('react', async (orig) => ({ ...(await orig<object>()), ...(await import(
 vi.mock('../../lib/supabase/browser', () => ({ createBrowserSupabase: () => ({}) }));
 const { reject } = vi.hoisted(() => ({ reject: () => Promise.reject(new Error('the loader failed: internal detail')) }));
 vi.mock('../../lib/vendor/dashboard', async (orig) => ({ ...(await orig<object>()), loadHeader: () => reject(), loadMix: () => reject(), loadTrends: () => reject(), loadSpectrum: () => reject() }));
+vi.mock('../../lib/vendor/brands', async (orig) => ({ ...(await orig<object>()), loadBrandLabels: () => reject() }));   // WO-0155
 vi.mock('../../lib/vendor/gaps', async (orig) => ({ ...(await orig<object>()), loadGaps: () => reject() }));
 vi.mock('../../lib/vendor/reports', async (orig) => ({ ...(await orig<object>()), openReport: () => reject() }));
 vi.mock('../../lib/vendor/insights', async (orig) => ({ ...(await orig<object>()), filterOptions: () => reject(), reports: () => reject() }));
@@ -114,5 +115,21 @@ describe('Reports: a rejecting loader ends on the fixed sentence for the list an
     expect(page).toContain(`<p class="error" role="alert">${INSIGHT_SENTENCES.unexpected}</p>`);
     expect(page).not.toContain('Loading.');
     expect(a11yProblems(page)).toEqual([]);
+  });
+});
+
+describe('the brand label map (WO-0155): a map that fails to load shows no error and keeps the guessed labels', () => {
+  it('Dashboard', async () => {
+    const d = mount(Dashboard, {});
+    d.render(); d.flush(); await settle();
+    const el = d.render() as ReactElement<ViewProps>;
+    expect(el.props.brands?.size).toBe(0);
+    expect(html(el)).not.toContain('internal detail');
+    expect(html(createElement(DashboardView, { ...el.props, s: { ...el.props.s, mixDim: 'brand' }, header: { coverage: { ok: true, data: { users_rounded: 150, last_run_at: null } }, options: { ok: true, data: [] } }, mix: { ok: true, data: [{ segment: 'demo-h-and-m', value: 60 }] } }))).toContain('<span>H And M</span>');
+  });
+  it('Gaps', async () => {
+    const g = mount(Gaps, {});
+    g.render(); g.flush(); await settle();
+    expect((g.render() as ReactElement<GapsViewProps>).props.brands?.size).toBe(0);
   });
 });

@@ -10,13 +10,14 @@ vi.mock('react', async (orig) => ({ ...(await orig<object>()), ...(await import(
 vi.mock('next/link', () => ({ default: () => null }));
 vi.mock('../../lib/supabase/browser', () => ({ createBrowserSupabase: () => ({}) }));
 type Call = { arg: string; resolve: (r: unknown) => void; reject: (e: unknown) => void };
-const { gapCalls, optionCalls, reportCalls, listCalls, opened } = vi.hoisted(() => ({ gapCalls: [] as Call[], optionCalls: [] as Call[], reportCalls: [] as Call[], listCalls: [] as Call[], opened: vi.fn() }));
+const { gapCalls, optionCalls, reportCalls, listCalls, brandCalls, opened } = vi.hoisted(() => ({ gapCalls: [] as Call[], optionCalls: [] as Call[], reportCalls: [] as Call[], listCalls: [] as Call[], brandCalls: [] as Call[], opened: vi.fn() }));
 const pending = (into: Call[], arg: string) => new Promise((resolve, reject) => { into.push({ arg, resolve, reject }); });
 vi.mock('../../lib/vendor/gaps', async (orig) => ({ ...(await orig<object>()), loadGaps: (_c: unknown, dim: string) => pending(gapCalls, dim) }));
 vi.mock('../../lib/vendor/reports', async (orig) => ({ ...(await orig<object>()), openReport: (_c: unknown, id: string) => pending(reportCalls, id) }));
 vi.mock('../../lib/vendor/insights', async (orig) => ({ ...(await orig<object>()), filterOptions: () => pending(optionCalls, 'options'), reports: () => pending(listCalls, 'list') }));
+vi.mock('../../lib/vendor/brands', async (orig) => ({ ...(await orig<object>()), loadBrandLabels: () => pending(brandCalls, 'brands') }));   // WO-0155
 vi.mock('../../lib/events', () => ({ EventLog: class { record = opened; } }));
-beforeEach(() => { for (const c of [gapCalls, optionCalls, reportCalls, listCalls]) c.length = 0; opened.mockClear(); });
+beforeEach(() => { for (const c of [gapCalls, optionCalls, reportCalls, listCalls, brandCalls]) c.length = 0; opened.mockClear(); });
 
 const gapsData = (segment: string) => ({ ok: true, data: { rows: [{ segment, owner_users_rounded: 10, wishlist_users_rounded: 30, gap_score: 3, label: null }], hidden: [] } });
 const detail = (id: string) => ({ ok: true, data: { id, period: '2026-11-01', reviewed_at: '2026-11-05T00:00:00Z', payload: {} } });
@@ -58,6 +59,28 @@ describe('Gaps: the live guard drops a result that arrives after the view change
     await settle();
     expect(gapsProps(g).data).toBeNull();
     expect(gapsProps(g).options).toBeNull();
+  });
+});
+
+describe('Gaps: the live guard holds for the brand label map (WO-0155)', () => {
+  it('a map that arrives after the page was left changes nothing', async () => {
+    const g = mount(Gaps as () => ReactElement, {});
+    g.render(); g.flush();
+    expect(brandCalls).toHaveLength(1);
+    g.unmount();
+    brandCalls[0]!.resolve(new Map([['demo-h-and-m', 'H&M']]));
+    await settle();
+    expect(gapsProps(g).brands?.size).toBe(0);
+  });
+  it('a map that arrives while the page is open is used, and is not loaded again when the segment changes', async () => {
+    const g = mount(Gaps as () => ReactElement, {});
+    g.render(); g.flush();
+    gapsProps(g).onDim('brand');
+    g.render(); g.flush();
+    expect(brandCalls).toHaveLength(1);
+    brandCalls[0]!.resolve(new Map([['demo-h-and-m', 'H&M']]));
+    await settle();
+    expect(gapsProps(g).brands?.get('demo-h-and-m')).toBe('H&M');
   });
 });
 

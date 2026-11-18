@@ -68,6 +68,15 @@ const CASES: [GateState, string, ReturnType<typeof to> | typeof allow][] = [
   ['unauthenticated', '/api/admin/sources/3/takedown', allow],
   ['needs_email_confirmation', '/api/admin/catalog/review', allow],
   ['ready', '/api/admin/catalog/review', allow],
+  // WO-0173: the end-of-pilot page is an admin page too: the admin state may open it, every other state is sent where it is sent from /admin/catalog
+  ['admin', '/admin/pilot', allow],
+  ['ready', '/admin/pilot', to('/')],
+  ['not_available', '/admin/pilot', to('/not-available')],
+  ['needs_onboarding', '/admin/pilot', to('/onboarding')],
+  ['needs_email_confirmation', '/admin/pilot', to('/check-your-email')],
+  ['needs_documents', '/admin/pilot', to('/accept-terms')],
+  ['needs_pilot_notice', '/admin/pilot', to('/pilot-notice')],
+  ['unauthenticated', '/admin/pilot', to('/sign-in?next=%2Fadmin%2Fpilot')],
   ['not_available', '/api/admin/sources', allow],
   ['unauthenticated', '/api/adminx', to('/sign-in?next=%2Fapi%2Fadminx')],
   ['unauthenticated', '/api/admin/../account/export', to('/sign-in?next=%2Fapi%2Faccount%2Fexport')],   // dot segments are resolved first: the admin prefix is not a way round the gate

@@ -4,6 +4,7 @@ import { createElement, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import AcceptTerms from '../../app/(auth)/accept-terms/page';
+import Onboarding from '../../app/(auth)/onboarding/page';
 import PilotNotice from '../../app/(auth)/pilot-notice/page';
 import { a11yProblems, hasTag } from '../../test-support/a11y';
 import { decideRoute } from '../../lib/supabase/gate';
@@ -23,6 +24,7 @@ const inOrder = (m: string, parts: string[]) => { const ix = parts.map((p) => m.
 describe.each([
   ['the pilot notice', PilotNotice, 'No thanks, sign out', 'I understand and join the pilot'],
   ['the Terms and Privacy Policy page', AcceptTerms, 'Sign out', 'Continue'],
+  ['the onboarding page (WO-0161)', Onboarding, 'Sign out', 'Start from popular items'],
 ] as const)('%s', (_name, Page, signOutLabel, primary) => {
   it('offers Export my data, Leave the pilot and Sign out, after the way forward, under one heading', async () => {
     const m = await page(Page);
@@ -60,6 +62,14 @@ describe('the gate lets these people reach what the pages offer', () => {
   });
 });
 
+describe('the gate at needs_onboarding (WO-0161)', () => {
+  it('keeps /leave and the export routes open and sends /settings, where the banner links, to /onboarding, which offers Export', () => {
+    expect(decideRoute('needs_onboarding', '/leave')).toEqual({ action: 'allow' });
+    expect(decideRoute('needs_onboarding', '/api/account/export')).toEqual({ action: 'allow' });
+    expect(decideRoute('needs_onboarding', '/settings')).toEqual({ action: 'redirect', to: '/onboarding' });
+  });
+});
+
 describe('HeldOptions', () => {
   it('shows its introduction and takes the sign-out button text from the page', () => {
     const m = html(createElement(HeldOptions, { intro: 'Hello there.', signOutLabel: 'Go away' }));
@@ -68,7 +78,7 @@ describe('HeldOptions', () => {
     expect(html(createElement(HeldOptions, { intro: 'x' }))).toContain('>Sign out</button>');
   });
   it('each page uses it, and neither page still carries a raw sign-out form of its own', () => {
-    for (const p of ['../../app/(auth)/pilot-notice/page.tsx', '../../app/(auth)/accept-terms/page.tsx']) {
+    for (const p of ['../../app/(auth)/pilot-notice/page.tsx', '../../app/(auth)/accept-terms/page.tsx', '../../app/(auth)/onboarding/page.tsx']) {
       const src = readFileSync(new URL(p, import.meta.url), 'utf8');
       expect(src).toContain('<HeldOptions');
       expect(src).not.toContain('/auth/sign-out');

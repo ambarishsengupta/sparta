@@ -16,6 +16,11 @@ export const ERRORS = {
   invalid_job_input: [422, 'The job input is not valid.'],
   storage_unavailable: [502, 'Storage did not answer.'],
   purge_incomplete: [500, 'Not every file could be removed.'],
+  confirmation_required: [400, 'Type END to confirm.'],
+  invalid_end_date: [422, 'The end date cannot be set to a date in the past.'],
+  pilot_not_ended: [409, 'The pilot has not ended yet.'],
+  outcome_unset: [409, 'Choose an outcome for the pilot first.'],
+  notice_unset: [409, 'No pilot notice version is set.'],
   server_error: [500, 'Something went wrong.'],
 } as const;
 export type ErrorCode = keyof typeof ERRORS;

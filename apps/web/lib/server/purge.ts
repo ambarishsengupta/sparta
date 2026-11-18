@@ -76,6 +76,17 @@ export async function purgeBucket(storage: StorageLike, bucket: string, uid: str
   throw new Error('still not empty');
 }
 
+/** WO-0160: removes every object of one user in every bucket (`BUCKETS`) through the Storage API, and returns how many were removed per bucket. The ONE
+ * routine of the self-service path (`handlePurge`) and of the administrator's end of the pilot (lib/server/admin-pilot.ts): the listing, paging and depth limits
+ * live only in `purgeBucket`. THROWS when any bucket could not be listed, emptied or checked; the caller then must not delete the account. The id must be a
+ * UUID: an empty or odd id would make the listing cover more than one user's folder, so it is refused before anything is listed. */
+export async function purgeUserFolders(storage: StorageLike, uid: string): Promise<Record<string, number>> {
+  if (!UUID.test(uid)) throw new Error('not a user id');
+  const removed: Record<string, number> = {};
+  for (const bucket of BUCKETS) removed[bucket] = await purgeBucket(storage, bucket, uid);
+  return removed;
+}
+
 /** WO-0130: at most this many purges per person in this many seconds, counted in the database (every instance). A purge that ends `purge_incomplete`
  * is retried by the person, so the limit is not 1; it is low because each call lists and removes every file of the person. */
 export const PURGE_LIMIT = { max: 6, windowSeconds: 600 } as const;
@@ -108,10 +119,8 @@ export async function handlePurge(req: Request, deps: PurgeDeps): Promise<Respon
     if (r.data !== true) return fail('reauthentication_required');
   } catch { return fail('unavailable'); }
 
-  const removed: Record<string, number> = {};
-  try {
-    for (const bucket of BUCKETS) removed[bucket] = await purgeBucket(deps.storage, bucket, uid);
-  } catch { return fail('purge_incomplete'); }
+  let removed: Record<string, number>;
+  try { removed = await purgeUserFolders(deps.storage, uid); } catch { return fail('purge_incomplete'); }
   return ok({ ok: true, removed });
 }
 

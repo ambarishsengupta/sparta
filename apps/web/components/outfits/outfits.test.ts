@@ -28,7 +28,7 @@ const sources = import.meta.glob<string>(
     '!../../lib/supabase/gate-state.ts', '!../../lib/supabase/proxy-session.ts', '!../../lib/supabase/server.ts', '!../../lib/supabase/consent-actions.ts',
     '!../../lib/supabase/backend.ts',
     // WO-0071: the server-only modules (secret-key client, worker and purge handlers) are not on the suggestion path; named one by one. source.test.ts proves that only route handlers import them.
-    '!../../lib/server/admin.ts', '!../../lib/server/api.ts', '!../../lib/server/limits.ts', '!../../lib/server/purge.ts', '!../../lib/server/signed-urls.ts', '!../../lib/server/admin-catalog.ts', '!../../lib/server/hm-demo.ts',
+    '!../../lib/server/admin.ts', '!../../lib/server/api.ts', '!../../lib/server/limits.ts', '!../../lib/server/purge.ts', '!../../lib/server/signed-urls.ts', '!../../lib/server/admin-catalog.ts', '!../../lib/server/admin-pilot.ts', '!../../lib/server/hm-demo.ts',
   ],
   { query: '?raw', import: 'default', eager: true },
 );

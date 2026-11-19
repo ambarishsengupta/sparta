@@ -1,0 +1,18 @@
+load-check (LOCAL stack, SYNTHETIC data; no hosted project is read) 2026-11-19T10:20:58Z
+[measured] load: 500 users, 50000 items, 5000 wishlist entries, 15000 purchases in 35.52 s (fixed seed load-check:v1, one transaction)
+[assumed] per-query limit 3000 ms: NFR-3's 3-second screen budget used as an upper bound (no new requirement); LOAD_CHECK_MAX_MS=3000
+[measured] wardrobe_first_page (one user under RLS, explain analyze, planning + execution): first run 0.532 ms, second run 0.462 ms, 50 rows returned, index used: yes (items_user_category_colour); within the limit
+[measured] wardrobe_filtered (one user under RLS, explain analyze, planning + execution): first run 0.250 ms, second run 0.251 ms, 2 rows returned, index used: yes (items_user_category_colour); within the limit
+[measured] item_count (one user under RLS, explain analyze, planning + execution): first run 0.247 ms, second run 0.204 ms, 1 rows returned, index used: yes (items_user_category_colour); within the limit
+[measured] RLS proof: count(*) as the signed-in user = 100 (their own items) while the table holds 50000, so the three timings above are the policy path and not a table scan of everyone's rows
+[measured] analytics.run_aggregation() inside a ROLLED-BACK transaction (the function runs in the caller's transaction, so no snapshot was needed): 2830.1 ms, status ok, 500 users and 50000 items included, 4056 cube rows built (all undone by the rollback); aggregation is a batch job, so the screen limit is not applied to it
+[measured] database size (pg_database_size, whole local database with the load in it, before clean-up): 55.8 MiB
+[assumed] free-plan database limit 500 MB per project, check at 80% = 400 MB (HLD 6.4, Supabase free plan as written there, not read from any hosted project); size within the limit
+[computed] file storage for 500 users at the HLD 6.4 rates, 60 items per user: 3950 MB (item images 80 KB + thumbnail 10 KB per item, 10 receipts of 250 KB per user; HLD NFR-7 states about 3.7 GB for the same inputs, so this arithmetic is about 7% higher than the HLD's rounded figure); at this check's 100 items per user: 5750 MB; no image or receipt was uploaded
+[assumed] free-plan file storage about 1 GB (1000 MB) per organisation (HLD 6.4 and 11): 500 users EXCEED it (3950 MB against 1000 MB), as HLD NFR-7 already states; this line is information and does not change the exit status; the fallbacks are in HLD section 11 and a paid plan needs the owner's approval
+[assumed] hosted limits (5 GB egress a month, pause after 7 days without activity, connection limits) are not measured here: hosted readings are the owner's or the SA's (workflow R8, human)
+[measured] before/after check: counts and the analytics.cube checksum are EQUAL
+[measured]   before: items=0 profiles=0 users=0 consents=0 acceptances=0 wishlist=0 purchases=0 invites_accepted=0 runs=0 facts=0 cube_stage=0 cube_rows=0 cube_md5=d41d8cd98f00b204e9800998ecf8427e leftover=0 signups_day=2026-11-19 signups_n=- seq_last=486 seq_called=t
+[measured]   after:  items=0 profiles=0 users=0 consents=0 acceptances=0 wishlist=0 purchases=0 invites_accepted=0 runs=0 facts=0 cube_stage=0 cube_rows=0 cube_md5=d41d8cd98f00b204e9800998ecf8427e leftover=0 signups_day=2026-11-19 signups_n=- seq_last=486 seq_called=t
+load-check: PASS
+exit=0 wall=39s

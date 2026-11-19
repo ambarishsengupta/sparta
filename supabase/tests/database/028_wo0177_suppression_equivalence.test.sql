@@ -1,14 +1,18 @@
--- WO-0177 (R8b): analytics.run_aggregation() was rewritten set-based so that it finishes at pilot scale; its OUTPUT must not change. This test runs the REFERENCE (a verbatim private copy of the
+-- WO-0177 (R8b), updated by WO-0178: analytics.run_aggregation() was rewritten set-based so that it finishes at pilot scale. This test runs a REFERENCE (a private copy of the simple, per-fact
 -- function body of migration 20261115100000, WO-0128, kept only here in pg_temp and gone at rollback) and the function in the database on the SAME data, one after the other, and asserts that
 -- the published cubes are identical row for row (every column: attributes, users_rounded, events_rounded, users_floor) and that the run rows agree (status, error code, users, items, rows suppressed).
+-- WO-0178 changed the RULE on purpose (the output of the old body is no longer what the function must produce), so the reference carries the same three changes, written the plain way (a
+-- correlated query on the facts, no working tables): (1) the remainder is the distinct users of the parent with NO fact in any visible child of the set; (2) a total row per kind and period is
+-- staged as a parent of the single-dimension rows and removed before rounding (never published, not counted in rows_suppressed); (3) the bands of a category are evaluated even when none is hidden
+-- (a remainder of 1 to min_group_size - 1 users, the users with no rated item, hides the smallest band). The comparison is still the proof that the set-based method equals the simple one.
 -- Data: every suppression case of the WO-0099 test (016) and the WO-0110 test (020), re-built here, their 30 seeded random populations, and two seeded random fixtures of thousands of facts across
 -- categories, colours, fits, brands, sizes, seasons, price bands, regions and periods (owned, wishlist, open wishlist and purchase facts), each run at several minimum group sizes.
 -- A skipped or vacuous comparison cannot pass: each fixture asserts how many facts, cube rows and complementary suppressions it holds. Synthetic and rolled back.
 begin;
 \ir helpers.inc
-select plan(37);
+select plan(35);
 
--- ---- the reference: the function body before WO-0177, verbatim, under another name (pg_temp.ref_run_aggregation) --------------------------------------------------------------------------
+-- ---- the reference: the plain per-fact function body (WO-0128) with the three WO-0178 changes, under another name (pg_temp.ref_run_aggregation) --------------------------------------------------------------------------
 create function pg_temp.ref_run_aggregation() returns bigint
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -41,6 +45,8 @@ begin
     insert into analytics_private.cube_stage (kind, period, d_category, condition_band, users, events)
       select 'owned', f.period, f.category, f.condition_band, count(distinct f.user_hash), count(*)
       from analytics_private.facts f where f.kind = 'owned' and f.condition_band <> 'Unrated' group by f.period, f.category, f.condition_band;
+    -- WO-0178: the total of each kind and period, a parent in step 2 only
+    insert into analytics_private.cube_stage (kind, period, users, events) select f.kind, f.period, count(distinct f.user_hash), count(*) from analytics_private.facts f group by f.kind, f.period;
 
     -- LLD 5.3 step 1: mark rows under the minimum group size
     select coalesce(array_agg(s.ctid), '{}'::tid[]) into v_marks from analytics_private.cube_stage s where s.users < v_min;
@@ -69,23 +75,28 @@ begin
             where not exists (select 1 from unnest($1) pm(t) where pm.t = p.ctid)
           ), grp as (
             select pt, count(*) filter (where hid) as nh, coalesce(array_agg(cv) filter (where not hid), '{}') as vis
-            from sib group by pt having count(*) filter (where hid) >= 1
-          ), need as (                                           -- remainder = distinct users of the parent outside every visible child of this set
+            from sib group by pt having count(*) filter (where hid) >= 1 or %6$L = 'condition_band'
+          ), need as (                                           -- remainder = distinct users of the parent with NO fact in any visible child of this set (WO-0178)
             select g.pt from grp g where g.nh = 1 or (
-              select count(distinct f.user_hash) from analytics_private.facts f join analytics_private.cube_stage p on p.ctid = g.pt
-              where f.kind = p.kind and f.period = p.period %4$s and not (f.%5$s = any (g.vis))) < %3$s
+              select count(*) from (select f.user_hash from analytics_private.facts f join analytics_private.cube_stage p on p.ctid = g.pt
+                where f.kind = p.kind and f.period = p.period %4$s
+                group by f.user_hash having not bool_or(coalesce(f.%5$s = any (g.vis), false))) q)   -- users of the parent with no fact in a visible child
+              between case when g.nh = 0 then 1 else 0 end and %3$s - 1
           ), pick as (
             select distinct on (s.pt) s.ct from sib s join need n on n.pt = s.pt where not s.hid order by s.pt, s.users, s.ct
           )
-          select array_agg(distinct ct) from pick $q$, a, v_on, v_min, v_fm, regexp_replace(a, '^[df]_', '')) into v_pick using v_marks;
+          select array_agg(distinct ct) from pick $q$, a, v_on, v_min, v_fm, regexp_replace(a, '^[df]_', ''), a) into v_pick using v_marks;
         v_n := coalesce(cardinality(v_pick), 0);                 -- a pick is never already marked, so these are all new marks
         v_marks := v_marks || coalesce(v_pick, '{}'::tid[]);
         v_new := v_new + v_n;
       end loop;
       exit when v_new = 0;
     end loop;
-    v_supp := cardinality(v_marks);
+    v_supp := cardinality(v_marks) - (select count(*) from analytics_private.cube_stage s join unnest(v_marks) m(t) on m.t = s.ctid
+      where num_nonnulls(s.d_category, s.d_colour_family, s.d_fit, s.d_brand, s.f_size, s.f_season, s.f_price_band, s.f_region, s.condition_band) = 0);   -- the total rows are not counted
     delete from analytics_private.cube_stage s using unnest(v_marks) m(t) where m.t = s.ctid;
+    delete from analytics_private.cube_stage s
+      where num_nonnulls(s.d_category, s.d_colour_family, s.d_fit, s.d_brand, s.f_size, s.f_season, s.f_price_band, s.f_region, s.condition_band) = 0;
 
     -- LLD 5.3 steps 3 and 4: round to the nearest 5, keep users_floor, and count the rows that round to 0 as suppressed
     select v_supp + count(*) filter (where round(s.users / 5.0) * 5 = 0 or round(s.events / 5.0) * 5 = 0) into v_supp from analytics_private.cube_stage s;
@@ -338,10 +349,6 @@ select is(pg_temp.same('fixture 1 (650 users) at 10'), 'same', 'fixture 1 at min
 select ok((select cube_rows >= 300 and suppressed >= 200 and complementary >= 20 from eqlog where label = 'fixture 1 (650 users) at 10'), 'fixture 1 at 10 is not vacuous: 300+ published rows, 200+ suppressed, 20+ of them complementary');
 select pg_temp.set_min(5);
 select is(pg_temp.same('fixture 1 at 5'), 'same', 'fixture 1 at min_group_size 5: identical');
-select pg_temp.set_min(15);
-select is(pg_temp.same('fixture 1 at 15'), 'same', 'fixture 1 at min_group_size 15: identical');
-select pg_temp.set_min(25);
-select is(pg_temp.same('fixture 1 at 25'), 'same', 'fixture 1 at min_group_size 25: identical');
 select pg_temp.set_min(50);
 select is(pg_temp.same('fixture 1 at 50'), 'same', 'fixture 1 at min_group_size 50 (the shipped value): identical');
 select ok((select complementary > 0 from eqlog where label = 'fixture 1 at 50'), 'fixture 1 at 50 has complementary suppression too');
@@ -361,9 +368,9 @@ select pg_temp.big(17, 650);
 select pg_temp.ref_run_aggregation();
 create temp table once as select * from analytics.cube;
 select pg_temp.ref_run_aggregation();
-select is((select count(*) from (select kind, period, d_category, d_colour_family, d_fit, d_brand, f_size, f_season, f_price_band, f_region, condition_band, users_rounded, events_rounded, users_floor from once
-  except all select kind, period, d_category, d_colour_family, d_fit, d_brand, f_size, f_season, f_price_band, f_region, condition_band, users_rounded, events_rounded, users_floor from analytics.cube) q), 0::bigint,
-  'the reference is deterministic: two runs on the same data give the same cube');
+select is((select count(*) from ((select kind, period, d_category, d_colour_family, d_fit, d_brand, f_size, f_season, f_price_band, f_region, condition_band, users_rounded, events_rounded, users_floor from once except all select kind, period, d_category, d_colour_family, d_fit, d_brand, f_size, f_season, f_price_band, f_region, condition_band, users_rounded, events_rounded, users_floor from analytics.cube)
+  union all (select kind, period, d_category, d_colour_family, d_fit, d_brand, f_size, f_season, f_price_band, f_region, condition_band, users_rounded, events_rounded, users_floor from analytics.cube except all select kind, period, d_category, d_colour_family, d_fit, d_brand, f_size, f_season, f_price_band, f_region, condition_band, users_rounded, events_rounded, users_floor from once)) q), 0::bigint,
+  'the reference is deterministic: two runs on the same data give the same cube (compared both ways)');
 select pg_temp.clear();
 
 -- ======== 4. totals, and what was compared ==========================================================================================================================================

@@ -5,7 +5,7 @@
 -- The cube is planted straight into analytics.cube (controlled rows, including rows a run would never publish); the last block feeds the real run.
 begin;
 \ir helpers.inc
-select plan(177);
+select plan(178);
 
 create function pg_temp.u(n int) returns uuid language sql immutable as $f$ select ('00100000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid $f$;
 create function pg_temp.va() returns uuid language sql immutable as $f$ select 'a1000000-0000-0000-0000-000000000001'::uuid $f$;
@@ -288,9 +288,13 @@ insert into app.items (user_id, name, category, sub_type, colour_r, colour_g, co
   select md5('wo0100:' || g)::uuid, 'x', case when g <= 10 then 'Tops' else 'Bottoms' end, case when g <= 10 then 'Polo' else 'Jeans' end, 0, 0, 139, 'manual' from generate_series(1, 19) g;
 select analytics.run_aggregation() as run_id \gset
 select is((select status from ops.aggregate_runs where id = :run_id), 'ok', 'the aggregation run finished ok');
-select is(pg_temp.mix(pg_temp.u(1), $$'category'$$), 'Tops=10', 'FR-80: a segment of 10 users is returned and a segment of 9 is not');
+select is(pg_temp.mix(pg_temp.u(1), $$'category'$$), '-', 'FR-80 and WO-0178: the segment of 9 (Bottoms) is not returned, and the total is a parent of the categories, so the smallest visible segment beside it (Tops, 10) is hidden with it');
 select is(pg_temp.val_as(pg_temp.u(1), 'authenticated', 'select users_rounded from analytics.coverage()'), '20', 'coverage after the run: 19 users, 20');
 select is(pg_temp.mix(pg_temp.u(6), $$'category'$$), 'err=42501: forbidden', 'a consumer is refused after the run too');
+-- without the nine Bottoms users there is no hidden sibling: the segment of exactly 10 is returned
+delete from auth.users where id in (select md5('wo0100:' || g)::uuid from generate_series(11, 19) g);
+select analytics.run_aggregation() as run_id2 \gset
+select is(pg_temp.mix(pg_temp.u(1), $$'category'$$), 'Tops=10', 'FR-80: a segment of 10 users is returned when no sibling is hidden');
 
 select * from finish();
 rollback;

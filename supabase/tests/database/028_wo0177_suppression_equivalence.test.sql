@@ -4,7 +4,10 @@
 -- WO-0178 changed the RULE on purpose (the output of the old body is no longer what the function must produce), so the reference carries the same three changes, written the plain way (a
 -- correlated query on the facts, no working tables): (1) the remainder is the distinct users of the parent with NO fact in any visible child of the set; (2) a total row per kind and period is
 -- staged as a parent of the single-dimension rows and removed before rounding (never published, not counted in rows_suppressed); (3) the bands of a category are evaluated even when none is hidden
--- (a remainder of 1 to min_group_size - 1 users, the users with no rated item, hides the smallest band). The comparison is still the proof that the set-based method equals the simple one.
+-- (a remainder of 1 to min_group_size - 1 users, the users with no rated item, hides the smallest band).
+-- WO-0179 changed the rule again, and the reference carries it: (4) a remainder of 0 no longer hides a child (variant Z: hide on a remainder of 1 to min_group_size - 1, or when the facts of the
+-- parent outside every visible child, which include unrated items for the bands, belong to 1 to min_group_size - 1 distinct users); (5) users_included is the owned total (users with an owned fact).
+-- The comparison is still the proof that the set-based method equals the simple one.
 -- Data: every suppression case of the WO-0099 test (016) and the WO-0110 test (020), re-built here, their 30 seeded random populations, and two seeded random fixtures of thousands of facts across
 -- categories, colours, fits, brands, sizes, seasons, price bands, regions and periods (owned, wishlist, open wishlist and purchase facts), each run at several minimum group sizes.
 -- A skipped or vacuous comparison cannot pass: each fixture asserts how many facts, cube rows and complementary suppressions it holds. Synthetic and rolled back.
@@ -34,7 +37,7 @@ begin
 
     v_salt := encode(extensions.gen_random_bytes(16), 'hex');   -- in memory only, never stored
     perform analytics_private.build_facts(v_salt);               -- a separate statement: build_facts truncates facts
-    select count(distinct f.user_hash), count(*) filter (where f.kind = 'owned') into v_users, v_items from analytics_private.facts f;
+    select count(distinct f.user_hash) filter (where f.kind = 'owned'), count(*) filter (where f.kind = 'owned') into v_users, v_items from analytics_private.facts f;   -- WO-0179: the owned total, not the cohort of all kinds
 
     -- LLD 5.2: seven dimension groups x five filter choices, then the condition spectrum (owned and rated only)
     truncate analytics_private.cube_stage;
@@ -76,12 +79,15 @@ begin
           ), grp as (
             select pt, count(*) filter (where hid) as nh, coalesce(array_agg(cv) filter (where not hid), '{}') as vis
             from sib group by pt having count(*) filter (where hid) >= 1 or %6$L = 'condition_band'
-          ), need as (                                           -- remainder = distinct users of the parent with NO fact in any visible child of this set (WO-0178)
+          ), need as (                                           -- WO-0179 (variant Z): one hidden child, or a remainder (distinct users of the parent with NO fact in any visible child) of 1 to min - 1,
+                                                                 -- or the facts of the parent outside every visible child owned by 1 to min - 1 distinct users (band sets: also when no band is hidden)
             select g.pt from grp g where g.nh = 1 or (
               select count(*) from (select f.user_hash from analytics_private.facts f join analytics_private.cube_stage p on p.ctid = g.pt
                 where f.kind = p.kind and f.period = p.period %4$s
                 group by f.user_hash having not bool_or(coalesce(f.%5$s = any (g.vis), false))) q)   -- users of the parent with no fact in a visible child
-              between case when g.nh = 0 then 1 else 0 end and %3$s - 1
+              between 1 and %3$s - 1
+            or (select count(distinct f.user_hash) from analytics_private.facts f join analytics_private.cube_stage p on p.ctid = g.pt
+                where f.kind = p.kind and f.period = p.period %4$s and not coalesce(f.%5$s = any (g.vis), false)) between 1 and %3$s - 1
           ), pick as (
             select distinct on (s.pt) s.ct from sib s join need n on n.pt = s.pt where not s.hid order by s.pt, s.users, s.ct
           )

@@ -71,16 +71,13 @@ insert into app.document_acceptances (user_id, document, version) select pg_temp
   from generate_series(1, 150) n, (values ('terms', 'current_terms_version'), ('privacy_policy', 'current_privacy_version')) d(doc, key)
   where not exists (select 1 from app.document_acceptances a where a.user_id = pg_temp.pid(n) and a.document = d.doc);
 
--- items: category k is owned by the users its rule picks (Tops by every user except the 16 below, Activewear by 7 and Ethnic wear by 9 users, so those two stay hidden). WO-0178: those 16 users own
--- ONLY their small category. The remainder of the category set (users with no item in a visible category) is then 16, not 0; with 0 the stricter complementary suppression would hide every category
--- beside the two hidden ones, and the dashboard would show no segment.
+-- items: category k is owned by the users its rule picks (Tops by all, Activewear by 7 and Ethnic wear by 9 users, so those two stay hidden)
 with cat(k, category, subs, base) as (values
   (1, 'Tops', '{T-shirt,Shirt,Sweater,Polo,Hoodie,Cardigan}'::text[], 25), (2, 'Bottoms', '{Chinos,Jeans,Joggers,Shorts,Trousers}', 45), (3, 'Footwear', '{Boots,Formal shoes,Sandals,Sneakers}', 70),
   (4, 'Outerwear', '{Blazer,Coat,Jacket}', 110), (5, 'Accessories', '{Bag,Belt,Cap,Scarf,Watch}', 25), (6, 'Activewear', '{Sports T-shirt,Track pants}', 30), (7, 'Ethnic wear', '{Kurta,Nehru jacket}', 40)),
 col(i, r, g, b) as (values (1, 17, 17, 17), (2, 0, 0, 128), (3, 244, 244, 240), (4, 46, 139, 87), (5, 217, 199, 160), (6, 200, 30, 40)),
 own as (select n, k, category, subs, base, case when v < 6 then 1 when v < 11 then 2 when v < 14 then 3 when v < 17 then 4 when v < 19 then 5 else 6 end ci
-        from generate_series(1, 150) n join cat on case cat.k when 1 then true when 2 then n % 5 <> 0 when 3 then n % 5 < 3 when 4 then n % 4 = 0 when 5 then n % 7 = 0 when 6 then n <= 7 else n between 141 and 149 end
-          and (cat.k >= 6 or not (n <= 7 or n between 141 and 149)),
+        from generate_series(1, 150) n join cat on case cat.k when 1 then true when 2 then n % 5 <> 0 when 3 then n % 5 < 3 when 4 then n % 4 = 0 when 5 then n % 7 = 0 when 6 then n <= 7 else n between 141 and 149 end,
         lateral (select (n * 3 + cat.k * 5) % 20 v) q)
 insert into app.items (id, user_id, name, category, sub_type, colour_r, colour_g, colour_b, fit, size_system, size_value, brand, price, currency, seasons, condition, origin)
 select md5('demo-insights-item:' || o.n || ':' || o.k)::uuid, pg_temp.pid(o.n), 'Demo ' || o.subs[o.n % cardinality(o.subs) + 1], o.category, o.subs[o.n % cardinality(o.subs) + 1], c.r, c.g, c.b,

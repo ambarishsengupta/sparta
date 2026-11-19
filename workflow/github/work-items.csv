@@ -147,3 +147,4 @@ WO-0175,WO-0175: accessibility fixes on the main flows,R8c,Release 1 (MVP),Deliv
 WO-0176,WO-0176: the setter that records the end-of-pilot notice as sent,R8d,Release 1 (MVP),Delivery agents,Todo
 WO-0177,WO-0177: complementary suppression that finishes at pilot scale,R8b,Release 1 (MVP),Delivery agents,Done
 WO-0178,WO-0178: complementary suppression that really prevents recovery by subtraction (privacy defect),R8b,Release 1 (MVP),Delivery agents,In Progress
+WO-0179,WO-0179: the subtraction paths WO-0178 leaves open (privacy),R8b,Release 1 (MVP),Delivery agents,Todo

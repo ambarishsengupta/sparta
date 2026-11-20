@@ -93,7 +93,7 @@ WO-0128,"WO-0128: empty the database lint baseline (search_path, casts, temporar
 WO-0129,"WO-0129: linters that need a new development dependency (ruff, react-hooks, jsx-a11y, regexp)",R8,Release 1 (MVP),Delivery agents,In Progress
 WO-0130,"WO-0130: hosting hardening found by the audit (CSP nonce, shared rate limits, fail-closed configuration)",R8,Release 1 (MVP),Delivery agents,Done
 X-HIST,Decide whether to rewrite Git history for the D3 notebook (after WO-0124),R8,Release 1 (MVP),Product owner,Todo
-X-CR1,"Approve change request CR-001: womenswear, and men and women as the audience (docs/CR-001-womenswear.md)",R8,Release 1 (MVP),Product owner,Todo
+X-CR1,"Approve change request CR-001: womenswear, and men and women as the audience (docs/CR-001-womenswear.md)",R8,Release 1 (MVP),Product owner,Done
 X-STYLE-W,"Name the womenswear style specialist (CR-001, decision D5)",R8,Release 1 (MVP),Product owner,Todo
 WO-0131,WO-0131: documents and legal text for CR-001,W,Release 2 (womenswear; waits for CR-001),Delivery agents,Todo
 WO-0132,"WO-0132: taxonomy version 2 (audience tag, women's sub-types, fits, materials, sizes)",W,Release 2 (womenswear; waits for CR-001),Delivery agents,Todo
@@ -140,7 +140,7 @@ WO-0170,"WO-0170: end-to-end: vendor and admin flows, end of the pilot",R8c,Rele
 WO-0171,WO-0171: accessibility pass on the main flows (WCAG 2.1 AA),R8c,Release 1 (MVP),Delivery agents,Todo
 WO-0172,WO-0172: the gate and CI run the end-to-end and accessibility suites,R8c,Release 1 (MVP),Delivery agents,Todo
 X-OLOI5,"Choose the email provider for the end-of-pilot notice (O-LOI5, R8 WO-0162)",R8,Release 1 (MVP),Product owner,Todo
-X-ODEP,"Approve the R8 development dependencies: Playwright, axe, and the age tool (O-DEP, WO-0164, WO-0168, WO-0171)",R8,Release 1 (MVP),Product owner,Todo
+X-ODEP,"Approve the R8 development dependencies: Playwright, axe, and the age tool (O-DEP, WO-0164, WO-0168, WO-0171)",R8,Release 1 (MVP),Product owner,Done
 WO-0173,WO-0173: the admin end-of-pilot page,R8a,Release 1 (MVP),Delivery agents,Done
 WO-0174,WO-0174: the gate collects every script test in supabase/scripts,R8b,Release 1 (MVP),Delivery agents,Done
 WO-0175,WO-0175: accessibility fixes on the main flows,R8c,Release 1 (MVP),Delivery agents,Todo

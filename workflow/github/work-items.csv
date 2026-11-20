@@ -132,7 +132,7 @@ WO-0162,WO-0162: the end-of-pilot notice email (housekeeping step 5),R8a,Release
 WO-0163,WO-0163: the read-only backup role and the deletion log,R8b,Release 1 (MVP),Delivery agents,Done
 WO-0164,WO-0164: backup and restore rehearsal on the local stack,R8b,Release 1 (MVP),Delivery agents,Todo
 WO-0165,"WO-0165: load check at 500 users and 50,000 items on the local stack",R8b,Release 1 (MVP),Delivery agents,Done
-WO-0166,WO-0166: email-delivery check against the local mail catcher,R8b,Release 1 (MVP),Delivery agents,Todo
+WO-0166,WO-0166: email-delivery check against the local mail catcher,R8b,Release 1 (MVP),Delivery agents,In Progress
 WO-0167,WO-0167: incident-plan practice drill on the local stack,R8b,Release 1 (MVP),Delivery agents,Todo
 WO-0168,WO-0168: end-to-end harness and the account and consent flows,R8c,Release 1 (MVP),Delivery agents,Todo
 WO-0169,"WO-0169: end-to-end: wardrobe, outfits and data rights",R8c,Release 1 (MVP),Delivery agents,Todo

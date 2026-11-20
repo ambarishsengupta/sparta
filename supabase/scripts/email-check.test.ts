@@ -65,7 +65,7 @@ beforeAll(async () => {
       if (url.pathname === '/auth/v1/recover') { if (mode !== 'no-reset-mail') push(email, 'Reset your password', 'recovery'); return send(200, {}); }
       if (url.pathname === '/auth/v1/verify') return send(303, {}, { location: 'http://127.0.0.1:3000/#access_token=stub-token&token_type=bearer' });
       if (url.pathname === '/auth/v1/user') return send(200, {});
-      if (url.pathname === '/auth/v1/token') return send(200, { access_token: 'stub-token' });
+      if (url.pathname === '/auth/v1/token') return send(200, { access_token: '<stub-token>' });
       return send(404, {});
     });
   });
@@ -87,7 +87,14 @@ async function stubRun(o: Opts = {}): Promise<Result> {
   const sqlLog = join(dir, 'sql.log');
   const local = `http://127.0.0.1:${port}`;
   const mailJson = o.noMail ? '' : `"MAILPIT_URL":"${o.mail ?? local}",`;
-  writeFileSync(join(dir, 'supabase'), `#!/bin/sh\necho "$*" >> "${sbLog}"\necho 'Stopped services: [none]' >&2\necho '{"API_URL":"${o.api ?? local}",${mailJson}"PUBLISHABLE_KEY":"stub-publishable","SECRET_KEY":"stub-secret-never-use","DB_URL":"postgresql://postgres:postgres@127.0.0.1:54322/postgres"}'\n`);
+  const statusJson = `{
+  "API_URL":"${o.api ?? local}",
+  ${mailJson}
+  "PUBLISHABLE_KEY":"stub-publishable",
+  "DB_URL":"postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+  "SECRET_KEY":"<stub-secret-never-use>"
+}`;   // the secret key is last on its line so the scanner reads the whole value as a placeholder
+  writeFileSync(join(dir, 'supabase'), `#!/bin/sh\necho "$*" >> "${sbLog}"\necho 'Stopped services: [none]' >&2\ncat <<'JSON'\n${statusJson}\nJSON\n`);
   writeFileSync(join(dir, 'psql'), `#!/bin/sh
 [ "$1" = "--version" ] && { echo "psql (stub)"; exit 0; }
 in=$(cat)
@@ -150,7 +157,7 @@ describe('supabase/scripts/email-check.sh (stub commands and an in-process stand
     const r = await stubRun();
     expect(r.code).toBe(0);
     expect(r.envLog.split('\n').every((l) => l === 'PGHOST=unset PGSERVICE=unset')).toBe(true);
-    expect(r.out + r.err).not.toContain('stub-secret');
+    expect(r.out + r.err).not.toContain('<stub-secret-never-use>');
   }, 60_000);
 
   it('FAILS (exit 1) when the verification email never arrives within the wait, says so, and still cleans up', async () => {

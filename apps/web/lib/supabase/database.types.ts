@@ -540,6 +540,21 @@ isOneToOne: false
             "accept_documents":
 { Args: { "p_age_confirmed": boolean,"p_privacy_version": string,"p_terms_version": string }; Returns: undefined
                            },
+"admin_end_pilot_delete":
+{ Args: { "p_admin": string,"p_user": string }; Returns: Json
+                           },
+"admin_end_pilot_next":
+{ Args: { "p_admin": string,"p_limit": number }; Returns: Json
+                           },
+"admin_end_pilot_preview":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_end_pilot_vendors":
+{ Args: { "p_admin": string,"p_limit": number }; Returns: Json
+                           },
+"admin_set_pilot_end":
+{ Args: { "p_admin": string,"p_end_date": string,"p_outcome": string }; Returns: Json
+                           },
 "claim_job":
 { Args: Record<PropertyKey, never>; Returns: {
               "attempts": number,"id": number,"input": Json,"type": string,"user_id": string
@@ -1024,6 +1039,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"deletion_log": {
+                  Row: {
+                    "deleted_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "deleted_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "deleted_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"fx_rates": {
                   Row: {
                     "currency": string,"per_usd": number,"rate_date": string
@@ -1130,6 +1159,9 @@ isOneToOne: false
           Functions: {
             "check_invitation":
 { Args: { "event": Json }; Returns: Json
+                           },
+"delete_participant":
+{ Args: { "p_user": string }; Returns: string
                            },
 "is_eligible":
 { Args: { "p_user": string }; Returns: boolean

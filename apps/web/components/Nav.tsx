@@ -8,11 +8,15 @@ const ACCOUNT_LINKS = [['/settings', 'Settings']] as const;
 /** WO-0103: the vendor portal has its own links (a vendor has no wardrobe); the agreement page, which is all a vendor can open before accepting, has none. */
 const VENDOR_LINKS = [['/vendor', 'Dashboard'], ['/vendor/gaps', 'Gaps'], ['/vendor/reports', 'Reports'], ['/vendor/account', 'Account']] as const;
 
+/** WO-0173: the admin pages. Only the admin state can be on one (the proxy sends everyone else away from /admin/*), so these links show on those two pages only (the exact paths: an unrouted /admin/x shows the ordinary links), in place of the wardrobe links the admin cannot open. */
+const ADMIN_LINKS = [['/admin/catalog', 'Catalogue'], ['/admin/pilot', 'End of pilot']] as const;
+
 /** `signedIn` is set by the page shell when the app runs against Supabase; Sign out is a plain form post, so it works without scripts. */
 export function Nav({ signedIn = false }: { signedIn?: boolean }) {
   const path = usePathname();
   const vendor = path === '/vendor' || path?.startsWith('/vendor/');
-  const links = vendor ? (path === '/vendor/agreement' ? [] : VENDOR_LINKS) : [...LINKS, ...(signedIn ? ACCOUNT_LINKS : [])];
+  const admin = ADMIN_LINKS.some(([href]) => href === path);
+  const links = admin ? ADMIN_LINKS : vendor ? (path === '/vendor/agreement' ? [] : VENDOR_LINKS) : [...LINKS, ...(signedIn ? ACCOUNT_LINKS : [])];
   const here = (href: string) => path === href || (vendor && href !== '/vendor' && path?.startsWith(`${href}/`));
   return (
     <header className="bar">

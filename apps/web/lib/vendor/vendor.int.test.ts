@@ -6,6 +6,7 @@ import { cleanup, discover, lockStack, makeReady, provisionUser, sql } from '../
 import { decideRoute } from '../supabase/gate';
 import { loadGateState } from '../supabase/gate-state';
 import { acceptVendorAgreement } from './access';
+import { loadBrandLabels } from './brands';
 import { INSIGHT_SENTENCES, coverage } from './insights';
 
 // WO-0103 against the REAL local stack: a throwaway vendor (role and membership set by SQL as postgres, an invented vendor) is held at the agreement, /vendor opens after
@@ -23,6 +24,7 @@ describe.skipIf(!stack)('vendor access against the real stack', () => {
   let unlock: (() => void) | undefined;
   const acceptances = (u: string) => Number(sql(`select count(*) from catalog.vendor_agreement_acceptances where user_id = :'u'`, { u }));
   let vicId = '';
+  const brandCode = `it-brand-${run}`;
 
   beforeAll(async () => {
     unlock = await lockStack();
@@ -33,7 +35,7 @@ describe.skipIf(!stack)('vendor access against the real stack', () => {
     sql(`update app.profiles set role = 'vendor' where id = :'u'; with v as (insert into catalog.vendors (name) values (:'n') returning id) insert into catalog.vendor_members (vendor_id, user_id) select id, :'u' from v`, { u: vicId, n: `IT Vendor ${run}` });
   });
   afterAll(async () => {
-    try { sql(`delete from catalog.vendors where name = :'n'`, { n: `IT Vendor ${run}` }); await cleanup(stack!, Object.values(email), mailIds); } finally { try { deleteQueryLogOf([vicId]); } finally { unlock?.(); } }
+    try { sql(`delete from catalog.lk_brand where code = :'c'`, { c: brandCode }); sql(`delete from catalog.vendors where name = :'n'`, { n: `IT Vendor ${run}` }); await cleanup(stack!, Object.values(email), mailIds); } finally { try { deleteQueryLogOf([vicId]); } finally { unlock?.(); } }
   });
 
   it('a vendor without the agreement is held at /vendor/agreement and the functions refuse it', async () => {
@@ -69,5 +71,16 @@ describe.skipIf(!stack)('vendor access against the real stack', () => {
     for (const p of ['/vendor', '/vendor/agreement', '/vendor/reports/x']) expect(decideRoute(state, p)).toEqual({ action: 'redirect', to: '/' });
     expect(await coverage(ann)).toEqual({ ok: false, kind: 'forbidden', message: INSIGHT_SENTENCES.forbidden });
     expect(await acceptVendorAgreement(ann)).toEqual({ ok: false, message: expect.stringMatching(/Something went wrong/) });
+  });
+
+  // WO-0155: the label map as the vendor's own session reads it. The brand row is inserted here and removed here (the H&M demo data is not needed and not touched).
+  it('reads the label of a brand row the test inserts, keyed by its code, and nothing for a code that is not there', async () => {
+    sql(`insert into catalog.lk_brand (code, label) values (:'c', 'IT & Co')`, { c: brandCode });
+    try {
+      const m = await loadBrandLabels(vic);
+      expect(m.get(brandCode)).toBe('IT & Co');
+      expect(m.has(`${brandCode}-absent`)).toBe(false);
+    } finally { sql(`delete from catalog.lk_brand where code = :'c'`, { c: brandCode }); }
+    expect((await loadBrandLabels(vic)).has(brandCode)).toBe(false);
   });
 });

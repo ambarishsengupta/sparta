@@ -4,7 +4,7 @@
 begin;
 \ir helpers.inc
 select count(*) as nt from pg_temp.app_tables \gset
-select plan(:nt * 11 + 206);   -- WO-0080: +18 = 7 per-table loops x 2 new tables + 2 per zero-argument function x 2 new functions
+select plan(:nt * 11 + 209);   -- WO-0080: +18 = 7 per-table loops x 2 new tables + 2 per zero-argument function x 2 new functions; WO-0158: +3 = 2 for the new zero-argument function app.admin_end_pilot_preview, 1 for the service_role check
 
 select pg_temp.mk_user(pg_temp.ua());
 select pg_temp.mk_user(pg_temp.ub());
@@ -34,11 +34,13 @@ select is((select array_agg(conrelid::regclass::text || ':' || confdeltype::text
 -- WO-0098 (R7a) replaces the table list with a stricter check: it now also names ops.aggregate_runs (run times and counts only) and pins that table's columns, so no column can hold a person.
 -- WO-0100 (R7a) replaces it again: it also names ops.vendor_query_log and pins its columns (a vendor and vendor-user id, a function name, parameters, a time: no consumer data).
 -- WO-0102 (R7a) extends it: ops.reports too, with its columns pinned (no user column; reviewed_by is an admin id with no foreign key, so the 'only non-cascading key' assertion above is unchanged).
+-- WO-0163 (R8b) extends it once more: ops.deletion_log too, its two columns pinned (a user id with no foreign key, and a time: no email or other detail, LLD 13.3).
 select is((select array_agg(c.relname::text order by c.relname) from pg_class c where c.relnamespace = 'ops'::regnamespace and c.relkind in ('r', 'p'))::text
   || ' / ' || (select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'aggregate_runs')::text
   || ' / ' || (select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'vendor_query_log')::text
-  || ' / ' || (select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'reports')::text,
-  '{admin_audit_log,aggregate_runs,daily_counts,fx_rates,invitations,rate_limit_windows,reports,settings,vendor_query_log,worker_heartbeat} / {id,started_at,finished_at,status,error_code,users_included,items_included,rows_suppressed,duration_ms} / {id,vendor_id,user_id,fn,params,called_at} / {id,period,generated_at,reviewed_by,reviewed_at,payload}',
+  || ' / ' || (select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'reports')::text
+  || ' / ' || (select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'deletion_log')::text,
+  '{admin_audit_log,aggregate_runs,daily_counts,deletion_log,fx_rates,invitations,rate_limit_windows,reports,settings,vendor_query_log,worker_heartbeat} / {id,started_at,finished_at,status,error_code,users_included,items_included,rows_suppressed,duration_ms} / {id,vendor_id,user_id,fn,params,called_at} / {id,period,generated_at,reviewed_by,reviewed_at,payload} / {user_id,deleted_at}',
   'ops holds exactly the three tables this suite checks for personal data, the worker heartbeat (worker id, times, counts), fx_rates (currency, date, rate), the admin audit log (admin id, action, a row id or a count, WO-0083), aggregate_runs (times, counts and a fixed error code, WO-0098) and vendor_query_log (vendor, vendor user, function, parameters, time, WO-0100) and reports (WO-0102: period, times, the reviewing admin and a payload of rounded published figures, pinned by 019) and rate_limit_windows (WO-0130: a server-made bucket key, a window start and a count, pinned by 023): no participant data');
 select is((select array_agg(column_name::text order by ordinal_position) from information_schema.columns where table_schema = 'ops' and table_name = 'daily_counts'),
   array['day', 'metric', 'n'], 'ops.daily_counts has a day, a metric and a number: no column can hold a person');
@@ -136,9 +138,10 @@ select is((select count(*) from exp_spoof s, jsonb_each(s.doc) e, jsonb_array_el
 -- delete_my_account is the one exception here (it has its own tests below: D, who deletes with claims naming B).
 create temp table fn0 as select p.oid::regprocedure::text as sig, n.nspname::text as sch, p.proname::text as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname in ('app', 'ops', 'catalog') and p.pronargs = 0 and p.prorettype <> 'trigger'::regtype and p.proname <> 'delete_my_account';
-select is((select array_agg(sch || '.' || name order by sch, name) from fn0), array['app.claim_job', 'app.current_role', 'app.export_my_data', 'app.has_consent', 'app.is_recent_sign_in', 'app.latest_fx_rates', 'app.purge_receipt_jobs', 'app.reap_stuck_jobs', 'app.recent_job_count', 'app.storage_used', 'app.supported_countries'],
-  'the functions without arguments are the eleven known ones (a new one must be added to this check on purpose)');
-select is_empty($$ select sig from fn0 where has_function_privilege('service_role', sig::regprocedure, 'execute') $$, 'the secret-key role can execute none of the argument-free functions (its one function, the WO-0088 audit writer, takes an explicit admin id and checks it)');
+select is((select array_agg(sch || '.' || name order by sch, name) from fn0), array['app.admin_end_pilot_preview', 'app.claim_job', 'app.current_role', 'app.export_my_data', 'app.has_consent', 'app.is_recent_sign_in', 'app.latest_fx_rates', 'app.purge_receipt_jobs', 'app.reap_stuck_jobs', 'app.recent_job_count', 'app.storage_used', 'app.supported_countries'],
+  'the functions without arguments are the twelve known ones (a new one must be added to this check on purpose; WO-0158 added app.admin_end_pilot_preview, read-only counts for the admin end-of-pilot route)');
+select is_empty($$ select sig from fn0 where has_function_privilege('service_role', sig::regprocedure, 'execute') and sig <> 'app.admin_end_pilot_preview()' $$, 'the secret-key role can execute none of the argument-free functions except the WO-0158 preview (its other functions, the WO-0088 audit writer among them, take an explicit admin id and check it)');
+select is((select array_agg(sig order by sig) from fn0 where has_function_privilege('service_role', sig::regprocedure, 'execute')), array['app.admin_end_pilot_preview()'], 'and the one argument-free function it can execute is the WO-0158 preview, which takes no user id and returns only counts');
 select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select (' || sig || ')::text'), pg_temp.val_claims(pg_temp.ua(), 'authenticated', (select extra from spoof), 'select (' || sig || ')::text'),
   sig || ' answers the same for A with and without claims that name B') from fn0 order by sig;
 select is(pg_temp.val_as(pg_temp.ua(), 'authenticated', 'select app.current_role()'), 'consumer', 'and the check is not vacuous: A is a consumer');

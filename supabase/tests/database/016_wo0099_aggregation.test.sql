@@ -94,7 +94,8 @@ select pg_temp.seg('s1acc', 12, 'Watch', pg_temp.col('black'));
 select pg_temp.seg('s1act', 12, 'Track pants', pg_temp.col('blue'));     -- Blue also in Activewear: Tops x Blue is hidden by suppression itself, not by its size
 select pg_temp.run() as id \gset s1_
 select is(pg_temp.vals('{"d_category":"Outerwear"}'), null, 'FR-80 a category of 9 users is not published');
-select is(pg_temp.vals('{"d_category":"Bottoms"}'), '10/10/10', 'FR-80 a category of exactly 10 users is published with users_rounded 10');
+select is(coalesce(pg_temp.vals('{"d_category":"Bottoms"}'), 'hidden'), 'hidden',
+  'WO-0178 (was: published as 10/10/10): the total is a parent of the categories, Outerwear (9) is hidden, so the smallest visible category, Bottoms (exactly 10), is hidden with it; a segment of exactly 10 is published in the single-segment run above');
 select is(pg_temp.vals('{"d_category":"Accessories"}') || ' ' || pg_temp.vals('{"d_category":"Footwear"}'), '10/10/10 15/20/10',
   'FR-82 rounds to the nearest 5: 12 users and 12 events give 10, 13 users and 18 events give 15 and 20 (users_floor stays 10)');
 select is_empty($$ select 1 from analytics.cube where users_rounded % 5 <> 0 or events_rounded % 5 <> 0 $$, 'FR-82 every published users_rounded and events_rounded is a multiple of 5');
@@ -209,10 +210,15 @@ select pg_temp.clear();
 
 -- ---- 8. FR-80 with the BR-26 shipped value of 50 ------------------------------------------------------------------------------------------
 update ops.settings set value = '50' where key = 'min_group_size';
+-- WO-0178: the total is a parent of the categories, so a hidden category (45) would hide the smallest visible one (50) beside it; the two segments are therefore run one after the other
+create temp table keep7 (v text);
 select pg_temp.seg('s7t', 45, 'T-shirt', pg_temp.col('navy'));
+select pg_temp.run();
+insert into keep7 select coalesce(pg_temp.vals('{"d_category":"Tops"}'), 'hidden');
+select pg_temp.clear();
 select pg_temp.seg('s7b', 50, 'Jeans', pg_temp.col('black'));
 select pg_temp.run();
-select is(coalesce(pg_temp.vals('{"d_category":"Tops"}'), 'hidden') || ' ' || pg_temp.vals('{"d_category":"Bottoms"}'), 'hidden 50/50/50', 'BR-26 with min_group_size 50 a segment of 45 users is hidden and one of 50 is shown');
+select is((select v from keep7) || ' ' || pg_temp.vals('{"d_category":"Bottoms"}'), 'hidden 50/50/50', 'BR-26 with min_group_size 50 a segment of 45 users is hidden and one of 50 is shown');
 select is_empty($$ select 1 from analytics.cube where users_floor < 50 $$, 'every published row has at least 50 users');
 
 select * from finish();

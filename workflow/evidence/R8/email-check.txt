@@ -1,0 +1,13 @@
+# WO-0166 email-delivery check, live run on the local stack, 2026-11-20 22:50 IST, commit 7346635
+# command: bash supabase/scripts/email-check.sh
+email-check (LOCAL stack, synthetic @example.test addresses, nothing leaves this machine) mail catcher: Mailpit v1.31.3, HTTP API v1 (/api/v1)
+PASS verification: sign-up mail from admin@email.com ("Confirm your email address") found in the mail catcher, its link followed, account confirmed
+PASS reset: reset mail from admin@email.com ("Reset your password") found, its link followed, a new generated password set, sign-in with it succeeded
+PASS uninvited: sign-up of an address not on the invitation list refused with the FR-8 message (status 403), no email caught, no user created
+NOT COVERED: export email (not built; LLD 6 export-ready email needs the provider, QC 11b)
+before/after check: invitations, users and the sign-up counter are EQUAL
+  before: invitations=0 users=0 signups_day=2026-11-20 signups_n=35
+  after:  invitations=0 users=0 signups_day=2026-11-20 signups_n=35
+NOTE: Auth's audit log keeps 7 rows for the synthetic addresses (not deleted on purpose)
+email-check: PASS
+exit=0

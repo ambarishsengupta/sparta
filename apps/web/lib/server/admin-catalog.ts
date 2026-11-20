@@ -46,10 +46,10 @@ async function adminId(request: Request, d: AdminDeps, mutating: boolean): Promi
 const audit = async (d: AdminDeps, id: string, action: string, target: string | null): Promise<boolean> =>
   !(await d.admin.schema('app').rpc('write_admin_audit', { p_admin: id, p_action: action, p_target: target as string })).error;
 /** The JSON body: `undefined` when there is none, `null` when it is too large or not JSON (the caller answers 400). */
-async function bodyOf(request: Request): Promise<unknown> {
+export async function bodyOf(request: Request): Promise<unknown> {
   try { const t = await request.text(); if (t.length > MAX_BODY) return null; return t === '' ? undefined : JSON.parse(t); } catch { return null; }
 }
-const guarded = async (run: () => Promise<Response>): Promise<Response> => { try { return await run(); } catch { return fail('server_error'); } };
+export const guarded = async (run: () => Promise<Response>): Promise<Response> => { try { return await run(); } catch { return fail('server_error'); } };
 
 export const listSources = (request: Request, d: AdminDeps): Promise<Response> => guarded(async () => {
   const id = await adminId(request, d, false);

@@ -55,6 +55,15 @@ const CASES: [name: string, path: string, code: string, rule: string][] = [
     [`the engine imports ${pkg}`, ENGINE, `import w from '${pkg}';\nexport const f = w;\n`, '@typescript-eslint/no-restricted-imports'],
   ] as [string, string, string, string][]),
   ...FACTORIES.map((fn): [string, string, string, string] => [`a call of ${fn} without the Database type argument`, 'apps/web/lib/supabase/browser.ts', `export const c = ${fn}('u', 'k');\n`, 'no-restricted-syntax']),
+  // WO-0154: require() and import() of a wrapper (one sample per kind of file that has its own selector list: app, config module, secret-key module, engine).
+  ...(['apps/web/components/Nav.tsx', 'apps/web/lib/pilot-config.ts', 'apps/web/lib/server/admin.ts', 'packages/rules/src/season.ts'] as const).flatMap((path) => [
+    [`${path} loads axios with require()`, path, "export const w = require('axios');\n", 'no-restricted-syntax'],
+    [`${path} loads a subpath of got with import()`, path, "export const w = () => import('got/dist/source');\n", 'no-restricted-syntax'],
+  ] as [string, string, string, string][]),
+  ...WRAPPERS.flatMap((pkg) => [
+    [`a component loads ${pkg} with require()`, COMPONENT, `export const w = require('${pkg}');\n`, 'no-restricted-syntax'],
+    [`a component loads ${pkg} with import()`, COMPONENT, `export const w = () => import('${pkg}');\n`, 'no-restricted-syntax'],
+  ] as [string, string, string, string][]),
   ['a component imports a subpath of axios', COMPONENT, "import a from 'axios/lib/core/Axios';\nexport const f = a;\n", '@typescript-eslint/no-restricted-imports'],
   ['an untyped factory call in the secret-key module', 'apps/web/lib/server/admin.ts', "export const c = createClient('u', 'k');\n", 'no-restricted-syntax'],
 ];
@@ -148,6 +157,35 @@ describe('the project lint rules fire (eslint.config.js, WO-0123)', () => {
     expect(await rulesFor(WEB_TEST, "import axios from 'axios';\nexport const f = axios;\n")).toEqual([]);
     // a test file may build loose clients and import anything
     expect(await rulesFor(WEB_TEST, "import { createClient } from '@supabase/supabase-js';\nexport const c = createClient('u', 'k');\n")).toEqual([]);
+  }, 180_000);
+
+  it('require() and import() of a fetch wrapper are refused in every app and engine source file, and nothing else is (WO-0154)', async () => {
+    // ESLint's computed configuration of every tracked source file (tests and test-support aside) holds both selectors at error. Flat config replaces a rule's options per block,
+    // so a block that sets its own no-restricted-syntax list without them fails here.
+    const SELECTORS = [
+      "CallExpression[callee.name='require'][arguments.0.value=/^(node-fetch|cross-fetch|ofetch|axios|ky|got)(\\/.*)?$/]",
+      "ImportExpression[source.value=/^(node-fetch|cross-fetch|ofetch|axios|ky|got)(\\/.*)?$/]",
+    ];
+    const tracked = (glob: string[]): string[] => execSync(`git ls-files ${glob.map((g) => `'${g}'`).join(' ')}`, { encoding: 'utf8' }).split('\n')
+      .filter((f) => f && !/\.test\.tsx?$/.test(f) && !f.startsWith('apps/web/test-support/') && !f.includes('/fixtures/'));
+    const files = [...tracked(['apps/web/**/*.ts', 'apps/web/**/*.tsx']), ...tracked(['packages/*/src/*.ts', 'packages/*/src/**/*.ts'])];
+    expect(files.length).toBeGreaterThan(100);
+    const lacking: string[] = [];
+    for (const f of files) {
+      const rule: unknown = (await eslint.calculateConfigForFile(f) as { rules?: Record<string, unknown> } | undefined)?.rules?.['no-restricted-syntax'];
+      const selectors = Array.isArray(rule) && (rule[0] === 2 || rule[0] === 'error') ? rule.slice(1).map((o: unknown) => (typeof o === 'object' && o !== null ? (o as { selector?: unknown }).selector : undefined)) : [];
+      if (!SELECTORS.every((x) => selectors.includes(x))) lacking.push(f);
+    }
+    expect(lacking).toEqual([]);
+    const config = readFileSync('eslint.config.js', 'utf8');
+    expect(config).toContain("CallExpression[callee.name='require'][arguments.0.value=");
+    expect(config).toContain('ImportExpression[source.value=');
+    // passing samples: other names (exact names only), a variable argument, a test file; the rule that fires is no-restricted-syntax, so only that id is looked at
+    const clean = async (path: string, code: string) => expect(await rulesFor(path, code)).not.toContain('no-restricted-syntax');
+    await clean(COMPONENT, "export const a = require('./got');\nexport const b = () => import('kysely');\nexport const c = () => import('axios-retry');\n");
+    await clean(COMPONENT, "export const w = (name: string) => require(name);\nexport const x = (name: string) => import(name);\n");
+    await clean(ENGINE, "export const a = require('./axios');\nexport const b = () => import('./ky');\n");
+    await clean(WEB_TEST, "export const w = require('axios');\nexport const x = () => import('got');\n");
   }, 180_000);
 
   it('the baseline exists, names only the new plugins\' rules, and holds no boundary rule (those have no exceptions)', () => {

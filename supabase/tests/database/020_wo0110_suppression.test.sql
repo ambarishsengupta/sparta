@@ -22,15 +22,18 @@ create function pg_temp.attrs(c analytics.cube) returns jsonb language sql immut
     'f_size', c.f_size, 'f_season', c.f_season, 'f_price_band', c.f_price_band, 'f_region', c.f_region, 'condition_band', c.condition_band)) $f$;
 create function pg_temp.vals(p jsonb) returns text language sql stable as $f$
   select string_agg(c.users_rounded || '/' || c.events_rounded || '/' || c.users_floor, ',') from analytics.cube c where c.kind = 'owned' and pg_temp.attrs(c) = p $f$;
--- Independent recovery check in DISTINCT users. For every published parent and every attribute that splits it (children = same kind and period, parent attributes plus one), the
--- residual is the number of distinct users of the parent (read from the facts, one row per fact) with no fact in any visible child. A residual of 1 to 9 is a recoverable hidden count.
+-- Independent recovery check in DISTINCT users, counted PER USER (WO-0178; before it counted facts and looked at published parents only). The parents are every published row AND the total of a
+-- kind and a period (the all-null row: not a cube row, but coverage() publishes the cohort, which for these single-kind fixtures is that total). For every parent and every attribute that
+-- splits it (children = same kind and period, parent attributes plus one), the residual is the number of distinct users of the parent (read from the facts) who have NO fact in any visible
+-- child of that set: the parent minus the union of the visible children. A residual of 1 to 9 is a recoverable hidden count.
 create function pg_temp.leaks(out pairs bigint, out leaks bigint) language sql stable as $f$
   with gt as (select user_hash u, kind, period, jsonb_strip_nulls(jsonb_build_object('d_category', category, 'd_colour_family', colour_family, 'd_fit', fit, 'd_brand', brand,
          'f_size', size, 'f_season', season, 'f_price_band', price_band, 'f_region', region, 'condition_band', condition_band)) a from analytics_private.facts),
-  pub as (select kind, period, pg_temp.attrs(c) a from analytics.cube c),
+  pub as (select kind, period, pg_temp.attrs(c) a from analytics.cube c union select distinct kind, period, '{}'::jsonb from gt),
   ps as (select p.kind, p.period, p.a pa, k.key x, array_agg(c.a ->> k.key) vs from pub p join pub c on c.kind = p.kind and c.period = p.period
          cross join lateral jsonb_object_keys(c.a) k(key) where c.a - k.key = p.a group by 1, 2, 3, 4),
-  r as (select (select count(distinct g.u) from gt g where g.kind = ps.kind and g.period = ps.period and g.a @> ps.pa and not coalesce(g.a ->> ps.x = any (ps.vs), false)) n from ps)
+  r as (select (select count(distinct g.u) from gt g where g.kind = ps.kind and g.period = ps.period and g.a @> ps.pa
+                and not exists (select 1 from gt h where h.u = g.u and h.kind = ps.kind and h.period = ps.period and h.a @> ps.pa and h.a ->> ps.x = any (ps.vs))) n from ps)
   select count(*), count(*) filter (where n between 1 and 9) from r $f$;
 create function pg_temp.truth(out pairs bigint, out leaks bigint) language plpgsql as $f$
 begin perform analytics_private.build_facts('wo0110-check'); select * into pairs, leaks from pg_temp.leaks(); end $f$;   -- a salt of its own: the run's facts are gone
@@ -118,7 +121,7 @@ insert into analytics_private.facts (user_hash, kind, period, category, sub_type
   from generate_series(1, 25) g;
 insert into analytics.cube (run_id, kind, period, d_category, d_colour_family, users_rounded, events_rounded, users_floor)
   select r.id, 'owned', date '2026-11-01', 'Activewear', v.cf, v.n, v.n, v.n from (select max(id) id from ops.aggregate_runs) r, (values (null, 25), ('Black', 20)) v(cf, n);
-select is((select pairs || '/' || leaks from pg_temp.leaks()), '1/1', 'canary: a published parent of 25 with a visible black of 20 leaves 5 distinct users, and the check reports that leak');
+select is((select pairs || '/' || leaks from pg_temp.leaks()), '2/1', 'canary: a published parent of 25 with a visible black of 20 leaves 5 distinct users, and the check reports that leak (two pairs are read; the total over Activewear is clean)');
 delete from analytics.cube;
 truncate analytics_private.facts;
 

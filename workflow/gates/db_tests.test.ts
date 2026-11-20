@@ -10,10 +10,18 @@ import { colourFamily } from '@sparta/taxonomy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { lockStack } from '../../apps/web/test-support/stack';
 import taxonomy from '../../packages/taxonomy/src/taxonomy.json';
-import '../../supabase/scripts/seed.test';
-import '../../supabase/scripts/seed-demo-catalog.test';
-import '../../supabase/scripts/seed-demo-insights.test';
-import '../../supabase/scripts/demo-data.test';
+
+// WO-0174: every supabase/scripts/*.test.ts is collected by one eager glob (vitest.config.ts does not include supabase/), so a new script test cannot be left out.
+const scriptTests = import.meta.glob('../../supabase/scripts/*.test.ts', { eager: true });
+
+describe('the script tests collected by this file (WO-0174)', () => {
+  it('are exactly the directory listing of supabase/scripts/*.test.ts', () => {
+    const collected = Object.keys(scriptTests).map((k) => k.slice(k.lastIndexOf('/') + 1)).sort();
+    const listed = readdirSync('supabase/scripts').filter((f) => f.endsWith('.test.ts')).sort();
+    expect(listed.length).toBeGreaterThan(0);
+    expect(collected).toEqual(listed);
+  });
+});
 
 // ---- db_tests.sh with a stub `supabase` that logs its calls ----
 function runScript(codes: { status?: number; reset?: number; test?: number }) {

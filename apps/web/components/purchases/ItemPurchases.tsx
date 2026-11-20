@@ -73,7 +73,7 @@ export function ItemPurchases({ itemId }: { itemId: string }) {
             {open !== p.id && (
               <div className="row">
                 <button type="button" onClick={() => setOpen(p.id)} aria-label={`Edit the purchase of ${p.date}`}>Edit</button>
-                <button type="button" className="danger" onClick={() => setDeleting(p.id)} aria-label={`Delete the purchase of ${p.date}`}>Delete</button>
+                <button type="button" className="danger" onClick={() => { if (!removing.current) setDeleting(p.id); }} aria-disabled={removingNow || undefined} aria-label={`Delete the purchase of ${p.date}`}>Delete</button>
               </div>
             )}
           </li>

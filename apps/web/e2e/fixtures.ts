@@ -35,10 +35,9 @@ export async function joinPilot(page: Page): Promise<void> {
 
 /** FR-6 and FR-9: a country of the pilot's list (by its name), or one that is not listed (by its two-letter code). Skips the optional start choice. */
 export async function onboard(page: Page, country: { listed: string } | { code: string }): Promise<void> {
-  // Open app defect, recorded by the orchestrator as WO-0185: a choice made before the page is hydrated is lost when React takes over (the Country box then shows as invalid and Skip changes
-  // nothing). This test waits for hydration first, so it never makes such a choice. The signal is React's own: once it has hydrated an element it puts its props on the element (`__reactProps$...`).
+  // WO-0185: the form keeps its controls disabled until React has taken it over and then sets `data-ready="true"` on it (components/consent/OnboardingForm.tsx), so a choice made here cannot be lost.
   await expect(page.getByLabel('Country', { exact: true })).toBeVisible();
-  await page.waitForFunction(() => { const el = document.getElementById('ob-country'); return el !== null && Object.keys(el).some((k) => k.startsWith('__reactProps$')); });
+  await page.locator('form.form[data-ready="true"]').waitFor({ timeout: 10_000 }).catch(() => { throw new Error('the onboarding form never became ready'); });
   if ('listed' in country) await page.getByLabel('Country', { exact: true }).selectOption({ label: country.listed });
   else {
     await page.getByLabel('Country', { exact: true }).selectOption({ label: 'My country is not listed' });

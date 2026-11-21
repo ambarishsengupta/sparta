@@ -151,6 +151,20 @@ describe('onboarding (FR-6, FR-9)', () => {
     expect(src).toContain("'aria-invalid'");
     expect(src).toContain('first.current?.focus()');
   });
+  // WO-0185: the server-rendered page is what a person sees before React has taken the form over (renderToStaticMarkup runs no effects, so it is that page). Nothing in it may take a choice that hydration would drop.
+  it('before the form is ready it is marked not ready and every control and button is disabled', () => {
+    expect(has(markup, 'form', 'class="form"', 'data-ready="false"')).toBe(true);
+    const controls = [...markup.matchAll(/<(?:input|select|button)\b[^>]*>/g)].map((m) => m[0]);
+    expect(controls.length).toBe(3 + 7 + 3); // three selects, seven occasions, three buttons
+    expect(controls.filter((c) => !/\sdisabled[=\s>]/.test(c))).toEqual([]);
+  });
+  it('the form is ready only after hydration (in an effect, so never in the server-rendered page), and only then are its controls enabled', () => {
+    const src = read('./OnboardingForm.tsx');
+    expect(src).toContain('useEffect(() => {');
+    expect(src).toContain("data-ready={ready ? 'true' : 'false'}");
+    expect(src.match(/disabled=\{!ready\}/g)).toHaveLength(5); // the country, hemisphere and currency selects, the typed country code and the occasion checkboxes; the three buttons follow
+    expect(src.match(/disabled=\{busy \|\| !ready\}/g)).toHaveLength(3);
+  });
   it('the note about a country that is not listed is a status message, not an error', () => { expect(read('./OnboardingForm.tsx')).toMatch(/id="ob-note" className="muted" role="status"/); });
 });
 

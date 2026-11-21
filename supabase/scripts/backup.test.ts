@@ -268,7 +268,7 @@ describe('supabase/scripts/restore-rehearsal.sh (stub commands in a throw-away l
   it('Ctrl-C during the container readiness wait stops the script (non-zero) and runs the cleanup, with the 120-second limit and the failure message kept', () => {
     const l = layout();
     // a docker whose pg_isready never answers (it sleeps, as a container that is not ready does); the rest is the layout's stub
-    const stubDocker = readFileSync(join(l.dir, 'bin', 'docker'), 'utf8').replace('#!/bin/sh\n', '#!/bin/sh\ncase "$*" in *pg_isready*) echo "$$" >> "$DR_LOG.polling"; exec sleep 30;; esac\n');
+    const stubDocker = readFileSync(join(l.dir, 'bin', 'docker'), 'utf8').replace('#!/bin/sh\n', () => '#!/bin/sh\ncase "$*" in *pg_isready*) echo "$$" >> "$DR_LOG.polling"; exec sleep 30;; esac\n');   // a replacer function: a string would turn $$ into $
     writeFileSync(join(l.dir, 'bin', 'docker'), stubDocker);
     writeFileSync(join(l.dir, 'supabase', 'scripts', 'backup.sh'), '#!/bin/sh\nmkdir -p "$3"\necho STUB-CIPHERTEXT > "$3/backup-stub.sql.age"\nexit 0\n');
     // job control (set -m) so the background script keeps the default SIGINT, as a script run in the foreground of a terminal does (a plain background job of a non-interactive shell ignores it)
@@ -285,6 +285,13 @@ kill -INT "$pid"; wait "$pid"; echo "exit=$?"`;
     expect(calls).toContain('SQL: remove-users');
     expect(readFileSync(`${l.dir}/rehearsal.err`, 'utf8')).toContain('RESTORE REHEARSAL: FAIL');
     expect(readdirSync(l.tmp)).toEqual([]);
+    // no process of the stubbed poll outlives the script: every pid the stub wrote is gone after a short bounded wait (3 s)
+    const pids = readFileSync(`${l.log}.polling`, 'utf8').split('\n').filter(Boolean).map(Number);
+    const alive = (pid: number): boolean => { try { process.kill(pid, 0); return true; } catch { return false; } };
+    for (let i = 0; i < 15 && pids.some(alive); i++) spawnSync('sleep', ['0.2']);
+    const survivors = pids.filter(alive);
+    for (const pid of survivors) { try { process.kill(pid, 'SIGTERM'); } catch { /* gone */ } }   // tidy up after a failing run
+    expect(survivors).toEqual([]);
     const src = readFileSync(REHEARSAL, 'utf8');   // unchanged by the fix: the limit and the message
     expect(src).toContain('deadline=$(( $(now_s) + 120 ))');
     expect(src).toContain('the throwaway container was not ready within 120 seconds (pg_isready); it is removed');

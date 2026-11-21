@@ -6,7 +6,7 @@
 #   user through the self-service path (app.delete_my_account, as a signed-in user with a fresh sign-in); 6 copy ops.deletion_log; 7 start a throwaway container of the SAME supabase/postgres image
 #   tag as the running database container, on a free port, ready when pg_isready answers inside it (120 s limit); 8 decrypt and restore into it; 9 run ops.delete_participant again there for every
 #   user in the copied log deleted after the backup; 10 check and print: roles exist (backup_role and worker_role included), auth.users count equals the backup's minus the re-deleted users, every
-#   `app` table's row count matches the live stack, the deleted user is absent. The last line is `RESTORE REHEARSAL: PASS`.
+#   table of `app`, `analytics` and `analytics_private` has the same row count as the live stack (it prints how many tables per schema), the deleted user is absent. The last line is `RESTORE REHEARSAL: PASS`.
 # On EVERY exit (trap: success, failure, timeout, Ctrl-C, kill): the container is removed, the key folder (and with it the backup file) is removed, the synthetic users and their log rows are removed,
 # backup_role's password is cleared, the auth grant is put back as it was found, and the live database is compared with how it was found. Nothing is sent off this machine. Never --linked.
 # No password or private key is printed, logged, written in the repository or put on a command line: generated values live in shell variables and in the environment of one command; each session that
@@ -79,7 +79,7 @@ cleanup() {
   local rc=$status after logn
   trap '' INT TERM
   trap - EXIT
-  [ -n "${poll:-}" ] && kill "$poll" 2>/dev/null   # a readiness poll still running (Ctrl-C during the wait)
+  [ -n "${poll:-}" ] && kill "$poll" 2>/dev/null   # a readiness poll still running (Ctrl-C during the wait): $poll is the timeout process, which ends its docker child too
   if [ "$done_flag" = 0 ]; then
     done_flag=1
     [ "$container_started" = 1 ] && docker rm -f "$rehearsal" >/dev/null 2>&1
@@ -209,14 +209,19 @@ container_started=1
 free_port="$(docker port "$rehearsal" 5432/tcp 2>/dev/null | head -n1 | sed 's/.*://')"
 echo "container $rehearsal on 127.0.0.1:${free_port:-?}"
 # Ctrl-C works in this wait too: a plain foreground `docker exec` swallows SIGINT and exits 0, so each poll and each pause runs in the BACKGROUND and the shell `wait`s on it; `wait` is
-# interrupted by the INT trap, which exits and runs cleanup (cleanup also terminates the poll that is still running)
+# interrupted by the INT trap, which exits and runs cleanup. bgwait starts the time limiter (timeout, else perl alarm) itself as the background command, with no shell function or subshell in
+# between, so $poll IS the limiter process; cleanup sends it TERM, and timeout passes the TERM on to its child (docker exec), so no poll outlives the script.
 poll=""
-bgwait() { "$@" >/dev/null 2>&1 </dev/null & poll=$!; wait "$poll"; local rc=$?; poll=""; return "$rc"; }
+bgwait() {
+  local s="$1" rc; shift
+  if command -v timeout >/dev/null 2>&1; then timeout --foreground -k 5 "$s" "$@" >/dev/null 2>&1 </dev/null & else perl -e 'alarm shift; exec @ARGV' "$s" "$@" >/dev/null 2>&1 </dev/null & fi
+  poll=$!; wait "$poll"; rc=$?; poll=""; return "$rc"
+}
 deadline=$(( $(now_s) + 120 )); ready=0
 while [ "$(now_s)" -lt "$deadline" ]; do
-  if bgwait limited 15 docker exec "$rehearsal" pg_isready -U postgres -h 127.0.0.1 \
-     && bgwait limited 15 docker exec "$rehearsal" psql -U supabase_admin -d postgres -X -q -At -c 'select 1;'; then ready=1; break; fi
-  bgwait sleep 2
+  if bgwait 15 docker exec "$rehearsal" pg_isready -U postgres -h 127.0.0.1 \
+     && bgwait 15 docker exec "$rehearsal" psql -U supabase_admin -d postgres -X -q -At -c 'select 1;'; then ready=1; break; fi
+  bgwait 5 sleep 2
 done
 [ "$ready" = 1 ] || fail "the throwaway container was not ready within 120 seconds (pg_isready); it is removed"
 rest() { limited 120 docker exec -i "$rehearsal" psql -U supabase_admin -d postgres -X -q -At -v ON_ERROR_STOP=1; }

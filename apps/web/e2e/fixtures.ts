@@ -35,12 +35,17 @@ export async function joinPilot(page: Page): Promise<void> {
 
 /** FR-6 and FR-9: a country of the pilot's list (by its name), or one that is not listed (by its two-letter code). Skips the optional start choice. */
 export async function onboard(page: Page, country: { listed: string } | { code: string }): Promise<void> {
-  if ('listed' in country) await page.getByLabel('Country', { exact: true }).selectOption({ label: country.listed });
-  else {
-    await page.getByLabel('Country', { exact: true }).selectOption({ label: 'My country is not listed' });
-    await page.getByLabel('Country code (two letters, for example US)').fill(country.code);
-  }
-  await page.getByRole('button', { name: 'Skip' }).click();
+  // A choice made before the page is hydrated is lost when React takes over (the Country box then shows as invalid and Skip changes nothing), which a full, busy run showed once. So the
+  // whole step is repeated until the page has left the onboarding form, a few seconds at a time.
+  await expect(async () => {
+    if ('listed' in country) await page.getByLabel('Country', { exact: true }).selectOption({ label: country.listed });
+    else {
+      await page.getByLabel('Country', { exact: true }).selectOption({ label: 'My country is not listed' });
+      await page.getByLabel('Country code (two letters, for example US)').fill(country.code);
+    }
+    await page.getByRole('button', { name: 'Skip' }).click();
+    await expect(page).not.toHaveURL(/\/onboarding$/, { timeout: 4_000 });
+  }).toPass({ timeout: 22_000 });
 }
 
 /** From a confirmed account to the wardrobe: sign in, the two ticks, the pilot notice, onboarding in a supported country. */
@@ -52,4 +57,16 @@ export async function reachWardrobe(page: Page, user: SyntheticUser): Promise<vo
   await onboard(page, { listed: 'India' });
   await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/$/);
   await expect(page.getByRole('heading', { name: 'Wardrobe' })).toBeVisible();
+}
+
+/** The wardrobe's own "Load demo wardrobe" button (the first demo wardrobe of the list): gives the user a set of items the outfit rules can work with. Returns how many items it added. */
+export async function loadDemoWardrobe(page: Page): Promise<number> {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Wardrobe' })).toBeVisible();
+  const button = page.getByRole('button', { name: 'Load demo wardrobe' });
+  await expect(button).toBeEnabled(); // the repository is ready
+  await button.click();
+  const note = page.getByText(/^Added \d+ items\.$/);
+  await expect(note).toBeVisible();
+  return Number(/\d+/.exec((await note.textContent()) ?? '')?.[0]);
 }

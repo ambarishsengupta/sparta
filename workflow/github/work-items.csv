@@ -130,7 +130,7 @@ WO-0160,WO-0160: the admin end-of-pilot settings and action,R8a,Release 1 (MVP),
 WO-0161,WO-0161: the end-of-pilot banner,R8a,Release 1 (MVP),Delivery agents,Done
 WO-0162,WO-0162: the end-of-pilot notice email (housekeeping step 5),R8a,Release 1 (MVP),Delivery agents,Todo
 WO-0163,WO-0163: the read-only backup role and the deletion log,R8b,Release 1 (MVP),Delivery agents,Done
-WO-0164,WO-0164: backup and restore rehearsal on the local stack,R8b,Release 1 (MVP),Delivery agents,Todo
+WO-0164,WO-0164: backup and restore rehearsal on the local stack,R8b,Release 1 (MVP),Delivery agents,In Progress
 WO-0165,"WO-0165: load check at 500 users and 50,000 items on the local stack",R8b,Release 1 (MVP),Delivery agents,Done
 WO-0166,WO-0166: email-delivery check against the local mail catcher,R8b,Release 1 (MVP),Delivery agents,Done
 WO-0167,WO-0167: incident-plan practice drill on the local stack,R8b,Release 1 (MVP),Delivery agents,Done

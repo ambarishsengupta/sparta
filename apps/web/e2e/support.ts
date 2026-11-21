@@ -1,16 +1,16 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { assertLocalStack, belongsToRun, env, isLocalUrl, runPattern, syntheticAddress, syntheticPassword } from '../test-support/e2e-local';
+import { assertLocalStack, belongsToRun, isLocalUrl, runPattern, syntheticAddress, syntheticPassword } from '../test-support/e2e-local';
 
 /** Everything the end-to-end tests need from the LOCAL stack (WO-0168): the run's settings, the database, the mail catcher and synthetic users.
  * The settings are put in the environment by playwright.config.ts; every use checks them again (assertLocalStack), so a worker cannot be pointed elsewhere. */
 export interface E2eStack { api: string; key: string; mail: string; db: string; run: string }
 
 export function stack(): E2eStack {
-  const urls = assertLocalStack({ supabaseUrl: env.SPARTA_E2E_API_URL, mailUrl: env.SPARTA_E2E_MAIL_URL, dbUrl: env.SPARTA_E2E_DB_URL });
-  const key = env.SPARTA_E2E_KEY;
-  const run = env.SPARTA_E2E_RUN;
+  const urls = assertLocalStack({ supabaseUrl: process.env.SPARTA_E2E_API_URL, mailUrl: process.env.SPARTA_E2E_MAIL_URL, dbUrl: process.env.SPARTA_E2E_DB_URL });
+  const key = process.env.SPARTA_E2E_KEY;
+  const run = process.env.SPARTA_E2E_RUN;
   if (!key || !run) throw new Error('end-to-end tests refuse to run: start them through playwright.config.ts (npx playwright test -c apps/web/playwright.config.ts).');
   return { api: urls.supabaseUrl.replace(/\/+$/, ''), key, mail: urls.mailUrl.replace(/\/+$/, ''), db: urls.dbUrl, run };
 }

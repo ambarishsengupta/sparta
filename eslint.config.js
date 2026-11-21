@@ -52,6 +52,10 @@ const SERVER_ONLY_IMPORTS = {
     message: 'lib/server holds the secret-key client and the handlers that use it. Only route handlers under app/api and lib/server itself may import it.',
   }],
 };
+// WO-0168: test support (the end-to-end harness reads the process environment and the local stack) is never imported by application code.
+const NO_TEST_SUPPORT = {
+  patterns: [{ group: ['**/test-support', '**/test-support/*'], message: 'Application code never imports test-support: it holds test helpers (the end-to-end harness reads any environment variable). Only tests, test-support and the e2e suite may.' }],
+};
 const SUPABASE_FACTORIES = {
   paths: [
     { name: '@supabase/supabase-js', importNames: ['createClient'], allowTypeImports: true, message: 'Build Supabase clients only in lib/supabase/{browser,server,proxy-session}.ts and lib/server/admin.ts.' },
@@ -136,7 +140,7 @@ export default tseslint.config(
       'no-script-url': 'error',
       'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER],
       'no-restricted-globals': ['error', ...NETWORK_GLOBALS],
-      '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, SUPABASE_FACTORIES, FETCH_WRAPPERS),
+      '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, SUPABASE_FACTORIES, FETCH_WRAPPERS, NO_TEST_SUPPORT),
     },
   },
   {
@@ -144,8 +148,9 @@ export default tseslint.config(
     // (set by playwright.config.ts, local stack only) and call the local mail catcher and Auth API with fetch. Focused or skipped tests, HTML writes and fetch wrappers stay errors.
     files: [`${WEB}/e2e/**/*.ts`, `${WEB}/playwright.config.ts`],
     rules: {
-      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, ...DYNAMIC_FETCH_WRAPPER],
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER],
       'no-restricted-globals': 'off',
+      '@typescript-eslint/no-restricted-imports': restrictImports(FETCH_WRAPPERS), // the suite imports test-support
     },
   },
   {
@@ -162,16 +167,16 @@ export default tseslint.config(
     // Who may import lib/server: the route handlers and lib/server itself. They still may not build other Supabase clients.
     files: [`${WEB}/app/api/**/route.ts`, `${WEB}/app/hm-image/[[]id]/route.ts`, `${WEB}/lib/server/**/*.ts`],
     ignores: TESTS,
-    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SUPABASE_FACTORIES, FETCH_WRAPPERS) },
+    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SUPABASE_FACTORIES, FETCH_WRAPPERS, NO_TEST_SUPPORT) },
   },
   {
     // The client factories.
     files: [`${WEB}/lib/supabase/browser.ts`, `${WEB}/lib/supabase/server.ts`, `${WEB}/lib/supabase/proxy-session.ts`],
-    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, FETCH_WRAPPERS) },
+    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, FETCH_WRAPPERS, NO_TEST_SUPPORT) },
   },
   {
     files: [`${WEB}/lib/server/admin.ts`],
-    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(FETCH_WRAPPERS) },   // the secret-key module may import lib/server and build its client, but not a fetch wrapper
+    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(FETCH_WRAPPERS, NO_TEST_SUPPORT) },   // the secret-key module may import lib/server and build its client, but not a fetch wrapper
   },
   {
     // The only direct network calls of the app (the same list as test-support/network-scan.ts): the two public JSON files of the

@@ -13,6 +13,10 @@ test('FR-1 an invited address signs up, confirms with the emailed link and reach
   await page.getByLabel('Password').fill(user.password);
   await page.getByRole('button', { name: 'Create account' }).click();
   await expect(page).toHaveURL(/\/check-your-email$/);
+  // FR-1: email is verified before the first login completes, so signing in with the new account does not work yet
+  await signIn(page, user);
+  await expect(page.locator('form').getByRole('alert')).toHaveText('Your email is not confirmed yet. Open the link in the message we sent you, then sign in.');
+  await expect(page).toHaveURL(/\/sign-in$/);
   // the same browser follows the link from the local mail catcher (it holds the one-time sign-in verifier)
   await page.goto(await verifyLink(user.email));
   await expect(page).toHaveURL(/\/accept-terms$/);
@@ -43,7 +47,14 @@ test('FR-2 and FR-68 the age and Terms ticks are required before the pilot notic
   await expect(page.getByText('Tick the box to agree to the Terms of Use and the Privacy Policy.')).toBeVisible();
   await page.getByLabel('I am 18 or over.').check();
   await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Confirm that you are 18 or over to continue.')).toHaveCount(0); // the age error is gone, only the terms error is left
   await expect(page.getByText('Tick the box to agree to the Terms of Use and the Privacy Policy.')).toBeVisible();
+  await expect(page).toHaveURL(/\/accept-terms$/);
+  await page.getByLabel('I am 18 or over.').uncheck(); // and the other way round: terms ticked, age not
+  await page.getByLabel('I agree to the Terms of Use and the Privacy Policy.').check();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Confirm that you are 18 or over to continue.')).toBeVisible();
+  await expect(page.getByText('Tick the box to agree to the Terms of Use and the Privacy Policy.')).toHaveCount(0);
   await expect(page).toHaveURL(/\/accept-terms$/);
   await page.goto('/pilot-notice'); // the notice cannot be reached around the ticks
   await expect(page).toHaveURL(/\/accept-terms$/);
@@ -55,6 +66,8 @@ test('FR-3 and FR-4 the pilot notice blocks until accepted, and No thanks leaves
   await signIn(page, user);
   await acceptTerms(page);
   await expect(page.getByRole('heading', { name: 'Welcome to the Sparta pilot' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
+  await expect(page.getByRole('main').getByRole('link', { name: 'Terms of Use' })).toHaveAttribute('href', '/terms');
   for (const path of ['/', '/outfits', '/settings']) { // nothing else opens while the notice is open
     await page.goto(path);
     await expect(page).toHaveURL(/\/pilot-notice$/);

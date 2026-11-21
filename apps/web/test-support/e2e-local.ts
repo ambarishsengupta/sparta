@@ -2,10 +2,6 @@ import { randomBytes } from 'node:crypto';
 
 /** Pure helpers of the end-to-end suite (WO-0168). They hold no state and touch no network, so a vitest test can pin them (e2e-local.test.ts) and the suite can trust them.
  * The suite runs only against the LOCAL Supabase stack: the Supabase URL, the mail catcher URL and the database URL must name 127.0.0.1, localhost or [::1]. */
-/** The process environment, read by the suite's own files (playwright.config.ts, e2e/support.ts). They are test code, not the app, but lib/supabase/source.test.ts lists every dotted
- * read of a variable by name from the process environment in a non-test file under apps/web and allows only the app's own; the suite reads the environment through this one binding so that list stays the app's. */
-export const env: NodeJS.ProcessEnv = process.env;
-
 const LOCAL_HOST = /^(?:127\.0\.0\.1|localhost|\[::1\])$/;
 
 /** True for an http(s) URL with a local host, no user name or password (a database URL may have them) and no query string or fragment (libpq reads ?host= and ?hostaddr=, and `http://127.0.0.1@evil.example` has the host evil.example). */

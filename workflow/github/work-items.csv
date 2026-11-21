@@ -150,5 +150,5 @@ WO-0178,WO-0178: complementary suppression that really prevents recovery by subt
 WO-0179,WO-0179: the subtraction paths WO-0178 leaves open (privacy),R8b,Release 1 (MVP),Delivery agents,Done
 WO-0180,WO-0180: the CI job has room for the strict gate (time limit 30 to 60 minutes),R8,Release 1 (MVP),Delivery agents,Done
 WO-0181,WO-0181: the backup tests pass on the Linux CI runner,R8b,Release 1 (MVP),Delivery agents,Done
-WO-0182,WO-0182: the backup covers analytics; two backup script fixes,R8b,Release 1 (MVP),Delivery agents,Todo
+WO-0182,WO-0182: the backup covers analytics; two backup script fixes,R8b,Release 1 (MVP),Delivery agents,In Progress
 X-PRIV,"SA: decide the open vendor-insight subtraction paths (two-way bridge, night-to-night, wishlist vs wishlist_open, multi-way) and sign the LLD 5.1/5.3/5.4 and FR-86 wording (WO-0179 note)",R8,Release 1 (MVP),Solution architect,Todo

@@ -1,0 +1,15 @@
+# WO-0168 end-to-end suite, run by the orchestrator, 2026-11-21 20:41 IST, branch wo/batch-20261121c at 89f22f1; exit code captured under bash
+# command: npx playwright test -c apps/web/playwright.config.ts
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › apps/web/e2e/account-consent.e2e.ts:8:1 › FR-1 an invited address signs up, confirms with the emailed link and reaches the age and Terms screen (1.5s)
+  ✓  2 [chromium] › apps/web/e2e/account-consent.e2e.ts:30:1 › FR-8 an uninvited address is refused at sign-up with the invitation-only message (420ms)
+  ✓  3 [chromium] › apps/web/e2e/account-consent.e2e.ts:42:1 › FR-2 and FR-68 the age and Terms ticks are required before the pilot notice (994ms)
+  ✓  4 [chromium] › apps/web/e2e/account-consent.e2e.ts:64:1 › FR-3 and FR-4 the pilot notice blocks until accepted, and No thanks leaves only export, Leave the pilot and sign out (1.4s)
+  ✓  5 [chromium] › apps/web/e2e/account-consent.e2e.ts:84:1 › FR-9 an unsupported country is sent to /not-available and offered only export, Leave the pilot and sign out (1.0s)
+  ✓  6 [chromium] › apps/web/e2e/account-consent.e2e.ts:98:1 › NFR-2 sign out and sign in as a second user on the same browser shows none of the first user's data or queued changes (2.1s)
+  ✓  7 [chromium] › apps/web/e2e/account-consent.e2e.ts:132:1 › FR-67 the About page shows the privacy contact address (116ms)
+
+  7 passed (8.9s)
+EXIT=0

@@ -6,7 +6,7 @@
 #   user through the self-service path (app.delete_my_account, as a signed-in user with a fresh sign-in); 6 copy ops.deletion_log; 7 start a throwaway container of the SAME supabase/postgres image
 #   tag as the running database container, on a free port, ready when pg_isready answers inside it (120 s limit); 8 decrypt and restore into it; 9 run ops.delete_participant again there for every
 #   user in the copied log deleted after the backup; 10 check and print: roles exist (backup_role and worker_role included), auth.users count equals the backup's minus the re-deleted users, every
-#   `app` table's row count matches the live stack, the deleted user is absent. The last line is `RESTORE REHEARSAL: PASS`.
+#   table of `app`, `analytics` and `analytics_private` has the same row count as the live stack (it prints how many tables per schema), the deleted user is absent. The last line is `RESTORE REHEARSAL: PASS`.
 # On EVERY exit (trap: success, failure, timeout, Ctrl-C, kill): the container is removed, the key folder (and with it the backup file) is removed, the synthetic users and their log rows are removed,
 # backup_role's password is cleared, the auth grant is put back as it was found, and the live database is compared with how it was found. Nothing is sent off this machine. Never --linked.
 # No password or private key is printed, logged, written in the repository or put on a command line: generated values live in shell variables and in the environment of one command; each session that
@@ -50,6 +50,9 @@ gen() { od -An -N16 -tx1 /dev/urandom | tr -d ' \n'; }
 
 APP_COUNTS_SQL="select c.relname || '|' || (xpath('/row/n/text()', query_to_xml(format('select count(*) as n from app.%I', c.relname), false, true, '')))[1]::text
   from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'app' and c.relkind in ('r', 'p') order by c.relname;"
+# the data comparison covers every table of app, analytics and analytics_private (WO-0182: backup_role now reads the two analytics schemas); names come out as schema.table
+COUNTS_SQL="select n.nspname || '.' || c.relname || '|' || (xpath('/row/n/text()', query_to_xml(format('select count(*) as n from %I.%I', n.nspname, c.relname), false, true, '')))[1]::text
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('app', 'analytics', 'analytics_private') and c.relkind in ('r', 'p') order by 1;"
 # what must be the same before and after: users, every app table, the deletion log, today's counters, backup_role's password and auth grant
 STATE_SQL="select 'users=' || (select count(*) from auth.users)
   || ';log=' || (select count(*) from ops.deletion_log)
@@ -69,13 +72,14 @@ grant_before="$(printf "select has_schema_privilege('backup_role', 'auth', 'usag
 daily_before="$(printf "select coalesce(json_agg(d), '[]'::json) from (select day, metric, n from ops.daily_counts where day = current_date order by metric) d;\n" | live postgres)" || refuse "could not read ops.daily_counts."
 start_ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-keydir=""; container_started=0; pw_set=0; grant_changed=0; seeded=0; done_flag=0; status=1; wrong_label=""
+poll=""; keydir=""; container_started=0; pw_set=0; grant_changed=0; seeded=0; done_flag=0; status=1; wrong_label=""
 user_ids=()
 
 cleanup() {
   local rc=$status after logn
   trap '' INT TERM
   trap - EXIT
+  [ -n "${poll:-}" ] && kill "$poll" 2>/dev/null   # a readiness poll still running (Ctrl-C during the wait): $poll is the timeout process, which ends its docker child too
   if [ "$done_flag" = 0 ]; then
     done_flag=1
     [ "$container_started" = 1 ] && docker rm -f "$rehearsal" >/dev/null 2>&1
@@ -154,7 +158,7 @@ bpw="$(gen)"
 pw_set=1
 printf "%s\nalter role backup_role password '%s';\n" "$LOGOFF" "$bpw" | live postgres >/dev/null || fail "could not set backup_role's password"
 users_at_backup="$(printf "select count(*) from auth.users;\n" | live postgres)"
-printf '%s\n' "$APP_COUNTS_SQL" | live postgres > "$keydir/counts.backup" || fail "could not count the app tables"
+printf '%s\n' "$COUNTS_SQL" | live postgres > "$keydir/counts.backup" || fail "could not count the tables"
 mkdir -p "$keydir/out"
 (
   PGPASSWORD="${bpw}"
@@ -170,7 +174,7 @@ backup_file="${backups[0]}"
 others=("$keydir"/out/*); [ "${#others[@]}" -eq 1 ] || fail "OUT_DIR holds more than the encrypted file"
 backup_ts="$(printf "select to_char(clock_timestamp() at time zone 'utc', 'YYYY-MM-DD HH24:MI:SS.US');\n" | live postgres)"
 echo "backup taken; the encrypted file is $(wc -c < "$backup_file" | tr -d ' ') bytes; auth.users at backup time: $users_at_backup"
-echo "NOT IN THIS BACKUP: the schemas analytics and analytics_private (7 derived tables; backup_role has no grant on them, a follow-up migration is needed), auth.refresh_tokens and auth.refresh_tokens_id_seq (session state), and the 21 platform-feature tables of the WO-0163 migration header (Auth and Storage features, no pilot data)"
+echo "NOT IN THIS BACKUP: auth.refresh_tokens and auth.refresh_tokens_id_seq (session state), and the 21 platform-feature tables of the WO-0163 migration header (Auth and Storage features, no pilot data)"
 sleep 1
 
 # ---- 5 and 6: a deletion after the backup, through the self-service path; copy the deletion log -----------------------------------------------
@@ -191,7 +195,7 @@ log_ids="$(printf "select user_id from ops.deletion_log where deleted_at > '%s':
 printf '%s\n' "$log_ids" > "$keydir/deletion_log.copy"
 n_log="$(printf '%s' "$log_ids" | grep -c . )"
 [ "$n_log" = "1" ] && [ "$log_ids" = "$deleted_id" ] || fail "the copied deletion log should hold exactly the one deleted user (got $n_log rows)"
-printf '%s\n' "$APP_COUNTS_SQL" | live postgres > "$keydir/counts.live" || fail "could not count the app tables"
+printf '%s\n' "$COUNTS_SQL" | live postgres > "$keydir/counts.live" || fail "could not count the tables"
 
 # ---- 7 throwaway container: same image tag, free port, ready by pg_isready inside it (120 s) -------------------------------------------------
 echo "-- 7 throwaway container of $image on a free port"
@@ -204,11 +208,20 @@ container_started=1
 ) || fail "could not start the throwaway container"
 free_port="$(docker port "$rehearsal" 5432/tcp 2>/dev/null | head -n1 | sed 's/.*://')"
 echo "container $rehearsal on 127.0.0.1:${free_port:-?}"
+# Ctrl-C works in this wait too: a plain foreground `docker exec` swallows SIGINT and exits 0, so each poll and each pause runs in the BACKGROUND and the shell `wait`s on it; `wait` is
+# interrupted by the INT trap, which exits and runs cleanup. bgwait starts the time limiter (timeout, else perl alarm) itself as the background command, with no shell function or subshell in
+# between, so $poll IS the limiter process; cleanup sends it TERM, and timeout passes the TERM on to its child (docker exec), so no poll outlives the script.
+poll=""
+bgwait() {
+  local s="$1" rc; shift
+  if command -v timeout >/dev/null 2>&1; then timeout --foreground -k 5 "$s" "$@" >/dev/null 2>&1 </dev/null & else perl -e 'alarm shift; exec @ARGV' "$s" "$@" >/dev/null 2>&1 </dev/null & fi
+  poll=$!; wait "$poll"; rc=$?; poll=""; return "$rc"
+}
 deadline=$(( $(now_s) + 120 )); ready=0
 while [ "$(now_s)" -lt "$deadline" ]; do
-  if limited 15 docker exec "$rehearsal" pg_isready -U postgres -h 127.0.0.1 >/dev/null 2>&1 \
-     && printf 'select 1;\n' | limited 15 docker exec -i "$rehearsal" psql -U supabase_admin -d postgres -X -q -At >/dev/null 2>&1; then ready=1; break; fi
-  sleep 2
+  if bgwait 15 docker exec "$rehearsal" pg_isready -U postgres -h 127.0.0.1 \
+     && bgwait 15 docker exec "$rehearsal" psql -U supabase_admin -d postgres -X -q -At -c 'select 1;'; then ready=1; break; fi
+  bgwait 5 sleep 2
 done
 [ "$ready" = 1 ] || fail "the throwaway container was not ready within 120 seconds (pg_isready); it is removed"
 rest() { limited 120 docker exec -i "$rehearsal" psql -U supabase_admin -d postgres -X -q -At -v ON_ERROR_STOP=1; }
@@ -263,11 +276,16 @@ echo "auth.users: at backup $users_at_backup; restored $users_restored_before (d
 [ "$present_before" = "1" ] && check "the deleted user was in the backup (the restore brought it back)" ok || check "the deleted user was in the backup" bad
 absent="$(printf "select count(*) from auth.users where id = '%s';\n" "$deleted_id" | rest)"
 [ "$absent" = "0" ] && check "the deleted user is absent from the restored cluster" ok || check "the deleted user is absent from the restored cluster" bad
-# every app table
-printf '%s\n' "$APP_COUNTS_SQL" | rest > "$keydir/counts.restored" || fail "could not count the restored app tables"
-echo "app table row counts (live stack after the deletion | restored cluster after the repeated deletion):"
-join -t'|' -a1 -a2 -e MISSING -o 0,1.2,2.2 "$keydir/counts.live" "$keydir/counts.restored" | awk -F'|' '{ printf "  %-28s %8s | %s\n", $1, $2, $3 }'
-if diff -q "$keydir/counts.live" "$keydir/counts.restored" >/dev/null; then check "every app table's row count matches ($(grep -c . "$keydir/counts.live") tables)" ok; else check "every app table's row count matches" bad; fi
+# every table of app, analytics and analytics_private
+printf '%s\n' "$COUNTS_SQL" | rest > "$keydir/counts.restored" || fail "could not count the restored tables"
+echo "table row counts (live stack after the deletion | restored cluster after the repeated deletion), schemas app, analytics, analytics_private:"
+LC_ALL=C join -t'|' -a1 -a2 -e MISSING -o 0,1.2,2.2 <(LC_ALL=C sort "$keydir/counts.live") <(LC_ALL=C sort "$keydir/counts.restored") | awk -F'|' '{ printf "  %-40s %8s | %s\n", $1, $2, $3 }'
+n_app="$(grep -c '^app\.' "$keydir/counts.live")"; n_an="$(grep -c '^analytics\.' "$keydir/counts.live")"; n_anp="$(grep -c '^analytics_private\.' "$keydir/counts.live")"
+echo "tables compared: app $n_app, analytics $n_an, analytics_private $n_anp"
+# a schema with no table to compare would make the check vacuous: all three must hold tables
+if [ "$n_app" -gt 0 ] && [ "$n_an" -gt 0 ] && [ "$n_anp" -gt 0 ] && diff -q "$keydir/counts.live" "$keydir/counts.restored" >/dev/null; then
+  check "every table's row count matches (app $n_app, analytics $n_an, analytics_private $n_anp tables)" ok
+else check "every table's row count matches (app $n_app, analytics $n_an, analytics_private $n_anp tables)" bad; fi
 [ "$problems" = "0" ] || fail "$problems check(s) failed"
 status=0
 exit 0

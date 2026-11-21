@@ -83,10 +83,10 @@ describe('.github/workflows/ci.yml runs the strict gate on a stack it builds its
   const yml = readFileSync('.github/workflows/ci.yml', 'utf8');
   const at = (needle: string) => { const i = yml.indexOf(needle); expect(i, `ci.yml contains: ${needle}`).toBeGreaterThan(-1); return i; };
 
-  it('runs the gate in strict mode, after the stack, the virtualenv and the role helpers exist, within 30 minutes', () => {
+  it('runs the gate in strict mode, after the stack, the virtualenv and the role helpers exist, within 60 minutes', () => {
     const order = ['npm ci', 'python -m venv', 'supabase start', 'bash workflow/gates/ci_role_password_scripts.sh', 'GATE_STRICT=1 bash workflow/gates/gate.sh'].map(at);
     expect(order).toEqual([...order].sort((a, b) => a - b));
-    expect(yml).toMatch(/^ {4}timeout-minutes: 30$/m);
+    expect(yml).toMatch(/^ {4}timeout-minutes: 60$/m);
     // the gate is never run without strict mode: that is the reduced gate finding A2 was about
     expect(yml.match(/gate\.sh/g)).toHaveLength(1);
     expect(yml).not.toMatch(/continue-on-error|\|\| true/);

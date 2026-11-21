@@ -126,13 +126,13 @@ export class Cast {
   }
 
   /** Puts one small file in the user's own folder of the item-images bucket, the way the app's own storage rules allow (the signed-in user, their own folder), so a deletion test can prove the file goes too.
-   * The worker is not needed for this. The user's token is used here and never kept or shown. Returns the object's name. */
-  async storeFile(user: SyntheticUser): Promise<string> {
+   * The worker is not needed for this. The user's token is used here and never kept or shown. Returns the object's name (`file` is its plain file name, so a test can store two). */
+  async storeFile(user: SyntheticUser, file = 'e2e-stored-file.png'): Promise<string> {
     const { api, key } = stack();
     const login = await call(`${api}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: key, 'content-type': 'application/json' }, body: JSON.stringify(user) });
     if (login.status !== 200) throw new Error(`signing in the synthetic user through the Auth API answered ${login.status}`);
     const { access_token: token, user: who } = (await login.json()) as { access_token: string; user: { id: string } };
-    const name = `${who.id}/e2e-stored-file.png`;
+    const name = `${who.id}/${file}`;
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
     const up = await call(`${api}/storage/v1/object/item-images/${name}`, { method: 'POST', headers: { apikey: key, authorization: `Bearer ${token}`, 'content-type': 'image/png' }, body: png });
     if (up.status !== 200) throw new Error(`storing a file in the synthetic user's folder answered ${up.status}`);

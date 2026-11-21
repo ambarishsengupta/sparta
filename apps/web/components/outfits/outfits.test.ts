@@ -239,11 +239,12 @@ describe('the strict no-network scan runs on every file, with exactly the listed
       for (const part of parts) expect(text.split(part).length - 1, `${file}: ${part}`).toBe(1);
     }
   });
-  it('the allowances are only the two learned-file fetches, the one same-origin POST of the Leave flow (WO-0071), the one same-origin sender of the admin catalogue page (WO-0088) and the placeholder host in two named files', () => {
+  it('the allowances are only the two learned-file fetches, the one same-origin POST of the Leave flow (WO-0071), the one same-origin sender of the admin catalogue page (WO-0088), the one same-origin item delete sender (WO-0183) and the placeholder host in two named files', () => {
     expect(ALLOWED).toEqual({
       'lib/engine-config.ts': ['fetch(PRIOR_URL, init())', 'fetch(UNLOCK_URL, init())'],
       'components/account/account-actions.ts': ['fetch(p, i)'],
       'components/admin/admin-actions.ts': ['fetch(p, i)'],
+      'components/wardrobe/item-actions.ts': ['fetch(p, i)'],
       'lib/auth-form.ts': ['http://sparta.invalid'], 'lib/supabase/gate.ts': ['http://sparta.invalid'],
     });
   });

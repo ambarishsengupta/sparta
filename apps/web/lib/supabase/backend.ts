@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
+import { browserSend } from '../../components/wardrobe/item-actions';
 import { sharedRepository } from '../local-repository';
 import type { WardrobeRepository } from '../repository';
 import { createBrowserSupabase } from './browser';
@@ -35,7 +36,7 @@ export async function selectRepository(backend: 'local' | 'supabase', makeClient
   let state: GateState | null;
   try { state = await loadGateState(client); } catch { return blockedRepository('network'); }
   const choice = pickBackend(backend, state);
-  return choice === 'supabase' ? new SupabaseRepository(client) : blockedRepository('session');
+  return choice === 'supabase' ? new SupabaseRepository(client, undefined, browserSend) : blockedRepository('session');
 }
 
 let chosen: Promise<WardrobeRepository> | null = null;

@@ -30,7 +30,9 @@ const take = (a: Answer, write: boolean): unknown => { if (a.error) throw classi
 const guard = async <T>(write: boolean, f: () => PromiseLike<T>): Promise<T> => { try { return await f(); } catch (e) { throw asRepositoryError(e, write); } };
 /** A value inside a PostgREST `or(...)` list: double-quoted, so commas, brackets and dots in a name cannot change the filter. */
 const quoted = (s: string): string => `"${s.replace(/[\\"]/g, '\\$&')}"`;
-const unsupported = (message: string): Promise<never> => Promise.reject(new RepositoryError('unsupported', true, message));
+/** How the item delete reaches the server's route (same origin, with the session cookie): injected by lib/supabase/backend.ts from components/wardrobe/item-actions.ts, so this file holds no request text (FR-59 scan). */
+type Send = (path: string, init: RequestInit) => Promise<Response>;
+const TOO_MANY_DELETES = 'You have deleted several items in a short time. Wait a few minutes and try again; nothing was deleted this time.';
 
 /**
  * The wardrobe in the signed-in person's Supabase account (WO-0052), over PostgREST with that person's own session and the publishable
@@ -47,7 +49,7 @@ export class SupabaseRepository implements WardrobeRepository {
   catalogue: CatalogueCollection;
   feedback: FeedbackSink;
 
-  constructor(private client: Client, private now: () => string = () => new Date().toISOString()) {
+  constructor(private client: Client, private now: () => string = () => new Date().toISOString(), private send?: Send) {
     const base = this.table<StoredItem, ItemInput, ItemInsert, ItemUpdate>(this.itemRows(), itemFromRow, (n, uid) => itemRow(n, uid, this.now()), itemPatch);
     this.items = {
       ...base,
@@ -56,7 +58,7 @@ export class SupabaseRepository implements WardrobeRepository {
       create: (n) => this.createItem(n, base),
       archive: (id, reason) => this.setItem(id, { status: 'archived', archive_reason: reason, archived_at: this.now() }),
       restore: (id) => this.setItem(id, { status: 'active', archive_reason: null, archived_at: null }),
-      remove: () => unsupported('Deleting an item is not available yet. Archive it instead: it leaves your wardrobe and your suggestions.'),
+      remove: (id) => this.deleteItem(id),
     };
     const outfits = this.table<SavedOutfit, OutfitInput, OutfitInsert, OutfitUpdate>(this.outfitTable(), outfitFromRow, null, outfitPatch); // created by createOutfit: it also writes the pieces
     this.outfits = { ...outfits, create: (n) => this.createOutfit(n, outfits), update: (id, p) => this.updateOutfit(id, p, outfits) };
@@ -222,6 +224,23 @@ export class SupabaseRepository implements WardrobeRepository {
   private async setItem(id: string, patch: ItemUpdate): Promise<StoredItem | undefined> {
     if (!UUID.test(id)) return undefined;
     return guard(true, async () => { const r = take((await this.app().from('items').update(patch).eq('id', id).select(ITEM_SELECT).maybeSingle()) as Answer, true) as Row | null; return r ? itemFromRow(r) : undefined; });
+  }
+
+  /** WO-0183 (FR-16): `authenticated` has no delete right on items (LLD 4.6), so the delete goes through the server route, which removes the item's files and then the row. An id that is not a UUID is
+   * "not found" without a request; a 404 from the route is the same answer (false). Nothing the route says is shown: each status has a fixed sentence. */
+  private deleteItem(id: string): Promise<boolean> {
+    if (!UUID.test(id)) return Promise.resolve(false);
+    const send = this.send;
+    if (!send) return Promise.reject(new RepositoryError('unsupported', true, 'Deleting an item is not available here.'));   // no browser sender (a server or test context): nothing is sent
+    return guard(true, async () => {
+      const res = await send(`/api/items/${id}`, { method: 'DELETE', credentials: 'same-origin' });
+      if (res.status === 404) return false;
+      if (res.status === 429) throw new RepositoryError('unexpected', true, TOO_MANY_DELETES);
+      let body: unknown = null;
+      try { body = await res.json(); } catch { /* not JSON: a redirect page or a gateway error */ }
+      if (res.ok && (body as { ok?: unknown } | null)?.ok === true) return true;
+      throw classify({ status: res.status, error: { code: (body as { error?: { code?: string } } | null)?.error?.code ?? null } }, true);
+    });
   }
 
   private itemRows(): TableCalls<ItemInsert, ItemUpdate> {

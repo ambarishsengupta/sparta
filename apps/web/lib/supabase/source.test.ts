@@ -49,10 +49,11 @@ describe('no secret or service key anywhere in apps/web except the one server-on
     // WO-0074: every import form (quotes, dynamic import(), require(), export ... from, re-export chains), see test-support/imports.ts and imports.test.ts
     const text = Object.fromEntries(sources.map((f) => [f.slice(root.length), readFileSync(f, 'utf8')]));
     const importing = (re: RegExp) => importersOf(text, re);
-    expect(importing(/(^|\/)admin$/)).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/pilot/end/route.ts', 'app/api/admin/pilot/preview/route.ts', 'app/api/admin/settings/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/worker/signed-urls/route.ts', 'lib/server/admin.test.ts']);
+    // WO-0183: app/api/items/[id]/route.ts (delete an item for good, FR-16) is the one further importer of the secret-key module, in both lists below.
+    expect(importing(/(^|\/)admin$/)).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/pilot/end/route.ts', 'app/api/admin/pilot/preview/route.ts', 'app/api/admin/settings/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/items/[id]/route.ts', 'app/api/worker/signed-urls/route.ts', 'lib/server/admin.test.ts']);
     const outside = importing(/(^|\/)server\/[a-z-]+$/).filter((f) => !f.startsWith('lib/server/'));
     // route handlers, and the integration/support code that exercises the handlers; no page, component or other lib module
-    expect(outside).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/pilot/end/route.ts', 'app/api/admin/pilot/preview/route.ts', 'app/api/admin/settings/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/worker/signed-urls/route.ts', 'app/hm-image/[id]/route.ts', 'test-support/purge.ts']);
+    expect(outside).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/pilot/end/route.ts', 'app/api/admin/pilot/preview/route.ts', 'app/api/admin/settings/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/items/[id]/route.ts', 'app/api/worker/signed-urls/route.ts', 'app/hm-image/[id]/route.ts', 'test-support/purge.ts']);
   });
   it('the H&M photograph route imports lib/server/hm-demo and no other lib/server module (WO-0122)', () => {
     const route = readFileSync(join(root, 'app/hm-image/[id]/route.ts'), 'utf8');
@@ -95,7 +96,7 @@ describe('the suggestion path reaches only the repository modules of lib/supabas
   });
   it('backend.ts, the one module the network test leaves out by name, imports exactly the session client, the gate state, the repositories and the generated types (a type-only import, WO-0150)', () => {
     expect(importsOf(join(root, 'lib/supabase/backend.ts')).sort()).toEqual(
-      ['../local-repository', '../repository', './browser', './config', './database.types', './errors', './errors', './gate', './gate-state', './repository', '@supabase/supabase-js'].sort());
+      ['../../components/wardrobe/item-actions', '../local-repository', '../repository', './browser', './config', './database.types', './errors', './errors', './gate', './gate-state', './repository', '@supabase/supabase-js'].sort());
   });
   it('only the use-repository hook imports backend.ts', () => {
     const users = all.filter((f) => /\.tsx?$/.test(f) && !f.endsWith('.test.ts') && importsOf(f).some((i) => /\/backend$/.test(i)));

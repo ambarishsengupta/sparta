@@ -114,3 +114,35 @@ test('FR-61 the sharing setting is shown on and locked, and its reason opens on 
   await page.getByText("Why can't I switch this off?").click();
   await expect(page.getByText(reason)).toBeVisible();
 });
+
+test('FR-16 deleting an item removes it and its image from storage', async ({ page, cast }) => {
+  const user = await cast.provision('delete');
+  await reachWardrobe(page, user);
+  await page.getByRole('link', { name: 'Add item' }).click();
+  await expect(page.getByRole('button', { name: 'Save item' })).toBeEnabled();
+  await page.getByLabel('Category').selectOption('Tops');
+  await expect(page.getByLabel('Category')).toHaveValue('Tops');
+  await page.getByLabel('Sub-type').selectOption('T-shirt');
+  await page.getByLabel('Name').fill('Tee to delete');
+  await page.getByRole('button', { name: 'Save item' }).click();
+  await expect(page.getByRole('link', { name: 'Tee to delete', exact: true })).toBeVisible();
+  // setup: an image and a thumbnail in the user's own folder of item-images (Storage API under the user's own login; the worker is not needed), and the item points at both
+  const image = await cast.storeFile(user, 'e2e-item-image.png');
+  const thumb = await cast.storeFile(user, 'e2e-item-thumb.png');
+  sql(`update app.items i set image_path = :'a', image_thumb_path = :'b' from auth.users u where u.id = i.user_id and u.email = :'e' and i.name = 'Tee to delete'`, { a: image, b: thumb, e: user.email });
+  const objects = (): number => Number(sql(`select count(*) from storage.objects where bucket_id = 'item-images' and name in (:'a', :'b')`, { a: image, b: thumb }));
+  const rows = (): number => Number(sql(`select count(*) from app.items i join auth.users u on u.id = i.user_id where u.email = :'e' and i.name = 'Tee to delete'`, { e: user.email }));
+  expect([rows(), objects()]).toEqual([1, 2]); // proven to exist before the deletion
+  await page.reload();
+  await page.getByRole('link', { name: 'Tee to delete', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Save item' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Delete item', exact: true }).click();
+  await expect(page.getByText('Delete this item permanently?')).toBeVisible(); // the existing confirmation
+  expect([rows(), objects()]).toEqual([1, 2]); // nothing is deleted before it is confirmed
+  await page.getByRole('button', { name: 'Delete item permanently' }).click();
+  await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/$/);
+  await expect(page.getByRole('link', { name: 'Tee to delete', exact: true })).toHaveCount(0);
+  // read-only query: the row and both objects are gone
+  expect(rows()).toBe(0);
+  expect(objects()).toBe(0);
+});

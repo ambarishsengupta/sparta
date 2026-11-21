@@ -12,6 +12,8 @@ export const ALLOWED: Record<string, string[]> = {
   'components/account/account-actions.ts': ['fetch(p, i)'],
   // WO-0088: the same-origin calls of the admin catalogue page to its three fixed routes (the default sender of adminCall, replaced by a fake in tests)
   'components/admin/admin-actions.ts': ['fetch(p, i)'],
+  // WO-0183: the same-origin DELETE of one item (a fixed path; the sender the repository is given, replaced by a fake in tests)
+  'components/wardrobe/item-actions.ts': ['fetch(p, i)'],
   // the placeholder host that is only ever parsed against, never contacted (one literal in each file)
   'lib/auth-form.ts': ['http://sparta.invalid'],
   'lib/supabase/gate.ts': ['http://sparta.invalid'],

@@ -70,7 +70,7 @@ const SUPABASE_FACTORIES = {
 };
 // WO-0153: fetch wrappers dodge the no-restricted-globals rule below (their names hold a hyphen or are not the global), so they are named too.
 const FETCH_WRAPPER_NAMES = ['node-fetch', 'cross-fetch', 'ofetch', 'axios', 'ky', 'got'];
-const FETCH_WRAPPER_MESSAGE = 'No fetch wrapper (node-fetch, cross-fetch, ofetch, axios, ky, got): the no-network rule applies to wrappers too. The engine packages never reach the network; the app does it only in the three files listed in eslint.config.js.';
+const FETCH_WRAPPER_MESSAGE = 'No fetch wrapper (node-fetch, cross-fetch, ofetch, axios, ky, got): the no-network rule applies to wrappers too. The engine packages never reach the network; the app does it only in the four files listed in eslint.config.js.';
 const FETCH_WRAPPERS = {
   // exact names as paths (a bare gitignore-style pattern such as 'got' would also match './got' and '@acme/got'); subpaths as patterns
   paths: FETCH_WRAPPER_NAMES.map((name) => ({ name, message: FETCH_WRAPPER_MESSAGE })),
@@ -86,7 +86,7 @@ const DYNAMIC_FETCH_WRAPPER = [
 // Flat config replaces a rule's options per block, so every block that restricts imports builds its options with this: it joins the `paths` and `patterns` of its parts.
 const restrictImports = (...parts) => ['error', { paths: parts.flatMap((p) => p.paths ?? []), patterns: parts.flatMap((p) => p.patterns ?? []) }];
 const NETWORK_GLOBALS = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map((name) => ({
-  name, message: 'No direct network call here. The engine packages never reach the network; the app does it only in the three files listed in eslint.config.js.',
+  name, message: 'No direct network call here. The engine packages never reach the network; the app does it only in the four files listed in eslint.config.js.',
 }));
 
 // WO-0129: the recommended rule sets of the two new plugins, with every rule forced to 'error' (the project has no warnings).
@@ -186,8 +186,8 @@ export default tseslint.config(
   },
   {
     // The only direct network calls of the app (the same list as test-support/network-scan.ts): the two public JSON files of the
-    // learned layer, the storage purge of Leave the pilot, and the admin routes.
-    files: [`${WEB}/lib/engine-config.ts`, `${WEB}/components/account/account-actions.ts`, `${WEB}/components/admin/admin-actions.ts`],
+    // learned layer, the storage purge of Leave the pilot, the admin routes, and the item delete (WO-0183).
+    files: [`${WEB}/lib/engine-config.ts`, `${WEB}/components/account/account-actions.ts`, `${WEB}/components/admin/admin-actions.ts`, `${WEB}/components/wardrobe/item-actions.ts`],
     rules: { 'no-restricted-globals': 'off' },
   },
 

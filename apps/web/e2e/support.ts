@@ -186,17 +186,21 @@ function localServerKey(): string | null {
   } catch { return null; }
 }
 
-/** Removes the objects in one user's folder after a test that failed before the app's own Leave flow removed them: through the Storage API (bytes and rows), and, if that is not possible,
- * the rows only (the database refuses a plain delete of storage rows, so that statement sets the documented switch for itself). Only ever runs against the local stack (sql() refuses otherwise). */
+/** Removes the objects in one user's folder after a test that failed before the app's own Leave flow removed them: through the Storage API (bytes and rows). A refusal by the API throws. If the key cannot
+ * be read, the rows are removed (the database refuses a plain delete of storage rows, so that statement sets the documented switch for itself) and the call then throws, because the bytes stay. Only ever runs against the local stack (sql() refuses otherwise). */
 async function removeStoredFiles(id: string): Promise<void> {
   if (id === '' || rowsOfUser(id).storage === 0) return;
   const key = localServerKey();
   if (key) {
     for (const name of sql(`select name from storage.objects where name like :'u' || '/%'`, { u: id }).split('\n').filter((n) => n !== '')) {
-      await call(`${stack().api}/storage/v1/object/item-images/${name}`, { method: 'DELETE', headers: { apikey: key, authorization: `Bearer ${key}` } });
+      const r = await call(`${stack().api}/storage/v1/object/item-images/${name}`, { method: 'DELETE', headers: { apikey: key, authorization: `Bearer ${key}` } });
+      if (r.status !== 200) throw new Error(`the Storage API refused to delete a leftover file of a synthetic user (status ${r.status}); the file's bytes are still in the local stack`);
     }
   }
-  if (rowsOfUser(id).storage > 0) sql(`begin; set local storage.allow_delete_query = 'true'; delete from storage.objects where name like :'u' || '/%'; commit;`, { u: id });
+  if (rowsOfUser(id).storage > 0) {
+    sql(`begin; set local storage.allow_delete_query = 'true'; delete from storage.objects where name like :'u' || '/%'; commit;`, { u: id });
+    if (!key) throw new Error("the local stack's key could not be read, so a leftover file's rows were removed but its bytes are still in the local stack");
+  }
 }
 
 /** Loads the synthetic demo catalogue (supabase/scripts/seed-demo-catalog.sh, local database only) when the local stack has none, and returns the step that takes it out again.

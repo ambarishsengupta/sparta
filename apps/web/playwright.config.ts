@@ -24,8 +24,9 @@ function discover(): string | undefined {
   process.env.SPARTA_E2E_MAIL_URL = s.MAILPIT_URL;
   process.env.SPARTA_E2E_DB_URL = s.DB_URL;
   process.env.SPARTA_E2E_KEY = s.PUBLISHABLE_KEY;
-  // WO-0169: Leave the pilot removes the person's files through a server route that needs the server-only key. The key goes to the local server process and nowhere else: it is returned here
-  // (never put in process.env, so the workers do not get it), it is read only after assertLocalStack has accepted the stack, and it is not part of the build's environment.
+  // WO-0169: Leave the pilot removes the person's files through a server route that needs the server-only key. The key goes to the local server process; it is returned here
+  // (never put in process.env, so the workers do not get it), it is read only after assertLocalStack has accepted the stack, and it is not part of the build's environment. The one other reader is the
+  // teardown in e2e/support.ts, which reads the key from `supabase status` itself to delete leftover files of a failed test through the Storage API.
   if (!s.SECRET_KEY) throw new Error('supabase status gave no secret key: is the local stack running (supabase start)? The Leave the pilot test needs the local server to hold it.');
   return s.SECRET_KEY;
 }
@@ -48,7 +49,7 @@ if (process.env.TEST_WORKER_INDEX === undefined && process.env.SPARTA_E2E_BUILT 
   process.env.SPARTA_E2E_BUILT = '1';
 }
 
-// What `next start` is given: the build's values and, only here, the local stack's server-only key (appEnv, which the build gets, never holds it). Set by assignment because the value is a variable.
+// What `next start` is given: the build's values and, only here, the local stack's server-only key (appEnv, which the build gets, never holds it). The bracket assignment form is used on purpose: `NAME: value` with a variable as the value is a false positive of workflow/gates/secret_scan.sh (it cannot tell a variable from a secret).
 const serverEnv: Record<string, string> = { ...appEnv };
 if (serverKey) serverEnv['SUPABASE_SECRET_KEY'] = serverKey;
 

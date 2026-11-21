@@ -37,8 +37,8 @@ async function leave(page: Page, password: string): Promise<void> {
   await page.getByRole('button', { name: 'Delete my account and leave the pilot' }).click();
   try { await expect(page).toHaveURL(/\/goodbye$/, { timeout: 20_000 }); } catch (e) {
     const said = (await page.getByRole('alert').filter({ hasText: /\S/ }).allTextContents()).join(' | ');
-    // the purge route needs the local stack's server-only key in the server's environment; playwright.config.ts does not pass it (see the WO-0169 report)
-    throw new Error(`Leave the pilot did not reach the goodbye page; the page says: ${said || '(no alert)'}. If it says files could not be removed, start the run with the local stack's server-only key in the environment of the run.`, { cause: e });
+    // the purge route needs the local stack's server-only key in the server's environment; playwright.config.ts takes it from `supabase status` and gives it to `next start`
+    throw new Error(`Leave the pilot did not reach the goodbye page; the page says: ${said || '(no alert)'}. If it says files could not be removed, the local stack's status did not give the server its key (check supabase status and playwright.config.ts).`, { cause: e });
   }
   await expect(page.getByRole('heading', { name: 'You have left the pilot' })).toBeVisible();
 }
@@ -81,9 +81,24 @@ test('FR-66 Leave the pilot needs the password, asks no reason, says how long de
   await expectSignInRefused(page, user);
 });
 
-test('FR-62 Export my data downloads a file that holds the user\'s items and none of another user\'s', async ({ page, cast }) => {
+test('FR-62 Export my data downloads a file that holds the user\'s items and none of another user\'s', async ({ page, cast, browser }) => {
   const user = await cast.provision('export');
   const other = await cast.provision('other');
+  const otherItem = 'Other user private tee';
+  const second = await browser.newContext(); // the second user has an item of their own, with a name nobody else has
+  try {
+    const p2 = await second.newPage();
+    await reachWardrobe(p2, other);
+    await p2.getByRole('link', { name: 'Add item' }).click();
+    await expect(p2.getByRole('button', { name: 'Save item' })).toBeEnabled();
+    await p2.getByLabel('Category').selectOption('Tops');
+    await expect(p2.getByLabel('Category')).toHaveValue('Tops');
+    await p2.getByLabel('Sub-type').selectOption('T-shirt');
+    await p2.getByLabel('Name').fill(otherItem);
+    await p2.getByRole('button', { name: 'Save item' }).click();
+    await expect(p2.getByRole('link', { name: otherItem, exact: true })).toBeVisible();
+  } finally { await second.close(); }
+  expect(itemNamesOf(other.email)).toEqual([otherItem]);
   await reachWardrobe(page, user);
   const added = await loadDemoWardrobe(page);
   const names = itemNamesOf(user.email);
@@ -102,7 +117,8 @@ test('FR-62 Export my data downloads a file that holds the user\'s items and non
   expect(Object.keys(doc).length).toBeGreaterThan(1);
   for (const name of names) expect(text).toContain(JSON.stringify(name).slice(1, -1));
   expect(text).toContain(user.email);
-  expect(text).not.toContain(other.email);
-  expect(text).not.toContain(user.password);
+  expect(text.includes(other.email), "export holds the other user's email").toBe(false);
+  expect(text.includes(otherItem), "export holds the other user's item").toBe(false);
+  expect(text.includes(user.password), 'export holds the password').toBe(false); // a boolean, so a failure never prints the password
 });
 

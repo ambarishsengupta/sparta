@@ -99,9 +99,10 @@ describe.skipIf(!stack)('SupabaseRepository against the real stack', () => {
     expect(q(`select archived_at is null from app.items where id = :'i'`, { i: shirt.id })).toBe('t');
   });
 
-  it('deleting an item is refused (the database grants no delete) and the row stays', async () => {
-    expect((await rejects(A.items.remove(shirt.id))).kind).toBe('unsupported');
+  it('with no browser sender, deleting an item fails and the row is still in the database (the account cannot delete a row directly, LLD 4.6; WO-0183: only the server route can)', async () => {
+    await rejects(A.items.remove(shirt.id));   // A is built without the browser sender: nothing is sent
     expect(rowsOf('items', annId)).toBe(1);
+    expect(q(`select count(*) from app.items where id = :'i'`, { i: shirt.id })).toBe('1');
   });
 
   it('an unknown or malformed id is "not found", and a patch that changes nothing reads the row', async () => {

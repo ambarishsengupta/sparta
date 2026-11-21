@@ -1,18 +1,19 @@
-# WO-0164 restore rehearsal, live run by the orchestrator, 2026-11-21 08:25 IST
-# command: bash supabase/scripts/restore-rehearsal.sh (branch wo/batch-20261121, maker files after fix loop 2, uncommitted at the time of the run)
+# WO-0182 restore rehearsal, live runs by the orchestrator, 2026-11-21 19:12 to 19:15 IST, branch wo/batch-20261121c at d519fa6 (committed maker files after fix loop 1)
+# Exit codes captured under bash (`bash -c '...; echo EXIT=$?'`), not zsh. Replaces the WO-0164 transcript, which is in git history (commit 8fe580d).
+# RUN 1: bash supabase/scripts/restore-rehearsal.sh on the local stack as it was (analytics tables empty)
 restore-rehearsal: LOCAL stack only (supabase_db_sparta, image public.ecr.aws/supabase/postgres:17.11.0.011); nothing leaves this machine
 -- 1 seed synthetic users
 -- 2 throwaway age key pair in a private folder outside the repository
 -- 3 grant usage on schema auth to backup_role (as supabase_admin, local only)
 -- 4 generated password on backup_role (as postgres, statement logging off), then backup.sh as backup_role
 backup: roles (pg_dumpall --roles-only --no-role-passwords), then schema and data (pg_dump, 21 platform-feature tables excluded), streamed into age
-backup: wrote /private/var/folders/93/z2yqxx896j13y4j_lfxwh21m0000gn/T/sparta-rehearsal.YaSSLn/out/backup-20261121T025553Z.sql.age (803097 bytes, encrypted; no plain-text file ever written)
-backup taken; the encrypted file is 803097 bytes; auth.users at backup time: 3
-NOT IN THIS BACKUP: the schemas analytics and analytics_private (7 derived tables; backup_role has no grant on them, a follow-up migration is needed), auth.refresh_tokens and auth.refresh_tokens_id_seq (session state), and the 21 platform-feature tables of the WO-0163 migration header (Auth and Storage features, no pilot data)
+backup: wrote /private/var/folders/93/z2yqxx896j13y4j_lfxwh21m0000gn/T/sparta-rehearsal.rXuPuY/out/backup-20261121T134248Z.sql.age (838744 bytes, encrypted; no plain-text file ever written)
+backup taken; the encrypted file is 838744 bytes; auth.users at backup time: 3
+NOT IN THIS BACKUP: auth.refresh_tokens and auth.refresh_tokens_id_seq (session state), and the 21 platform-feature tables of the WO-0163 migration header (Auth and Storage features, no pilot data)
 -- 5 delete one synthetic user through the self-service path (app.delete_my_account, signed-in user, fresh sign-in)
 -- 6 copy ops.deletion_log (rows after the backup)
 -- 7 throwaway container of public.ecr.aws/supabase/postgres:17.11.0.011 on a free port
-container sparta_restore_rehearsal_45582 on 127.0.0.1:32792
+container sparta_restore_rehearsal_9650 on 127.0.0.1:32794
 -- 8 decrypt with the throwaway private key and restore into the container
 restore finished: 17 expected message(s) (roles and the auth schema already in the fresh image; the sessions foreign key to the excluded auth.oauth_clients)
 -- 9 run the deletion again in the restored cluster for each user in the copied log
@@ -27,38 +28,119 @@ PASS restored auth.users equals the backup's count
 PASS auth.users after the repeated deletion = backup count minus the re-deleted users
 PASS the deleted user was in the backup (the restore brought it back)
 PASS the deleted user is absent from the restored cluster
-app table row counts (live stack after the deletion | restored cluster after the repeated deletion):
-  collections                         0 | 0
-  consent_records                     2 | 2
-  document_acceptances                4 | 4
-  item_collections                    0 | 0
-  item_features                       0 | 0
-  item_tags                           0 | 0
-  items                               6 | 6
-  jobs                                0 | 0
-  outfit_items                        0 | 0
-  outfit_logs                         0 | 0
-  outfit_plans                        0 | 0
-  outfits                             0 | 0
-  profiles                            2 | 2
-  purchase_receipts                   0 | 0
-  purchases                           0 | 0
-  receipts                            0 | 0
-  suggestion_feedback                 0 | 0
-  tags                                0 | 0
-  wishlist_entries                    0 | 0
-PASS every app table's row count matches (19 tables)
+table row counts (live stack after the deletion | restored cluster after the repeated deletion), schemas app, analytics, analytics_private:
+  analytics.cube                                  0 | 0
+  analytics_private.cube_stage                    0 | 0
+  analytics_private.facts                         0 | 0
+  analytics_private.supp_cell                     0 | 0
+  analytics_private.supp_par                      0 | 0
+  analytics_private.supp_pu                       0 | 0
+  analytics_private.supp_sib                      0 | 0
+  app.collections                                 0 | 0
+  app.consent_records                             2 | 2
+  app.document_acceptances                        4 | 4
+  app.item_collections                            0 | 0
+  app.item_features                               0 | 0
+  app.item_tags                                   0 | 0
+  app.items                                       6 | 6
+  app.jobs                                        0 | 0
+  app.outfit_items                                0 | 0
+  app.outfit_logs                                 0 | 0
+  app.outfit_plans                                0 | 0
+  app.outfits                                     0 | 0
+  app.profiles                                    2 | 2
+  app.purchase_receipts                           0 | 0
+  app.purchases                                   0 | 0
+  app.receipts                                    0 | 0
+  app.suggestion_feedback                         0 | 0
+  app.tags                                        0 | 0
+  app.wishlist_entries                            0 | 0
+tables compared: app 19, analytics 1, analytics_private 6
+PASS every table's row count matches (app 19, analytics 1, analytics_private 6 tables)
 left as found: auth.users, ops.deletion_log, today's counters, every app table, backup_role password (none) and the auth grant (f) are as before; no container, key folder or file left
 container log since the start: 'alter role ... password' lines: 0
 RESTORE REHEARSAL: PASS
-# exit: 0
+EXIT=0
 
-# wrong-key run: REHEARSAL_WRONG_KEY=1 bash supabase/scripts/restore-rehearsal.sh
-container sparta_restore_rehearsal_45909 on 127.0.0.1:32793
+# RUN 2: the same, after `bash supabase/scripts/seed-demo-insights.sh` (SYNTHETIC panel; exit 0; aggregation filled analytics.cube with 772 rows), so analytics data really goes through backup and restore; afterwards `seed-demo-insights.sh --remove` exited 0
+restore-rehearsal: LOCAL stack only (supabase_db_sparta, image public.ecr.aws/supabase/postgres:17.11.0.011); nothing leaves this machine
+-- 1 seed synthetic users
+-- 2 throwaway age key pair in a private folder outside the repository
+-- 3 grant usage on schema auth to backup_role (as supabase_admin, local only)
+-- 4 generated password on backup_role (as postgres, statement logging off), then backup.sh as backup_role
+backup: roles (pg_dumpall --roles-only --no-role-passwords), then schema and data (pg_dump, 21 platform-feature tables excluded), streamed into age
+backup: wrote /private/var/folders/93/z2yqxx896j13y4j_lfxwh21m0000gn/T/sparta-rehearsal.SjUR9J/out/backup-20261121T134320Z.sql.age (1256098 bytes, encrypted; no plain-text file ever written)
+backup taken; the encrypted file is 1256098 bytes; auth.users at backup time: 155
+NOT IN THIS BACKUP: auth.refresh_tokens and auth.refresh_tokens_id_seq (session state), and the 21 platform-feature tables of the WO-0163 migration header (Auth and Storage features, no pilot data)
+-- 5 delete one synthetic user through the self-service path (app.delete_my_account, signed-in user, fresh sign-in)
+-- 6 copy ops.deletion_log (rows after the backup)
+-- 7 throwaway container of public.ecr.aws/supabase/postgres:17.11.0.011 on a free port
+container sparta_restore_rehearsal_10089 on 127.0.0.1:32795
+-- 8 decrypt with the throwaway private key and restore into the container
+restore finished: 17 expected message(s) (roles and the auth schema already in the fresh image; the sessions foreign key to the excluded auth.oauth_clients)
+-- 9 run the deletion again in the restored cluster for each user in the copied log
+-- 10 checks
+roles in the live cluster: 20; restored: 20; missing: none
+PASS all roles exist in the restored cluster
+PASS role backup_role exists in the restored cluster
+PASS role worker_role exists in the restored cluster
+PASS restored backup_role: bypassrls, not a member of pg_read_all_data
+auth.users: at backup 155; restored 155 (deleted user present: 1); re-deleted 1; after the repeated deletion 154
+PASS restored auth.users equals the backup's count
+PASS auth.users after the repeated deletion = backup count minus the re-deleted users
+PASS the deleted user was in the backup (the restore brought it back)
+PASS the deleted user is absent from the restored cluster
+table row counts (live stack after the deletion | restored cluster after the repeated deletion), schemas app, analytics, analytics_private:
+  analytics.cube                                772 | 772
+  analytics_private.cube_stage                    0 | 0
+  analytics_private.facts                         0 | 0
+  analytics_private.supp_cell                     0 | 0
+  analytics_private.supp_par                      0 | 0
+  analytics_private.supp_pu                       0 | 0
+  analytics_private.supp_sib                      0 | 0
+  app.collections                                 0 | 0
+  app.consent_records                           152 | 152
+  app.document_acceptances                      304 | 304
+  app.item_collections                            0 | 0
+  app.item_features                               0 | 0
+  app.item_tags                                   0 | 0
+  app.items                                     440 | 440
+  app.jobs                                        0 | 0
+  app.outfit_items                                0 | 0
+  app.outfit_logs                                 0 | 0
+  app.outfit_plans                                0 | 0
+  app.outfits                                     0 | 0
+  app.profiles                                  154 | 154
+  app.purchase_receipts                           0 | 0
+  app.purchases                                 434 | 434
+  app.receipts                                    0 | 0
+  app.suggestion_feedback                         0 | 0
+  app.tags                                        0 | 0
+  app.wishlist_entries                          210 | 210
+tables compared: app 19, analytics 1, analytics_private 6
+PASS every table's row count matches (app 19, analytics 1, analytics_private 6 tables)
+left as found: auth.users, ops.deletion_log, today's counters, every app table, backup_role password (none) and the auth grant (f) are as before; no container, key folder or file left
+container log since the start: 'alter role ... password' lines: 0
+RESTORE REHEARSAL: PASS
+EXIT=0
+
+# RUN 3: REHEARSAL_WRONG_KEY=1 bash supabase/scripts/restore-rehearsal.sh (must fail); afterwards `docker ps -a` listed no rehearsal container and `supabase status` showed the stack up
+restore-rehearsal: LOCAL stack only (supabase_db_sparta, image public.ecr.aws/supabase/postgres:17.11.0.011); nothing leaves this machine
+-- 1 seed synthetic users
+-- 2 throwaway age key pair in a private folder outside the repository
+-- 3 grant usage on schema auth to backup_role (as supabase_admin, local only)
+-- 4 generated password on backup_role (as postgres, statement logging off), then backup.sh as backup_role
+backup: roles (pg_dumpall --roles-only --no-role-passwords), then schema and data (pg_dump, 21 platform-feature tables excluded), streamed into age
+backup: wrote /private/var/folders/93/z2yqxx896j13y4j_lfxwh21m0000gn/T/sparta-rehearsal.IfaFRN/out/backup-20261121T134334Z.sql.age (838929 bytes, encrypted; no plain-text file ever written)
+backup taken; the encrypted file is 838929 bytes; auth.users at backup time: 3
+NOT IN THIS BACKUP: auth.refresh_tokens and auth.refresh_tokens_id_seq (session state), and the 21 platform-feature tables of the WO-0163 migration header (Auth and Storage features, no pilot data)
+-- 5 delete one synthetic user through the self-service path (app.delete_my_account, signed-in user, fresh sign-in)
+-- 6 copy ops.deletion_log (rows after the backup)
+-- 7 throwaway container of public.ecr.aws/supabase/postgres:17.11.0.011 on a free port
+container sparta_restore_rehearsal_10448 on 127.0.0.1:32796
 -- 8 decrypt with the throwaway private key and restore into the container (REHEARSAL_WRONG_KEY=1: decrypting with an unrelated key, this run must fail)
 restore-rehearsal: age could not decrypt the backup with this key: age: error: no identity matched any of the recipients
 left as found: auth.users, ops.deletion_log, today's counters, every app table, backup_role password (none) and the auth grant (f) are as before; no container, key folder or file left
 container log since the start: 'alter role ... password' lines: 0
 RESTORE REHEARSAL: FAIL (exit 1)
-# exit status of the wrong-key run not captured (the wrapper shell was zsh, which has no PIPESTATUS); the script's own last line above reports FAIL (exit 1)
-# after both runs: rehearsal containers: 0
+EXIT=1

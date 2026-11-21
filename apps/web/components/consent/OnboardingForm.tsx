@@ -1,12 +1,14 @@
 'use client';
 import { OCCASIONS } from '@sparta/taxonomy';
-import { useRef, useState, type SubmitEvent } from 'react';
+import { useRef, useState, useSyncExternalStore, type SubmitEvent } from 'react';
 import { countryCode, currencyFor, hemisphereFor, OTHER_COUNTRY, startPage, validateOnboarding, type OnboardingErrors, type Option, type StartChoice } from '../../lib/onboarding';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 import { showRejection } from '../../lib/supabase/errors';
 import { completeOnboarding } from '../../lib/supabase/consent-actions';
 
 const err = (id: string, text?: string) => text && <p id={id} className="error" role="alert">{text}</p>;
+
+const subscribeNever = () => () => undefined; // a stable no-op: the value never changes after hydration
 
 /** FR-6 and FR-9: country (the pilot's list, or any other two-letter code), hemisphere, currency and, optionally, occasions. */
 export function OnboardingForm({ countries, currencies }: { countries: Option[]; currencies: Option[] }) {
@@ -18,6 +20,9 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
   const [errors, setErrors] = useState<OnboardingErrors>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // WO-0185: false in the server-rendered page and until React has taken the form over. A control used before that would have its value replaced by the empty state, so every control and button stays
+  // disabled until then (a disabled control is announced as disabled, as usual). The form's `data-ready` attribute is the signal for tests: "false" before, "true" after.
+  const ready = useSyncExternalStore(subscribeNever, () => true, () => false); // React's hydration pattern: the server snapshot (false) for the server render and for hydration, the client snapshot (true) right after
   const start = useRef<StartChoice>('skip'); // which of the three buttons sent the form
   const refs = { country: useRef<HTMLSelectElement>(null), typed: useRef<HTMLInputElement>(null), hemisphere: useRef<HTMLSelectElement>(null), currency: useRef<HTMLSelectElement>(null) };
   const country = countryCode(choice, typed);
@@ -49,11 +54,11 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
   const bad = (m?: string, id?: string) => ({ 'aria-invalid': m ? true : undefined, 'aria-describedby': m ? id : undefined });
 
   return (
-    <form className="form" onSubmit={submit} noValidate>
+    <form className="form" onSubmit={submit} noValidate data-ready={ready ? 'true' : 'false'}>
       <h1>A few questions</h1>
       <label htmlFor="ob-country">Country</label>
       <select id="ob-country" ref={refs.country} value={choice} onChange={(e) => chooseCountry(e.target.value, e.target.value === OTHER_COUNTRY ? typed.trim().toUpperCase() : e.target.value)}
-        required {...bad(errors.country && !outside ? errors.country : undefined, 'ob-country-error')}>
+        required disabled={!ready} {...bad(errors.country && !outside ? errors.country : undefined, 'ob-country-error')}>
         <option value="">Choose your country</option>
         {countries.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         <option value={OTHER_COUNTRY}>My country is not listed</option>
@@ -62,7 +67,7 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
       {outside && (
         <>
           <label htmlFor="ob-typed">Country code (two letters, for example US)</label>
-          <input id="ob-typed" ref={refs.typed} type="text" maxLength={2} autoComplete="off" value={typed}
+          <input id="ob-typed" ref={refs.typed} type="text" disabled={!ready} maxLength={2} autoComplete="off" value={typed}
             onChange={(e) => { setTyped(e.target.value); chooseCountry(OTHER_COUNTRY, e.target.value.trim().toUpperCase()); }}
             aria-describedby={['ob-note', errors.country ? 'ob-typed-error' : ''].filter(Boolean).join(' ')} aria-invalid={errors.country ? true : undefined} />
           {err('ob-typed-error', errors.country)}
@@ -70,14 +75,14 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
         </>
       )}
       <label htmlFor="ob-hemisphere">Hemisphere (decides the seasons)</label>
-      <select id="ob-hemisphere" ref={refs.hemisphere} value={hemisphere} onChange={(e) => { setHemisphere(e.target.value); setErrors({ ...errors, hemisphere: undefined }); }} required {...bad(errors.hemisphere, 'ob-hemisphere-error')}>
+      <select id="ob-hemisphere" ref={refs.hemisphere} value={hemisphere} onChange={(e) => { setHemisphere(e.target.value); setErrors({ ...errors, hemisphere: undefined }); }} required disabled={!ready} {...bad(errors.hemisphere, 'ob-hemisphere-error')}>
         <option value="">Choose</option>
         <option value="north">Northern</option>
         <option value="south">Southern</option>
       </select>
       {err('ob-hemisphere-error', errors.hemisphere)}
       <label htmlFor="ob-currency">Preferred currency</label>
-      <select id="ob-currency" ref={refs.currency} value={currency} onChange={(e) => { setCurrency(e.target.value); setErrors({ ...errors, currency: undefined }); }} required {...bad(errors.currency, 'ob-currency-error')}>
+      <select id="ob-currency" ref={refs.currency} value={currency} onChange={(e) => { setCurrency(e.target.value); setErrors({ ...errors, currency: undefined }); }} required disabled={!ready} {...bad(errors.currency, 'ob-currency-error')}>
         <option value="">Choose</option>
         {currencies.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
       </select>
@@ -86,7 +91,7 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
         <legend>Occasions you dress for most (optional)</legend>
         {OCCASIONS.map((o) => (
           <label key={o} className="check">
-            <input type="checkbox" checked={occasions.includes(o)} onChange={(e) => setOccasions(e.target.checked ? [...occasions, o] : occasions.filter((x) => x !== o))} />
+            <input type="checkbox" disabled={!ready} checked={occasions.includes(o)} onChange={(e) => setOccasions(e.target.checked ? [...occasions, o] : occasions.filter((x) => x !== o))} />
             {o}
           </label>
         ))}
@@ -97,9 +102,9 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
         <legend>Where do you want to start?</legend>
         <p className="muted">Optional. Your country, hemisphere and currency above are needed whichever you pick.</p>
         <div className="row">
-          <button type="submit" className="primary" disabled={busy} onClick={() => { start.current = 'popular'; }}>{busy ? 'Please wait' : 'Start from popular items'}</button>
-          <button type="submit" disabled={busy} onClick={() => { start.current = 'own'; }}>Add my own</button>
-          <button type="submit" disabled={busy} onClick={() => { start.current = 'skip'; }}>Skip</button>
+          <button type="submit" className="primary" disabled={busy || !ready} onClick={() => { start.current = 'popular'; }}>{busy ? 'Please wait' : 'Start from popular items'}</button>
+          <button type="submit" disabled={busy || !ready} onClick={() => { start.current = 'own'; }}>Add my own</button>
+          <button type="submit" disabled={busy || !ready} onClick={() => { start.current = 'skip'; }}>Skip</button>
         </div>
       </fieldset>
     </form>

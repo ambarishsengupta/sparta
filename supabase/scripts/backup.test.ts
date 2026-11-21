@@ -38,9 +38,10 @@ function layout(noPg = false): { dir: string; tmp: string; outDir: string; recip
   const stub = (name: string, body: string): void => { writeFileSync(join(dir, 'bin', name), `#!/bin/sh\n${body}\n`); chmodSync(join(dir, 'bin', name), 0o755); };
   const common = `echo "${'$'}(basename "${'$'}0") ${'$'}*" >> "${log}"\n[ "${'$'}DR_FAIL" = "${'$'}(basename "${'$'}0")" ] && { echo "stub failure" >&2; exit 3; }`;
   if (!noPg) {
-    // each stub dump is padded past backup.sh's 1000-byte minimum (a real dump is far larger); DR_EMPTY=1 makes both print nothing
-    stub('pg_dump', `${common}\n[ -n "${'$'}DR_EMPTY" ] && exit 0\necho '-- PLAIN-DATA-MARKER'\nhead -c 1100 /dev/zero | tr '\\0' x; echo`);
-    stub('pg_dumpall', `${common}\n[ -n "${'$'}DR_EMPTY" ] && exit 0\necho '-- PLAIN-ROLES-MARKER'\nhead -c 1100 /dev/zero | tr '\\0' x; echo`);
+    // each stub dump is padded past backup.sh's 1000-byte minimum (a real dump is far larger); DR_EMPTY=1 makes both print nothing, DR_EMPTY_DATA=1 only pg_dump (it still exits 0),
+    // DR_ROLES_BIG=1 makes the roles dump 8000 bytes (about a real roles dump)
+    stub('pg_dump', `${common}\n[ -n "${'$'}DR_EMPTY" ] && exit 0\n[ -n "${'$'}DR_EMPTY_DATA" ] && exit 0\necho '-- PLAIN-DATA-MARKER'\nhead -c 1100 /dev/zero | tr '\\0' x; echo`);
+    stub('pg_dumpall', `${common}\n[ -n "${'$'}DR_EMPTY" ] && exit 0\necho '-- PLAIN-ROLES-MARKER'\n[ -n "${'$'}DR_ROLES_BIG" ] && { head -c 8000 /dev/zero | tr '\\0' x; echo; exit 0; }\nhead -c 1100 /dev/zero | tr '\\0' x; echo`);
   }
   // age: -o FILE writes a fake ciphertext; -d (decrypt) fails as it does with a wrong key
   stub('age', `${common}
@@ -173,6 +174,33 @@ describe('supabase/scripts/backup.sh (stub commands in a throw-away layout, noth
     expect(readdirSync(r.tmp)).toEqual([]);   // the one-number count folder is removed too
   }, 30_000);
 
+  it('fails when only the schema-and-data dump comes back empty although it exits 0 and the roles dump is large: each dump has its own byte floor (WO-0182)', () => {
+    const r = backup(GOOD, { DR_EMPTY_DATA: '1', DR_ROLES_BIG: '1' });
+    expect(r.code).toBe(1);
+    expect(r.err).toContain('the schema and data dump held');
+    expect(r.err).toMatch(/\(minimum \d+\): an empty or cut-off dump is not a backup/);
+    expect(r.err).not.toContain('the roles dump held');   // the roles dump was fine: the floor of the other dump is what failed
+    expect(readdirSync(r.outDir)).toEqual([]);
+    expect(readdirSync(r.tmp)).toEqual([]);
+  }, 30_000);
+
+  it('fails when only the roles dump comes back empty although the schema-and-data dump is fine (the roles dump has a floor too)', () => {
+    const l = layout();
+    writeFileSync(join(l.dir, 'bin', 'pg_dumpall'), '#!/bin/sh\necho "pg_dumpall $*" >> "$DR_LOG"\nexit 0\n');   // exits 0, prints nothing
+    const r = run('backup.sh', [GOOD, l.recipients, l.outDir], {}, l);
+    expect(r.code).toBe(1);
+    expect(r.err).toContain('the roles dump held');
+    expect(readdirSync(r.outDir)).toEqual([]);
+  }, 30_000);
+
+  it('does not exclude the schemas analytics and analytics_private from the dump (WO-0182: backup_role reads them now)', () => {
+    const r = backup(GOOD);
+    expect(r.code).toBe(0);
+    const data = r.calls.find((c) => c.startsWith('pg_dump ')) ?? '';
+    expect(data).not.toMatch(/--exclude-schema analytics\b/);   // covers analytics and analytics_private
+    expect(data).toContain('--exclude-schema cron');   // the platform schemas stay out
+  }, 30_000);
+
   it('refuses an OUT_DIR inside the repository typed in another case (identity, not text: a case-insensitive volume lets the same folder be named twice)', () => {
     const l = layout();
     const upper = join(l.dir.toUpperCase(), 'dumps');
@@ -225,7 +253,48 @@ describe('supabase/scripts/restore-rehearsal.sh (stub commands in a throw-away l
   it('prints the NOT IN THIS BACKUP line naming what the backup leaves out', () => {
     const r = run('restore-rehearsal.sh', [], { DR_FAIL: 'age' });
     const line = r.out.split('\n').find((l) => l.startsWith('NOT IN THIS BACKUP:')) ?? '';
-    for (const word of ['analytics', 'analytics_private', 'auth.refresh_tokens', 'auth.refresh_tokens_id_seq', '21 platform-feature tables']) expect(line).toContain(word);
+    for (const word of ['auth.refresh_tokens', 'auth.refresh_tokens_id_seq', '21 platform-feature tables']) expect(line).toContain(word);
+    for (const word of ['analytics', 'analytics_private']) expect(line).not.toContain(word);   // WO-0182: they are in the backup now
+  }, 60_000);
+
+  it('the data comparison names every table of app, analytics and analytics_private and prints how many it compared per schema (read from the script: no container, no row)', () => {
+    const src = readFileSync(REHEARSAL, 'utf8');
+    expect(src).toMatch(/nspname in \('app', 'analytics', 'analytics_private'\)/);   // the one query that counts the live and the restored tables
+    expect(src).toContain('tables compared: app $n_app, analytics $n_an, analytics_private $n_anp');
+    expect(src).toMatch(/\[ "\$n_an" -gt 0 \] && \[ "\$n_anp" -gt 0 \]/);   // a schema with no table makes the check fail, not pass vacuously
+    expect(src.match(/COUNTS_SQL" \| (live postgres|rest) >/g)).toHaveLength(3);   // backup time, live after the deletion, restored: all three use it
+  }, 60_000);
+
+  it('Ctrl-C during the container readiness wait stops the script (non-zero) and runs the cleanup, with the 120-second limit and the failure message kept', () => {
+    const l = layout();
+    // a docker whose pg_isready never answers (it sleeps, as a container that is not ready does); the rest is the layout's stub
+    const stubDocker = readFileSync(join(l.dir, 'bin', 'docker'), 'utf8').replace('#!/bin/sh\n', () => '#!/bin/sh\ncase "$*" in *pg_isready*) echo "$$" >> "$DR_LOG.polling"; exec sleep 30;; esac\n');   // a replacer function: a string would turn $$ into $
+    writeFileSync(join(l.dir, 'bin', 'docker'), stubDocker);
+    writeFileSync(join(l.dir, 'supabase', 'scripts', 'backup.sh'), '#!/bin/sh\nmkdir -p "$3"\necho STUB-CIPHERTEXT > "$3/backup-stub.sql.age"\nexit 0\n');
+    // job control (set -m) so the background script keeps the default SIGINT, as a script run in the foreground of a terminal does (a plain background job of a non-interactive shell ignores it)
+    const driver = `set -m
+    bash "${join(l.dir, 'supabase', 'scripts', 'restore-rehearsal.sh')}" > "${l.dir}/rehearsal.out" 2> "${l.dir}/rehearsal.err" & pid=$!
+for i in $(seq 1 100); do [ -s "${l.log}.polling" ] && break; sleep 0.2; done
+kill -INT "$pid"; wait "$pid"; echo "exit=$?"`;
+    const r = spawnSync('bash', ['-c', driver], { encoding: 'utf8', timeout: 50_000, env: { ...process.env, PATH: `${join(l.dir, 'bin')}:${process.env.PATH ?? ''}`, TMPDIR: l.tmp, DR_LOG: l.log, DR_FAIL: '', PGHOST: 'db.evil.test' } });
+    const code = Number(/exit=(\d+)/.exec(r.stdout)?.[1]);
+    const calls = readFileSync(l.log, 'utf8').split('\n');
+    expect(existsSync(`${l.log}.polling`)).toBe(true);   // the signal arrived DURING the readiness wait
+    expect(code).not.toBe(0);
+    expect(calls.some((c) => /^docker rm -f sparta_restore_rehearsal_\d+$/.test(c))).toBe(true);   // the cleanup ran
+    expect(calls).toContain('SQL: remove-users');
+    expect(readFileSync(`${l.dir}/rehearsal.err`, 'utf8')).toContain('RESTORE REHEARSAL: FAIL');
+    expect(readdirSync(l.tmp)).toEqual([]);
+    // no process of the stubbed poll outlives the script: every pid the stub wrote is gone after a short bounded wait (3 s)
+    const pids = readFileSync(`${l.log}.polling`, 'utf8').split('\n').filter(Boolean).map(Number);
+    const alive = (pid: number): boolean => { try { process.kill(pid, 0); return true; } catch { return false; } };
+    for (let i = 0; i < 15 && pids.some(alive); i++) spawnSync('sleep', ['0.2']);
+    const survivors = pids.filter(alive);
+    for (const pid of survivors) { try { process.kill(pid, 'SIGTERM'); } catch { /* gone */ } }   // tidy up after a failing run
+    expect(survivors).toEqual([]);
+    const src = readFileSync(REHEARSAL, 'utf8');   // unchanged by the fix: the limit and the message
+    expect(src).toContain('deadline=$(( $(now_s) + 120 ))');
+    expect(src).toContain('the throwaway container was not ready within 120 seconds (pg_isready); it is removed');
   }, 60_000);
 
   it('clears backup_role\'s password in the trap when backup.sh fails after the password was set', () => {

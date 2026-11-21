@@ -52,6 +52,16 @@ const SERVER_ONLY_IMPORTS = {
     message: 'lib/server holds the secret-key client and the handlers that use it. Only route handlers under app/api and lib/server itself may import it.',
   }],
 };
+// WO-0168: test support (the end-to-end harness reads the process environment and the local stack) is never imported by application code.
+const NO_TEST_SUPPORT = {
+  patterns: [{ group: ['**/test-support', '**/test-support/*'], message: 'Application code never imports test-support: it holds test helpers (the end-to-end harness reads any environment variable). Only tests, test-support and the e2e suite may.' }],
+};
+// no-restricted-imports sees static imports only, so import('.../test-support/...') and require('.../test-support/...') are named here (the way DYNAMIC_FETCH_WRAPPER does). A computed argument is not seen.
+const TEST_SUPPORT_CALLED = String.raw`/(^|\/)test-support(\/|$)/`;
+const DYNAMIC_TEST_SUPPORT = [
+  { selector: `CallExpression[callee.name='require'][arguments.0.value=${TEST_SUPPORT_CALLED}]`, message: NO_TEST_SUPPORT.patterns[0].message },
+  { selector: `ImportExpression[source.value=${TEST_SUPPORT_CALLED}]`, message: NO_TEST_SUPPORT.patterns[0].message },
+];
 const SUPABASE_FACTORIES = {
   paths: [
     { name: '@supabase/supabase-js', importNames: ['createClient'], allowTypeImports: true, message: 'Build Supabase clients only in lib/supabase/{browser,server,proxy-session}.ts and lib/server/admin.ts.' },
@@ -60,7 +70,7 @@ const SUPABASE_FACTORIES = {
 };
 // WO-0153: fetch wrappers dodge the no-restricted-globals rule below (their names hold a hyphen or are not the global), so they are named too.
 const FETCH_WRAPPER_NAMES = ['node-fetch', 'cross-fetch', 'ofetch', 'axios', 'ky', 'got'];
-const FETCH_WRAPPER_MESSAGE = 'No fetch wrapper (node-fetch, cross-fetch, ofetch, axios, ky, got): the no-network rule applies to wrappers too. The engine packages never reach the network; the app does it only in the three files listed in eslint.config.js.';
+const FETCH_WRAPPER_MESSAGE = 'No fetch wrapper (node-fetch, cross-fetch, ofetch, axios, ky, got): the no-network rule applies to wrappers too. The engine packages never reach the network; the app does it only in the four files listed in eslint.config.js.';
 const FETCH_WRAPPERS = {
   // exact names as paths (a bare gitignore-style pattern such as 'got' would also match './got' and '@acme/got'); subpaths as patterns
   paths: FETCH_WRAPPER_NAMES.map((name) => ({ name, message: FETCH_WRAPPER_MESSAGE })),
@@ -76,7 +86,7 @@ const DYNAMIC_FETCH_WRAPPER = [
 // Flat config replaces a rule's options per block, so every block that restricts imports builds its options with this: it joins the `paths` and `patterns` of its parts.
 const restrictImports = (...parts) => ['error', { paths: parts.flatMap((p) => p.paths ?? []), patterns: parts.flatMap((p) => p.patterns ?? []) }];
 const NETWORK_GLOBALS = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map((name) => ({
-  name, message: 'No direct network call here. The engine packages never reach the network; the app does it only in the three files listed in eslint.config.js.',
+  name, message: 'No direct network call here. The engine packages never reach the network; the app does it only in the four files listed in eslint.config.js.',
 }));
 
 // WO-0129: the recommended rule sets of the two new plugins, with every rule forced to 'error' (the project has no warnings).
@@ -134,40 +144,50 @@ export default tseslint.config(
       'no-console': 'error',
       'no-alert': 'error',
       'no-script-url': 'error',
-      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER],
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER, ...DYNAMIC_TEST_SUPPORT],
       'no-restricted-globals': ['error', ...NETWORK_GLOBALS],
-      '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, SUPABASE_FACTORIES, FETCH_WRAPPERS),
+      '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, SUPABASE_FACTORIES, FETCH_WRAPPERS, NO_TEST_SUPPORT),
+    },
+  },
+  {
+    // WO-0168: the end-to-end suite and its Playwright config. They are test code that drives the built app from outside: they read the run's settings from process.env
+    // (set by playwright.config.ts, local stack only) and call the local mail catcher and Auth API with fetch. Focused or skipped tests, HTML writes and fetch wrappers stay errors.
+    files: [`${WEB}/e2e/**/*.ts`, `${WEB}/playwright.config.ts`],
+    rules: {
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER],
+      'no-restricted-globals': 'off',
+      '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, SUPABASE_FACTORIES, FETCH_WRAPPERS), // test code: all the import guards of app code except NO_TEST_SUPPORT (the suite imports test-support)
     },
   },
   {
     // The configuration modules: the only readers of process.env, and only of NEXT_PUBLIC_ names.
     files: [`${WEB}/lib/supabase/config.ts`, `${WEB}/lib/engine-config.ts`, `${WEB}/lib/pilot-config.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER, ...DYNAMIC_TEST_SUPPORT] },
   },
   {
     // The two readers of server-only variables (LLD 6): the secret-key module and the worker route.
     files: [`${WEB}/lib/server/admin.ts`, `${WEB}/lib/server/hm-demo.ts`, `${WEB}/app/api/worker/signed-urls/route.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER, ...DYNAMIC_TEST_SUPPORT] },
   },
   {
     // Who may import lib/server: the route handlers and lib/server itself. They still may not build other Supabase clients.
     files: [`${WEB}/app/api/**/route.ts`, `${WEB}/app/hm-image/[[]id]/route.ts`, `${WEB}/lib/server/**/*.ts`],
     ignores: TESTS,
-    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SUPABASE_FACTORIES, FETCH_WRAPPERS) },
+    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SUPABASE_FACTORIES, FETCH_WRAPPERS, NO_TEST_SUPPORT) },
   },
   {
     // The client factories.
     files: [`${WEB}/lib/supabase/browser.ts`, `${WEB}/lib/supabase/server.ts`, `${WEB}/lib/supabase/proxy-session.ts`],
-    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, FETCH_WRAPPERS) },
+    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, FETCH_WRAPPERS, NO_TEST_SUPPORT) },
   },
   {
     files: [`${WEB}/lib/server/admin.ts`],
-    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(FETCH_WRAPPERS) },   // the secret-key module may import lib/server and build its client, but not a fetch wrapper
+    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(FETCH_WRAPPERS, NO_TEST_SUPPORT) },   // the secret-key module may import lib/server and build its client, but not a fetch wrapper
   },
   {
     // The only direct network calls of the app (the same list as test-support/network-scan.ts): the two public JSON files of the
-    // learned layer, the storage purge of Leave the pilot, and the admin routes.
-    files: [`${WEB}/lib/engine-config.ts`, `${WEB}/components/account/account-actions.ts`, `${WEB}/components/admin/admin-actions.ts`],
+    // learned layer, the storage purge of Leave the pilot, the admin routes, and the item delete (WO-0183).
+    files: [`${WEB}/lib/engine-config.ts`, `${WEB}/components/account/account-actions.ts`, `${WEB}/components/admin/admin-actions.ts`, `${WEB}/components/wardrobe/item-actions.ts`],
     rules: { 'no-restricted-globals': 'off' },
   },
 

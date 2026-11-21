@@ -18,11 +18,14 @@ const all = files(root);
 const ADMIN = 'lib/server/admin.ts';
 const FORBIDDEN: [string, RegExp, string[]][] = [
   ['the service-role name', new RegExp(['service', 'role'].join('_'), 'i'), [ADMIN]],
-  ['a secret-key variable', new RegExp(['SUPABASE', 'SECRET', 'KEY'].join('_')), ['.env.example', ADMIN]],
+  // WO-0169: playwright.config.ts passes the LOCAL stack's key to the LOCAL `next start` it spawns (Leave the pilot's file removal needs it); assertLocalStack refuses any non-local URL before the key is read.
+  ['a secret-key variable', new RegExp(['SUPABASE', 'SECRET', 'KEY'].join('_')), ['.env.example', ADMIN, 'playwright.config.ts']],
   ['a secret key value', new RegExp(['sb', 'secret', ''].join('_')), [ADMIN]],
   ['a service-role JWT', new RegExp('eyJ[A-Za-z0-9_-]{30,}\\.eyJ'), []],
   ['a publishable key value', new RegExp(['sb', 'publishable', '[A-Za-z0-9_-]{8,}'].join('_')), []],
 ];
+// WO-0168: the end-to-end harness reads its own run settings from the environment; it is never bundled into the app (eslint also stops app code importing test-support).
+const E2E_HARNESS = (file: string): boolean => file.startsWith('e2e/') || file === 'playwright.config.ts';
 const WORKER_VAR = ['WORKER', 'API', 'TOKEN'].join('_');
 
 describe('no secret or service key anywhere in apps/web except the one server-only module (CC4, CC7; WO-0071)', () => {
@@ -36,7 +39,7 @@ describe('no secret or service key anywhere in apps/web except the one server-on
   });
   it('.env.local is git-ignored', () => { expect(readFileSync(join(root, '.gitignore'), 'utf8').split('\n')).toContain('.env.local'); });
   it('the app reads only public (NEXT_PUBLIC_) environment variables, and the three Supabase ones among them; the only others are the secret key (admin module) and the worker token (worker route)', () => {
-    const reads = all.filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith('.test.ts')).flatMap((f) => readFileSync(f, 'utf8').split('\n').flatMap((line) => [...(line.split('//')[0] ?? '').matchAll(/process\.env\.(\w+)/g)].map((m) => `${m[1]} <- ${f.slice(root.length)}`)));
+    const reads = all.filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith('.test.ts') && !E2E_HARNESS(f.slice(root.length))).flatMap((f) => readFileSync(f, 'utf8').split('\n').flatMap((line) => [...(line.split('//')[0] ?? '').matchAll(/process\.env\.(\w+)/g)].map((m) => `${m[1]} <- ${f.slice(root.length)}`)));
     const names = new Set(reads.map((r) => r.split(' <- ')[0]!));
     expect([...new Set(reads.filter((r) => !r.startsWith('NEXT_PUBLIC_')))].sort()).toEqual([`${['SUPABASE', 'SECRET', 'KEY'].join('_')} <- ${ADMIN}`, `${WORKER_VAR} <- app/api/worker/signed-urls/route.ts`, 'HM_DEMO_IMAGE_ROOT <- lib/server/hm-demo.ts'].sort());
     for (const n of ['NEXT_PUBLIC_DATA_BACKEND', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL']) expect(names.has(n)).toBe(true);
@@ -46,10 +49,11 @@ describe('no secret or service key anywhere in apps/web except the one server-on
     // WO-0074: every import form (quotes, dynamic import(), require(), export ... from, re-export chains), see test-support/imports.ts and imports.test.ts
     const text = Object.fromEntries(sources.map((f) => [f.slice(root.length), readFileSync(f, 'utf8')]));
     const importing = (re: RegExp) => importersOf(text, re);
-    expect(importing(/(^|\/)admin$/)).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/pilot/end/route.ts', 'app/api/admin/pilot/preview/route.ts', 'app/api/admin/settings/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/worker/signed-urls/route.ts', 'lib/server/admin.test.ts']);
+    // WO-0183: app/api/items/[id]/route.ts (delete an item for good, FR-16) is the one further importer of the secret-key module, in both lists below.
+    expect(importing(/(^|\/)admin$/)).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/pilot/end/route.ts', 'app/api/admin/pilot/preview/route.ts', 'app/api/admin/settings/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/items/[id]/route.ts', 'app/api/worker/signed-urls/route.ts', 'lib/server/admin.test.ts']);
     const outside = importing(/(^|\/)server\/[a-z-]+$/).filter((f) => !f.startsWith('lib/server/'));
     // route handlers, and the integration/support code that exercises the handlers; no page, component or other lib module
-    expect(outside).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/pilot/end/route.ts', 'app/api/admin/pilot/preview/route.ts', 'app/api/admin/settings/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/worker/signed-urls/route.ts', 'app/hm-image/[id]/route.ts', 'test-support/purge.ts']);
+    expect(outside).toEqual(['app/api/account/purge-storage/route.ts', 'app/api/admin/catalog/review/route.ts', 'app/api/admin/pilot/end/route.ts', 'app/api/admin/pilot/preview/route.ts', 'app/api/admin/settings/route.ts', 'app/api/admin/sources/[id]/takedown/route.ts', 'app/api/admin/sources/route.ts', 'app/api/items/[id]/route.ts', 'app/api/worker/signed-urls/route.ts', 'app/hm-image/[id]/route.ts', 'test-support/purge.ts']);
   });
   it('the H&M photograph route imports lib/server/hm-demo and no other lib/server module (WO-0122)', () => {
     const route = readFileSync(join(root, 'app/hm-image/[id]/route.ts'), 'utf8');
@@ -92,7 +96,7 @@ describe('the suggestion path reaches only the repository modules of lib/supabas
   });
   it('backend.ts, the one module the network test leaves out by name, imports exactly the session client, the gate state, the repositories and the generated types (a type-only import, WO-0150)', () => {
     expect(importsOf(join(root, 'lib/supabase/backend.ts')).sort()).toEqual(
-      ['../local-repository', '../repository', './browser', './config', './database.types', './errors', './errors', './gate', './gate-state', './repository', '@supabase/supabase-js'].sort());
+      ['../../components/wardrobe/item-actions', '../local-repository', '../repository', './browser', './config', './database.types', './errors', './errors', './gate', './gate-state', './repository', '@supabase/supabase-js'].sort());
   });
   it('only the use-repository hook imports backend.ts', () => {
     const users = all.filter((f) => /\.tsx?$/.test(f) && !f.endsWith('.test.ts') && importsOf(f).some((i) => /\/backend$/.test(i)));

@@ -8,7 +8,6 @@ import type { PurchaseErrors } from '../../lib/purchase-form';
 import { logPurchase, ymd } from '../../lib/purchases';
 import { SUGGESTED_LABEL } from '../../lib/photo-flow';
 import type { PhotoAttachment, StoredItem } from '../../lib/repository';
-import { canDeleteItems } from '../../lib/supabase/config';
 import { attempt, messageOf } from '../../lib/supabase/errors';
 import { FITS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, conditionBandOf } from '@sparta/taxonomy';
 import { categoryChoices, emptyForm, familyOfHex, formFromItem, subTypeChoices, updateForm, validateForm } from '../../lib/item-form';
@@ -159,7 +158,7 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
       <div className="row">
         <button type="submit" className="primary" disabled={!repo}>Save item</button>
         <button type="button" onClick={() => (catalogueStart ? catalogueStart.onCancel() : router.push('/'))}>Cancel</button>
-        {itemId && canDeleteItems() && <button type="button" className="danger" onClick={() => setDeleting(true)}>Delete item</button>}
+        {itemId && <button type="button" className="danger" onClick={() => setDeleting(true)}>Delete item</button>}
       </div>
       {deleting && <ConfirmStep label="Confirm deleting this item" question="Delete this item permanently?" confirmLabel="Delete item permanently" onConfirm={() => void remove()} onCancel={() => setDeleting(false)} busy={removingNow} cancelWhileBusy={false} />}
     </form>

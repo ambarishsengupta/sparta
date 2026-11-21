@@ -17,13 +17,13 @@ const builder = (call: Call, answer: (c: Call) => Answer): unknown => new Proxy(
     ? (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => new Promise((ok) => ok(answer(call))).then(res, rej)
     : (...args: unknown[]) => { call.steps.push([String(prop), args]); return builder(call, answer); }),
 });
-function fake(answer: (c: Call) => Answer = () => OK, session: { user: { id: string } } | null = { user: { id: 'u1' } }) {
+function fake(answer: (c: Call) => Answer = () => OK, session: { user: { id: string } } | null = { user: { id: 'u1' } }, send?: (path: string, init: RequestInit) => Promise<Response>) {
   const calls: Call[] = [];
   const client = {
     auth: { getSession: async () => ({ data: { session }, error: null }) },
     schema: (schema: string) => ({ from: (table: string) => { const call = { schema, table, steps: [] as Call['steps'] }; calls.push(call); return builder(call, answer); } }),
   } as unknown as SupabaseClient;
-  return { repo: new SupabaseRepository(client, () => 'NOW'), calls };
+  return { repo: new SupabaseRepository(client, () => 'NOW', send), calls };
 }
 const sent = (calls: Call[]) => calls.filter((c) => c.steps.length > 0); // a table handle taken but never used sends nothing
 const step = (c: Call, name: string) => c.steps.find((s) => s[0] === name)?.[1][0];
@@ -64,11 +64,37 @@ describe('requests', () => {
     await repo.items.update(UUID, { hex: '#000000' });
     expect(calls[0]!.steps.map((s) => s[0])).toEqual(['select', 'eq', 'maybeSingle']);
   });
-  it('deleting an item is refused with a plain sentence and no request (the database grants no delete on items)', async () => {
-    const { repo, calls } = fake();
-    const e = await rejects(repo.items.remove(UUID));
-    expect([e.kind, e.message]).toEqual(['unsupported', expect.stringMatching(/Archive it instead/)]);
+  it('deleting an item is one DELETE to the server route with the session cookie, and no table request (WO-0183: the database grants no delete on items)', async () => {
+    const seen: [string, RequestInit][] = [];
+    const { repo, calls } = fake(undefined, undefined, async (path, init) => { seen.push([path, init]); return new Response(JSON.stringify({ ok: true }), { status: 200 }); });
+    expect(await repo.items.remove(UUID)).toBe(true);
+    expect(seen).toEqual([[`/api/items/${UUID}`, { method: 'DELETE', credentials: 'same-origin' }]]);
     expect(sent(calls)).toEqual([]);
+  });
+  it('with no sender given (a server or test context) deleting an item fails and sends nothing', async () => {
+    const { repo, calls } = fake();
+    expect((await rejects(repo.items.remove(UUID))).kind).toBe('unsupported');
+    expect(sent(calls)).toEqual([]);
+  });
+  it('a 404 from the route is "not found" (false); an id that is not a uuid is false with no request', async () => {
+    const { repo } = fake(undefined, undefined, async () => new Response(JSON.stringify({ error: { code: 'item_not_found' } }), { status: 404 }));
+    expect(await repo.items.remove(UUID)).toBe(false);
+    const never = fake(undefined, undefined, async () => { throw new Error('request made'); });
+    expect(await never.repo.items.remove('item-1')).toBe(false);
+  });
+  it.each([
+    [401, 'not_signed_in', 'session'], [403, 'forbidden', 'refused'], [500, 'server_error', 'unexpected'], [502, 'storage_unavailable', 'unexpected'], [503, 'unavailable', 'unexpected'],
+  ])('a %i (%s) from the route is a %s failure with a fixed sentence, never the server text', async (status, code, kind) => {
+    const { repo } = fake(undefined, undefined, async () => new Response(JSON.stringify({ error: { code, message: 'secret table app.items detail' } }), { status }));
+    const e = await rejects(repo.items.remove(UUID));
+    expect(e.kind).toBe(kind);
+    expect(e.message).not.toMatch(/secret|app\.items/);
+  });
+  it('a 429 says to wait; a page that is not JSON and a network failure are failures too, and a 200 without ok:true is not a success', async () => {
+    expect((await rejects(fake(undefined, undefined, async () => new Response('{}', { status: 429 })).repo.items.remove(UUID))).message).toMatch(/Wait a few minutes/);
+    expect((await rejects(fake(undefined, undefined, async () => new Response('<html>sign in</html>', { status: 200 })).repo.items.remove(UUID))).kind).toBe('unexpected');
+    expect((await rejects(fake(undefined, undefined, async () => new Response('{}', { status: 200 })).repo.items.remove(UUID))).kind).toBe('unexpected');
+    expect((await rejects(fake(undefined, undefined, async () => { throw new TypeError('fetch failed'); }).repo.items.remove(UUID))).kind).toBe('network');
   });
   it('an outfit whose pieces cannot be stored is removed again and the person is told; no empty outfit is left', async () => {
     const { repo, calls } = fake((c) => (c.table === 'outfits' && c.steps.some((s) => s[0] === 'insert') ? { data: { id: UUID }, error: null, status: 201 } : c.table === 'outfit_items' ? fail(409, '23505') : OK));

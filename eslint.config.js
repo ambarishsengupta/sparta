@@ -56,6 +56,12 @@ const SERVER_ONLY_IMPORTS = {
 const NO_TEST_SUPPORT = {
   patterns: [{ group: ['**/test-support', '**/test-support/*'], message: 'Application code never imports test-support: it holds test helpers (the end-to-end harness reads any environment variable). Only tests, test-support and the e2e suite may.' }],
 };
+// no-restricted-imports sees static imports only, so import('.../test-support/...') and require('.../test-support/...') are named here (the way DYNAMIC_FETCH_WRAPPER does). A computed argument is not seen.
+const TEST_SUPPORT_CALLED = String.raw`/(^|\/)test-support(\/|$)/`;
+const DYNAMIC_TEST_SUPPORT = [
+  { selector: `CallExpression[callee.name='require'][arguments.0.value=${TEST_SUPPORT_CALLED}]`, message: NO_TEST_SUPPORT.patterns[0].message },
+  { selector: `ImportExpression[source.value=${TEST_SUPPORT_CALLED}]`, message: NO_TEST_SUPPORT.patterns[0].message },
+];
 const SUPABASE_FACTORIES = {
   paths: [
     { name: '@supabase/supabase-js', importNames: ['createClient'], allowTypeImports: true, message: 'Build Supabase clients only in lib/supabase/{browser,server,proxy-session}.ts and lib/server/admin.ts.' },
@@ -138,7 +144,7 @@ export default tseslint.config(
       'no-console': 'error',
       'no-alert': 'error',
       'no-script-url': 'error',
-      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER],
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER, ...DYNAMIC_TEST_SUPPORT],
       'no-restricted-globals': ['error', ...NETWORK_GLOBALS],
       '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, SUPABASE_FACTORIES, FETCH_WRAPPERS, NO_TEST_SUPPORT),
     },
@@ -150,18 +156,18 @@ export default tseslint.config(
     rules: {
       'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER],
       'no-restricted-globals': 'off',
-      '@typescript-eslint/no-restricted-imports': restrictImports(FETCH_WRAPPERS), // the suite imports test-support
+      '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, SUPABASE_FACTORIES, FETCH_WRAPPERS), // test code: all the import guards of app code except NO_TEST_SUPPORT (the suite imports test-support)
     },
   },
   {
     // The configuration modules: the only readers of process.env, and only of NEXT_PUBLIC_ names.
     files: [`${WEB}/lib/supabase/config.ts`, `${WEB}/lib/engine-config.ts`, `${WEB}/lib/pilot-config.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER, ...DYNAMIC_TEST_SUPPORT] },
   },
   {
     // The two readers of server-only variables (LLD 6): the secret-key module and the worker route.
     files: [`${WEB}/lib/server/admin.ts`, `${WEB}/lib/server/hm-demo.ts`, `${WEB}/app/api/worker/signed-urls/route.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER, ...DYNAMIC_TEST_SUPPORT] },
   },
   {
     // Who may import lib/server: the route handlers and lib/server itself. They still may not build other Supabase clients.

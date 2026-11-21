@@ -24,7 +24,7 @@ const FORBIDDEN: [string, RegExp, string[]][] = [
   ['a publishable key value', new RegExp(['sb', 'publishable', '[A-Za-z0-9_-]{8,}'].join('_')), []],
 ];
 // WO-0168: the end-to-end harness reads its own run settings from the environment; it is never bundled into the app (eslint also stops app code importing test-support).
-const E2E_HARNESS = ['e2e/', 'playwright.config.ts', 'test-support/e2e-local.ts'];
+const E2E_HARNESS = (file: string): boolean => file.startsWith('e2e/') || file === 'playwright.config.ts';
 const WORKER_VAR = ['WORKER', 'API', 'TOKEN'].join('_');
 
 describe('no secret or service key anywhere in apps/web except the one server-only module (CC4, CC7; WO-0071)', () => {
@@ -38,7 +38,7 @@ describe('no secret or service key anywhere in apps/web except the one server-on
   });
   it('.env.local is git-ignored', () => { expect(readFileSync(join(root, '.gitignore'), 'utf8').split('\n')).toContain('.env.local'); });
   it('the app reads only public (NEXT_PUBLIC_) environment variables, and the three Supabase ones among them; the only others are the secret key (admin module) and the worker token (worker route)', () => {
-    const reads = all.filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith('.test.ts') && !E2E_HARNESS.some((h) => f.slice(root.length).startsWith(h))).flatMap((f) => readFileSync(f, 'utf8').split('\n').flatMap((line) => [...(line.split('//')[0] ?? '').matchAll(/process\.env\.(\w+)/g)].map((m) => `${m[1]} <- ${f.slice(root.length)}`)));
+    const reads = all.filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith('.test.ts') && !E2E_HARNESS(f.slice(root.length))).flatMap((f) => readFileSync(f, 'utf8').split('\n').flatMap((line) => [...(line.split('//')[0] ?? '').matchAll(/process\.env\.(\w+)/g)].map((m) => `${m[1]} <- ${f.slice(root.length)}`)));
     const names = new Set(reads.map((r) => r.split(' <- ')[0]!));
     expect([...new Set(reads.filter((r) => !r.startsWith('NEXT_PUBLIC_')))].sort()).toEqual([`${['SUPABASE', 'SECRET', 'KEY'].join('_')} <- ${ADMIN}`, `${WORKER_VAR} <- app/api/worker/signed-urls/route.ts`, 'HM_DEMO_IMAGE_ROOT <- lib/server/hm-demo.ts'].sort());
     for (const n of ['NEXT_PUBLIC_DATA_BACKEND', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL']) expect(names.has(n)).toBe(true);

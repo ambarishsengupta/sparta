@@ -17,7 +17,8 @@ permissions:
 jobs:
   gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # WO-0180: measured on 2026-11-20: the strict gate step took about 25 minutes and the whole job 29m42s; 60 leaves room because R8c adds browser tests and the gate is never trimmed to fit (workflow rule 12).
+    timeout-minutes: 60
     env:
       # A runner can never hold the licensed dataset folders (H&M, team photos). Checks that need them state that and do not run here.
       SPARTA_NO_LOCAL_DATASETS: '1'

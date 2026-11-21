@@ -4,7 +4,7 @@
 // throw-away folder, so "nothing left behind" is read from that folder. The live run is only the completion-condition command of WO-0164 (`bash supabase/scripts/restore-rehearsal.sh`).
 // Collected through workflow/gates/db_tests.test.ts (vitest.config.ts does not include supabase/).
 import { spawnSync } from 'node:child_process';
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -95,6 +95,26 @@ function run(script: string, args: string[], env: Record<string, string> = {}, l
 const backup = (url: string, env: Record<string, string> = {}, l = layout()): Run => run('backup.sh', [url, l.recipients, l.outDir], env, l);
 const GOOD = 'postgresql://backup_role@127.0.0.1:54322/postgres';
 
+/** A folder of symlinks to exactly the system tools backup.sh and the stubs run (each found with `command -v` on THIS machine), and never pg_dump or pg_dumpall: a PATH made of this folder alone cannot reach a host PostgreSQL tool on any machine. */
+function systemToolsOnly(dir: string): string {
+  const sys = join(dir, 'systools');
+  mkdirSync(sys, { recursive: true });
+  // backup.sh: dirname grep mkdir mktemp sed head date tee wc tr seq sleep rm mv (cd, pwd, echo, test are builtins), the stubs: sh basename cat env head tr, the test's own spawn: bash
+  const need = ['bash', 'sh', 'dirname', 'basename', 'grep', 'mkdir', 'mktemp', 'sed', 'head', 'date', 'tee', 'wc', 'tr', 'seq', 'sleep', 'rm', 'mv', 'cat', 'env'];
+  const find = (tool: string): string => spawnSync('bash', ['-c', `command -v ${tool}`], { encoding: 'utf8' }).stdout.trim();
+  for (const tool of need) {
+    const found = find(tool);
+    if (!found.startsWith('/')) throw new Error(`the test needs the system tool "${tool}" on PATH and it is missing on this machine`);
+    symlinkSync(found, join(sys, tool));
+  }
+  // backup.sh's time limit uses timeout when there is one, else perl: one of the two must exist
+  const limiter = ['timeout', 'perl'].filter((t) => find(t).startsWith('/'));
+  if (limiter.length === 0) throw new Error('the test needs the system tool "timeout" or "perl" on PATH and both are missing on this machine');
+  for (const tool of limiter) symlinkSync(find(tool), join(sys, tool));
+  expect(readdirSync(sys).filter((f) => f.startsWith('pg_'))).toEqual([]);   // by construction: no host dump tool
+  return sys;
+}
+
 describe('supabase/scripts/backup.sh (stub commands in a throw-away layout, nothing real contacted)', () => {
   it.each(BAD)('refuses the database URL %j (exit 2, before any command is called)', (url) => {
     const r = backup(url);
@@ -160,13 +180,17 @@ describe('supabase/scripts/backup.sh (stub commands in a throw-away layout, noth
     if (existsSync(l.dir.toUpperCase())) {   // true on a case-insensitive volume (macOS APFS): the same folder, so it must be refused
       expect([r.code, r.err.includes('outside this repository'), r.calls]).toEqual([2, true, []]);
     } else {
-      expect(r.code).toBe(0);   // a case-sensitive volume: another folder altogether
+      // a case-sensitive volume: another folder altogether, so the identity check has nothing to refuse; the run is not refused as "outside this repository" (it may still fail to create a folder under the upper-case root)
+      expect(r.err).not.toContain('outside this repository');
+      expect([0, 2]).toContain(r.code);
+      if (r.code === 0) expect([r.calls.some((c) => c.startsWith('pg_dumpall')), r.calls.some((c) => c.startsWith('pg_dump ')), r.calls.some((c) => c.startsWith('age'))]).toEqual([true, true, true]);
+      else { expect(r.err).toContain('cannot create OUT_DIR'); expect(r.calls).toEqual([]); }
     }
   }, 30_000);
 
   it('without a host pg_dump it runs the dumps through docker exec with the password passed by environment name only, and no argument holds its value', () => {
     const l = layout(true);
-    const r = run('backup.sh', [GOOD, l.recipients, l.outDir], { PGPASSWORD: 'your-probe-value' }, l, '/usr/bin:/bin:/usr/sbin:/sbin');
+    const r = run('backup.sh', [GOOD, l.recipients, l.outDir], { PGPASSWORD: 'your-probe-value' }, l, systemToolsOnly(l.dir));
     expect(r.err).toBe('');
     expect(r.code).toBe(0);
     const execs = r.calls.filter((c) => c.startsWith('docker exec'));

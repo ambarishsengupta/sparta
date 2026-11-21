@@ -37,7 +37,7 @@ export async function joinPilot(page: Page): Promise<void> {
 export async function onboard(page: Page, country: { listed: string } | { code: string }): Promise<void> {
   // WO-0185: the form keeps its controls disabled until React has taken it over and then sets `data-ready="true"` on it (components/consent/OnboardingForm.tsx), so a choice made here cannot be lost.
   await expect(page.getByLabel('Country', { exact: true })).toBeVisible();
-  await page.locator('form.form[data-ready="true"]').waitFor({ timeout: 10_000 }).catch(() => { throw new Error('the onboarding form never became ready'); });
+  await page.locator('form.form[data-ready="true"]').waitFor({ timeout: 10_000 }).catch((e: unknown) => { throw new Error('the onboarding form never became ready', { cause: e }); });
   if ('listed' in country) await page.getByLabel('Country', { exact: true }).selectOption({ label: country.listed });
   else {
     await page.getByLabel('Country', { exact: true }).selectOption({ label: 'My country is not listed' });

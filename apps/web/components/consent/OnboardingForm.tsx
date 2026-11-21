@@ -1,12 +1,14 @@
 'use client';
 import { OCCASIONS } from '@sparta/taxonomy';
-import { useEffect, useRef, useState, type SubmitEvent } from 'react';
+import { useRef, useState, useSyncExternalStore, type SubmitEvent } from 'react';
 import { countryCode, currencyFor, hemisphereFor, OTHER_COUNTRY, startPage, validateOnboarding, type OnboardingErrors, type Option, type StartChoice } from '../../lib/onboarding';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 import { showRejection } from '../../lib/supabase/errors';
 import { completeOnboarding } from '../../lib/supabase/consent-actions';
 
 const err = (id: string, text?: string) => text && <p id={id} className="error" role="alert">{text}</p>;
+
+const subscribeNever = () => () => undefined; // a stable no-op: the value never changes after hydration
 
 /** FR-6 and FR-9: country (the pilot's list, or any other two-letter code), hemisphere, currency and, optionally, occasions. */
 export function OnboardingForm({ countries, currencies }: { countries: Option[]; currencies: Option[] }) {
@@ -20,12 +22,7 @@ export function OnboardingForm({ countries, currencies }: { countries: Option[];
   const [busy, setBusy] = useState(false);
   // WO-0185: false in the server-rendered page and until React has taken the form over. A control used before that would have its value replaced by the empty state, so every control and button stays
   // disabled until then (a disabled control is announced as disabled, as usual). The form's `data-ready` attribute is the signal for tests: "false" before, "true" after.
-  const [ready, setReady] = useState(false);
-  useEffect(() => { // an effect runs only in the browser, after hydration; the state is set from a callback because the lint rule refuses a state set in the body of an effect
-    let live = true;
-    queueMicrotask(() => { if (live) setReady(true); });
-    return () => { live = false; };
-  }, []);
+  const ready = useSyncExternalStore(subscribeNever, () => true, () => false); // React's hydration pattern: the server snapshot (false) for the server render and for hydration, the client snapshot (true) right after
   const start = useRef<StartChoice>('skip'); // which of the three buttons sent the form
   const refs = { country: useRef<HTMLSelectElement>(null), typed: useRef<HTMLInputElement>(null), hemisphere: useRef<HTMLSelectElement>(null), currency: useRef<HTMLSelectElement>(null) };
   const country = countryCode(choice, typed);

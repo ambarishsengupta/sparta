@@ -28,9 +28,12 @@ test('FR-6 and FR-9 a country chosen before the page is ready is not lost, and S
   const country = page.getByLabel('Country', { exact: true });
   // A person on a slow phone tries at once. Either the form takes the choice and must keep it, or it refuses it (disabled until ready); a short timeout tells the two apart.
   const accepted = await country.selectOption({ label: 'India' }, { timeout: 1_500 }).then(() => true, () => false);
+  if (!accepted) await expect(country).toBeDisabled(); // refused for the right reason: the control is disabled, not some other failure of selectOption
   release();
   await page.waitForLoadState('load');
-  await page.waitForFunction(() => { const el = document.getElementById('ob-country'); return el !== null && Object.keys(el).some((k) => k.startsWith('__reactProps$')); }); // React has taken the form over
+  // React's own mark on a hydrated element. Kept on purpose: the form of the code before WO-0185 has no data-ready, and the run against it needs a signal that does not depend on the fix.
+  await page.waitForFunction(() => { const el = document.getElementById('ob-country'); return el !== null && Object.keys(el).some((k) => k.startsWith('__reactProps$')); }, undefined, { timeout: 10_000 })
+    .catch((e: unknown) => { throw new Error('React never took over the onboarding form', { cause: e }); });
   // The select can still show the early choice after hydration while the form's state is empty, so what proves the choice is kept is what Skip does, not what the box shows.
   if (accepted) await expect(country).toHaveValue('IN');
   else { await expect(page.locator('form.form')).toHaveAttribute('data-ready', 'true'); await country.selectOption({ label: 'India' }); } // refused early: choose again once the form says it is ready

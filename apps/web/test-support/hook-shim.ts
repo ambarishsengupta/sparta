@@ -1,7 +1,7 @@
-/** Test support, no browser needed: runs a component function by hand with stand-ins for the React hooks it uses (useState, useReducer, useRef, useCallback, useEffect, useId), so a test can run its effects, let a
+/** Test support, no browser needed: runs a component function by hand with stand-ins for the React hooks it uses (useState, useReducer, useRef, useCallback, useEffect, useId, useSyncExternalStore), so a test can run its effects, let a
  * promise settle and read what the component would render next. Used from a test with `vi.mock('react', ...)`; nothing in the app imports this file. */
 type Effect = { deps: readonly unknown[] | undefined; cleanup: (() => void) | undefined };
-interface Instance { slots: unknown[]; effects: Effect[]; slot: number; effect: number; pending: { at: number; run: () => void | (() => void) }[]; next: number }
+interface Instance { slots: unknown[]; effects: Effect[]; slot: number; effect: number; pending: { at: number; run: () => void | (() => void) }[]; next: number; hydrated: boolean }
 let current: Instance | null = null;
 const here = (): Instance => { if (!current) throw new Error('a hook was called outside render()'); return current; };
 const same = (a: readonly unknown[] | undefined, b: readonly unknown[] | undefined) => !!a && !!b && a.length === b.length && a.every((x, i) => Object.is(x, b[i]));
@@ -27,6 +27,10 @@ export const hookStandIns = {
     return fn;
   },
   useId() { const h = here(); return `:test-${h.next++}:`; },
+  /** The server snapshot until `flush()` has run (the shim's stand-in for hydration), the client snapshot after it. Nothing is subscribed to: the store of a test never changes. */
+  useSyncExternalStore<T>(_subscribe: (onChange: () => void) => () => void, getSnapshot: () => T, getServerSnapshot?: () => T) {
+    return here().hydrated || !getServerSnapshot ? getSnapshot() : getServerSnapshot();
+  },
   useEffect(run: () => void | (() => void), deps?: readonly unknown[]) {
     const h = here(); const at = h.effect++;
     const before = h.effects[at];
@@ -36,10 +40,10 @@ export const hookStandIns = {
 
 /** One mounted component: `render()` calls it (with the state so far) and returns its element; `flush()` runs the effects that render() queued (after the cleanup of the ones they replace); `unmount()` runs every cleanup. */
 export function mount<P, R>(component: (props: P) => R, props: P) {
-  const h: Instance = { slots: [], effects: [], slot: 0, effect: 0, pending: [], next: 0 };
+  const h: Instance = { slots: [], effects: [], slot: 0, effect: 0, pending: [], next: 0, hydrated: false };
   return {
     render(): R { current = h; h.slot = 0; h.effect = 0; h.next = 0; try { return component(props); } finally { current = null; } },
-    flush() { const todo = h.pending; h.pending = []; for (const { at, run } of todo) { const e = h.effects[at]!; e.cleanup?.(); const back = run(); e.cleanup = typeof back === 'function' ? back : undefined; } },
+    flush() { h.hydrated = true; const todo = h.pending; h.pending = []; for (const { at, run } of todo) { const e = h.effects[at]!; e.cleanup?.(); const back = run(); e.cleanup = typeof back === 'function' ? back : undefined; } },
     unmount() { for (const e of h.effects) { e.cleanup?.(); e.cleanup = undefined; } },
   };
 }

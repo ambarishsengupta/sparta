@@ -158,9 +158,10 @@ describe('onboarding (FR-6, FR-9)', () => {
     expect(controls.length).toBe(3 + 7 + 3); // three selects, seven occasions, three buttons
     expect(controls.filter((c) => !/\sdisabled[=\s>]/.test(c))).toEqual([]);
   });
-  it('the form is ready only after hydration (in an effect, so never in the server-rendered page), and only then are its controls enabled', () => {
+  it('the form is ready only after hydration (a store that says false on the server and during hydration and true after), and only then are its controls enabled', () => {
     const src = read('./OnboardingForm.tsx');
-    expect(src).toContain('useEffect(() => {');
+    expect(src).toContain('useSyncExternalStore(subscribeNever, () => true, () => false)');
+    expect(src).toContain('const subscribeNever = () => () => undefined;'); // module level, so the subscribe function is stable
     expect(src).toContain("data-ready={ready ? 'true' : 'false'}");
     expect(src.match(/disabled=\{!ready\}/g)).toHaveLength(5); // the country, hemisphere and currency selects, the typed country code and the occasion checkboxes; the three buttons follow
     expect(src.match(/disabled=\{busy \|\| !ready\}/g)).toHaveLength(3);

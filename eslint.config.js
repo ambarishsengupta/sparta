@@ -140,6 +140,15 @@ export default tseslint.config(
     },
   },
   {
+    // WO-0168: the end-to-end suite and its Playwright config. They are test code that drives the built app from outside: they read the run's settings from process.env
+    // (set by playwright.config.ts, local stack only) and call the local mail catcher and Auth API with fetch. Focused or skipped tests, HTML writes and fetch wrappers stay errors.
+    files: [`${WEB}/e2e/**/*.ts`, `${WEB}/playwright.config.ts`],
+    rules: {
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, ...DYNAMIC_FETCH_WRAPPER],
+      'no-restricted-globals': 'off',
+    },
+  },
+  {
     // The configuration modules: the only readers of process.env, and only of NEXT_PUBLIC_ names.
     files: [`${WEB}/lib/supabase/config.ts`, `${WEB}/lib/engine-config.ts`, `${WEB}/lib/pilot-config.ts`],
     rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER] },

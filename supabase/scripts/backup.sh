@@ -66,9 +66,14 @@ trap cleanup EXIT
 trap 'exit 1' INT TERM
 
 umask 077
-# a folder that holds ONE file with ONE number (the count of plain-text bytes that went into age), never any dump text
+# a folder that holds two files with ONE number each (the plain-text bytes of each dump that went into age), never any dump text
 countdir="$(mktemp -d "${TMPDIR:-/tmp}/sparta-backup-count.XXXXXX")" || { echo "backup: cannot make the count folder" >&2; exit 1; }
-min_bytes=1000   # a roles-only dump of even the bare Supabase cluster is several KB and the schema dump far more; under 1000 bytes in total means a dump came back empty or cut off
+# One floor per dump, each counted on its own stream (a big roles dump must not hide an empty schema dump). Both are 1000 bytes: a dump that exits 0 but prints nothing gives 0, and a real one is far above.
+#   roles_min = 1000: a roles-only dump of the bare Supabase cluster is about 8 KB (20 roles with their attributes and memberships); even one role's lines are well over 1000, so under it the dump is cut off.
+#   data_min  = 1000: pg_dump's preamble alone is about 500 bytes, and this database holds 7 analytics tables, about 40 app, catalog and ops tables and auth.users, whose definitions run to hundreds of KB; a dump under
+#                     1000 bytes holds no table definitions, so it came back empty or cut off (a failing pg_dump is caught by its exit status; this floor catches the one that exits 0 and prints nothing).
+roles_min=1000
+data_min=1000
 project="$(sed -n 's/^project_id *= *"\([^"]*\)".*/\1/p' supabase/config.toml 2>/dev/null | head -n1)"
 container="supabase_db_${project:-sparta}"
 
@@ -96,11 +101,9 @@ excluded=(
 excluded+=(auth.refresh_tokens auth.refresh_tokens_id_seq)
 data_args=(--quote-all-identifier --no-comments --clean --if-exists -d "$db_name")
 for t in "${excluded[@]}"; do data_args+=(--exclude-table "$t"); done
-# FINDING (WO-0163 gap): the schemas analytics and analytics_private (derived aggregates, 7 tables) are in no grant of the WO-0163 migration, so backup_role has no usage on them and pg_dump
-# stops at them ("permission denied for schema analytics_private"). They are left out here and are NOT in the backup until a migration grants backup_role usage and select on them.
 # platform-internal schemas the Supabase CLI leaves out of its dump (it keeps auth and storage for the data); their objects come from the image and its services
 for s in 'information_schema' 'pg_*' graphql graphql_public pgsodium pgsodium_masks pgtle repack tiger tiger_data 'timescaledb_*' '_timescaledb_*' topology vault etl extensions pgbouncer realtime \
-         _analytics _realtime _supavisor cron net supabase_functions dbdev pgmq analytics analytics_private; do data_args+=(--exclude-schema "$s"); done
+         _analytics _realtime _supavisor cron net supabase_functions dbdev pgmq; do data_args+=(--exclude-schema "$s"); done
 
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 final="$out_dir/backup-$stamp.sql.age"
@@ -109,15 +112,20 @@ final="$out_dir/backup-$stamp.sql.age"
 # decide the outcome; a failed dump leaves a partial ciphertext that the trap removes.
 echo "backup: roles (pg_dumpall --roles-only --no-role-passwords), then schema and data (pg_dump, 21 platform-feature tables excluded), streamed into age"
 (
-  pgtool pg_dumpall --roles-only --no-role-passwords --quote-all-identifier --no-comments -l "$db_name" || { echo "backup: the roles dump failed" >&2; exit 1; }
-  pgtool pg_dump "${data_args[@]}" || { echo "backup: the schema and data dump failed" >&2; exit 1; }
-) | tee >(wc -c > "$countdir/n") | limited 900 age -R "$recipients" -o "$final.part"
+  # each dump is counted on its own (its own wc -c file), so the floor of one cannot be met by the bytes of the other
+  pgtool pg_dumpall --roles-only --no-role-passwords --quote-all-identifier --no-comments -l "$db_name" | tee >(wc -c > "$countdir/roles")
+  rs=("${PIPESTATUS[@]}"); [ "${rs[0]}" = 0 ] && [ "${rs[1]}" = 0 ] || { echo "backup: the roles dump failed" >&2; exit 1; }
+  pgtool pg_dump "${data_args[@]}" | tee >(wc -c > "$countdir/data")
+  ds=("${PIPESTATUS[@]}"); [ "${ds[0]}" = 0 ] && [ "${ds[1]}" = 0 ] || { echo "backup: the schema and data dump failed" >&2; exit 1; }
+) | limited 900 age -R "$recipients" -o "$final.part"
 st=("${PIPESTATUS[@]}")
 for c in "${st[@]}"; do [ "$c" = 0 ] || { echo "backup: the dump or the encryption failed (status ${st[*]})" >&2; exit 1; }; done
-# the counter finishes just after the pipeline; wait for its number (at most 10 s)
-for _ in $(seq 1 100); do [ -s "$countdir/n" ] && break; sleep 0.1; done
-plain_bytes="$(tr -d ' \n' < "$countdir/n" 2>/dev/null)"
-[[ "$plain_bytes" =~ ^[0-9]+$ ]] && [ "$plain_bytes" -ge "$min_bytes" ] || { echo "backup: the dumps held ${plain_bytes:-no} bytes in total (minimum $min_bytes): an empty or cut-off dump is not a backup" >&2; exit 1; }
+# the counters finish just after the pipeline; wait for both numbers (at most 10 s)
+for _ in $(seq 1 100); do [ -s "$countdir/roles" ] && [ -s "$countdir/data" ] && break; sleep 0.1; done
+roles_bytes="$(tr -d ' \n' < "$countdir/roles" 2>/dev/null)"
+data_bytes="$(tr -d ' \n' < "$countdir/data" 2>/dev/null)"
+[[ "$roles_bytes" =~ ^[0-9]+$ ]] && [ "$roles_bytes" -ge "$roles_min" ] || { echo "backup: the roles dump held ${roles_bytes:-no} bytes (minimum $roles_min): an empty or cut-off dump is not a backup" >&2; exit 1; }
+[[ "$data_bytes" =~ ^[0-9]+$ ]] && [ "$data_bytes" -ge "$data_min" ] || { echo "backup: the schema and data dump held ${data_bytes:-no} bytes (minimum $data_min): an empty or cut-off dump is not a backup" >&2; exit 1; }
 [ -s "$final.part" ] || { echo "backup: the encrypted file is empty" >&2; exit 1; }
 mv "$final.part" "$final" || { echo "backup: cannot place the encrypted file" >&2; exit 1; }
 echo "backup: wrote $final ($(wc -c < "$final" | tr -d ' ') bytes, encrypted; no plain-text file ever written)"

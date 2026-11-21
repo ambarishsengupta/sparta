@@ -135,7 +135,7 @@ WO-0165,"WO-0165: load check at 500 users and 50,000 items on the local stack",R
 WO-0166,WO-0166: email-delivery check against the local mail catcher,R8b,Release 1 (MVP),Delivery agents,Done
 WO-0167,WO-0167: incident-plan practice drill on the local stack,R8b,Release 1 (MVP),Delivery agents,Done
 WO-0168,WO-0168: end-to-end harness and the account and consent flows,R8c,Release 1 (MVP),Delivery agents,Done
-WO-0169,"WO-0169: end-to-end: wardrobe, outfits and data rights",R8c,Release 1 (MVP),Delivery agents,In Progress
+WO-0169,"WO-0169: end-to-end: wardrobe, outfits and data rights",R8c,Release 1 (MVP),Delivery agents,Done
 WO-0170,"WO-0170: end-to-end: vendor and admin flows, end of the pilot",R8c,Release 1 (MVP),Delivery agents,Todo
 WO-0171,WO-0171: accessibility pass on the main flows (WCAG 2.1 AA),R8c,Release 1 (MVP),Delivery agents,Todo
 WO-0172,WO-0172: the gate and CI run the end-to-end and accessibility suites,R8c,Release 1 (MVP),Delivery agents,Todo
@@ -152,4 +152,6 @@ WO-0180,WO-0180: the CI job has room for the strict gate (time limit 30 to 60 mi
 WO-0181,WO-0181: the backup tests pass on the Linux CI runner,R8b,Release 1 (MVP),Delivery agents,Done
 WO-0182,WO-0182: the backup covers analytics; two backup script fixes,R8b,Release 1 (MVP),Delivery agents,Done
 WO-0183,"WO-0183: delete an item for good (FR-16): the item route, the button, and its end-to-end test",R8c,Release 1 (MVP),Delivery agents,Todo
+WO-0184,"WO-0184: the outfit calendar (FR-55)",R8c,Release 1 (MVP),Delivery agents,Todo
+WO-0185,"WO-0185: onboarding keeps a country chosen before the page is ready",R8c,Release 1 (MVP),Delivery agents,Todo
 X-PRIV,"SA: decide the open vendor-insight subtraction paths (two-way bridge, night-to-night, wishlist vs wishlist_open, multi-way) and sign the LLD 5.1/5.3/5.4 and FR-86 wording (WO-0179 note)",R8,Release 1 (MVP),Solution architect,Todo

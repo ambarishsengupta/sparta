@@ -1,0 +1,24 @@
+# WO-0169 end-to-end run by the orchestrator, 2026-11-22 00:55 IST, on ed86718
+# command: npx playwright test -c apps/web/playwright.config.ts (plain; nothing extra in the environment); EXIT=0
+# read-only counts (e2e auth users | e2e invitations | storage.objects): before 0|0|0, after 0|0|0; no server or Playwright process left
+
+
+Running 15 tests using 1 worker
+
+  ✓   1 [chromium] › apps/web/e2e/account-consent.e2e.ts:8:1 › FR-1 an invited address signs up, confirms with the emailed link and reaches the age and Terms screen (1.6s)
+  ✓   2 [chromium] › apps/web/e2e/account-consent.e2e.ts:30:1 › FR-8 an uninvited address is refused at sign-up with the invitation-only message (520ms)
+  ✓   3 [chromium] › apps/web/e2e/account-consent.e2e.ts:42:1 › FR-2 and FR-68 the age and Terms ticks are required before the pilot notice (1.3s)
+  ✓   4 [chromium] › apps/web/e2e/account-consent.e2e.ts:64:1 › FR-3 and FR-4 the pilot notice blocks until accepted, and No thanks leaves only export, Leave the pilot and sign out (1.7s)
+  ✓   5 [chromium] › apps/web/e2e/account-consent.e2e.ts:84:1 › FR-9 an unsupported country is sent to /not-available and offered only export, Leave the pilot and sign out (1.4s)
+  ✓   6 [chromium] › apps/web/e2e/account-consent.e2e.ts:98:1 › NFR-2 sign out and sign in as a second user on the same browser shows none of the first user's data or queued changes (2.6s)
+  ✓   7 [chromium] › apps/web/e2e/account-consent.e2e.ts:132:1 › FR-67 the About page shows the privacy contact address (109ms)
+  ✓   8 [chromium] › apps/web/e2e/data-rights.e2e.ts:53:1 › FR-63 deleting the account removes its rows, files and invitation, and sign-in with the same email and password is refused (2.4s)
+  ✓   9 [chromium] › apps/web/e2e/data-rights.e2e.ts:62:1 › FR-66 Leave the pilot needs the password, asks no reason, says how long deletion takes, and then sign-in fails (2.6s)
+  ✓  10 [chromium] › apps/web/e2e/data-rights.e2e.ts:84:1 › FR-62 Export my data downloads a file that holds the user's items and none of another user's (3.2s)
+  ✓  11 [chromium] › apps/web/e2e/wardrobe-outfits.e2e.ts:10:1 › FR-22 and FR-28 an item added by hand appears in the wardrobe and is stored for the user (1.5s)
+  ✓  12 [chromium] › apps/web/e2e/wardrobe-outfits.e2e.ts:28:1 › FR-21 and FR-28 an item picked from the demo catalogue is pre-filled, saved with its catalogue link and shown in the wardrobe (1.9s)
+  ✓  13 [chromium] › apps/web/e2e/wardrobe-outfits.e2e.ts:48:1 › FR-52 and FR-53 an outfit is suggested for an occasion, a swap keeps it valid, and Accept stores the outfit (2.0s)
+  ✓  14 [chromium] › apps/web/e2e/wardrobe-outfits.e2e.ts:81:1 › FR-59a Complete the look keeps the anchor item in every outfit (1.5s)
+  ✓  15 [chromium] › apps/web/e2e/wardrobe-outfits.e2e.ts:105:1 › FR-61 the sharing setting is shown on and locked, and its reason opens on request (1.3s)
+
+  15 passed (26.9s)

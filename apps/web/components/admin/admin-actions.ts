@@ -1,5 +1,7 @@
 /** The browser side of the admin catalogue routes (WO-0088): same-origin calls with the session cookie, answers read into plain values. Never throws; the person sees the server's fixed sentence. */
 export type Send = (path: string, init: RequestInit) => Promise<Response>;
+/** The one same-origin sender; a test passes a fake instead. */
+export const browserSend: Send = (p, i) => fetch(p, i);
 export type AdminResult<T> = { ok: true; data: T } | { ok: false; message: string };
 export const SOURCES_PATH = '/api/admin/sources';
 export const REVIEW_PATH = '/api/admin/catalog/review';
@@ -7,7 +9,7 @@ export const takedownPath = (id: number): string => `/api/admin/sources/${id}/ta
 export const NO_CONNECTION = 'Could not reach the server. Nothing was changed. Check your connection and try again.';
 export const NOT_UNDERSTOOD = 'The server did not answer as expected. Nothing was changed.';
 
-export async function adminCall<T>(path: string, method: 'GET' | 'POST' | 'PATCH', body?: unknown, send: Send = (p, i) => fetch(p, i)): Promise<AdminResult<T>> {
+export async function adminCall<T>(path: string, method: 'GET' | 'POST' | 'PATCH', body?: unknown, send: Send = browserSend): Promise<AdminResult<T>> {
   try {
     const res = await send(path, { method, credentials: 'same-origin', ...(body === undefined ? {} : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }) });
     let json: unknown = null;

@@ -38,6 +38,8 @@ export const mayAllow = (s: { robots_allowed?: unknown; terms_note?: unknown; ch
 
 const FIELDS = ['name', 'site_url', 'robots_allowed', 'terms_note', 'checked_on', 'contact', 'allowed'] as const;
 /** The body of POST (every field but `contact` and `allowed` required) or PATCH (`id` plus at least one field). Unknown keys refuse the whole body. */
+export function parseSource(body: unknown, mode: 'create', now?: Date): Parsed<{ id?: number; fields: SourceFields }>;
+export function parseSource(body: unknown, mode: 'update', now?: Date): Parsed<{ id?: number; fields: Partial<SourceFields> }>;
 export function parseSource(body: unknown, mode: 'create' | 'update', now?: Date): Parsed<{ id?: number; fields: Partial<SourceFields> }> {
   if (!plain(body)) return bad;
   const allowedKeys: string[] = mode === 'update' ? ['id', ...FIELDS] : [...FIELDS];
@@ -50,7 +52,12 @@ export function parseSource(body: unknown, mode: 'create' | 'update', now?: Date
   if ('checked_on' in body) { if (!checkDateOk(body.checked_on, now)) return bad; f.checked_on = body.checked_on; }
   if ('contact' in body) { const v = body.contact === null || body.contact === '' ? null : oneLine(body.contact, CONTACT_MAX); if (v === null && body.contact !== null && body.contact !== '') return bad; f.contact = v; }
   if ('allowed' in body) { if (typeof body.allowed !== 'boolean') return bad; f.allowed = body.allowed; }
-  if (mode === 'create') return ['name', 'site_url', 'robots_allowed', 'terms_note', 'checked_on'].every((k) => k in f) ? { ok: true, value: { fields: { allowed: false, contact: null, ...f } } } : bad;
+  if (mode === 'create') {
+    // the five required fields are named again so the type sees them as set (each is set only to a value, never to undefined)
+    const { name, site_url, robots_allowed, terms_note, checked_on } = f;
+    if (name === undefined || site_url === undefined || robots_allowed === undefined || terms_note === undefined || checked_on === undefined) return bad;
+    return { ok: true, value: { fields: { allowed: false, contact: null, ...f, name, site_url, robots_allowed, terms_note, checked_on } } };
+  }
   if (typeof body.id !== 'number' || !Number.isSafeInteger(body.id) || body.id < 1 || Object.keys(f).length === 0) return bad;
   return { ok: true, value: { id: body.id, fields: f } };
 }

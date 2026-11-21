@@ -22,6 +22,8 @@ export function ItemPurchases({ itemId }: { itemId: string }) {
   const [error, setError] = useState('');
   const heading = useRef<HTMLHeadingElement>(null); // where focus goes when the purchase it was on is deleted
   const [deleting, setDeleting] = useState<string | null>(null); // the purchase whose delete awaits the second press
+  const removing = useRef(false); // true from the confirming press until the delete has answered: a second press does nothing
+  const [removingNow, setRemovingNow] = useState(false); // the same, for the confirm button
   const refresh = useCallback(async () => {
     if (!repo) return;
     try { setRows(await repo.purchases.forItem(itemId)); } catch (e) { setError(messageOf(e, false)); }
@@ -42,8 +44,14 @@ export function ItemPurchases({ itemId }: { itemId: string }) {
     return null;
   };
   const remove = async (id: string) => {
+    if (removing.current) return;
+    removing.current = true;
+    setRemovingNow(true);
+    const problem = await attempt(() => repo!.purchases.remove(id));
+    removing.current = false;
+    setRemovingNow(false);
     setDeleting(null);
-    setError((await attempt(() => repo!.purchases.remove(id))) ?? '');
+    setError(problem ?? '');
     await refresh();
     heading.current?.focus();
   };
@@ -58,14 +66,14 @@ export function ItemPurchases({ itemId }: { itemId: string }) {
             <div className="grow">
               <p className="title">{p.date}{p.store ? ` · ${p.store}` : ''}</p>
               <p className="muted">{p.quantity} × {formatPrice(p.price, p.currency)}{p.notes ? ` · ${p.notes}` : ''}</p>
-              {deleting === p.id && <ConfirmStep label={`Confirm deleting the purchase of ${p.date}`} question="Delete this purchase?" confirmLabel="Delete purchase" onConfirm={() => void remove(p.id)} onCancel={() => setDeleting(null)} />}
+              {deleting === p.id && <ConfirmStep label={`Confirm deleting the purchase of ${p.date}`} question="Delete this purchase?" confirmLabel="Delete purchase" onConfirm={() => void remove(p.id)} onCancel={() => setDeleting(null)} busy={removingNow} cancelWhileBusy={false} />}
               {open === p.id && <PurchaseForm initial={formFromPurchase(p)} currency={currency} submitLabel="Save purchase" onSubmit={save(p.id)} onCancel={() => setOpen(null)} />}
             </div>
             <Price amount={lineTotal(p)} currency={p.currency} profile={currency} rates={rates} />
             {open !== p.id && (
               <div className="row">
                 <button type="button" onClick={() => setOpen(p.id)} aria-label={`Edit the purchase of ${p.date}`}>Edit</button>
-                <button type="button" className="danger" onClick={() => setDeleting(p.id)} aria-label={`Delete the purchase of ${p.date}`}>Delete</button>
+                <button type="button" className="danger" onClick={() => { if (!removing.current) setDeleting(p.id); }} aria-disabled={removingNow || undefined} aria-label={`Delete the purchase of ${p.date}`}>Delete</button>
               </div>
             )}
           </li>

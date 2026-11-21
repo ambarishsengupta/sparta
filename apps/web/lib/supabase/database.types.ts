@@ -540,6 +540,21 @@ isOneToOne: false
             "accept_documents":
 { Args: { "p_age_confirmed": boolean,"p_privacy_version": string,"p_terms_version": string }; Returns: undefined
                            },
+"admin_end_pilot_delete":
+{ Args: { "p_admin": string,"p_user": string }; Returns: Json
+                           },
+"admin_end_pilot_next":
+{ Args: { "p_admin": string,"p_limit": number }; Returns: Json
+                           },
+"admin_end_pilot_preview":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_end_pilot_vendors":
+{ Args: { "p_admin": string,"p_limit": number }; Returns: Json
+                           },
+"admin_set_pilot_end":
+{ Args: { "p_admin": string,"p_end_date": string,"p_outcome": string }; Returns: Json
+                           },
 "claim_job":
 { Args: Record<PropertyKey, never>; Returns: {
               "attempts": number,"id": number,"input": Json,"type": string,"user_id": string
@@ -585,6 +600,9 @@ isOneToOne: false
                            },
 "purge_receipt_jobs":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"rate_limit_hit":
+{ Args: { "p_bucket": string,"p_max": number,"p_window_seconds": number }; Returns: boolean
                            },
 "reap_stuck_jobs":
 { Args: Record<PropertyKey, never>; Returns: number
@@ -1021,6 +1039,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"deletion_log": {
+                  Row: {
+                    "deleted_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "deleted_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "deleted_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"fx_rates": {
                   Row: {
                     "currency": string,"per_usd": number,"rate_date": string
@@ -1045,6 +1077,20 @@ isOneToOne: false
                   }
                   Update: {
                     "accepted_at"?: string | null,"email"?: string,"invited_at"?: string,"note"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"rate_limit_windows": {
+                  Row: {
+                    "bucket": string,"hits": number,"window_start": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bucket": string,"hits": number,"window_start": string
+                  }
+                  Update: {
+                    "bucket"?: string,"hits"?: number,"window_start"?: string
                   }
                   Relationships: [
                     
@@ -1113,6 +1159,9 @@ isOneToOne: false
           Functions: {
             "check_invitation":
 { Args: { "event": Json }; Returns: Json
+                           },
+"delete_participant":
+{ Args: { "p_user": string }; Returns: string
                            },
 "is_eligible":
 { Args: { "p_user": string }; Returns: boolean

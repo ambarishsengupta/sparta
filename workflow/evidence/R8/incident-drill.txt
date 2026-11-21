@@ -1,0 +1,40 @@
+# WO-0167 incident-plan practice drill, live run on the local stack, 2026-11-20 23:39 IST, commit 148744d
+# command: bash supabase/scripts/incident-drill.sh
+incident-drill: LOCAL stack only; nothing is written to a file, nothing leaves this machine
+      plan section 4 step 2 (Contain), lost machine: rotate the worker_role and backup_role database passwords
+      worker_role and backup_role passwords rotated to fresh generated values
+PASS a1 rotate worker_role and backup_role passwords (103 ms)
+      connection with the old worker_role password refused (password authentication failed)
+PASS a2 old worker_role password is refused (59 ms)
+      connection with the new worker_role password succeeded
+PASS a3 new worker_role password connects (52 ms)
+      connection with the new backup_role password succeeded
+PASS a4 new backup_role password connects (57 ms)
+      backup_role password cleared again (WO-0163 leaves it without one)
+      worker_role restored: no password, as found (set-worker-password.sh --clear)
+PASS a5 restore worker_role, clear backup_role (171 ms)
+      signed-in synthetic user read 3 rows; with items_select set to 'using (false)' it read 0; transaction rolled back
+PASS b1 deny-all policy in one transaction hides the rows (62 ms)
+      app.items policies identical before and after (pg_policies comparison, 3 policies, no difference); no synthetic user left
+PASS b2 rollback leaves app.items policies unchanged (93 ms)
+      Fill these in PRIVATELY, outside the repository (plan section 5). Never put personal data in the log.
+      --- section 5: record fields ---
+      
+      Keep an incident log in a private place (not the public repository): date and time found, who found it, severity, what happened, data and people affected, actions and times, notices sent, and the review. Never put personal data in the log.
+        [ ] date and time found   [ ] who found it   [ ] severity   [ ] what happened
+        [ ] data and people affected   [ ] actions and times   [ ] notices sent   [ ] review (within 7 days)
+      --- section 6: message to affected participants (outline) ---
+      
+      > **Subject: A security issue affecting your Sparta pilot account**
+      >
+      > What happened, in plain words, and when it was found.
+      > What information of yours was involved, and what was not.
+      > What we have done to stop it and to prevent a repeat.
+      > What you can do (for example change your password; nothing else is needed if no credentials were involved).
+      > How to reach us, and how to delete your account if you wish to leave.
+      > We are sorry. This is a student pilot, and we take your trust seriously.
+PASS c  message outline and record fields (11 ms)
+restored: worker_role password none as found, backup_role password none as found, app.items policies unchanged, no synthetic user left
+incident-drill: PASS
+exit=0
+# note (orchestrator): the a5 detail line "(set-worker-password.sh --clear)" is stale wording (incident-drill.sh line 187); the drill clears the password itself with statement logging off and does not call that script. docker logs for the run window showed no worker_role or backup_role password statement (the two collector_role lines in that minute came from the strict gate's collector tests).

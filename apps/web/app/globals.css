@@ -108,6 +108,7 @@ a.button.secondary, .button.secondary { margin: 0; color: var(--text); backgroun
 a.button.secondary:hover, .button.secondary:hover { color: var(--on-ink); background: var(--ink); border-color: var(--ink); }
 button.danger { color: var(--text); border-style: dashed; }
 button:disabled, button:disabled:hover { color: var(--disabled); background: var(--surface); border-color: var(--disabled); cursor: default; }
+button[aria-disabled="true"], button[aria-disabled="true"]:hover { color: var(--disabled); background: var(--surface); border-color: var(--disabled); cursor: not-allowed; }   /* WO-0156: locked but still focusable (a delete is running); same tokens as :disabled */
 button.linklike:hover { color: var(--text); background: none; }
 
 /* Notices and errors: text plus a mark, never colour alone */

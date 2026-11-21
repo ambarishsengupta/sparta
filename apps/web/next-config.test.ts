@@ -25,6 +25,11 @@ describe('next.config: security headers', () => {
     expect(csp.split('; ').map((d) => d.split(' ')[0]).sort()).toEqual(['base-uri', 'form-action', 'frame-ancestors', 'object-src']);
     expect(csp).not.toMatch(/\*|https?:|unsafe|data:/);
   });
+  // WO-0130: the script-src with a per-request nonce is NOT here (a static header can not hold a per-request value): proxy.ts sets the full policy, see proxy-csp.test.ts.
+  it('the static header never carries a script-src or a nonce: a script policy here would be a second, per-build policy beside the proxy\'s per-request one', async () => {
+    const csp = (await config.headers!())[0]!.headers.find((h) => h.key === 'Content-Security-Policy')!.value;
+    expect(csp).not.toMatch(/script-src|nonce|default-src/);
+  });
   it('keeps the workspace transpile setting', () => { expect(config.transpilePackages).toEqual(['@sparta/taxonomy', '@sparta/rules']); });
 });
 

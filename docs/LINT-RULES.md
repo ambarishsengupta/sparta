@@ -2,6 +2,8 @@
 
 Added by WO-0123 after the audit of 2026-11-15 (`workflow/work-orders/Audit.md`). Workflow rule 12 makes them binding.
 WO-0149 (2026-11-16) added three rules from the run of 15 and 16 November: the untyped database client, work-order scope lines (RL13) and gate scripts that hide a tool's errors (RL14). `docs/BUILD-GUIDE.md` tells the story behind each.
+WO-0153 (2026-11-18) added two rules: no fetch-wrapper imports and typed Supabase factory calls (follow-ups 7 and 14 of `workflow/STATE.md`). WO-0154 (2026-11-18) closed the gap WO-0153 named: `require()` and `import()` of a fetch wrapper.
+WO-0129 (2026-11-17) added the linters that needed a new development dependency (audit finding A12): React hooks mistakes, slow regular expressions and, for Python, ruff. The product owner approved the four dependencies on 2026-11-16, each pinned to an exact version.
 
 ## How it works
 
@@ -14,6 +16,7 @@ WO-0149 (2026-11-16) added three rules from the run of 15 and 16 November: the u
 | `eslint-suppressions.json` | `npm run lint` | `npx eslint . --prune-suppressions` after a fix |
 | `workflow/gates/repo_lint.baseline.json` | `npm run lint:repo` | delete the entry |
 | `workflow/gates/db_lint.baseline.json` | `bash workflow/gates/db_lint.sh` | delete the entry |
+| `[lint.per-file-ignores]` in `workflow/gates/ruff.toml` | `bash workflow/gates/py_lint.sh` | fix the finding, delete its code from the file's line (and the line when it is empty), lower the number in `workflow/gates/py_lint.test.ts` |
 
 ## Where the rules are
 
@@ -24,6 +27,8 @@ WO-0149 (2026-11-16) added three rules from the run of 15 and 16 November: the u
 | Tracked files, H&M rows, Python, requirements, Dockerfile, workflows, shell, SQL text, work items, notebooks, work-order scope lines, gate scripts | `workflow/gates/repo_lint.py` | `npm run lint:repo` (and `--selftest`) |
 | The live database catalog | `supabase/tests/database/900_catalog_lint.test.sql` | `supabase test db` |
 | plpgsql functions | `workflow/gates/db_lint.sh` | `bash workflow/gates/db_lint.sh` |
+| Python (pyflakes, bugbear, bandit) | `workflow/gates/ruff.toml` | `bash workflow/gates/py_lint.sh` |
+| Proof that ruff flags a bad sample, and the count of the known findings | `workflow/gates/py_lint.test.ts` | `npx vitest run workflow/gates/py_lint.test.ts` |
 | That the committed database types match the database | `workflow/gates/types_drift.sh` | `bash workflow/gates/types_drift.sh` |
 | That nothing was skipped | `workflow/gates/gate.sh` | `GATE_STRICT=1 bash workflow/gates/gate.sh` |
 
@@ -40,7 +45,26 @@ WO-0149 (2026-11-16) added three rules from the run of 15 and 16 November: the u
 | `no-floating-promises`, `no-misused-promises`, `return-await`, `await-thenable` | app and packages | A promise whose failure nobody handles |
 | `no-unsafe-*` (five rules) | app and packages, not tests | Using a value of type `any` (a database row, parsed JSON) before narrowing it |
 | `no-restricted-syntax` (untyped client) | web app, not tests | Naming `SupabaseClient` without `<Database>`: through an untyped client every row is an unchecked value and a renamed column still compiles (audit finding A6). Three modules are still excepted by a list in `eslint.config.js` that `lint_rules.test.ts` pins; WO-0150 empties it |
+| `no-restricted-imports` (fetch wrappers) | web app and engine packages, not tests | Importing `node-fetch`, `cross-fetch`, `ofetch`, `axios`, `ky` or `got` (also their subpaths). The no-network rule reads the `fetch` global and the regex scan reads the name `fetch`, so a wrapper package with a hyphen or a different name dodged both (WO-0153, follow-up 7). Flat config replaces a rule's options per block, so each block that restricts imports builds its options with `restrictImports(...)` in `eslint.config.js`; the secret-key module, which used to switch the rule off, now keeps this restriction alone. Test files, `test-support` and `fixtures` are not covered |
+| `no-restricted-syntax` (untyped factory) | web app, not tests | A call of `createBrowserClient`, `createServerClient` or `createClient` without `<Database>`: it compiles and gives an untyped client (WO-0153, follow-up 14; the untyped-client rule above catches only `SupabaseClient` type references). The selector is in the list of every web-app block, and `lint_rules.test.ts` checks ESLint's computed configuration of every tracked web-app source file |
+| `no-restricted-syntax` (dynamic fetch wrapper) | web app and engine packages, not tests | `require('axios')` and `import('axios')` (also a subpath such as `got/dist/source`, and the other four names) with the name as a string literal: `no-restricted-imports` sees static imports only (WO-0154, open item of WO-0153). Two selectors (`CallExpression[callee.name='require']...` and `ImportExpression[...]`) are in the list of every block that sets `no-restricted-syntax`: the web-app block, the configuration modules, the secret-key and worker-route modules, and the engine packages block (flat config replaces a rule's options per block). `lint_rules.test.ts` has a firing sample per kind of file and checks ESLint's computed configuration of every tracked app and engine source file. NOT covered: a computed argument (`require(name)`), a template literal, tests, `test-support` and `fixtures` |
 | `no-console`, `no-alert`, `no-eval`, `no-implied-eval`, `no-new-func`, `no-script-url` | app (first two also in packages) | Console output, native dialogs, running text as code |
+
+## Linters added by WO-0129 (new development dependencies)
+
+| Plugin or tool (exact version) | Rule set | Where | What it stops |
+| --- | --- | --- | --- |
+| `eslint-plugin-react-hooks` 7.1.1 | the 17 rules of `recommended-latest`, all as errors (`exhaustive-deps`, `rules-of-hooks`, `set-state-in-effect`, `refs`, `purity`, `immutability` and the other React compiler rules) | web app, not tests | A stale closure, an effect that reads state missing from its dependency list, state set inside an effect, a ref read while rendering, a hook called conditionally |
+| `eslint-plugin-regexp` 3.3.3 | every `regexp/` rule of `flat/recommended`, all as errors (for example `no-super-linear-backtracking`, `no-dupe-disjunctions`, `no-contradiction-with-assertion`, `no-unused-capturing-group`, `prefer-d`, `prefer-w`) | every JavaScript and TypeScript file | A slow regular expression (the class of the R2c legal-renderer finding), an ambiguous or redundant one. The core ESLint rules that the plugin's set also switches on (for example `prefer-regex-literals`) are not turned on: only the plugin's own rules are |
+| `eslint-plugin-jsx-a11y` | not used | | Dropped by the product owner on 2026-11-20: its 6.10.2 release does not support ESLint 10 (peer range ESLint 3 to 9), and the same ground is covered by the repository's accessibility source tests (test-support) and the browser axe and keyboard pass of WO-0171. It can be added later if a version supports ESLint 10. |
+| `ruff` 0.17.5 (`services/worker/requirements-dev.txt`) | pyflakes `F`, flake8-bugbear `B`, flake8-bandit `S` | `services`, `jobs`, `ml`, `workflow` (stage `py_lint` of the gate) | An unused import or name, a mutable default argument, `assert` in shipped code, `subprocess` with a shell, `eval`, hard-coded passwords, SQL built from strings, unsafe XML parsing |
+
+How the baselines work:
+
+- **ESLint.** The findings of the two plugins that existed on 2026-11-17 are in `eslint-suppressions.json` (ESLint's own `--suppress-all`): 177 findings in 68 files. `lint_rules.test.ts` counts them per rule with exact numbers and allows only these two plugins' rules in the file. ESLint fails on a new finding and on an entry no longer needed (`npx eslint . --prune-suppressions` removes entries after a fix). The sample for each plugin in `lint_rules.test.ts` must fire.
+- **ruff.** The findings that existed on 2026-11-17 (411 in 31 files, mostly `S101` `assert` in tests) are listed per file in `[lint.per-file-ignores]` of `workflow/gates/ruff.toml`. `py_lint.test.ts` re-runs ruff without that list and compares the count per file and per rule code with exact numbers, so a new finding of an already listed code in a listed file fails the test, a fixed finding cannot be traded for a new one of another listed code, and a fixed one fails the test until its number is lowered. `# noqa` comments are ignored (`--ignore-noqa`); a test has ruff write its own noqa comments into a sample and checks that the stage still reports every finding.
+- **Without the virtualenv** `py_lint.sh` prints `SKIPPED` and exits 0, so a `GATE_STRICT=1` run fails the stage, and the ruff tests in `py_lint.test.ts` fail with the reason (they never skip). A missing ruff, a crash or a new finding fails the stage.
+- **No autofix.** `eslint --fix`, `ruff --fix` and `ruff format` are not used to clear a baseline inside a work order that does not own the files.
 
 ## Repository lint rules added after WO-0123
 

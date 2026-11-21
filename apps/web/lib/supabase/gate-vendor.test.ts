@@ -33,6 +33,8 @@ describe('decideRoute: the vendor area', () => {
     ['unauthenticated', '/vendor', to('/sign-in?next=%2Fvendor')], ['unauthenticated', '/vendor/agreement', to('/sign-in?next=%2Fvendor%2Fagreement')],
     ['admin', '/vendor', to('/admin/catalog')], ['not_available', '/vendor', to('/not-available')], ['needs_documents', '/vendor/account', to('/accept-terms')],
     ['needs_email_confirmation', '/vendor', to('/check-your-email')],
+    // WO-0173: the end-of-pilot admin page, as /admin/catalog above
+    ['vendor', '/admin/pilot', to('/vendor')], ['needs_vendor_agreement', '/admin/pilot', to('/vendor/agreement')], ['admin', '/admin/pilot', allow],
   ])('%s on %s', (state, path, expected) => { expect(decideRoute(state, path)).toEqual(expected); });
 });
 

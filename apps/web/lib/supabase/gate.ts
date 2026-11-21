@@ -40,7 +40,7 @@ const HELD_PAGES = ['/leave'];
 const INVALID = '/__invalid__';
 /** WO-0088: the admin routes answer 401 or 403 themselves in every state (an API client cannot follow a redirect to a sign-in page); the admin page belongs to the admin state only. */
 const ADMIN_API = '/api/admin';
-const ADMIN_PAGES = ['/admin/catalog'];
+const ADMIN_PAGES = ['/admin/catalog', '/admin/pilot'];   // WO-0173: the end-of-pilot page is an admin page like the catalogue
 /** WO-0103: the vendor portal. A vendor without the current agreement can open only its agreement page; a vendor with it lives under /vendor; no one else gets in. */
 const isVendorPath = (path: string): boolean => path === '/vendor' || path.startsWith('/vendor/');
 
@@ -80,6 +80,7 @@ export function decideRoute(state: GateState, rawPath: string): Decision {
     return redirect(path === '/' ? '/sign-in' : `/sign-in?next=${encodeURIComponent(path + (path === INVALID ? '' : searchOf(rawPath)))}`);
   }
   if (state === 'ready') return AUTH_PAGES.includes(path) || GATE_PAGES.includes(path) || ADMIN_PAGES.includes(path) || isVendorPath(path) ? redirect('/') : ALLOW;
+  if (state === 'admin' && ADMIN_PAGES.includes(path)) return ALLOW;   // WO-0173: every admin page is open to the admin state (before, only the home page /admin/catalog was)
   if (state === 'vendor') return isVendorPath(path) && path !== HOME.needs_vendor_agreement ? ALLOW : redirect(HOME.vendor);
   const held = state !== 'needs_email_confirmation' && state !== 'needs_vendor_agreement' && (HELD_PAGES.includes(path) || HELD_API.some((p) => path === p || path.startsWith(`${p}/`)));
   return path === HOME[state] || held ? ALLOW : redirect(HOME[state]);

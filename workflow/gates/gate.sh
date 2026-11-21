@@ -2,7 +2,7 @@
 # gate.sh: the deterministic final authority (G2). Every other approval defers to this script.
 # Exit 0 = work may be reported complete. Non-zero = not done, no exceptions.
 #
-# Stages, in order: typecheck, db_tests, types_drift (regenerates the database types from the freshly reset local database and fails when they differ from the committed apps/web/lib/supabase/database.types.ts; SKIPPED without the local stack), worker_tests (pytest in the worker virtualenv; SKIPPED without it), collector_tests (pytest for jobs/collector, same virtualenv, local test server only; SKIPPED without it), test (with GATE_STRICT=1: workflow/gates/strict_tests.sh, which runs the live seed checks on their own and then the suites that need the demo insights), lint, web_containment (builds the web app with dummy secrets and scans the bundles; SKIPPED without Node), repo_lint (non-JavaScript lint: tracked files, H&M rows, Python, SQL, Docker, workflows, work items), db_lint (plpgsql checks against a baseline; SKIPPED without the local stack), manifest check, secret scan (BR-43), release map, goals check.
+# Stages, in order: typecheck, db_tests, types_drift (regenerates the database types from the freshly reset local database and fails when they differ from the committed apps/web/lib/supabase/database.types.ts; SKIPPED without the local stack), worker_tests (pytest in the worker virtualenv; SKIPPED without it), collector_tests (pytest for jobs/collector, same virtualenv, local test server only; SKIPPED without it), test (with GATE_STRICT=1: workflow/gates/strict_tests.sh, which runs the live seed checks on their own and then the suites that need the demo insights), lint, web_containment (builds the web app with dummy secrets and scans the bundles; SKIPPED without Node), repo_lint (non-JavaScript lint: tracked files, H&M rows, Python, SQL, Docker, workflows, work items), py_lint (ruff: pyflakes, bugbear and bandit over services, jobs, ml and workflow, known findings listed per file in ruff.toml; SKIPPED without the virtualenv), db_lint (plpgsql checks against a baseline; SKIPPED without the local stack), manifest check, secret scan (BR-43), release map, goals check.
 # db_tests runs before test so the vitest database checks see a freshly built database; it prints SKIPPED when
 # the local Supabase stack is not running.
 # GATE_STRICT=1: a stage that skipped a check fails the gate (required before a merge; see run_stage below).
@@ -13,6 +13,10 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 2
+
+# Tools that change their output when they see an AI agent (the Supabase CLI writes JSON then, text otherwise) must behave here as on a
+# CI runner, so the gate clears the agent-detection variables first: a run inside a Claude session then shows what CI will show.
+unset CLAUDECODE AI_AGENT CLAUDE_CODE_ENTRYPOINT
 
 # check_goals.sh skips the goal whose predicate is this script, so it cannot recurse.
 export SPARTA_GATE_ACTIVE=1
@@ -58,6 +62,7 @@ run_stage "test" "${TEST_CMD[@]}"
 run_stage "lint" npm run lint
 run_stage "web_containment" bash workflow/gates/web_containment.sh
 run_stage "repo_lint" python3 workflow/gates/repo_lint.py
+run_stage "py_lint" bash workflow/gates/py_lint.sh
 run_stage "db_lint" bash workflow/gates/db_lint.sh
 run_stage "manifest_check" node workflow/gates/manifest_check.mjs
 run_stage "secret_scan" bash workflow/gates/secret_scan.sh

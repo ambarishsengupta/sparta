@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { leaveThePilot } from '../../components/account/account-actions';
 import { cleanup, discover, lockStack, makeReady, provisionUser, sql } from '../../test-support/stack';
+import { snapshotRateWindows } from '../../test-support/ops-rows';
 import { adminFor, purgeInProcess, purgeUserFiles } from '../../test-support/purge';
 import { POST as workerRoute } from '../../app/api/worker/signed-urls/route';
 
@@ -33,6 +34,7 @@ describe.skipIf(!stack)('worker signed URLs and the storage purge against the re
   let ann: SupabaseClient; let bob: SupabaseClient; let cat: SupabaseClient;
   let annId = ''; let bobId = ''; let catId = '';
   let unlock: (() => void) | undefined;
+  let restoreWindows: (() => void) | undefined;
   const admin = () => adminFor(stack!);
   const q = (text: string, vars: Record<string, string> = {}) => sql(text, vars);
   const exists = (id: string) => q(`select count(*) from auth.users where id = :'u'`, { u: id }) === '1';
@@ -45,6 +47,7 @@ describe.skipIf(!stack)('worker signed URLs and the storage purge against the re
 
   beforeAll(async () => {
     unlock = await lockStack();
+    restoreWindows = snapshotRateWindows(['worker.ok', 'worker.fail']);   // the worker budgets are shared buckets: put them back as they were, not by key
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', stack!.url); vi.stubEnv(KEY_VARIABLE, stack!.secret); vi.stubEnv('WORKER_API_TOKEN', bearer);
     [ann, bob, cat] = [await provisionUser(stack!, email.ann, pw, mailIds), await provisionUser(stack!, email.bob, pw, mailIds), await provisionUser(stack!, email.cat, pw, mailIds)];
     [annId, bobId, catId] = (await Promise.all([ann, bob, cat].map((c) => c.auth.getUser()))).map((r) => r.data.user!.id) as [string, string, string];
@@ -60,7 +63,7 @@ describe.skipIf(!stack)('worker signed URLs and the storage purge against the re
         for (const m of found.messages) if (!mailIds.includes(m.ID)) mailIds.push(m.ID);
       }
       await cleanup(stack!, Object.values(email), mailIds);
-    } finally { unlock?.(); }
+    } finally { try { restoreWindows?.(); } finally { unlock?.(); } }
   });
 
   // ---- the worker route -------------------------------------------------------------------------------------------------------------

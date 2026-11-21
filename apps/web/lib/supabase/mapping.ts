@@ -5,36 +5,58 @@ import { isMonth } from '../wishlist-plan';
 import type { Cursor, Purchase, PurchaseDraft, PurchaseFilter, PurchaseInput } from '../purchases';
 import type { FeedbackFacts, ItemInput, OutfitInput, PhotoFeatures, SavedOutfit, StoredItem, WishlistEntry, WishlistInput } from '../repository';
 import { RepositoryError } from './errors';
+import type { Database, Json } from './database.types';
 
 // Both ways between the screens' shapes and the rows of app.items, app.outfits, app.outfit_items, app.wishlist_entries and
 // app.suggestion_feedback (supabase/migrations). Pure: no client, no clock except where one is passed in. The database sets
 // colour_hex, colour_family and the secondary colour itself (trigger catalog.set_colour_fields), so no row built here carries them.
 type Row = Record<string, unknown>;
+// The shapes of the rows this module builds are the generated ones (WO-0150): a renamed or retyped column fails the typecheck here.
+type AppTables = Database['app']['Tables'];
+export type ItemInsert = AppTables['items']['Insert'];
+export type ItemUpdate = AppTables['items']['Update'];
+export type FeaturesInsert = AppTables['item_features']['Insert'];
+export type OutfitInsert = AppTables['outfits']['Insert'];
+export type OutfitUpdate = AppTables['outfits']['Update'];
+/** A piece row before the repository adds `outfit_id` (the database assigns the outfit's id). */
+export type PieceInsert = Omit<AppTables['outfit_items']['Insert'], 'outfit_id'>;
+export type WishlistInsert = AppTables['wishlist_entries']['Insert'];
+export type WishlistUpdate = AppTables['wishlist_entries']['Update'];
+export type FeedbackInsert = AppTables['suggestion_feedback']['Insert'];
+export type PurchaseInsert = AppTables['purchases']['Insert'];
+export type PurchaseUpdate = AppTables['purchases']['Update'];
 const bad = (what: string): never => { throw new RepositoryError('unexpected', false, `The stored ${what} could not be read.`); };
 const strings = <T extends string>(v: unknown, ok: (x: unknown) => x is T, what: string): T[] => (Array.isArray(v) && v.every(ok) ? [...v] : bad(what));
 const orNull = <T extends string>(v: unknown, ok: (x: unknown) => x is T, what: string): T | null => (v === null || v === undefined ? null : ok(v) ? v : bad(what));
 
-const ITEM_COLUMNS = {
-  name: 'name', category: 'category', subType: 'sub_type', fit: 'fit', material: 'material', pattern: 'pattern', seasons: 'seasons',
-  occasions: 'occasions', condition: 'condition', favourite: 'favourite', neverWorn: 'never_worn', status: 'status', archiveReason: 'archive_reason',
-} as const;
 /** Everything a read needs from app.items (no image paths, notes or prices). */
 export const ITEM_SELECT = 'id,name,category,sub_type,colour_r,colour_g,colour_b,colour_hex,colour_family,fit,material,pattern,seasons,occasions,condition,never_worn,favourite,status,archive_reason,created_at,updated_at,catalog_item_id';
 
 /** Changed fields only, as columns. `hex`, `colourFamily` and the ids are never sent: the database derives them from the RGB. */
-export function itemPatch(patch: Partial<ItemInput>): Row {
-  const row: Row = {};
-  for (const [key, column] of Object.entries(ITEM_COLUMNS)) {
-    const v = (patch as Row)[key];
-    if (v !== undefined) row[column] = Array.isArray(v) ? v.slice() : v;
-  }
+export function itemPatch(patch: Partial<ItemInput>): ItemUpdate {
+  const row: ItemUpdate = {};
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.category !== undefined) row.category = patch.category;
+  if (patch.subType !== undefined) row.sub_type = patch.subType;
+  if (patch.fit !== undefined) row.fit = patch.fit;
+  if (patch.material !== undefined) row.material = patch.material;
+  if (patch.pattern !== undefined) row.pattern = patch.pattern;
+  if (patch.seasons !== undefined) row.seasons = patch.seasons.slice();
+  if (patch.occasions !== undefined) row.occasions = patch.occasions.slice();
+  if (patch.condition !== undefined) row.condition = patch.condition;
+  if (patch.favourite !== undefined) row.favourite = patch.favourite;
+  if (patch.neverWorn !== undefined) row.never_worn = patch.neverWorn;
+  if (patch.status !== undefined) row.status = patch.status;
+  if (patch.archiveReason !== undefined) row.archive_reason = patch.archiveReason;
   if (patch.rgb) [row.colour_r, row.colour_g, row.colour_b] = patch.rgb;
   if (patch.status === 'active') row.archived_at = null; // archiving sets archived_at in the repository, which has the clock
   return row;
 }
 
-export const itemRow = (input: ItemInput, userId: string, now: string): Row => ({
-  ...itemPatch(input), user_id: userId, origin: input.photo ? 'photo' : input.catalogue ? 'catalogue' : 'manual', archived_at: input.status === 'archived' ? now : null,
+export const itemRow = (input: ItemInput, userId: string, now: string): ItemInsert => ({
+  ...itemPatch(input), // the columns the table needs are named again so the type sees them as set (an input always has them)
+  name: input.name, category: input.category, sub_type: input.subType, colour_r: input.rgb[0], colour_g: input.rgb[1], colour_b: input.rgb[2],
+  user_id: userId, origin: input.photo ? 'photo' : input.catalogue ? 'catalogue' : 'manual', archived_at: input.status === 'archived' ? now : null,
   ...(input.photo ? { image_path: input.photo.imagePath, image_thumb_path: input.photo.imageThumbPath } : {}),
   ...(input.barcode !== undefined && /^[0-9]{14}$/.test(input.barcode) ? { barcode: input.barcode } : {}),
   ...(input.catalogue ? { catalog_item_id: input.catalogue.id, brand: input.catalogue.brand, size_value: input.catalogue.sizeValue } : {}),
@@ -42,7 +64,7 @@ export const itemRow = (input: ItemInput, userId: string, now: string): Row => (
 
 const FEATURE_LENGTH: Record<string, { size: number; maxClass: number }> = { 'garment-cnn-v1': { size: 32, maxClass: 9 }, 'garment-cnn-v2': { size: 64, maxClass: 19 } };
 /** The `app.item_features` row for a new item, or null when the features do not fit the table's checks (a known model version, the right count of finite numbers). */
-export function featuresRow(itemId: string, userId: string, f: PhotoFeatures): Row | null {
+export function featuresRow(itemId: string, userId: string, f: PhotoFeatures): FeaturesInsert | null {
   const shape = FEATURE_LENGTH[f.modelVersion];
   if (!shape || f.embedding.length !== shape.size || !f.embedding.every((n) => typeof n === 'number' && Number.isFinite(n))) return null;
   if (f.garmentClass !== null && !(Number.isInteger(f.garmentClass) && f.garmentClass >= 0 && f.garmentClass <= shape.maxClass)) return null;
@@ -83,9 +105,9 @@ const notesOf = (o: Pick<OutfitInput, 'score' | 'reasons'>): string => JSON.stri
  * is one row, because (outfit_id, item_id) is the key; it is kept under the first slot it is in, and `outfitFromRow` puts it back in
  * every slot it fills.
  */
-export function outfitRows(input: OutfitInput, userId: string): { outfit: Row; pieces: Row[] } {
+export function outfitRows(input: OutfitInput, userId: string): { outfit: OutfitInsert; pieces: PieceInsert[] } {
   const seen = new Set<string>();
-  const pieces: Row[] = [];
+  const pieces: PieceInsert[] = [];
   for (const slot of SLOT_ORDER) {
     const item = input.items[slot];
     if (item !== null && item !== undefined && !seen.has(item)) { seen.add(item); pieces.push({ user_id: userId, item_id: item, slot }); }
@@ -94,9 +116,9 @@ export function outfitRows(input: OutfitInput, userId: string): { outfit: Row; p
 }
 
 /** Changed outfit columns only (the pieces are replaced separately by the repository). */
-export function outfitPatch(patch: Partial<OutfitInput>): Row {
-  const row: Row = {};
-  if (patch.occasion !== undefined) Object.assign(row, { occasions: [patch.occasion], name: `${patch.occasion} outfit` });
+export function outfitPatch(patch: Partial<OutfitInput>): OutfitUpdate {
+  const row: OutfitUpdate = {};
+  if (patch.occasion !== undefined) { row.occasions = [patch.occasion]; row.name = `${patch.occasion} outfit`; }
   return row;
 }
 
@@ -126,17 +148,17 @@ export function outfitFromRow(r: Row): SavedOutfit | null {
 
 // ---- wishlist --------------------------------------------------------------------------------------------------------
 /** A colour family becomes the RGB of its reference swatch (the database turns it back into the same family); Multi is the flag. */
-function wishColour(family: WishlistInput['colourFamily']): Row {
+function wishColour(family: WishlistInput['colourFamily']): Pick<WishlistUpdate, 'colour_r' | 'colour_g' | 'colour_b' | 'is_multicolour'> {
   if (family === 'Multi') return { colour_r: null, colour_g: null, colour_b: null, is_multicolour: true };
   const swatch = family ? referenceSwatch(family) : undefined;
-  const rgb = swatch ? ([1, 3, 5] as const).map((i) => parseInt(swatch.hex.slice(i, i + 2), 16)) : [null, null, null];
-  return { colour_r: rgb[0], colour_g: rgb[1], colour_b: rgb[2], is_multicolour: false };
+  const rgb = swatch ? ([1, 3, 5] as const).map((i) => parseInt(swatch.hex.slice(i, i + 2), 16)) : null;
+  return { colour_r: rgb?.[0] ?? null, colour_g: rgb?.[1] ?? null, colour_b: rgb?.[2] ?? null, is_multicolour: false };
 }
 
-export function wishlistPatch(patch: Partial<WishlistInput>): Row {
-  const row: Row = {};
+export function wishlistPatch(patch: Partial<WishlistInput>): WishlistUpdate {
+  const row: WishlistUpdate = {};
   if (patch.name !== undefined) row.name = patch.name;
-  if (patch.subType !== undefined) Object.assign(row, { sub_type: patch.subType, category: categoryOfSubType(patch.subType) });
+  if (patch.subType !== undefined) { row.sub_type = patch.subType; row.category = categoryOfSubType(patch.subType); }
   if (patch.note !== undefined) row.notes = patch.note;
   if (patch.origin !== undefined) row.origin = patch.origin;
   if (patch.colourFamily !== undefined) Object.assign(row, wishColour(patch.colourFamily));
@@ -147,7 +169,12 @@ export function wishlistPatch(patch: Partial<WishlistInput>): Row {
   return row;
 }
 const badPlan = (): never => { throw new RepositoryError('rejected', true); };
-export const wishlistRow = (input: WishlistInput, userId: string): Row => ({ origin: 'user', ...wishColour(null), ...wishlistPatch(input), user_id: userId });
+// unreachable from the app (unlock candidates are checked against SUB_TYPES); the message says what is wrong on a write, not a read
+const noCategory = (subType: string): never => { throw new RepositoryError('unexpected', false, `The garment type ${subType} has no category.`); };
+export const wishlistRow = (input: WishlistInput, userId: string): WishlistInsert => ({
+  origin: 'user', ...wishColour(null), ...wishlistPatch(input), // the three required columns are named again so the type sees them as set
+  name: input.name, sub_type: input.subType, category: categoryOfSubType(input.subType) ?? noCategory(input.subType), user_id: userId,
+});
 
 export const WISHLIST_SELECT = 'id,name,category,sub_type,colour_family,notes,origin,created_at,planned_month,budget,currency';
 export function wishlistFromRow(r: Row): WishlistEntry {
@@ -174,7 +201,7 @@ function planFromRow(r: Row): Pick<WishlistEntry, 'plannedMonth' | 'budget' | 'c
 const RULE_ID = /^[A-Z][A-Z0-9_]{0,15}$/;
 
 /** null for anything that is not an accepted or rejected suggestion. */
-export function feedbackRow(e: FeedbackFacts, userId: string): Row | null {
+export function feedbackRow(e: FeedbackFacts, userId: string): FeedbackInsert | null {
   if ((e.type !== 'suggestion_accepted' && e.type !== 'suggestion_rejected') || !e.occasion) return null;
   return { user_id: userId, occasion: e.occasion, rule_ids: e.rule_ids.filter((r) => RULE_ID.test(r)), accepted: e.type === 'suggestion_accepted', engine_config: e.engine_config };
 }
@@ -195,8 +222,8 @@ export function purchaseFromRow(r: Row): Purchase | null {
   };
 }
 
-const draftColumns = (d: Partial<PurchaseDraft>): Row => {
-  const row: Row = {};
+const draftColumns = (d: Partial<PurchaseDraft>): PurchaseUpdate => {
+  const row: PurchaseUpdate = {};
   if (d.date !== undefined) row.purchase_date = d.date;
   if (d.store !== undefined) row.store = d.store;
   if (d.price !== undefined) row.price = d.price;
@@ -205,10 +232,10 @@ const draftColumns = (d: Partial<PurchaseDraft>): Row => {
   if (d.notes !== undefined) row.notes = d.notes;
   return row;
 };
-export const purchaseRow = (i: PurchaseInput, userId: string): Row => ({ ...draftColumns(i), user_id: userId, item_id: i.itemId });
+export const purchaseRow = (i: PurchaseInput, userId: string): PurchaseInsert => ({ ...draftColumns(i), user_id: userId, item_id: i.itemId });
 export const purchasePatch = draftColumns;
 /** The `p_item` colour and the `p_purchase` document for `app.wishlist_bought` (its keys are the function's own). */
-export function boughtArgs(entry: string, draft: PurchaseDraft, colourHex?: string): Row {
+export function boughtArgs(entry: string, draft: PurchaseDraft, colourHex?: string): { p_entry: string; p_item: Json; p_purchase: Json } {
   const rgb = colourHex ? ([1, 3, 5] as const).map((i) => parseInt(colourHex.slice(i, i + 2), 16)) : [];
   return { p_entry: entry, p_item: colourHex ? { colour_r: rgb[0], colour_g: rgb[1], colour_b: rgb[2] } : {}, p_purchase: draftColumns(draft) };
 }

@@ -1,7 +1,25 @@
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+// WO-0130 (4): the real fs/promises, with calls recorded so the tests can see that the file is opened once and every later call goes through that handle.
+const calls = vi.hoisted(() => ({ open: [] as string[], byPath: [] as string[], closed: 0 }));
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>();
+  return {
+    ...actual,
+    open: async (...args: Parameters<typeof actual.open>) => {
+      calls.open.push(String(args[0]));
+      const handle = await actual.open(...args);
+      const close = handle.close.bind(handle);
+      handle.close = async () => { calls.closed += 1; await close(); };
+      return handle;
+    },
+    stat: async (...args: Parameters<typeof actual.stat>) => { calls.byPath.push('stat'); return actual.stat(...args); },
+    readFile: async (...args: Parameters<typeof actual.readFile>) => { calls.byPath.push('readFile'); return actual.readFile(...args); },
+  };
+});
 import * as route from '../../app/hm-image/[id]/route';
 import { hmImageEnabled, hmImagePath } from './hm-demo';
 
@@ -14,7 +32,7 @@ const put = (id: string, bytes: Buffer) => { mkdirSync(join(root, 'images', id.s
 
 beforeAll(() => { root = mkdtempSync(join(tmpdir(), 'hm-demo-test-')); put(ID, JPEG); put('0990000002', Buffer.alloc(2 * 1024 * 1024 + 1)); put('0990000003', Buffer.alloc(2 * 1024 * 1024)); });
 afterAll(() => { rmSync(root, { recursive: true, force: true }); });
-afterEach(() => { delete process.env.HM_DEMO_IMAGE_ROOT; });
+afterEach(() => { delete process.env.HM_DEMO_IMAGE_ROOT; calls.open.length = 0; calls.byPath.length = 0; calls.closed = 0; });
 
 describe('lib/server/hm-demo.ts', () => {
   it('is off when the variable is unset or empty', () => {
@@ -59,6 +77,39 @@ describe('GET /hm-image/[id]', () => {
     expect((await ask('0990000002')).status).toBe(404);
     expect((await ask('0990000003')).status).toBe(200);
   });
+  it('opens the file once, checks the size and reads on that handle (no stat or read by path), and closes the handle', async () => {
+    process.env.HM_DEMO_IMAGE_ROOT = root;
+    expect((await ask(ID)).status).toBe(200);
+    expect(calls.open).toEqual([join(root, 'images', '099', `${ID}.jpg`)]);
+    expect(calls.byPath).toEqual([]);
+    expect(calls.closed).toBe(1);
+  });
+  it('closes the handle on the 404 for a file over the limit, and opens nothing for an invalid id', async () => {
+    process.env.HM_DEMO_IMAGE_ROOT = root;
+    expect((await ask('0990000002')).status).toBe(404);
+    expect(calls.open.length).toBe(1);
+    expect(calls.closed).toBe(1);
+    expect((await ask('abc')).status).toBe(404);
+    expect(calls.open.length).toBe(1);
+  });
+  it('answers 404 for a folder (closing its handle) and for a missing file', async () => {
+    process.env.HM_DEMO_IMAGE_ROOT = root;
+    mkdirSync(join(root, 'images', '099', '0990000008.jpg'), { recursive: true });
+    expect((await ask('0990000008')).status).toBe(404);
+    expect((await ask('0990000009')).status).toBe(404);
+    expect(calls.byPath).toEqual([]);
+    expect(calls.closed).toBe(1);
+  });
+  it('answers 404 at once for a named pipe (it must not block waiting for a writer) and closes its handle', async () => {
+    process.env.HM_DEMO_IMAGE_ROOT = root;
+    mkdirSync(join(root, 'images', '099'), { recursive: true });
+    execFileSync('mkfifo', [join(root, 'images', '099', '0990000007.jpg')]);   // no mkfifo on the machine: this throws and the test fails, it is not skipped
+    const res = await Promise.race([ask('0990000007'), new Promise<never>((_, no) => setTimeout(() => no(new Error('the route blocked on a named pipe')), 2000))]);
+    expect(res.status).toBe(404);
+    expect(calls.open.length).toBe(1);
+    expect(calls.closed).toBe(1);
+    expect(calls.byPath).toEqual([]);
+  }, 5000);
   it('exports GET and no other method', () => {
     expect(Object.keys(route).filter((k) => /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/.test(k))).toEqual(['GET']);
   });

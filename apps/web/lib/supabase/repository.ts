@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 import type { FxRates } from '../money';
 import { CATALOGUE_PAGE, CATALOGUE_SELECT, catalogueFromRow, cleanCatalogueFilter, hmPhotoId, parseStyle } from '../catalogue';
 import type { CatalogueCollection, CatalogueCursor, CataloguePage } from '../catalogue';
@@ -6,13 +7,22 @@ import { PAGE, totalsByCurrency } from '../purchases';
 import type { Cursor, Page, Purchase, PurchaseFilter } from '../purchases';
 import type { Collection, FeedbackSink, ItemCollection, ItemInput, OutfitInput, PriceContext, PurchaseCollection, SavedOutfit, StoredItem, WardrobeRepository, WishlistCollection, WishlistEntry, WishlistInput } from '../repository';
 import { RepositoryError, asRepositoryError, classify } from './errors';
+import type { ItemInsert, ItemUpdate, OutfitInsert, OutfitUpdate, WishlistInsert, WishlistUpdate } from './mapping';
 import {
   ITEM_SELECT, OUTFIT_SELECT, PURCHASE_SELECT, WISHLIST_SELECT, boughtArgs, cleanCursor, cleanFilter, featuresRow, likePattern, purchaseFromRow, purchasePatch, purchaseRow, feedbackRow, itemFromRow, itemPatch, itemRow, outfitFromRow, outfitPatch, outfitRows, wishlistFromRow, wishlistPatch, wishlistRow,
 } from './mapping';
 
 type Row = Record<string, unknown>;
+/** What `table` needs of one table, each call written out against the generated types so a renamed column fails the typecheck (WO-0150). */
+interface TableCalls<I, U> {
+  list(): PromiseLike<unknown>;
+  get(id: string): PromiseLike<unknown>;
+  insert(row: I): PromiseLike<unknown>;
+  update(id: string, row: U): PromiseLike<unknown>;
+  remove(id: string): PromiseLike<unknown>;
+}
 type Answer = { data: unknown; error: { code?: string | null; message?: string | null; name?: string | null } | null; status?: number };
-type Client = Pick<SupabaseClient, 'auth' | 'schema'>;
+type Client = Pick<SupabaseClient<Database>, 'auth' | 'schema'>;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The data of an answer, or the classified failure. `write` picks the wording ("your change was not saved" only for changes). */
@@ -38,7 +48,7 @@ export class SupabaseRepository implements WardrobeRepository {
   feedback: FeedbackSink;
 
   constructor(private client: Client, private now: () => string = () => new Date().toISOString()) {
-    const base = this.table<StoredItem, ItemInput>('items', ITEM_SELECT, itemFromRow, (n, uid) => itemRow(n, uid, this.now()), itemPatch);
+    const base = this.table<StoredItem, ItemInput, ItemInsert, ItemUpdate>(this.itemRows(), itemFromRow, (n, uid) => itemRow(n, uid, this.now()), itemPatch);
     this.items = {
       ...base,
       list: () => base.list().then((list) => this.withPhotos(list)),
@@ -48,9 +58,9 @@ export class SupabaseRepository implements WardrobeRepository {
       restore: (id) => this.setItem(id, { status: 'active', archive_reason: null, archived_at: null }),
       remove: () => unsupported('Deleting an item is not available yet. Archive it instead: it leaves your wardrobe and your suggestions.'),
     };
-    const outfits = this.table<SavedOutfit, OutfitInput>('outfits', OUTFIT_SELECT, outfitFromRow, () => ({}), outfitPatch);
+    const outfits = this.table<SavedOutfit, OutfitInput, OutfitInsert, OutfitUpdate>(this.outfitTable(), outfitFromRow, null, outfitPatch); // created by createOutfit: it also writes the pieces
     this.outfits = { ...outfits, create: (n) => this.createOutfit(n, outfits), update: (id, p) => this.updateOutfit(id, p, outfits) };
-    const wish = this.table<WishlistEntry, WishlistInput>('wishlist_entries', WISHLIST_SELECT, wishlistFromRow, wishlistRow, wishlistPatch);
+    const wish = this.table<WishlistEntry, WishlistInput, WishlistInsert, WishlistUpdate>(this.wishlistTable(), wishlistFromRow, wishlistRow, wishlistPatch);
     this.wishlist = {
       ...wish,
       // an entry already marked bought has left the wishlist: only open ones are listed
@@ -209,24 +219,59 @@ export class SupabaseRepository implements WardrobeRepository {
   }
 
   /** Archive and restore in one request, with the clock for archived_at (itemPatch has none). */
-  private async setItem(id: string, patch: Row): Promise<StoredItem | undefined> {
+  private async setItem(id: string, patch: ItemUpdate): Promise<StoredItem | undefined> {
     if (!UUID.test(id)) return undefined;
     return guard(true, async () => { const r = take((await this.app().from('items').update(patch).eq('id', id).select(ITEM_SELECT).maybeSingle()) as Answer, true) as Row | null; return r ? itemFromRow(r) : undefined; });
   }
 
-  private table<T extends { id: string }, N>(name: string, select: string, from: (r: Row) => T | null, insert: (n: N, uid: string) => Row, patch: (p: Partial<N>) => Row): Collection<T, N> {
-    const t = () => this.app().from(name);
-    const one = (r: unknown): T | undefined => (r ? from(r as Row) ?? undefined : undefined);
-    const get = (id: string) => (UUID.test(id) ? guard(false, async () => one(take((await t().select(select).eq('id', id).maybeSingle()) as Answer, false))) : Promise.resolve(undefined));
+  private itemRows(): TableCalls<ItemInsert, ItemUpdate> {
+    const t = () => this.app().from('items');
     return {
-      list: () => guard(false, async () => ((take((await t().select(select).order('created_at', { ascending: false })) as Answer, false) as Row[] | null) ?? []).flatMap((r) => from(r) ?? [])),
+      list: () => t().select(ITEM_SELECT).order('created_at', { ascending: false }),
+      get: (id) => t().select(ITEM_SELECT).eq('id', id).maybeSingle(),
+      insert: (row) => t().insert(row).select(ITEM_SELECT).single(),
+      update: (id, row) => t().update(row).eq('id', id).select(ITEM_SELECT).maybeSingle(),
+      remove: (id) => t().delete().eq('id', id).select('id'),
+    };
+  }
+
+  private outfitTable(): TableCalls<OutfitInsert, OutfitUpdate> {
+    const t = () => this.app().from('outfits');
+    return {
+      list: () => t().select(OUTFIT_SELECT).order('created_at', { ascending: false }),
+      get: (id) => t().select(OUTFIT_SELECT).eq('id', id).maybeSingle(),
+      insert: (row) => t().insert(row).select(OUTFIT_SELECT).single(),
+      update: (id, row) => t().update(row).eq('id', id).select(OUTFIT_SELECT).maybeSingle(),
+      remove: (id) => t().delete().eq('id', id).select('id'),
+    };
+  }
+
+  private wishlistTable(): TableCalls<WishlistInsert, WishlistUpdate> {
+    const t = () => this.app().from('wishlist_entries');
+    return {
+      list: () => t().select(WISHLIST_SELECT).order('created_at', { ascending: false }),
+      get: (id) => t().select(WISHLIST_SELECT).eq('id', id).maybeSingle(),
+      insert: (row) => t().insert(row).select(WISHLIST_SELECT).single(),
+      update: (id, row) => t().update(row).eq('id', id).select(WISHLIST_SELECT).maybeSingle(),
+      remove: (id) => t().delete().eq('id', id).select('id'),
+    };
+  }
+
+  private table<T extends { id: string }, N, I, U extends object>(calls: TableCalls<I, U>, from: (r: Row) => T | null, insert: ((n: N, uid: string) => I) | null, patch: (p: Partial<N>) => U): Collection<T, N> {
+    const one = (r: unknown): T | undefined => (r ? from(r as Row) ?? undefined : undefined);
+    const get = (id: string) => (UUID.test(id) ? guard(false, async () => one(take((await calls.get(id)) as Answer, false))) : Promise.resolve(undefined));
+    return {
+      list: () => guard(false, async () => ((take((await calls.list()) as Answer, false) as Row[] | null) ?? []).flatMap((r) => from(r) ?? [])),
       get,
-      create: (n) => guard(true, async () => one(take((await t().insert(insert(n, await this.uid())).select(select).single()) as Answer, true)) ?? Promise.reject(new RepositoryError('unexpected', true))),
+      create: (n) => guard(true, async () => {
+        if (!insert) throw new RepositoryError('unsupported', true);
+        return one(take((await calls.insert(insert(n, await this.uid()))) as Answer, true)) ?? Promise.reject(new RepositoryError('unexpected', true));
+      }),
       update: (id, p) => guard(true, async () => patch(p)).then((row) => {
         if (!UUID.test(id) || Object.keys(row).length === 0) return get(id);
-        return guard(true, async () => one(take((await t().update(row).eq('id', id).select(select).maybeSingle()) as Answer, true)));
+        return guard(true, async () => one(take((await calls.update(id, row)) as Answer, true)));
       }),
-      remove: (id) => (UUID.test(id) ? guard(true, async () => ((take((await t().delete().eq('id', id).select('id')) as Answer, true) as Row[] | null) ?? []).length > 0) : Promise.resolve(false)),
+      remove: (id) => (UUID.test(id) ? guard(true, async () => ((take((await calls.remove(id)) as Answer, true) as Row[] | null) ?? []).length > 0) : Promise.resolve(false)),
     };
   }
 
@@ -256,7 +301,7 @@ export class SupabaseRepository implements WardrobeRepository {
       take((await this.app().from('outfits').update({ ...outfitPatch(patch), notes: outfit.notes }).eq('id', id)) as Answer, true);
       if (patch.items) {
         if (pieces.length > 0) take((await this.app().from('outfit_items').upsert(pieces, { onConflict: 'outfit_id,item_id' })) as Answer, true);
-        const keep = loose.map((p) => p.item_id as string);
+        const keep = loose.map((p) => p.item_id);
         const q = this.app().from('outfit_items').delete().eq('outfit_id', id);
         take((await (keep.length > 0 ? q.not('item_id', 'in', `(${keep.join(',')})`) : q)) as Answer, true);
       }

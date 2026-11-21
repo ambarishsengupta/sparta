@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Nav } from '../components/Nav';
+import { PilotEndBanner } from '../components/shared/PilotEndBanner';
 import { dataBackend } from '../lib/supabase/config';
 import { isSignedIn } from '../lib/supabase/server';
 import './globals.css';
@@ -24,7 +25,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         <a className="skip" href="#main">Skip to content</a>
         <Nav signedIn={signedIn} />
-        <main id="main">{children}</main>
+        <main id="main">
+          {signedIn && <PilotEndBanner />}
+          {children}
+        </main>
         <footer className="foot">
           <nav aria-label="About and legal">
             <Link href="/about" prefetch={false}>About the pilot</Link>

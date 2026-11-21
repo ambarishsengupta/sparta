@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRef, useState, type SubmitEvent } from 'react';
 import { validateAcceptance, type AcceptanceErrors } from '../../lib/consent-form';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
-import { messageOf } from '../../lib/supabase/errors';
+import { showRejection } from '../../lib/supabase/errors';
 import { acceptDocuments, type Versions } from '../../lib/supabase/consent-actions';
 
 /** FR-2 and FR-68: the 18-or-over tick and the Terms and Privacy Policy tick on one screen. The versions shown are the ones sent. */
@@ -18,7 +18,7 @@ export function AcceptTermsForm({ versions }: { versions: Pick<Versions, 'terms'
 
   function submit(e: SubmitEvent) {
     e.preventDefault();
-    accept().catch((err: unknown) => { setBusy(false); setFailure(messageOf(err)); }); // a rejection is shown, never left unhandled
+    accept().catch(showRejection(setBusy, setFailure)); // a rejection is shown, never left unhandled
   }
   async function accept() {
     setFailure(null);

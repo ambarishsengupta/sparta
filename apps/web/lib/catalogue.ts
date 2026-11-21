@@ -46,19 +46,17 @@ export function cleanCatalogueFilter(f: CatalogueFilter): CatalogueFilter {
   };
 }
 
-export const CATALOGUE_SELECT = 'id,sku,name,brand,category,sub_type,colour_hex,colour_family,fit,pattern,material,seasons,occasions,sizes_available,price,currency,product_url';
+export const CATALOGUE_SELECT = 'id,sku,name,brand,category,sub_type,colour_hex,colour_family,fit,pattern,material,seasons,occasions,sizes_available,price,currency,product_url,sources(name)';
 type Row = Record<string, unknown>;
 const list = <T extends string>(v: unknown, ok: (x: unknown) => x is T): T[] => (Array.isArray(v) ? v.filter(ok) : []);
 const orNull = <T extends string>(v: unknown, ok: (x: unknown) => x is T): T | null => (ok(v) ? v : null);
 
 export const HM_DEMO_SOURCE = 'hm-demo';
-/** Consumers cannot read `catalog.sources`, so the demo source is recognised by the address its loader (WO-0120) gives every row: the local host, path `/hm-demo/<sku>`. */
-export function sourceNameOf(sku: string, productUrl: string): string | undefined {
-  try {
-    const u = new URL(productUrl);
-    return u.hostname === '127.0.0.1' && u.pathname === `/${HM_DEMO_SOURCE}/${sku}` ? HM_DEMO_SOURCE : undefined;
-  } catch { return undefined; }
-}
+/** The source's name as the database gives it: the catalogue read embeds `sources(name)` through the foreign key (a consumer may read id and name of a source with active items, nothing else). */
+const sourceNameFrom = (v: unknown): string | undefined => {
+  const name = typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Row).name : undefined;
+  return typeof name === 'string' && name !== '' ? name : undefined;
+};
 /** The 10-digit H&M article id whose photograph a tile may show: only for the `hm-demo` source and a sku of exactly 10 digits. */
 export const hmPhotoId = (sku: string | undefined, source: string | undefined): string | null => (source === HM_DEMO_SOURCE && sku !== undefined && /^[0-9]{10}$/.test(sku) ? sku : null);
 
@@ -67,6 +65,7 @@ export function catalogueFromRow(r: Row): CatalogueItem | null {
   const { category, sub_type: subType } = r;
   if (typeof r.id !== 'string' || typeof r.name !== 'string' || typeof r.product_url !== 'string' || !isCategory(category) || !isSubType(category, subType)) return null;
   const hex = typeof r.colour_hex === 'string' && /^#[0-9A-Fa-f]{6}$/.test(r.colour_hex) ? r.colour_hex.toUpperCase() : DEFAULT_HEX.toUpperCase();
+  const source = sourceNameFrom(r.sources);
   const price = r.price === null || r.price === undefined ? null : Number(r.price);
   return {
     id: r.id, name: r.name, brand: typeof r.brand === 'string' && r.brand !== '' ? r.brand : null, category, subType, hex, colourFamily: orNull(r.colour_family, isColourFamily),
@@ -74,7 +73,7 @@ export function catalogueFromRow(r: Row): CatalogueItem | null {
     sizes: Array.isArray(r.sizes_available) ? r.sizes_available.filter((s): s is string => typeof s === 'string' && s.length <= 20) : [],
     price: price !== null && Number.isFinite(price) && price >= 0 ? price : null, currency: typeof r.currency === 'string' && /^[A-Za-z]{3}$/.test(r.currency.trim()) ? r.currency.trim().toUpperCase() : null,
     productUrl: r.product_url,
-    ...(typeof r.sku === 'string' ? { sku: r.sku, ...(sourceNameOf(r.sku, r.product_url) ? { source: HM_DEMO_SOURCE } : {}) } : {}),
+    ...(typeof r.sku === 'string' ? { sku: r.sku } : {}), ...(source !== undefined ? { source } : {}),
   };
 }
 

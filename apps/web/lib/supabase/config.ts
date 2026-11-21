@@ -41,5 +41,40 @@ export function hostableConfigProblem(env: HostableEnv = {
 /** The no-login demo flag as the build environment gives it (see hostableConfigProblem). */
 export const hostableDemoFlag = (): string | undefined => process.env.NEXT_PUBLIC_SPARTA_DEMO_NO_LOGIN;
 
+/** The Supabase project's origin (scheme, host, port) from NEXT_PUBLIC_SUPABASE_URL, or null when it is unset or not an http(s) URL. */
+export function supabaseOrigin(url: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL): string | null {
+  if (!url) return null;
+  try { const u = new URL(url); return u.protocol === 'https:' || u.protocol === 'http:' ? u.origin : null; } catch { return null; }
+}
+
+/**
+ * WO-0130 (audit finding A13): the full Content-Security-Policy of a signed-in-accounts build, made by the proxy for ONE request around that request's nonce.
+ *  - script-src: 'self' plus the nonce plus 'strict-dynamic' (the scripts Next writes carry the nonce, and what they load is trusted); NO 'unsafe-inline' and no
+ *    'unsafe-eval' (production Next and React need none; `next dev` with accounts may log eval warnings, because React's dev build uses eval for stack
+ *    traces: the configuration modules may not read NODE_ENV, and development is not what is hosted).
+ *  - connect-src: this site (Next's own data requests) and the Supabase origin (sign-in, data, storage). img-src: this site, blob: (photo previews) and the
+ *    Supabase origin (signed storage URLs are served from it). Everything else falls back to default-src 'self'.
+ *  - style-src keeps 'unsafe-inline': the app sets style attributes (React `style={{...}}`), which a nonce cannot cover. Inline STYLE can not run code; the
+ *    residual risk is accepted and recorded in workflow/work-orders/Audit.md (WO-0130).
+ *  - frame-ancestors, form-action, base-uri and object-src repeat the static header of next.config.ts, which stays as it was.
+ * An unset or unreadable Supabase URL leaves the origin out (a stricter policy), never widens it.
+ */
+export function contentSecurityPolicy(nonce: string, supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL): string {
+  const supabase = supabaseOrigin(supabaseUrl);
+  const extra = supabase === null ? '' : ` ${supabase}`;
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    "style-src 'self' 'unsafe-inline'",
+    `connect-src 'self'${extra}`,
+    `img-src 'self' blob:${extra}`,
+    "font-src 'self'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+  ].join('; ');
+}
+
 /** Session cookies (LLD 10): SameSite=Lax, Secure whenever the project URL is https (every hosted deployment). Not HttpOnly: the browser client reads them. */
 export const cookieOptions = (url: string) => ({ sameSite: 'lax' as const, secure: url.startsWith('https:'), path: '/' });

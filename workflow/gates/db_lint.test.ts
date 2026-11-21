@@ -6,7 +6,9 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 // WO-0149: the db_lint stage must tell a linter that found nothing from a linter that did not run. Until this work order the script threw
 // the linter's error output away and read "no result" as "no finding" (found by the WO-0128 check). The `supabase` CLI here is a stub:
-// `status` answers as asked, `db lint` prints and exits as asked; no database is needed. The real run is the gate.
+// `status` answers as asked, `db lint` prints and exits as asked, and like the real CLI it prints JSON only when given --output-format json
+// (text otherwise: the CLI chooses JSON by itself only inside an AI agent, which is why the gate failed on every CI runner until 2026-11-17).
+// No database is needed. The real run is the gate.
 const SCRIPT = 'workflow/gates/db_lint.sh';
 const scratch = mkdtempSync(join(tmpdir(), 'db-lint-'));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
@@ -17,7 +19,7 @@ function run(o: { stack?: boolean; stdout?: string; stderr?: string; exit?: numb
   const dir = mkdtempSync(join(scratch, 'run-'));
   writeFileSync(join(dir, 'stdout'), o.stdout ?? '');
   writeFileSync(join(dir, 'stderr'), o.stderr ?? '');
-  const stub = `#!/bin/sh\ncase "$1" in\nstatus) exit ${o.stack === false ? 1 : 0};;\ndb) cat "${join(dir, 'stdout')}"; cat "${join(dir, 'stderr')}" >&2; exit ${o.exit ?? 0};;\nesac\n`;
+  const stub = `#!/bin/sh\ncase "$1" in\nstatus) exit ${o.stack === false ? 1 : 0};;\ndb) case "$*" in *"--output-format json"*) cat "${join(dir, 'stdout')}";; *) echo "No schema errors found";; esac; cat "${join(dir, 'stderr')}" >&2; exit ${o.exit ?? 0};;\nesac\n`;
   writeFileSync(join(dir, 'supabase'), stub);
   chmodSync(join(dir, 'supabase'), 0o755);
   const tmp = mkdtempSync(join(dir, 'tmp-'));
@@ -63,5 +65,14 @@ describe('db_lint.sh (WO-0123, WO-0149)', () => {
     const r = run({ stack: false, stdout: CLEAN });
     expect([r.code, r.out.includes('SKIPPED')]).toEqual([0, true]);
     expect(r.out).not.toContain('PASS');
+  });
+});
+
+describe('gate.sh runs as a CI runner would (2026-11-17)', () => {
+  it('clears the AI-agent variables before the first stage', () => {
+    const gate = readFileSync('workflow/gates/gate.sh', 'utf8');
+    const unset = gate.indexOf('unset CLAUDECODE AI_AGENT CLAUDE_CODE_ENTRYPOINT\n');
+    expect(unset).toBeGreaterThan(-1);
+    expect(unset).toBeLessThan(gate.indexOf('run_stage "'));
   });
 });

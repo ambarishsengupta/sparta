@@ -1,5 +1,7 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import regexp from 'eslint-plugin-regexp';
 
 // Sparta lint rules (WO-0123, audit of 2026-11-15). Read docs/LINT-RULES.md before changing this file.
 //
@@ -40,6 +42,10 @@ const UNTYPED_CLIENT = {
   selector: "TSTypeReference[typeName.name='SupabaseClient']:not([typeArguments])",
   message: 'Name the database: SupabaseClient<Database>, with `import type { Database }` from lib/supabase/database.types. Through an untyped client every row is an unchecked value and a renamed column still compiles (audit finding A6, WO-0126, WO-0149).',
 };
+const UNTYPED_FACTORY = {
+  selector: "CallExpression[callee.name=/^(createBrowserClient|createServerClient|createClient)$/]:not([typeArguments])",
+  message: 'Name the database in the call: createBrowserClient<Database>(url, key) (likewise createServerClient and createClient), with `import type { Database }` from lib/supabase/database.types. Without the type argument the client is untyped and a renamed column still compiles (WO-0153, follow-up 14).',
+};
 const SERVER_ONLY_IMPORTS = {
   patterns: [{
     group: ['**/lib/server', '**/lib/server/*', './server/*', '../server/*', '../../server/*'],
@@ -52,9 +58,30 @@ const SUPABASE_FACTORIES = {
     { name: '@supabase/ssr', importNames: ['createServerClient', 'createBrowserClient'], allowTypeImports: true, message: 'Build Supabase clients only in lib/supabase/{browser,server,proxy-session}.ts.' },
   ],
 };
+// WO-0153: fetch wrappers dodge the no-restricted-globals rule below (their names hold a hyphen or are not the global), so they are named too.
+const FETCH_WRAPPER_NAMES = ['node-fetch', 'cross-fetch', 'ofetch', 'axios', 'ky', 'got'];
+const FETCH_WRAPPER_MESSAGE = 'No fetch wrapper (node-fetch, cross-fetch, ofetch, axios, ky, got): the no-network rule applies to wrappers too. The engine packages never reach the network; the app does it only in the three files listed in eslint.config.js.';
+const FETCH_WRAPPERS = {
+  // exact names as paths (a bare gitignore-style pattern such as 'got' would also match './got' and '@acme/got'); subpaths as patterns
+  paths: FETCH_WRAPPER_NAMES.map((name) => ({ name, message: FETCH_WRAPPER_MESSAGE })),
+  patterns: [{ group: FETCH_WRAPPER_NAMES.map((name) => `${name}/*`), message: FETCH_WRAPPER_MESSAGE }],
+};
+// WO-0154: no-restricted-imports sees static imports only, so require('axios') and import('axios') (also a subpath, as a string literal) are named here. Every block that sets no-restricted-syntax lists these two,
+// because flat config replaces a rule's options per block. A computed argument (require(name)) or a template literal is not seen.
+const FETCH_WRAPPER_CALLED = String.raw`/^(${FETCH_WRAPPER_NAMES.join('|')})(\/.*)?$/`;
+const DYNAMIC_FETCH_WRAPPER = [
+  { selector: `CallExpression[callee.name='require'][arguments.0.value=${FETCH_WRAPPER_CALLED}]`, message: FETCH_WRAPPER_MESSAGE },
+  { selector: `ImportExpression[source.value=${FETCH_WRAPPER_CALLED}]`, message: FETCH_WRAPPER_MESSAGE },
+];
+// Flat config replaces a rule's options per block, so every block that restricts imports builds its options with this: it joins the `paths` and `patterns` of its parts.
+const restrictImports = (...parts) => ['error', { paths: parts.flatMap((p) => p.paths ?? []), patterns: parts.flatMap((p) => p.patterns ?? []) }];
 const NETWORK_GLOBALS = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map((name) => ({
   name, message: 'No direct network call here. The engine packages never reach the network; the app does it only in the three files listed in eslint.config.js.',
 }));
+
+// WO-0129: the recommended rule sets of the two new plugins, with every rule forced to 'error' (the project has no warnings).
+// Only the plugin's own rules (a recommended set may also switch on a core rule: that would be a new rule that is not the plugin's).
+const asErrors = (rules, prefix) => Object.fromEntries(Object.entries(rules).filter(([name]) => name.startsWith(prefix)).map(([name, setting]) => [name, ['error', ...(Array.isArray(setting) ? setting.slice(1) : [])]]));
 
 export default tseslint.config(
   {
@@ -107,42 +134,35 @@ export default tseslint.config(
       'no-console': 'error',
       'no-alert': 'error',
       'no-script-url': 'error',
-      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT],
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER],
       'no-restricted-globals': ['error', ...NETWORK_GLOBALS],
-      '@typescript-eslint/no-restricted-imports': ['error', { ...SERVER_ONLY_IMPORTS, ...SUPABASE_FACTORIES }],
+      '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, SUPABASE_FACTORIES, FETCH_WRAPPERS),
     },
-  },
-  {
-    // The three modules that still hold an untyped Supabase client (WO-0149). Typing them needs real changes: repository.ts builds its
-    // rows as loose records (16 type errors), backend.ts hands its client to repository.ts, and admin-catalog.ts sends null for arguments
-    // the generated types call non-null. WO-0150 types them and deletes this block. The list may only shrink: lint_rules.test.ts pins it.
-    files: [`${WEB}/lib/supabase/repository.ts`, `${WEB}/lib/supabase/backend.ts`, `${WEB}/lib/server/admin-catalog.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, ANY_ENV, COMPUTED_ENV] },
   },
   {
     // The configuration modules: the only readers of process.env, and only of NEXT_PUBLIC_ names.
     files: [`${WEB}/lib/supabase/config.ts`, `${WEB}/lib/engine-config.ts`, `${WEB}/lib/pilot-config.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, SECRET_ENV, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER] },
   },
   {
     // The two readers of server-only variables (LLD 6): the secret-key module and the worker route.
     files: [`${WEB}/lib/server/admin.ts`, `${WEB}/lib/server/hm-demo.ts`, `${WEB}/app/api/worker/signed-urls/route.ts`],
-    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT] },
+    rules: { 'no-restricted-syntax': ['error', FOCUSED_TEST, ...UNSAFE_HTML, COMPUTED_ENV, UNTYPED_CLIENT, UNTYPED_FACTORY, ...DYNAMIC_FETCH_WRAPPER] },
   },
   {
     // Who may import lib/server: the route handlers and lib/server itself. They still may not build other Supabase clients.
     files: [`${WEB}/app/api/**/route.ts`, `${WEB}/app/hm-image/[[]id]/route.ts`, `${WEB}/lib/server/**/*.ts`],
     ignores: TESTS,
-    rules: { '@typescript-eslint/no-restricted-imports': ['error', SUPABASE_FACTORIES] },
+    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SUPABASE_FACTORIES, FETCH_WRAPPERS) },
   },
   {
     // The client factories.
     files: [`${WEB}/lib/supabase/browser.ts`, `${WEB}/lib/supabase/server.ts`, `${WEB}/lib/supabase/proxy-session.ts`],
-    rules: { '@typescript-eslint/no-restricted-imports': ['error', SERVER_ONLY_IMPORTS] },
+    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(SERVER_ONLY_IMPORTS, FETCH_WRAPPERS) },
   },
   {
     files: [`${WEB}/lib/server/admin.ts`],
-    rules: { '@typescript-eslint/no-restricted-imports': 'off' },
+    rules: { '@typescript-eslint/no-restricted-imports': restrictImports(FETCH_WRAPPERS) },   // the secret-key module may import lib/server and build its client, but not a fetch wrapper
   },
   {
     // The only direct network calls of the app (the same list as test-support/network-scan.ts): the two public JSON files of the
@@ -157,11 +177,12 @@ export default tseslint.config(
     ignores: TESTS,
     rules: {
       'no-console': 'error',
+      'no-restricted-syntax': ['error', FOCUSED_TEST, ...DYNAMIC_FETCH_WRAPPER],
       'no-restricted-globals': ['error', ...NETWORK_GLOBALS, { name: 'process', message: 'The engine runs in the browser: no process, no environment.' }],
-      '@typescript-eslint/no-restricted-imports': ['error', { patterns: [
+      '@typescript-eslint/no-restricted-imports': restrictImports({ patterns: [
         { group: ['node:*', 'fs', 'path', 'crypto', 'child_process', 'os', 'http', 'https'], message: 'The engine runs in the browser: no Node modules.' },
         { group: ['**/apps/**', '@supabase/*', 'next', 'next/*', 'react', 'react-dom'], message: 'The engine depends on nothing but @sparta/taxonomy.' },
-      ] }],
+      ] }, FETCH_WRAPPERS),
     },
   },
 
@@ -192,5 +213,20 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'error',
       '@typescript-eslint/no-unsafe-return': 'error',
     },
+  },
+
+  // ---- 5. WO-0129: linters that came with a new development dependency (eslint-plugin-jsx-a11y 6.10.2 could not be installed: see docs/LINT-RULES.md) ----
+  {
+    // Hooks mistakes: stale closures, missing effect dependencies, state set in render (React compiler rules of react-hooks 7).
+    files: [`${WEB}/**/*.{ts,tsx}`],
+    ignores: TESTS,
+    plugins: { 'react-hooks': reactHooks },
+    rules: asErrors(reactHooks.configs.flat['recommended-latest'].rules, 'react-hooks/'),
+  },
+  {
+    // Slow or ambiguous regular expressions (the class of the R2c legal-renderer finding), in all source.
+    files: ['**/*.{js,mjs,cjs,ts,tsx}'],
+    plugins: { regexp },
+    rules: asErrors(regexp.configs['flat/recommended'].rules, 'regexp/'),
   },
 );

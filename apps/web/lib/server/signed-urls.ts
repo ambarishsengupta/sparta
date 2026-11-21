@@ -1,5 +1,6 @@
 import { fail, ok, UUID, type StorageLike } from './api';
-import { bearerToken, makeLimiter, tokenMatches } from './limits';
+import { bearerToken, makeLimiter, sharedCounter, tokenMatches, type RateRpc } from './limits';
+
 
 /** LLD 6, 7.1: what the worker may fetch and write for ONE running job, as signed URLs. Every path comes from the job row (inputs) or is
  * derived here from the owner id and job id (outputs); nothing in the request body names a path. */
@@ -19,12 +20,25 @@ export function workerLimiters(now: () => number = Date.now): { allow: () => boo
   return { allow: makeLimiter(WORKER_BUDGET.calls, WORKER_BUDGET.windowMs, now), allowFailure: makeLimiter(WORKER_BUDGET.failures, WORKER_BUDGET.windowMs, now) };
 }
 
+/** WO-0130: the two budgets again, counted in the database as well, so they hold across instances. The per-process limiter (`workerLimiters`) is asked FIRST by
+ * the handler (a refusal there costs no database call); only a call it lets through is counted in the shared bucket, `worker.ok` or `worker.fail`.
+ * The counter throws when the shared count cannot be read, and handleSignedUrls then answers 503 (fail closed, see limits.ts). */
+export type WorkerBucket = 'worker.ok' | 'worker.fail';
+export function workerCounter(rpc: RateRpc): (bucket: WorkerBucket) => Promise<boolean> {
+  const spec = { windowSeconds: WORKER_BUDGET.windowMs / 1000 };
+  const byBucket = { 'worker.ok': sharedCounter(rpc, { ...spec, max: WORKER_BUDGET.calls }), 'worker.fail': sharedCounter(rpc, { ...spec, max: WORKER_BUDGET.failures }) };
+  return (bucket) => byBucket[bucket](bucket);
+}
+
 export interface SignedUrlDeps {
   bearer: string | undefined;
   /** Called once per request that presented the correct token; false means the worker's own budget is spent (429). */
   allow: () => boolean;
   /** Called once per request that failed authentication, never for a correct token; false means 429 for that failure. */
   allowFailure: () => boolean;
+  /** WO-0130: the shared (database) count, asked only after the per-process limiter said yes. Optional so the existing handler tests need none; the route always passes it
+   * (pinned by limits-shared.test.ts). It throws when the count cannot be read: the answer is then 503. */
+  count?: (bucket: WorkerBucket) => Promise<boolean>;
   lookupJob: (id: number) => Promise<JobRow | null>;
   storage: StorageLike;
 }
@@ -60,8 +74,15 @@ export async function handleSignedUrls(req: Request, deps: SignedUrlDeps): Promi
   if (req.method !== 'POST') return fail('method_not_allowed');
   if (!deps.bearer || deps.bearer.length < 32) return fail('unavailable');
   // The token is checked FIRST (WO-0074): only a failure is counted against the failure budget, and a correct token never meets that budget.
-  if (!tokenMatches(bearerToken(req.headers.get('authorization')), deps.bearer)) return deps.allowFailure() ? fail('unauthorised') : fail('rate_limited');
+  // WO-0130: the per-process limiter is the first brake; a call it lets through is then counted in the database too. When that count cannot be read the
+  // route is closed for the request: 503, nothing is looked up (fail closed, see limits.ts).
+  if (!tokenMatches(bearerToken(req.headers.get('authorization')), deps.bearer)) {
+    if (!deps.allowFailure()) return fail('rate_limited');
+    try { if (deps.count && !(await deps.count('worker.fail'))) return fail('rate_limited'); } catch { return fail('unavailable'); }
+    return fail('unauthorised');
+  }
   if (!deps.allow()) return fail('rate_limited');
+  try { if (deps.count && !(await deps.count('worker.ok'))) return fail('rate_limited'); } catch { return fail('unavailable'); }
 
   let body: unknown;
   try {

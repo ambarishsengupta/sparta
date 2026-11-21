@@ -8,6 +8,8 @@
 # build-output.test.ts is left to the web_containment stage, which runs it against a real build (SPARTA_REQUIRE_BUILD=1).
 # Local stack only (the seed script refuses any other database). Hard time limits (rule 11); the seed is removed on every exit.
 set -uo pipefail
+# --reporter=dot on every run: vitest picks a compact 'agent' reporter by itself inside an AI agent and otherwise prints the titles of slow
+# tests, and several titles hold the skip marker word that gate.sh's run_stage greps for (found 2026-11-17). Failures print in full.
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 2
 if ! supabase status >/dev/null 2>&1; then
   echo "SKIPPED: the local Supabase stack is not running; the strict test stage needs it."
@@ -17,14 +19,14 @@ limited() { local s="$1"; shift; if command -v timeout >/dev/null 2>&1; then tim
 SEEDED=(apps/web/lib/vendor/dashboard.int.test.ts apps/web/lib/vendor/reports.int.test.ts)
 rc=0
 echo "strict_tests: 1/3 every suite except the live seed checks"
-limited 1500 npx vitest run --exclude workflow/gates/db_tests.test.ts --exclude "${SEEDED[0]}" --exclude "${SEEDED[1]}" --exclude apps/web/lib/server/build-output.test.ts || rc=1
+limited 1500 npx vitest run --reporter=dot --exclude workflow/gates/db_tests.test.ts --exclude "${SEEDED[0]}" --exclude "${SEEDED[1]}" --exclude apps/web/lib/server/build-output.test.ts || rc=1
 echo "strict_tests: 2/3 the live seed checks, alone"
-SEED_LIVE=1 limited 900 npx vitest run workflow/gates/db_tests.test.ts || rc=1
+SEED_LIVE=1 limited 900 npx vitest run --reporter=dot workflow/gates/db_tests.test.ts || rc=1
 echo "strict_tests: 3/3 the vendor suites against the demo insights"
 unseed() { limited 300 bash supabase/scripts/seed-demo-insights.sh --remove >/dev/null 2>&1; }
 trap unseed EXIT
 if limited 600 bash supabase/scripts/seed-demo-insights.sh >/dev/null 2>&1; then
-  limited 900 npx vitest run "${SEEDED[@]}" || rc=1
+  limited 900 npx vitest run --reporter=dot "${SEEDED[@]}" || rc=1
 else
   echo "strict_tests: the demo insights could not be loaded"; rc=1
 fi

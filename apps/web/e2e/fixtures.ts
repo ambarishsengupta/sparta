@@ -35,17 +35,18 @@ export async function joinPilot(page: Page): Promise<void> {
 
 /** FR-6 and FR-9: a country of the pilot's list (by its name), or one that is not listed (by its two-letter code). Skips the optional start choice. */
 export async function onboard(page: Page, country: { listed: string } | { code: string }): Promise<void> {
-  // A choice made before the page is hydrated is lost when React takes over (the Country box then shows as invalid and Skip changes nothing), which a full, busy run showed once. So the
-  // whole step is repeated until the page has left the onboarding form, a few seconds at a time.
-  await expect(async () => {
+  // Workaround, not a fix: a choice made before the page is hydrated is lost when React takes over (the Country box then shows as invalid and Skip changes nothing; seen once in a
+  // busy full run, reported as an app finding in WO-0169). So the step is repeated, at most 4 times with 4 seconds each (16 s, inside the 30-second test timeout), then it fails clearly.
+  for (let attempt = 1; attempt <= 4; attempt++) {
     if ('listed' in country) await page.getByLabel('Country', { exact: true }).selectOption({ label: country.listed });
     else {
       await page.getByLabel('Country', { exact: true }).selectOption({ label: 'My country is not listed' });
       await page.getByLabel('Country code (two letters, for example US)').fill(country.code);
     }
     await page.getByRole('button', { name: 'Skip' }).click();
-    await expect(page).not.toHaveURL(/\/onboarding$/, { timeout: 4_000 });
-  }).toPass({ timeout: 22_000 });
+    try { await expect(page).not.toHaveURL(/\/onboarding$/, { timeout: 4_000 }); return; } catch { /* hydration may have dropped the choice: try again */ }
+  }
+  throw new Error('onboarding did not finish after 4 attempts of 4 seconds each: the form still shows after the country was chosen and Skip was pressed');
 }
 
 /** From a confirmed account to the wardrobe: sign in, the two ticks, the pilot notice, onboarding in a supported country. */

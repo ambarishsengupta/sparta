@@ -14,8 +14,8 @@ const webDir = join(root, 'apps/web');
 const nextBin = join(root, 'node_modules/next/dist/bin/next');
 
 /** The local stack's settings from `supabase status`, read once by the main process and handed to the workers through the environment. */
-function discover(): void {
-  if (process.env.SPARTA_E2E_API_URL) return;
+function discover(): string | undefined {
+  if (process.env.SPARTA_E2E_API_URL) return undefined; // a worker: the main process has done this, and only the main process starts the server
   const out = execFileSync('supabase', ['status', '-o', 'json'], { stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000 }).toString();
   const s = JSON.parse(out.slice(out.indexOf('{'), out.lastIndexOf('}') + 1)) as Record<string, string | undefined>;
   assertLocalStack({ supabaseUrl: s.API_URL, mailUrl: s.MAILPIT_URL, dbUrl: s.DB_URL });
@@ -24,8 +24,12 @@ function discover(): void {
   process.env.SPARTA_E2E_MAIL_URL = s.MAILPIT_URL;
   process.env.SPARTA_E2E_DB_URL = s.DB_URL;
   process.env.SPARTA_E2E_KEY = s.PUBLISHABLE_KEY;
+  // WO-0169: Leave the pilot removes the person's files through a server route that needs the server-only key. The key goes to the local server process and nowhere else: it is returned here
+  // (never put in process.env, so the workers do not get it), it is read only after assertLocalStack has accepted the stack, and it is not part of the build's environment.
+  if (!s.SECRET_KEY) throw new Error('supabase status gave no secret key: is the local stack running (supabase start)? The Leave the pilot test needs the local server to hold it.');
+  return s.SECRET_KEY;
 }
-discover();
+const serverKey = discover();
 process.env.SPARTA_E2E_RUN ??= randomBytes(6).toString('hex'); // the unique part of every synthetic address of this run
 // Checked again here, so the build and the server below can never be given a remote address.
 const urls = assertLocalStack({ supabaseUrl: process.env.SPARTA_E2E_API_URL, mailUrl: process.env.SPARTA_E2E_MAIL_URL, dbUrl: process.env.SPARTA_E2E_DB_URL });
@@ -43,6 +47,10 @@ if (process.env.TEST_WORKER_INDEX === undefined && process.env.SPARTA_E2E_BUILT 
   execFileSync(process.execPath, [nextBin, 'build', '--webpack'], { cwd: webDir, env: { ...process.env, ...appEnv }, stdio: ['ignore', 'ignore', 'inherit'], timeout: 600_000 });
   process.env.SPARTA_E2E_BUILT = '1';
 }
+
+// What `next start` is given: the build's values and, only here, the local stack's server-only key (appEnv, which the build gets, never holds it). Set by assignment because the value is a variable.
+const serverEnv: Record<string, string> = { ...appEnv };
+if (serverKey) serverEnv['SUPABASE_SECRET_KEY'] = serverKey;
 
 const out = join(tmpdir(), `sparta-e2e-${process.env.SPARTA_E2E_RUN}`);
 export default defineConfig({
@@ -66,7 +74,7 @@ export default defineConfig({
     timeout: 120_000,
     reuseExistingServer: false,
     gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
-    env: appEnv, // added to the environment the server inherits
+    env: serverEnv, // added to the environment the server inherits
     stdout: 'ignore',
     stderr: 'pipe',
   },

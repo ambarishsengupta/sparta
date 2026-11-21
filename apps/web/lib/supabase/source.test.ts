@@ -18,7 +18,8 @@ const all = files(root);
 const ADMIN = 'lib/server/admin.ts';
 const FORBIDDEN: [string, RegExp, string[]][] = [
   ['the service-role name', new RegExp(['service', 'role'].join('_'), 'i'), [ADMIN]],
-  ['a secret-key variable', new RegExp(['SUPABASE', 'SECRET', 'KEY'].join('_')), ['.env.example', ADMIN]],
+  // WO-0169: playwright.config.ts passes the LOCAL stack's key to the LOCAL `next start` it spawns (Leave the pilot's file removal needs it); assertLocalStack refuses any non-local URL before the key is read.
+  ['a secret-key variable', new RegExp(['SUPABASE', 'SECRET', 'KEY'].join('_')), ['.env.example', ADMIN, 'playwright.config.ts']],
   ['a secret key value', new RegExp(['sb', 'secret', ''].join('_')), [ADMIN]],
   ['a service-role JWT', new RegExp('eyJ[A-Za-z0-9_-]{30,}\\.eyJ'), []],
   ['a publishable key value', new RegExp(['sb', 'publishable', '[A-Za-z0-9_-]{8,}'].join('_')), []],

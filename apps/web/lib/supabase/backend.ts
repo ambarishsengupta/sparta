@@ -1,7 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 import { browserSend } from '../../components/wardrobe/item-actions';
-import { sharedRepository } from '../local-repository';
+import { seedDemo } from '../demo-seed';
+import { browserStorage, sharedRepository } from '../local-repository';
+import type { LocalRepository } from '../local-repository';
 import type { WardrobeRepository } from '../repository';
 import { createBrowserSupabase } from './browser';
 import { dataBackend } from './config';
@@ -41,4 +43,7 @@ export async function selectRepository(backend: 'local' | 'supabase', makeClient
 
 let chosen: Promise<WardrobeRepository> | null = null;
 /** One choice per page load, shared by every component that asks. */
-export const chooseRepository = (): Promise<WardrobeRepository> => (chosen ??= selectRepository(dataBackend(), createBrowserSupabase, sharedRepository));
+export const chooseRepository = (): Promise<WardrobeRepository> => (chosen ??= selectRepository(dataBackend(), createBrowserSupabase, sharedRepository).then(async (r) => {
+  if (dataBackend() !== 'supabase') await seedDemo(r as LocalRepository, browserStorage()).catch(() => undefined); // the no-login demo opens full; a failed seed leaves the demo as it was
+  return r;
+}));

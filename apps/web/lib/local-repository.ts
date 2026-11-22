@@ -1,5 +1,5 @@
 import { categoryOfSubType, colourFamily, hexToRgb, referenceSwatch } from '@sparta/taxonomy';
-import { filterCatalogue, hmPhotoId } from './catalogue';
+import { HM_DEMO_SOURCE, filterCatalogue, hmPhotoId } from './catalogue';
 import { DEMO_CATALOGUE } from './demo-catalogue';
 import type { CatalogueItem } from './catalogue';
 import { PAGE, afterCursor, matches, newestFirst, totalsByCurrency } from './purchases';
@@ -70,7 +70,7 @@ export class LocalRepository implements WardrobeRepository {
   catalogue: CatalogueCollection;
 
   constructor(private storage: StorageLike | null = browserStorage(), private now: () => string = () => new Date().toISOString(), catalogue: readonly CatalogueItem[] = DEMO_CATALOGUE) {
-    this.catalogue = { page: async (f, after = null) => filterCatalogue(catalogue, f, after), brands: async () => [...new Set(catalogue.flatMap((i) => i.brand ?? []))].sort(), byGtin: async () => [] /* the bundled demo items carry no barcode number */ };
+    this.catalogue = { page: async (f, after = null) => filterCatalogue(catalogue, f, after, catalogue.some((c) => c.source === HM_DEMO_SOURCE)), brands: async () => [...new Set(catalogue.flatMap((i) => i.brand ?? []))].sort(), byGtin: async () => [] /* the bundled demo items carry no barcode number */ };
     this.persistent = storage !== null;
     this.doc = read(storage);
     const base = this.collection<'items', StoredItem, ItemInput>('items', 'item');
@@ -98,7 +98,7 @@ export class LocalRepository implements WardrobeRepository {
 
   private view(p: Doc['purchases'][number]): Purchase {
     const item = this.doc.items.find((i) => i.id === p.itemId);
-    return { ...p, itemName: item?.name ?? '', category: item?.category ?? null, brand: null };
+    return { ...p, itemName: item?.name ?? '', category: item?.category ?? null, brand: null, photoId: item?.photoId ?? null };
   }
 
   private purchaseCollection(): PurchaseCollection {

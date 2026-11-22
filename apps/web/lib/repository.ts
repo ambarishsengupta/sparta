@@ -54,6 +54,8 @@ export interface WishlistEntry {
   plannedMonth?: string | null;
   budget?: number | null;
   currency?: string | null;
+  /** The H&M article id of a photograph to show (local H&M demo only); absent: "No photo yet". */
+  photoId?: string | null;
 }
 export type WishlistInput = Omit<WishlistEntry, 'id' | 'createdAt'>;
 

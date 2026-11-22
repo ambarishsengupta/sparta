@@ -15,6 +15,7 @@ import {
 } from '../../lib/suggestions-view-model';
 import type { Card, View } from '../../lib/suggestions-view-model';
 import { addUnlockToWishlist, unlockFor, unlockKey } from '../../lib/wishlist';
+import { ProductPhoto } from '../ui/ProductPhoto';
 import { useLearned } from '../use-learned';
 import { useRepository } from '../use-repository';
 import { OutfitCard } from './OutfitCard';
@@ -154,6 +155,7 @@ export function OutfitsView() {
       {anchor && (
         <section className={styles.anchor} aria-labelledby="anchor-title">
           <h2 id="anchor-title">Complete the look{anchorName ? ` around ${anchorName}` : ''}</h2>
+          {anchor && byId.get(anchor) && <div className="thumb"><ProductPhoto id={byId.get(anchor)?.photoId} name={anchorName ?? 'Your pick'} /></div>}
           {anchorIntro(view, occasion) && <p className="muted">{anchorIntro(view, occasion)}</p>}
           <div className="row"><button type="button" onClick={leaveAnchor}>Back to normal suggestions</button></div>
         </section>
@@ -187,7 +189,7 @@ export function OutfitsView() {
         </div>
       )}
       {view?.kind === 'cards' && (
-        <ul className="list cards">
+        <ul className={`wide ${styles.grid}`}>
           {view.cards.map((card, i) => (
             <li key={card.key} className={styles.outfit}>
               <OutfitCard card={card} index={i} items={byId}

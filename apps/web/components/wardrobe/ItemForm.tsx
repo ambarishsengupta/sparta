@@ -12,8 +12,7 @@ import { attempt, messageOf } from '../../lib/supabase/errors';
 import { FITS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, conditionBandOf } from '@sparta/taxonomy';
 import { categoryChoices, emptyForm, familyOfHex, formFromItem, subTypeChoices, updateForm, validateForm } from '../../lib/item-form';
 import type { FormErrors, ItemFormValues } from '../../lib/item-form';
-import { CatalogueDetails, CatalogueIntro } from '../catalogue/CatalogueFields';
-import { CategoryIllustration } from '../ui/illustrations';
+import { CatalogueDetails, CatalogueIntro, cataloguePhotoId } from '../catalogue/CatalogueFields';
 import { ConfirmStep } from '../ui/ConfirmStep';
 import { ProductPhoto } from '../ui/ProductPhoto';
 import { useRepository } from '../use-repository';
@@ -115,11 +114,13 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
   const colourLabel = !!photoStart?.colourSuggested && values.hex === start?.hex;
   const family = familyOfHex(values.hex);
   const band = values.condition === null ? null : conditionBandOf(values.condition);
+  const shown = existing ? { id: existing.photoId, name: existing.name } : catalogueStart ? { id: cataloguePhotoId(catalogueStart.item), name: catalogueStart.item.name } : null;
   return (
+    <div className={shown ? 'product-page wide' : undefined}>
+    {shown && <div className="product-photo"><ProductPhoto id={shown.id} name={shown.name} /></div>}
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }} noValidate>
       <h1>{itemId ? 'Edit item' : 'Add item'}</h1>
       {barcode && !itemId && <p className="muted" data-barcode={barcode}>Barcode {barcode} will be saved with this item.</p>}
-      {existing && <div className="art"><div className="swatch"><ProductPhoto id={existing.photoId} name={existing.name}><CategoryIllustration category={existing.category} hex={existing.hex} label={`${existing.subType} illustration`} /></ProductPhoto></div></div>}
       {catalogueStart && <CatalogueIntro item={catalogueStart.item} />}
       {failure && <p role="alert" className="error">{failure}</p>}
       {garmentLabel && <p className="muted" data-suggestion="garment">{SUGGESTED_LABEL}: category and sub-type. Change them if they are not right.</p>}
@@ -162,5 +163,6 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
       </div>
       {deleting && <ConfirmStep label="Confirm deleting this item" question="Delete this item permanently?" confirmLabel="Delete item permanently" onConfirm={() => void remove()} onCancel={() => setDeleting(false)} busy={removingNow} cancelWhileBusy={false} />}
     </form>
+    </div>
   );
 }

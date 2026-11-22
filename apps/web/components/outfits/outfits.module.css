@@ -21,3 +21,15 @@
 .anchor h2 { margin: 0; font-size: var(--fs-body); line-height: var(--lh-body); letter-spacing: 0; }
 .unlock { margin-top: var(--s12); padding-top: var(--s4); border-top: var(--hairline-w) solid var(--rule); }
 .unlock h2 { margin: 0 0 var(--s1); }
+
+.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s6); align-items: start; }
+@media (min-width: 64rem) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.flatlay { list-style: none; margin: 0 0 var(--s3); padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s3); }
+@media (min-width: 40rem) { .flatlay { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.piece { display: grid; grid-template-rows: auto 1fr auto; gap: var(--s2); align-content: start; }
+.photo { aspect-ratio: 3 / 4; width: 100%; background: var(--paper); border: var(--hairline-w) solid var(--rule); overflow: hidden; }
+.pieceName { margin: 0; display: grid; gap: var(--s1); font-size: var(--fs-label); line-height: var(--lh-label); }
+.pieceName .title { text-transform: uppercase; }
+.piece button { width: 100%; }
+.choices { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.choice .thumb { width: 3.5rem; }

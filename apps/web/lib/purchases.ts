@@ -8,7 +8,7 @@ export type PurchaseOrigin = 'manual' | 'wishlist' | 'catalogue' | 'receipt';
 export interface PurchaseDraft { date: string; store: string | null; price: number; currency: string; quantity: number; notes: string | null }
 export type PurchaseInput = PurchaseDraft & { itemId: string };
 /** A purchase as the screens read it: the row plus the few attributes of its item that the filters use. */
-export interface Purchase extends PurchaseInput { id: string; createdAt: string; itemName: string; category: Category | null; brand: string | null }
+export interface Purchase extends PurchaseInput { id: string; createdAt: string; itemName: string; category: Category | null; brand: string | null; /** The item's H&M photograph, when it has one. */ photoId?: string | null }
 export interface PurchaseFilter { store: string; brand: string; category: string; from: string; to: string }
 export const NO_PURCHASE_FILTER: PurchaseFilter = { store: '', brand: '', category: '', from: '', to: '' };
 /** Newest first by date, then id: the keyset the next page continues after. */

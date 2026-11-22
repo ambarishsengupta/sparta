@@ -70,3 +70,10 @@ export const hmWardrobes = (articles: readonly HmArticle[]): Record<string, HmIt
 });
 
 export const HM_ARTICLES: readonly HmArticle[] = parseHmArticles(hmDemoArticles());
+
+/** A representative H&M photograph for an unlock suggestion (a sub-type and a colour family, no item): the same sub-type and colour when there is one, else the same sub-type; null with no H&M list. */
+export function unlockPhotoId(subType: string, family: string | null | undefined, articles: readonly HmArticle[] = HM_ARTICLES): string | null {
+  const same = articles.filter((a) => a.subType === subType);
+  const exact = same.find((a) => a.rgb !== null && colourFamily(...a.rgb) === family);
+  return (exact ?? same[0])?.sku ?? null;
+}

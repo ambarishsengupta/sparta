@@ -2,17 +2,19 @@
 import { CURRENCIES } from '../../lib/purchase-form';
 import type { PurchaseErrors } from '../../lib/purchase-form';
 import { formatPrice } from '../../lib/money';
+import { hmPhotoId } from '../../lib/catalogue';
 import type { CatalogueItem, PaidValues } from '../../lib/catalogue';
-import { CategoryIllustration } from '../ui/illustrations';
 import { SourceLink } from './SourceLink';
 
 const fail = (message?: string) => message && <span role="alert" className="error">{message}</span>;
 
-/** The top of the form from the picker (FR-21, FR-24): the item's drawing in its stored colour, where it is from, and the source link. */
+/** The photo id of a catalogue row, for the item page. */
+export const cataloguePhotoId = (item: CatalogueItem): string | null => hmPhotoId(item.sku, item.source);
+
+/** The top of the form from the picker (FR-21, FR-24): where it is from and the source link. The photo is shown by the item page around the form. */
 export function CatalogueIntro({ item }: { item: CatalogueItem }) {
   return (
     <>
-      <div className="art"><div className="swatch"><CategoryIllustration category={item.category} hex={item.hex} label={`${item.subType} illustration`} /></div></div>
       <p className="muted">From the catalogue{item.brand ? `: ${item.brand}` : ''}{item.price !== null && item.currency ? `, listed at ${formatPrice(item.price, item.currency)}` : ''}. <SourceLink url={item.productUrl} /></p>
     </>
   );

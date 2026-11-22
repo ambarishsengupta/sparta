@@ -6,6 +6,7 @@ import { formatPrice } from '../../lib/money';
 import { NO_PURCHASE_FILTER, lineTotal, periodRange } from '../../lib/purchases';
 import type { Cursor, CurrencyTotal, Period, Purchase, PurchaseFilter } from '../../lib/purchases';
 import { messageOf } from '../../lib/supabase/errors';
+import { ProductPhoto } from '../ui/ProductPhoto';
 import { useRepository } from '../use-repository';
 import { Price } from './Price';
 import { usePrices } from './use-prices';
@@ -67,6 +68,7 @@ export function PurchasesView() {
       <ul className="list">
         {(rows ?? []).map((p) => (
           <li key={p.id} className="card line">
+            <div className="thumb"><ProductPhoto id={p.photoId} name={p.itemName} /></div>
             <div className="grow">
               <Link href={`/items/${p.itemId}`} prefetch={false} className="title">{p.itemName}</Link>
               <p className="muted">{p.date}{p.store ? ` · ${p.store}` : ''}{p.quantity > 1 ? ` · ${p.quantity} × ${formatPrice(p.price, p.currency)}` : ''}</p>

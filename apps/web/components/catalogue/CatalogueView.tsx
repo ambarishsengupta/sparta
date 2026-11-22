@@ -11,7 +11,6 @@ import { messageOf } from '../../lib/supabase/errors';
 import { addOwnWithBarcode, noMatch, severalMatches } from '../../lib/barcode-lookup';
 import type { BarcodeResult } from '../../lib/barcode-lookup';
 import { ItemForm } from '../wardrobe/ItemForm';
-import { CategoryIllustration } from '../ui/illustrations';
 import { ProductPhoto } from '../ui/ProductPhoto';
 import { useRepository } from '../use-repository';
 import { BarcodeLookup } from './BarcodeLookup';
@@ -21,7 +20,7 @@ import { SourceLink } from './SourceLink';
 export function CatalogueTile({ item, onChoose }: { item: CatalogueItem; onChoose: () => void }) {
   return (
     <li className="card item">
-      <div className="swatch"><ProductPhoto id={hmPhotoId(item.sku, item.source)} name={item.name}><CategoryIllustration category={item.category} hex={item.hex} label={`${item.subType} illustration`} /></ProductPhoto></div>
+      <div className="swatch"><ProductPhoto id={hmPhotoId(item.sku, item.source)} name={item.name} /></div>
       <div className="grow">
         <p className="title">{item.name}</p>
         <p className="muted">{[item.brand, item.colourFamily, item.price !== null && item.currency ? formatPrice(item.price, item.currency) : null].filter(Boolean).join(' · ')}</p>

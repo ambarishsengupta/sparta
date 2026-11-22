@@ -10,6 +10,7 @@ import type { WishlistEntry } from '../../lib/repository';
 import { attempt, messageOf } from '../../lib/supabase/errors';
 import { NO_PLAN, emptyPlan, formFromEntry, monthLabel } from '../../lib/wishlist-plan';
 import type { PlanDraft } from '../../lib/wishlist-plan';
+import { ProductPhoto } from '../ui/ProductPhoto';
 import { useRepository } from '../use-repository';
 import { PlanForm } from './PlanForm';
 import { PlanGroups } from './PlanGroups';
@@ -49,6 +50,7 @@ export function WishlistView() {
     const mine = open?.id === e.id ? open.kind : null;
     return (
       <li key={e.id} className="card line">
+        <div className="thumb"><ProductPhoto id={e.photoId} name={e.name} /></div>
         <div className="grow">
           <p className="title">{e.name}</p>
           <p className="muted">{e.colourFamily ? `${e.colourFamily} · ` : ''}{e.subType}</p>

@@ -86,8 +86,18 @@ export function sourceLink(url: string): string | null {
 }
 
 const lower = (s: string | null) => (s ?? '').toLowerCase();
+/** The rows (already in name order) dealt out one category at a time: Tops, Bottoms, Footwear, Outerwear, Accessories, Occasion wear, then the rest; socks and underwear come last. */
+const DEAL: readonly string[] = ['Tops', 'Bottoms', 'Footwear', 'Outerwear', 'Accessories', 'Occasion wear'];
+function interleave(rows: readonly CatalogueItem[]): CatalogueItem[] {
+  const lanes = new Map<string, CatalogueItem[]>();
+  for (const r of rows) { const lane = DEAL.includes(r.category) ? r.category : 'rest'; lanes.set(lane, [...(lanes.get(lane) ?? []), r]); }
+  const order = [...DEAL, 'rest'].map((l) => lanes.get(l) ?? []);
+  const out: CatalogueItem[] = [];
+  for (let n = 0; order.some((l) => n < l.length); n++) for (const l of order) if (n < l.length) out.push(l[n]!);
+  return out;
+}
 /** The same search and filters over a list in memory (the browser-only demo catalogue), in the order the database gives: name, then id. */
-export function filterCatalogue(items: readonly CatalogueItem[], filter: CatalogueFilter, after: CatalogueCursor | null = null): CataloguePage {
+export function filterCatalogue(items: readonly CatalogueItem[], filter: CatalogueFilter, after: CatalogueCursor | null = null, mixed = false): CataloguePage {
   const f = cleanCatalogueFilter(filter);
   const style = parseStyle(f.style);
   const q = f.q.toLowerCase();
@@ -95,7 +105,14 @@ export function filterCatalogue(items: readonly CatalogueItem[], filter: Catalog
   const rest = items.filter((i) => (!q || lower(i.name).includes(q) || lower(i.brand).includes(q)) && (!f.category || i.category === f.category) && (!f.brand || i.brand === f.brand)
     && (!f.colourFamily || i.colourFamily === f.colourFamily)
     && (!style || (style.kind === 'fit' ? i.fit === style.value : style.kind === 'pattern' ? i.pattern === style.value : (i.occasions as string[]).includes(style.value)))
-    && (!after || key(i) > key(after))).sort((a, b) => (key(a) < key(b) ? -1 : 1));
+    && (mixed || !after || key(i) > key(after))).sort((a, b) => (key(a) < key(b) ? -1 : 1));
+  if (mixed) { // the local H&M demo only: one of each category in turn, so the first screen is a mix and not a page of socks; the cursor is found by id
+    const order = interleave(rest);
+    const from = after ? order.findIndex((i) => i.id === after.id) + 1 : 0;
+    const rows = order.slice(from, from + CATALOGUE_PAGE);
+    const last = rows[CATALOGUE_PAGE - 1];
+    return { rows, next: from + CATALOGUE_PAGE < order.length && last ? { name: last.name, id: last.id } : null };
+  }
   const rows = rest.slice(0, CATALOGUE_PAGE);
   const last = rows[CATALOGUE_PAGE - 1];
   return { rows, next: rest.length > CATALOGUE_PAGE && last ? { name: last.name, id: last.id } : null };

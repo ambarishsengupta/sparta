@@ -141,6 +141,16 @@ button.linklike:hover { color: var(--text); background: none; }
 @media (min-width: 64rem) { .list.tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } .list.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
 .demo { margin-top: var(--s10); padding-top: var(--s4); border-top: var(--hairline-w) solid var(--rule); display: grid; gap: var(--s3); max-width: 24rem; }
 
+/* Real photos: the one neutral tile for an item with no photo, the product page, and the small photo in a row */
+.no-photo { display: grid; place-content: center; width: 100%; height: 100%; min-height: 4rem; padding: var(--s2); background: var(--paper); color: var(--muted); font-size: var(--fs-label); line-height: var(--lh-label); text-transform: uppercase; text-align: center; }
+.photo { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0; background: var(--paper); }
+.thumb { flex: none; width: 5rem; aspect-ratio: 3 / 4; background: var(--paper); border: var(--hairline-w) solid var(--rule); overflow: hidden; }
+.thumb .photo { object-fit: cover; }
+.product-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s6); align-items: start; }
+.product-page .form { max-width: 32rem; }
+.product-photo { aspect-ratio: 3 / 4; width: 100%; max-width: 32rem; background: var(--paper); border: var(--hairline-w) solid var(--rule); overflow: hidden; }
+@media (min-width: 48rem) { .product-page { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s10); } .product-photo { position: sticky; top: var(--s4); max-width: none; } }
+
 /* Purchases and wishlist: totals per currency, amounts, the panel under an item */
 .filters.six { grid-template-columns: repeat(2, minmax(0, 1fr)); } .filters.six input, .filters.six select { width: 100%; min-width: 0; }
 @media (min-width: 40rem) { .filters.six { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

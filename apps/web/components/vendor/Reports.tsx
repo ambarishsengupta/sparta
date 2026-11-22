@@ -1,6 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { isNoLoginDemo } from '../../lib/demo-mode';
+import { DEMO_GAPS, DEMO_REPORTS, demoGapRows } from '../../lib/demo-vendor';
 import { EventLog } from '../../lib/events';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 import { INSIGHT_SENTENCES, loadFailed, reports, type Insight, type ReportDetail, type ReportRow } from '../../lib/vendor/insights';
@@ -18,6 +20,21 @@ export const monthName = (d: string) => `${MONTHS[Number(d.slice(5, 7)) - 1] ?? 
 
 /** FR-78: the reviewed reports of the vendor's portal, newest first. */
 export function ReportList() {
+  return isNoLoginDemo() ? <DemoReportList /> : <LiveReportList />;
+}
+
+/** The no-login demo: three demo reports, each with a title, a date and a status. */
+function DemoReportList() {
+  return (
+    <div className="wide"><table className={styles.trend}>
+      <caption>Reports</caption>
+      <thead><tr><th scope="col">Report</th><th scope="col">Date</th><th scope="col">Status</th></tr></thead>
+      <tbody>{DEMO_REPORTS.map((r) => <tr key={r.id}><th scope="row"><Link href={`/vendor/reports/${r.id}`}>{r.title}</Link></th><td>{r.date}</td><td>{r.status}</td></tr>)}</tbody>
+    </table></div>
+  );
+}
+
+function LiveReportList() {
   const [list, setList] = useState<Slot<ReportRow[]>>(null);
   useEffect(() => { let live = true; reports(createBrowserSupabase()).then((r) => live && setList(r), () => live && setList(loadFailed())); return () => { live = false; }; }, []);
   return <ReportListView list={list} />;
@@ -37,6 +54,35 @@ export function ReportListView({ list }: { list: Slot<ReportRow[]> }) {
 
 /** One reviewed report. The uuid is checked before any call; `vendor_report_opened` is recorded once per opening, when a report is actually shown. */
 export function ReportPage({ id }: { id: string }) {
+  return isNoLoginDemo() ? <DemoReportPage id={id} /> : <LiveReportPage id={id} />;
+}
+
+/** The no-login demo: one demo report in five sections (summary, top gaps with photos, rising wishlist, condition spectrum, notes). An unknown id says so, with no 404. */
+function DemoReportPage({ id }: { id: string }) {
+  const r = DEMO_REPORTS.find((x) => x.id === id);
+  if (!r) return <><h1>Report</h1><p role="status">{NOT_FOUND}</p><Link href="/vendor/reports">All reports</Link></>;
+  const gaps = demoGapRows(DEMO_GAPS.filter((g) => r.payload.gaps.some((p) => p.segment === g.segment)));
+  return (
+    <>
+      <h1>{r.title}</h1>
+      <div className="wide">
+        <p className="muted">{r.date}. Status: {r.status}. <Link href="/vendor/reports">All reports</Link></p>
+        <h2>Summary</h2>
+        <p>{r.summary}</p>
+        <h2>Top gaps</h2>
+        <GapsTable caption="Gaps by category and colour family, highest gap score first" rows={gaps} />
+        <h2>Rising wishlist segments</h2>
+        <BarList name="Rising wishlist categories: increase in users" rows={r.payload.rising_wishlist.map((x) => ({ label: x.segment, value: x.increase, text: `+${x.increase} users (${x.previous_users_rounded} to ${x.users_rounded})` }))} />
+        <h2>Condition spectrum</h2>
+        {r.payload.condition_spectrum.map((c) => <section key={c.category}><h3>{c.category}</h3><BandShareBar category={c.category} bands={c.bands} /></section>)}
+        <h2>Notes</h2>
+        <ul>{r.notes.map((n) => <li key={n}>{n}</li>)}</ul>
+      </div>
+    </>
+  );
+}
+
+function LiveReportPage({ id }: { id: string }) {
   const [one, setOne] = useState<Slot<ReportDetail | null>>(null);
   const recorded = useRef('');
   useEffect(() => {

@@ -3,6 +3,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { CATEGORIES, subTypesOf } from '@sparta/taxonomy';
 import type { Category } from '@sparta/taxonomy';
 import { TAKEDOWN_NOTE_MAX } from '../../lib/admin-catalog';
+import { isNoLoginDemo } from '../../lib/demo-mode';
+import { demoReviewQueue, type DemoReviewItem, type ReviewState } from '../../lib/demo-vendor';
+import { ProductPhoto } from '../ui/ProductPhoto';
 import { REVIEW_PATH, SOURCES_PATH, adminCall, takedownPath } from './admin-actions';
 
 export interface Source { id: number; name: string; site_url: string; robots_allowed: boolean; terms_note: string; allowed: boolean; checked_on: string; contact: string | null; takedown_at: string | null; takedown_note: string | null }
@@ -58,6 +61,40 @@ function ReviewRow({ item, onDecide }: { item: ReviewItem; onDecide: (body: Reco
 }
 
 export function AdminCatalog() {
+  return isNoLoginDemo() ? <DemoAdminCatalog /> : <LiveAdminCatalog />;
+}
+
+const STATE_LABEL: Record<ReviewState, string> = { new: 'New', approved: 'Approved', rejected: 'Rejected' };
+/** The no-login demo: the review queue of 10 catalogue items as a photo grid. Approve and Reject change the state in memory only; nothing is called or stored. */
+function DemoAdminCatalog() {
+  const [items, setItems] = useState<DemoReviewItem[]>(demoReviewQueue);
+  const decide = (id: string, state: ReviewState) => setItems((all) => all.map((i) => (i.id === id ? { ...i, state } : i)));
+  const count = (state: ReviewState) => items.filter((i) => i.state === state).length;
+  return (
+    <>
+      <h1>Catalogue review</h1>
+      <p className="muted" role="status">{count('new')} new, {count('approved')} approved, {count('rejected')} rejected. Demo only: decisions are kept on this page and nothing is saved.</p>
+      <h2>Review queue</h2>
+      <ul className="list tiles">
+        {items.map((i) => (
+          <li key={i.id} className="card item">
+            <div className="swatch"><ProductPhoto id={i.photoId} name={i.name} /></div>
+            <div className="grow">
+              <p className="title">{i.name}</p>
+              <p className="muted">{[i.category, i.subType].filter(Boolean).join(' · ')} · {STATE_LABEL[i.state]}</p>
+              <div className="row">
+                <button type="button" disabled={i.state === 'approved'} onClick={() => decide(i.id, 'approved')} aria-label={`Approve ${i.name}`}>Approve</button>
+                <button type="button" className="danger" disabled={i.state === 'rejected'} onClick={() => decide(i.id, 'rejected')} aria-label={`Reject ${i.name}`}>Reject</button>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function LiveAdminCatalog() {
   const [sources, setSources] = useState<Source[] | null>(null);
   const [review, setReview] = useState<ReviewItem[] | null>(null);
   const [form, setForm] = useState(NEW_SOURCE);

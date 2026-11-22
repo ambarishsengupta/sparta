@@ -1,5 +1,8 @@
 'use client';
 import { useEffect, useId, useRef, useState } from 'react';
+import { isNoLoginDemo } from '../../lib/demo-mode';
+import { demoPilot } from '../../lib/demo-vendor';
+import { ConfirmStep } from '../ui/ConfirmStep';
 import type { Send } from './admin-actions';
 import {
   CONFIRM_WORD, MAX_CALLS, MAX_RETRIES, OUTCOMES, PREVIEW_PATH, SETTINGS_PATH, endCall, pilotRead, readPreview, readSettings,
@@ -61,6 +64,56 @@ function Counts({ t }: { t: Totals }) {
 }
 
 export function AdminPilot({ send, today }: { send?: Send; today?: string }) {
+  return isNoLoginDemo() ? <DemoAdminPilot /> : <LiveAdminPilot send={send} today={today} />;
+}
+
+/** The no-login demo: the settings page with fixed demo figures. The date and outcome can be changed on the page; "End the pilot" asks for its confirmation and then says nothing was ended. */
+function DemoAdminPilot() {
+  const [today, setToday] = useState<string | null>(null);   // read after the page loads, so the page made at build time and the browser agree
+  const [date, setDate] = useState('');
+  const [saved, setSaved] = useState<{ date: string; outcome: Outcome } | null>(null);
+  const [outcome, setOutcome] = useState<Outcome | ''>('continue');
+  const [message, setMessage] = useState('');
+  const [asking, setAsking] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const hint = useId();
+  useEffect(() => { const t = todayUtc(); const d = demoPilot(t); setToday(t); setDate(d.date); setSaved({ date: d.date, outcome: d.outcome }); }, []);
+  const p = demoPilot(today ?? todayUtc());
+  if (today === null || saved === null) return <><h1>End of the pilot</h1><p className="muted" role="status">Loading…</p></>;
+  return (
+    <>
+      <h1>End of the pilot</h1>
+      <h2>When the pilot ends</h2>
+      <p>Planned end date: <strong>{saved.date}</strong> ({when(saved.date, today)}). Outcome: <strong>{OUTCOME_LABEL[saved.outcome]}</strong>.</p>
+      <form className="form" onSubmit={(e) => { e.preventDefault(); if (date !== '' && outcome !== '') { setSaved({ date, outcome }); setMessage(`Saved. The pilot ends on ${date}. Demo only: nothing is stored.`); } }}>
+        <label>End date<input type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} /></label>
+        <label>Outcome
+          <select value={outcome} aria-describedby={hint} onChange={(e) => setOutcome(OUTCOMES.find((o) => o === e.target.value) ?? '')}>
+            <option value="">Choose</option>
+            {OUTCOMES.map((o) => <option key={o} value={o}>{OUTCOME_LABEL[o]}</option>)}
+          </select>
+        </label>
+        <p id={hint} className="muted">{OUTCOME_HINT}</p>
+        <div className="row"><button type="submit" className="primary" disabled={date === '' || outcome === ''}>Save end date and outcome</button></div>
+        <p role="status" className="muted">{message}</p>
+      </form>
+      <h2>What the end will delete</h2>
+      <p className="muted">Counts only. Nothing has been deleted.</p>
+      <ul className="list" aria-label="What the end will delete">
+        <li className="card"><p className="title">{plural(p.consumers, 'participant', 'participants')} will be deleted, with their items, photos, receipts and exports</p></li>
+        <li className="card"><p className="title">{plural(p.invitations, 'unused invitation', 'unused invitations')} will be deleted</p></li>
+        <li className="card"><p className="title">{plural(p.vendors, 'vendor account', 'vendor accounts')}, deleted only when the outcome is Close</p></li>
+      </ul>
+      <h2>End the pilot</h2>
+      {asking
+        ? <ConfirmStep label="Confirm the end of the pilot" question={`End the pilot and delete ${plural(p.consumers, 'participant', 'participants')}?`} confirmLabel="Yes, end the pilot" onConfirm={() => { setAsking(false); setEnded(true); }} onCancel={() => setAsking(false)} />
+        : <div className="row"><button type="button" className="danger" onClick={() => { setEnded(false); setAsking(true); }}>End the pilot</button></div>}
+      {ended && <p role="status"><strong>Demo only: nothing was ended</strong></p>}
+    </>
+  );
+}
+
+function LiveAdminPilot({ send, today }: { send?: Send; today?: string }) {
   const now = today ?? todayUtc();
   const [settings, setSettings] = useState<PilotSettings | null>(null);
   const [preview, setPreview] = useState<PilotPreview | null>(null);

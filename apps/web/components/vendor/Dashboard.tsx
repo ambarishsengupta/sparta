@@ -1,6 +1,8 @@
 'use client';
 import { CATEGORIES } from '@sparta/taxonomy';
 import { useEffect, useReducer, useRef, useState } from 'react';
+import { DEMO_BRAND_LABELS, DEMO_COVERAGE, DEMO_FILTER_OPTIONS, demoMix, demoSpectrum, demoTrends } from '../../lib/demo-vendor';
+import { isNoLoginDemo } from '../../lib/demo-mode';
 import { EventLog } from '../../lib/events';
 import { createBrowserSupabase } from '../../lib/supabase/browser';
 import { NO_BRAND_LABELS, loadBrandLabels, type BrandLabels } from '../../lib/vendor/brands';
@@ -18,6 +20,22 @@ const when = (iso: string) => `${new Date(iso).toISOString().slice(0, 16).replac
 /** FR-72 to FR-77, FR-80: the vendor's dashboard. Each view loads once per change of its own selector or of the filter, with the vendor's own session; no polling, no prefetch. The only
  * arithmetic on a returned value is the share division (lib/vendor/dashboard.ts). A segment the filter hides is shown as "Not enough users to display". */
 export function Dashboard() {
+  return isNoLoginDemo() ? <DemoDashboard /> : <LiveDashboard />;
+}
+
+/** The no-login demo: the same view with fixed demo figures (lib/demo-vendor.ts); the selectors and the filter work on them, nothing is called or recorded. */
+function DemoDashboard() {
+  const [filter, dispatch] = useReducer(filterReducer, null);
+  const [pick, setPick] = useState({ mixDim: INITIAL.mixDim, trendDim: INITIAL.trendDim, category: INITIAL.category });
+  const s: DashState = { ...pick, filter };
+  const header = { coverage: { ok: true, data: DEMO_COVERAGE } as Slot<Coverage | null>, options: { ok: true, data: DEMO_FILTER_OPTIONS } as Slot<FilterOption[]> };
+  const mix: Slot<Seg[]> = { ok: true, data: demoMix(pick.mixDim, filter) };
+  const trends = demoTrends(pick.trendDim, filter);
+  const spectrum: Slot<BandShare[]> = { ok: true, data: demoSpectrum(pick.category) };
+  return <DashboardView s={s} header={header} mix={mix} trends={{ purchase: { ok: true, data: trends.purchase }, wishlist: { ok: true, data: trends.wishlist } }} spectrum={spectrum} brands={DEMO_BRAND_LABELS} onPick={(p) => setPick({ ...pick, ...p })} onFilter={dispatch} />;
+}
+
+function LiveDashboard() {
   const client = useRef<ReturnType<typeof createBrowserSupabase> | null>(null);
   const base = useRef<Base>({});
   const seen = useRef('');

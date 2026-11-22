@@ -8,6 +8,8 @@ const LINKS = [['/', 'Wardrobe'], ['/outfits', 'Outfits'], ['/catalogue', 'Catal
 const ACCOUNT_LINKS = [['/settings', 'Settings']] as const;
 /** WO-0103: the vendor portal has its own links (a vendor has no wardrobe); the agreement page, which is all a vendor can open before accepting, has none. */
 const VENDOR_LINKS = [['/vendor', 'Dashboard'], ['/vendor/gaps', 'Gaps'], ['/vendor/reports', 'Reports'], ['/vendor/account', 'Account']] as const;
+/** UI wave 3b: the no-login demo adds the two location pages after Gaps (they do not exist outside the demo). */
+const DEMO_VENDOR_LINKS = [VENDOR_LINKS[0], VENDOR_LINKS[1], ['/vendor/locations', 'Locations'], ['/vendor/planning', 'Planning'], VENDOR_LINKS[2], VENDOR_LINKS[3]] as const;
 
 /** WO-0173: the admin pages. Only the admin state can be on one (the proxy sends everyone else away from /admin/*), so these links show on those two pages only (the exact paths: an unrouted /admin/x shows the ordinary links), in place of the wardrobe links the admin cannot open. */
 const ADMIN_LINKS = [['/admin/catalog', 'Catalogue'], ['/admin/pilot', 'End of pilot']] as const;
@@ -23,7 +25,7 @@ export function Nav({ signedIn = false }: { signedIn?: boolean }) {
   const demo = isNoLoginDemo();
   const demoAdmin = demo && (path === '/admin' || path?.startsWith('/admin/') === true);
   const admin = demoAdmin || ADMIN_LINKS.some(([href]) => href === path);
-  const links = demoAdmin ? DEMO_ADMIN_LINKS : admin ? ADMIN_LINKS : demo && vendor ? VENDOR_LINKS : vendor ? (path === '/vendor/agreement' ? [] : VENDOR_LINKS) : [...LINKS, ...(signedIn ? ACCOUNT_LINKS : [])];
+  const links = demoAdmin ? DEMO_ADMIN_LINKS : admin ? ADMIN_LINKS : demo && vendor ? DEMO_VENDOR_LINKS : vendor ? (path === '/vendor/agreement' ? [] : VENDOR_LINKS) : [...LINKS, ...(signedIn ? ACCOUNT_LINKS : [])];
   const view = demoAdmin ? 'ADMIN' : vendor ? 'VENDOR' : 'SHOPPER';
   const here = (href: string) => path === href || (vendor && href !== '/vendor' && path?.startsWith(`${href}/`));
   return (

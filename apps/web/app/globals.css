@@ -4,6 +4,7 @@
   --bg: #ffffff; --surface: #ffffff; --text: #000000; --muted: #595959; --border: #000000; --rule: #000000; --hairline: #d4d4d4;
   --accent: #1b2bff; --on-accent: #ffffff; --link: #1b2bff; --focus: #1b2bff; --error: #000000; --disabled: #767676;
   --ink: #000000; --on-ink: #ffffff; --paper: #ffffff; --black: #000000; --focus-box: #1b2bff;
+  --chart-1: var(--accent); --chart-2: var(--ink); --chart-3: #767676; --chart-4: #d4d4d4; --chart-5: var(--accent); --chart-6: var(--ink); /* 5 and 6 are drawn hatched (an SVG pattern) by the chart kit */
   --font: 'IBM Plex Mono', Helvetica, Arial, sans-serif;
   --fs-body: 14px; --lh-body: 21px; --fs-label: 12px; --lh-label: 18px; --fs-button: 14px; --fs-h1: 32px; --lh-h1: 34px; --fs-h2: 20px; --lh-h2: 24px; --track-tight: -0.05em;
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s12: 48px; --s16: 64px;
@@ -15,6 +16,7 @@
     --bg: #000000; --surface: #000000; --text: #ffffff; --muted: #a6a6a6; --border: #ffffff; --rule: #ffffff; --hairline: #2e2e2e;
     --accent: #8c96ff; --on-accent: #000000; --link: #8c96ff; --focus: #8c96ff; --error: #ffffff; --disabled: #8a8a8a;
     --ink: #ffffff; --on-ink: #000000;
+    --chart-3: #8a8a8a; --chart-4: #4d4d4d;
   }
 }
 @media (min-width: 40rem) { :root { --gutter: 24px; --fs-h1: 40px; --lh-h1: 42px; } }
@@ -282,3 +284,51 @@ th.photo-col { width: 6.5rem; } td > .thumb { width: 4.5rem; }
 .ins-teaser { padding: var(--s4); border: var(--hairline-w) solid var(--rule); } .ins-teaser h2 { margin: 0 0 var(--s3); font-size: var(--fs-body); line-height: var(--lh-body); letter-spacing: 0; }
 .ins-teaser ul { list-style: none; padding: 0; } .ins-teaser li { display: flex; justify-content: space-between; gap: var(--s3); padding: var(--s1) 0; border-bottom: var(--hairline-w) solid var(--hairline); }
 .ins-teaser a { display: inline-flex; align-items: center; min-height: var(--target); text-transform: uppercase; font-size: var(--fs-label); }
+
+/* Vendor chart kit (components/ui/charts). Colours only through --chart-1 to --chart-6 and the tokens above; square corners, no shadows. */
+.ch { margin: 0 0 var(--s4); padding: 0; min-width: 0; }
+.ch-title { font-size: var(--fs-label); line-height: var(--lh-label); text-transform: uppercase; color: var(--muted); margin: 0 0 var(--s2); }
+.ch-plot { position: relative; }
+.ch-svg { display: block; width: 100%; height: auto; touch-action: pan-y; overflow: visible; }
+.ch-svg text { font: 400 11px/1 var(--font); fill: var(--text); }
+.ch-axis { fill: var(--muted); } .ch-svg text.ch-axis { fill: var(--muted); text-transform: uppercase; font-size: 10px; }
+.ch-val { font-weight: 500; } .ch-svg text.ch-centre { font: 500 18px/1 var(--font); }
+.ch-grid { stroke: var(--hairline); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ch-line { fill: none; stroke-width: 2.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.ch-dashed { stroke-dasharray: 6 4; } .ch-line.ch-dashed { stroke-linecap: butt; }
+.ch-area { stroke: var(--bg); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ch-band { fill: var(--hairline); opacity: 0.35; }
+.ch-cross { stroke: var(--rule); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ch-dot { fill: var(--bg); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.ch-target { stroke: var(--rule); stroke-width: 1.5; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+.ch-bar { stroke: var(--rule); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ch-hover { fill: var(--hairline); opacity: 0.3; } .ch-hit { fill: transparent; }
+.ch-slice { stroke: var(--bg); stroke-width: 2; vector-effect: non-scaling-stroke; } .ch-slice[data-active='true'] { stroke: var(--rule); stroke-width: 3; }
+.ch-svg text.ch-slice-label { font-weight: 500; pointer-events: none; } .ch-svg text.ch-halo { paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+.ch-empty { fill: none; stroke: var(--hairline); }
+.ch-pie, .ch-gauge { margin-left: auto; margin-right: auto; }
+.ch-gauge-track, .ch-gauge-fill { fill: none; stroke-width: 16; } .ch-gauge-track { stroke: var(--chart-4); } .ch-gauge-fill { stroke: var(--chart-1); }
+.ch-gauge-target { stroke: var(--rule); stroke-width: 2.5; } .ch-gauge-needle { stroke: var(--rule); stroke-width: 3; stroke-linecap: butt; } .ch-gauge-hub { fill: var(--ink); }
+.ch-legend { list-style: none; margin: var(--s2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); font-size: var(--fs-label); line-height: var(--lh-label); }
+.ch-legend li { display: inline-flex; align-items: center; gap: var(--s2); } .ch-swatch { flex: none; display: block; }
+.ch-tip { position: absolute; z-index: 5; min-width: 8rem; max-width: 16rem; padding: var(--s2) var(--s3); background: var(--bg); border: var(--hairline-w) solid var(--rule); color: var(--text); font-size: var(--fs-label); line-height: var(--lh-label); pointer-events: none; transform: translate(-50%, calc(-100% - 10px)); }
+.ch-tip[data-side='left'] { transform: translate(calc(-100% - 10px), -50%); } .ch-tip[data-side='right'] { transform: translate(10px, -50%); }
+.ch-tip-title { text-transform: uppercase; color: var(--muted); } .ch-tip-row { display: flex; align-items: center; gap: var(--s2); } .ch-tip-row span:not(.ch-swatch) { flex: 1; } .ch-tip-row b { font-weight: 500; }
+.ch-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.ch-badge { position: relative; display: inline-flex; align-items: center; min-height: 20px; padding: 0 var(--s2); border: var(--hairline-w) solid var(--rule); font-size: var(--fs-label); line-height: var(--lh-label); text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+.ch-badge[data-status='Healthy'] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+.ch-badge[data-status='Watch'] { color: var(--text); background: var(--bg); }
+.ch-badge[data-status='Restock now'] { color: var(--on-ink); background: var(--ink); border-color: var(--ink); }
+.ch-badge[data-status='Overstock'] { color: var(--text); background: var(--bg); }
+.ch-badge-hatch { position: absolute; inset: 0; } .ch-badge-text { position: relative; padding: 0 var(--s1); background: var(--bg); }
+.ch-kpi { display: grid; gap: var(--s1); align-content: start; min-width: 0; padding: var(--s3) var(--s4); border: var(--hairline-w) solid var(--rule); }
+.ch-kpi-label { font-size: var(--fs-label); line-height: var(--lh-label); text-transform: uppercase; color: var(--muted); }
+.ch-kpi-value { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: 500; } .ch-kpi[data-accent='true'] .ch-kpi-value { color: var(--accent); }
+.ch-kpi-change { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1); font-size: var(--fs-label); line-height: var(--lh-label); } .ch-kpi-change svg { fill: var(--text); } .ch-kpi-vs { color: var(--muted); }
+.ch-spark { display: block; margin-top: var(--s1); } .ch-spark svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ch-spark-line { fill: none; stroke: var(--chart-1); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.ch-heat-scroll { overflow-x: auto; } .ch-heat { border-collapse: collapse; width: 100%; font-size: var(--fs-label); line-height: var(--lh-label); }
+.ch-heat th { font-weight: 400; text-transform: uppercase; color: var(--muted); text-align: center; padding: var(--s1) var(--s2); } .ch-heat tbody th { text-align: left; color: var(--text); text-transform: none; min-width: 10rem; }
+.ch-heat-row { display: flex; align-items: center; gap: var(--s2); min-height: var(--target); padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; } button.ch-heat-row { width: 100%; cursor: pointer; text-decoration: underline; text-decoration-color: var(--hairline); } button.ch-heat-row:hover { color: var(--accent); background: none; }
+.ch-heat-cell { text-align: center; font-weight: 500; border: var(--hairline-w) solid var(--bg); padding: var(--s2); min-width: 3.5rem; } .ch-heat-cell[data-outline='true'] { outline: 2px solid var(--rule); outline-offset: -2px; }
+.ch-ramp { display: flex; align-items: center; gap: var(--s1); margin-top: var(--s2); font-size: var(--fs-label); line-height: var(--lh-label); color: var(--muted); text-transform: uppercase; } .ch-ramp i { display: block; width: 20px; height: 12px; border: var(--hairline-w) solid var(--rule); }

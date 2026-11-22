@@ -49,8 +49,8 @@ export function WishlistView() {
   const entry = (e: WishlistEntry) => {
     const mine = open?.id === e.id ? open.kind : null;
     return (
-      <li key={e.id} className="card line">
-        <div className="thumb"><ProductPhoto id={e.photoId} name={e.name} /></div>
+      <li key={e.id} className="card wish">
+        <div className="wish-photo"><ProductPhoto id={e.photoId} name={e.name} /></div>
         <div className="grow">
           <p className="title">{e.name}</p>
           <p className="muted">{e.colourFamily ? `${e.colourFamily} · ` : ''}{e.subType}</p>
@@ -65,7 +65,7 @@ export function WishlistView() {
           )}
         </div>
         {!mine && (
-          <div className="row">
+          <div className="wish-actions">
             <button type="button" onClick={() => setOpen({ id: e.id, kind: 'plan' })} aria-label={`${e.plannedMonth ? 'Edit plan' : 'Plan'}: ${e.name}`}>{e.plannedMonth ? 'Edit plan' : 'Plan'}</button>
             <button type="button" onClick={() => setOpen({ id: e.id, kind: 'buy' })} aria-label={`Mark as bought: ${e.name}`}>Mark as bought</button>
           </div>
@@ -74,13 +74,13 @@ export function WishlistView() {
     );
   };
   return (
-    <>
+    <div className="wide wishlist">
       <h1>Wishlist</h1>
       <p aria-live="polite" className="muted">{note}</p>
       {error && <p role="alert" className="error">{error}</p>}
       {entries === null && !error && <p className="muted">Loading…</p>}
       {entries?.length === 0 && <p>Your wishlist is empty. <Link href="/outfits">Outfits</Link> suggests what to add next.</p>}
       {entries && entries.length > 0 && <PlanGroups entries={entries} renderEntry={entry} />}
-    </>
+    </div>
   );
 }

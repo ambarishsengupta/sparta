@@ -31,13 +31,13 @@ export function ItemCard({ item, onArchive, onRestore }: {
           {item.favourite ? ' · Favourite' : ''}{item.status === 'archived' && item.archiveReason ? ` · ${item.archiveReason}` : ''}
         </p>
         {item.status === 'active' && isOffered(item) && (
-          <Link href={`/outfits?anchor=${item.id}`} prefetch={false} className="button secondary" aria-label={`Build outfits around this: ${item.name}`}>Build outfits around this</Link>
+          <Link href={`/outfits?anchor=${item.id}`} prefetch={false} className="button secondary" aria-label={`Build outfits around this: ${item.name}`}>Style this</Link>
         )}
         {item.status === 'archived' ? (
           <button type="button" onClick={onRestore}>Restore {item.name}</button>
         ) : (
           <details>
-            <summary>Archive {item.name}</summary>
+            <summary aria-label={`Archive ${item.name}`}>Archive</summary>
             <div className="row">
               <label>Reason
                 <select value={reason} onChange={(e) => setReason(e.target.value as ArchiveReason)}>

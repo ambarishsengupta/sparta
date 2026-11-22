@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { isNoLoginDemo } from '../lib/demo-mode';
 import { SignOutForm } from './account/SignOutForm';
 
-const LINKS = [['/', 'Wardrobe'], ['/outfits', 'Outfits'], ['/wishlist', 'Wishlist'], ['/purchases', 'Purchases']] as const;
+const LINKS = [['/', 'Wardrobe'], ['/outfits', 'Outfits'], ['/catalogue', 'Catalogue'], ['/wishlist', 'Wishlist'], ['/purchases', 'Purchases']] as const;
 const ACCOUNT_LINKS = [['/settings', 'Settings']] as const;
 /** WO-0103: the vendor portal has its own links (a vendor has no wardrobe); the agreement page, which is all a vendor can open before accepting, has none. */
 const VENDOR_LINKS = [['/vendor', 'Dashboard'], ['/vendor/gaps', 'Gaps'], ['/vendor/reports', 'Reports'], ['/vendor/account', 'Account']] as const;

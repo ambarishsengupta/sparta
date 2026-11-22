@@ -25,7 +25,7 @@ export function CatalogueTile({ item, onChoose }: { item: CatalogueItem; onChoos
         <p className="title">{item.name}</p>
         <p className="muted">{[item.brand, item.colourFamily, item.price !== null && item.currency ? formatPrice(item.price, item.currency) : null].filter(Boolean).join(' · ')}</p>
         <div className="row">
-          <button type="button" onClick={onChoose} aria-label={`Choose ${item.name}`}>Choose</button>
+          <button type="button" onClick={onChoose} aria-label={`Choose ${item.name}`}>Add to wardrobe</button>
           <SourceLink url={item.productUrl} />
         </div>
       </div>

@@ -135,9 +135,6 @@ export function OutfitsView() {
   return (
     <>
       <h1>Outfits</h1>
-      <p className="muted">{dataBackend() === 'supabase'
-        ? 'Outfits are worked out in this browser. The outfits you save are kept in your account, and each Accept or Reject sends only the occasion and the rules involved (never item names).'
-        : 'Everything is worked out in this browser. Nothing is sent anywhere.'}</p>
       <fieldset className={styles.picker}>
         <legend>Occasion</legend>
         {OCCASIONS.map((o) => (
@@ -204,6 +201,9 @@ export function OutfitsView() {
           ))}
         </ul>
       )}
+      <p className="muted">{dataBackend() === 'supabase'
+        ? 'Outfits are worked out in this browser. The outfits you save are kept in your account, and each Accept or Reject sends only the occasion and the rules involved (never item names).'
+        : 'Everything is worked out in this browser. Nothing is sent anywhere.'}</p>
       {ctx && view?.kind !== 'empty' && <UnlockPanel entries={unlockList} listed={wished} onAdd={(e) => void addUnlock(e)} />}
     </>
   );

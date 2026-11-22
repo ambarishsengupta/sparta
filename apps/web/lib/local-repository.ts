@@ -1,6 +1,8 @@
 import { categoryOfSubType, colourFamily, hexToRgb, referenceSwatch } from '@sparta/taxonomy';
 import { HM_DEMO_SOURCE, filterCatalogue, hmPhotoId } from './catalogue';
 import { DEMO_CATALOGUE } from './demo-catalogue';
+import { demoArticleForGtin } from './demo-barcodes';
+import { isNoLoginDemo } from './demo-mode';
 import type { CatalogueItem } from './catalogue';
 import { PAGE, afterCursor, matches, newestFirst, totalsByCurrency } from './purchases';
 import type { Purchase, PurchaseInput } from './purchases';
@@ -70,7 +72,11 @@ export class LocalRepository implements WardrobeRepository {
   catalogue: CatalogueCollection;
 
   constructor(private storage: StorageLike | null = browserStorage(), private now: () => string = () => new Date().toISOString(), catalogue: readonly CatalogueItem[] = DEMO_CATALOGUE) {
-    this.catalogue = { page: async (f, after = null) => filterCatalogue(catalogue, f, after, catalogue.some((c) => c.source === HM_DEMO_SOURCE)), brands: async () => [...new Set(catalogue.flatMap((i) => i.brand ?? []))].sort(), byGtin: async () => [] /* the bundled demo items carry no barcode number */ };
+    this.catalogue = { page: async (f, after = null) => filterCatalogue(catalogue, f, after, catalogue.some((c) => c.source === HM_DEMO_SOURCE)), brands: async () => [...new Set(catalogue.flatMap((i) => i.brand ?? []))].sort(), byGtin: async (gtin) => { /* only the five demo barcodes (lib/demo-barcodes.ts) answer, in the no-login demo; the bundled items carry no barcode number */
+      const a = isNoLoginDemo() ? demoArticleForGtin(gtin) : undefined;
+      const item = a ? catalogue.find((c) => c.id === `hm-${a.sku}`) : undefined;
+      return item ? [item] : [];
+    } };
     this.persistent = storage !== null;
     this.doc = read(storage);
     const base = this.collection<'items', StoredItem, ItemInput>('items', 'item');

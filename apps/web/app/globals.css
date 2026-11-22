@@ -230,3 +230,22 @@ th.photo-col { width: 6.5rem; } td > .thumb { width: 4.5rem; }
   .item a.button.secondary { opacity: 0; transition: opacity 120ms linear, background-color 120ms linear, color 120ms linear; }
   .item:hover a.button.secondary, .item:focus-within a.button.secondary, .item a.button.secondary:focus-visible { opacity: 1; }
 }
+
+/* UI wave 3a: demo barcodes and the simulated camera (no-login demo only) */
+.demo-barcodes ul.list { display: flex; flex-wrap: wrap; gap: var(--s3); margin: 0 0 var(--s3); padding: 0; list-style: none; }
+.demo-barcode { display: grid; gap: var(--s1); justify-items: center; width: 9.5rem; min-height: var(--target); margin: 0; padding: var(--s2); color: #000; background: #fff; border: var(--hairline-w) solid var(--border); border-radius: 0; text-transform: none; cursor: pointer; }
+.demo-barcode svg { display: block; width: 100%; height: auto; }
+.demo-barcode .digits { font-size: var(--fs-label); line-height: var(--lh-label); letter-spacing: 0.04em; }
+.demo-barcode .label { font-size: var(--fs-label); line-height: var(--lh-label); text-transform: uppercase; color: #595959; }
+.demo-barcode:hover:not(:disabled) { color: #000; background: #fff; border-color: var(--accent); }
+.viewfinder { display: grid; gap: var(--s3); justify-items: center; width: 100%; margin: var(--s3) 0; padding: var(--s6) var(--s4); color: #fff; background: #000; border: var(--hairline-w) solid var(--border); }
+.viewfinder-frame { position: relative; width: min(100%, 24rem); height: 9rem; overflow: hidden; background: #0d0d0d; border: var(--hairline-w) solid #fff; }
+.viewfinder-frame::before, .viewfinder-frame::after { content: ''; position: absolute; width: 1.5rem; height: 1.5rem; border: 3px solid #fff; }
+.viewfinder-frame::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.viewfinder-frame::after { right: -1px; bottom: -1px; border-left: 0; border-top: 0; }
+.scan-line { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--accent); box-shadow: 0 0 8px 1px var(--accent); animation: scan-sweep 1.4s linear infinite alternate; }
+.viewfinder-note { margin: 0; color: #fff; font-size: var(--fs-label); line-height: var(--lh-label); text-transform: uppercase; }
+.viewfinder button { color: #fff; background: #000; border-color: #fff; }
+.viewfinder button:hover { color: #000; background: #fff; border-color: #fff; }
+@keyframes scan-sweep { from { top: 0; } to { top: calc(100% - 2px); } }
+@media (prefers-reduced-motion: reduce) { .scan-line { animation: none; top: 50%; } }

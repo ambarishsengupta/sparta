@@ -58,6 +58,15 @@ export function CatalogueView() {
     } catch (e) { if (mine === run.current) setError(messageOf(e, false)); }
   }, [repo, applied]);
   useEffect(() => { void load(null); }, [load]);
+  const jumped = useRef(false); // "Add by barcode" on the wardrobe links here with ?barcode=1: show the barcode section and focus its field, once
+  useEffect(() => {
+    if (!repo || jumped.current || typeof window === 'undefined' || !new URLSearchParams(window.location.search).has('barcode')) return;
+    const section = document.querySelector<HTMLElement>('section[aria-label="Find by barcode"]');
+    if (!section) return;
+    jumped.current = true;
+    section.scrollIntoView({ block: 'start' });
+    section.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
+  }, [repo, chosen]);
   useEffect(() => { if (repo) void repo.catalogue.brands().then(setBrands, () => setBrands([])); }, [repo]);
 
   if (chosen) return <ItemForm catalogueStart={{ item: chosen, onCancel: () => setChosen(null) }} barcode={chosenCode} />;

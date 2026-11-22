@@ -79,6 +79,7 @@ export function WardrobeList() {
         <div className="row">
           {(dataBackend() === 'supabase' || isNoLoginDemo()) && <Link href="/items/new/photo" className="button secondary">Add by photo</Link>}
           <Link href="/catalogue" className="button secondary">Add from catalogue</Link>
+          <Link href="/catalogue?barcode=1" className="button secondary">Add by barcode</Link>
           <Link href="/items/new" className="button">Add item</Link>
         </div>
       </div>

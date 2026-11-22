@@ -19,12 +19,12 @@ export function StoresGrid() {
               <div className="vd-card-body">
                 <h3><Link href={`/vendor/stores/${r.store.id}`}>{r.store.name}</Link></h3>
                 <p className="muted">{r.store.online ? 'Online store' : r.store.city}, {r.store.region}, size {r.store.size}</p>
-                <ul className="vd-counts">{STOCK_STATUSES.map((s) => <li key={s}><StatusBadge status={s} /><b>{r.counts[s]}</b></li>)}</ul>
+                <ul className="vd-counts">{STOCK_STATUSES.map((s) => <li key={s}><StatusBadge status={s} count={r.counts[s]} /></li>)}</ul>
                 <dl className="vd-facts"><div><dt>Revenue</dt><dd>{formatInr(r.revenue)}</dd></div></dl>
                 <Sparkline label={`${r.store.name}, revenue per week, last 12 weeks`} values={r.spark} />
                 <Gauge title={`Sell-through, ${r.store.name}`} value={r.sellThrough} target={SELL_THROUGH_TARGET} />
                 {r.best ? (
-                  <p className="vd-item"><span className="thumb vd-mini"><ProductPhoto id={r.best.articleId} name={r.best.name} /></span><span><span className="muted">Top item</span><br /><Link href={`/vendor/products/${r.best.id}`}>{r.best.name}</Link></span></p>
+                  <p className="vd-item"><ProductPhoto id={r.best.articleId} name={r.best.name} size="thumb" /><span><span className="muted">Top item</span><br /><Link href={`/vendor/products/${r.best.id}`}>{r.best.name}</Link></span></p>
                 ) : <p className="muted">No sales.</p>}
               </div>
             </li>

@@ -15,7 +15,7 @@ export function ItemAgeHeatmap({ filters }: { filters: Filters }) {
       {rows.length === 0 ? <p className="vd-empty">No items under these filters.</p> : (
         <Heatmap
           title="Units sold by item and age group"
-          rowLabels={rows.map((r) => <span key={r.product.id} className="vd-heat-row"><span className="thumb vd-mini"><ProductPhoto id={r.product.articleId} name={r.product.name} /></span><span>{r.product.name}</span></span>)}
+          rowLabels={rows.map((r) => <span key={r.product.id} className="vd-heat-row"><ProductPhoto id={r.product.articleId} name={r.product.name} size="thumb" /><span className="vd-name1">{r.product.name}</span></span>)}
           rowNames={rows.map((r) => r.product.name)}
           columnLabels={[...AGE_GROUPS]}
           values={rows.map((r) => r.values)}

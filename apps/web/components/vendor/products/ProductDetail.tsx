@@ -49,7 +49,7 @@ function Found({ product }: { product: Product }) {
         <p className="muted">{NOTE}</p>
       </div>
       <section className="vp-head" aria-label="Product facts">
-        <div className="vp-photo"><ProductPhoto id={product.articleId} name={product.name} /></div>
+        <div className="vp-photo"><ProductPhoto id={product.articleId} name={product.name} size="hero" /></div>
         <div className="vp-facts">
           <StatusBadge status={s.status} />
           <dl className="vd-facts">

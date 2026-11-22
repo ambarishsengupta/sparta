@@ -76,9 +76,9 @@ function Builder({ pre }: { pre: string }) {
 
       {shown.length === 0 ? <p className="vd-empty">No suggested lines for these filters: the stock on hand and on order already covers 6 weeks.</p> : (
         <div className="vd-scroll">
-          <table className="vd-table">
+          <table className="vd-table vd-rows">
             <caption className="ch-sr">Suggested restock lines</caption>
-            <thead><tr><th scope="col">Tick</th><th scope="col" colSpan={2}>Product</th><th scope="col">Store</th><th scope="col">Status</th><th scope="col">Cover</th><th scope="col">On hand / on order</th><th scope="col">Suggested</th><th scope="col">Units to order</th><th scope="col">Cost</th></tr></thead>
+            <thead><tr><th scope="col">Tick</th><th scope="col" colSpan={2}>Product</th><th scope="col">Store</th><th scope="col">Status</th><th scope="col" className="vd-num">Cover</th><th scope="col" className="vd-num">On hand / on order</th><th scope="col" className="vd-num">Suggested</th><th scope="col">Units to order</th><th scope="col" className="vd-num">Cost</th></tr></thead>
             <tbody>
               {shown.map((l) => {
                 const on = ticked.has(l.key);

@@ -17,5 +17,5 @@ export function ActionsHeading({ title, children }: { title: string; children?: 
 
 /** A small product photograph (the real H&M photo, or the neutral "No photo yet" tile). */
 export function Thumb({ product }: { product: Product }) {
-  return <span className="thumb vd-mini"><ProductPhoto id={product.articleId} name={product.name} /></span>;
+  return <ProductPhoto id={product.articleId} name={product.name} size="thumb" />;
 }

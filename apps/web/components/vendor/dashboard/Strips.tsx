@@ -12,11 +12,11 @@ function RestockCard({ item }: { item: RestockItem }) {
   const p = item.product;
   return (
     <li className="vd-card">
-      <Link className="vd-card-photo" href={`/vendor/products/${p.id}`} aria-label={`${p.name}: product page`}><ProductPhoto id={p.articleId} name={p.name} /></Link>
+      <Link className="vd-card-photo" href={`/vendor/products/${p.id}`} aria-label={`${p.name}: product page`}><ProductPhoto id={p.articleId} name={p.name} size="card" /></Link>
       <div className="vd-card-body">
         <StatusBadge status="Restock now" />
-        <h3>{p.name}</h3>
-        <p className="muted">Short at {storeList(item.stores)}</p>
+        <h3 className="vd-name" title={p.name}>{p.name}</h3>
+        <p className="muted vd-short">Short at {storeList(item.stores)}</p>
         <dl className="vd-facts">
           <div><dt>Cover</dt><dd>{formatWeeks(item.cover)}</dd></div>
           <div><dt>Stockout</dt><dd>{shortDate(item.stockoutDate)}</dd></div>
@@ -44,16 +44,16 @@ function BestCard({ s, rank }: { s: ProductSummary; rank: number }) {
   const p = s.product;
   return (
     <li className="vd-card">
-      <Link className="vd-card-photo" href={`/vendor/products/${p.id}`} aria-label={`${p.name}: product page`}><ProductPhoto id={p.articleId} name={p.name} /></Link>
+      <Link className="vd-card-photo" href={`/vendor/products/${p.id}`} aria-label={`${p.name}: product page`}><ProductPhoto id={p.articleId} name={p.name} size="card" /></Link>
       <div className="vd-card-body">
         <p className="vd-rank">No. {rank}</p>
-        <h3>{p.name}</h3>
+        <h3 className="vd-name" title={p.name}>{p.name}</h3>
         <dl className="vd-facts">
           <div><dt>Units</dt><dd>{formatNumber(s.units)}</dd></div>
           <div><dt>Revenue</dt><dd>{formatInr(s.revenue)}</dd></div>
           <div><dt>Top age</dt><dd>{s.topAge}</dd></div>
         </dl>
-        <Gauge title={`Sell-through, ${p.name}`} value={s.sellThrough} target={SELL_THROUGH_TARGET} />
+        <Gauge title="Sell-through" value={s.sellThrough} target={SELL_THROUGH_TARGET} maxWidth="9rem" />
         <Sparkline label={`${p.name}, units per week, last 12 weeks`} values={s.spark} />
       </div>
     </li>

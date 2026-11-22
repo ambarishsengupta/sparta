@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { Frame, HatchDefs, clamp, compact, foldSeries, formatValue, niceScale, pointerX, slotVar, useChartId } from './shared';
+import { Frame, HatchDefs, clamp, compact, foldSeries, formatValue, niceScale, pointerX, slotVar, r2, useChartId } from './shared';
 import type { Series, TipData, ValueFormat } from './shared';
 
 export interface LineChartProps {
@@ -30,10 +30,10 @@ export function LineChart({ title, labels, series, forecastFrom, valueFormat = f
   const H = Math.round(W / aspect);
   const n = labels.length;
   const { max: top, ticks } = niceScale(Math.max(0, ...items.flatMap((s) => s.values)));
-  const x = (i: number) => M.l + (n <= 1 ? 0.5 : i / (n - 1)) * (W - M.l - M.r);
-  const y = (v: number) => M.t + (1 - v / top) * (H - M.t - M.b);
+  const x = (i: number) => r2(M.l + (n <= 1 ? 0.5 : i / (n - 1)) * (W - M.l - M.r));
+  const y = (v: number) => r2(M.t + (1 - v / top) * (H - M.t - M.b));
   const cut = forecastFrom !== undefined && forecastFrom > 0 && forecastFrom < n ? forecastFrom : null;
-  const path = (vals: number[], from: number, to: number) => vals.slice(from, to + 1).map((v, k) => `${k === 0 ? 'M' : 'L'}${x(from + k).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  const path = (vals: number[], from: number, to: number) => vals.slice(from, to + 1).map((v, k) => `${k === 0 ? 'M' : 'L'}${x(from + k)} ${y(v)}`).join(' ');
   const step = Math.max(1, Math.ceil(n / 8));
 
   const pick = (e: ReactPointerEvent<SVGSVGElement>) => {
@@ -51,8 +51,8 @@ export function LineChart({ title, labels, series, forecastFrom, valueFormat = f
     <Frame title={title} legend={items.map((s, k) => ({ label: s.label, slot: slots[k] ?? 1 }))} tip={tip} table={{ head: ['Week', ...items.map((s) => s.label)], rows: labels.map((l, i) => [l, ...items.map((s) => valueFormat(s.values[i] ?? 0))]) }}>
       <svg className="ch-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title} onPointerMove={pick} onPointerDown={pick} onPointerLeave={(e) => { if (e.pointerType === 'mouse') setAt(null); }}>
         <HatchDefs id={id} />
-        {cut !== null ? <g><rect className="ch-band" x={x(cut - 1)} y={M.t} width={x(n - 1) - x(cut - 1)} height={H - M.t - M.b} /><text className="ch-axis" x={x(n - 1)} y={M.t + 10} textAnchor="end">FORECAST</text></g> : null}
-        {ticks.map((t) => <g key={t}><line className="ch-grid" x1={M.l} x2={W - M.r} y1={y(t)} y2={y(t)} /><text className="ch-axis" x={M.l - 6} y={y(t) + 4} textAnchor="end">{compact(t)}</text></g>)}
+        {cut !== null ? <g><rect className="ch-band" x={x(cut - 1)} y={M.t} width={r2(x(n - 1) - x(cut - 1))} height={r2(H - M.t - M.b)} /><text className="ch-axis" x={x(n - 1)} y={M.t + 10} textAnchor="end">FORECAST</text></g> : null}
+        {ticks.map((t) => <g key={t}><line className="ch-grid" x1={M.l} x2={W - M.r} y1={y(t)} y2={y(t)} /><text className="ch-axis" x={M.l - 6} y={r2(y(t) + 4)} textAnchor="end">{compact(t)}</text></g>)}
         {labels.map((l, i) => (i % step === 0 ? <text key={i} className="ch-axis" x={x(i)} y={H - 8} textAnchor="middle">{l}</text> : null))}
         {items.map((s, k) => {
           const slot = slots[k] ?? 1;

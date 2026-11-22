@@ -26,8 +26,7 @@ export function RetailDashboard() {
         <div className="vd-kpis">
           {tiles.map((k) => (
             <div key={k.key} className="vd-kpi">
-              <KpiTile label={k.label} value={k.display} change={k.changePct} accent={k.accent === true} lowerIsBetter={k.key === 'cover'} spark={k.spark} sparkLabel={`${k.label}, per week, last 12 weeks`} />
-              {k.changePct === null ? <span className="vd-new">New</span> : null}
+              <KpiTile label={k.label} value={k.display} change={k.changePct} accent={k.accent === true} lowerIsBetter={k.key === 'cover'} isNew={k.changePct === null} spark={k.spark} sparkLabel={`${k.label}, per week, last 12 weeks`} />
             </div>
           ))}
         </div>

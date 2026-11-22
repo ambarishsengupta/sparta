@@ -80,6 +80,8 @@ export function niceScale(max: number, count = 4): { max: number; ticks: number[
   const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
   return { max: step * count, ticks: Array.from({ length: count + 1 }, (_, i) => step * i) };
 }
+/** Rounds a computed SVG coordinate or path number to 2 decimals, so the server and the browser write exactly the same digits. */
+export const r2 = (n: number): number => Math.round(n * 100) / 100;
 export const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
 export const truncate = (s: string, n: number): string => (s.length <= n ? s : `${s.slice(0, Math.max(1, n - 1))}…`);
 /** The pointer's x position in the svg's own coordinates (the viewBox is `w` wide). */

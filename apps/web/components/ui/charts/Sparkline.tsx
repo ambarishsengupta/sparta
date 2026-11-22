@@ -1,4 +1,4 @@
-import { formatValue } from './shared';
+import { formatValue, r2 } from './shared';
 import type { ValueFormat } from './shared';
 
 export interface SparklineProps {
@@ -15,14 +15,14 @@ export interface SparklineProps {
 /** A tiny line, no axes. It fills its container's width. The values are listed for screen readers. */
 export function Sparkline({ label, values, forecastFrom, valueFormat = formatValue, aspect = 4.5 }: SparklineProps) {
   const W = 100;
-  const H = W / aspect;
+  const H = r2(W / aspect);
   const n = values.length;
   const lo = Math.min(...values);
   const hi = Math.max(...values);
   const span = hi - lo || 1;
-  const x = (i: number) => (n <= 1 ? W / 2 : (i / (n - 1)) * W);
-  const y = (v: number) => 2 + (1 - (v - lo) / span) * (H - 4);
-  const path = (from: number, to: number) => values.slice(from, to + 1).map((v, k) => `${k === 0 ? 'M' : 'L'}${x(from + k).toFixed(2)} ${y(v).toFixed(2)}`).join(' ');
+  const x = (i: number) => r2(n <= 1 ? W / 2 : (i / (n - 1)) * W);
+  const y = (v: number) => r2(2 + (1 - (v - lo) / span) * (H - 4));
+  const path = (from: number, to: number) => values.slice(from, to + 1).map((v, k) => `${k === 0 ? 'M' : 'L'}${x(from + k)} ${y(v)}`).join(' ');
   const cut = forecastFrom !== undefined && forecastFrom > 0 && forecastFrom < n ? forecastFrom : null;
   return (
     <span className="ch-spark">

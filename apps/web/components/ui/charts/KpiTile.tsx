@@ -10,6 +10,8 @@ export interface KpiTileProps {
   changeLabel?: string;
   /** True when a fall is the good direction (returns, weeks of cover too high); it only changes the wording for screen readers, the arrow always points the way the number moved. */
   lowerIsBetter?: boolean;
+  /** True when there is no earlier period to compare with: a small outlined "New" tag stands in the change line. */
+  isNew?: boolean;
   /** The value in the accent colour (for the "needs attention" tile). */
   accent?: boolean;
   /** A line of values for the sparkline; left out: no sparkline. */
@@ -18,7 +20,7 @@ export interface KpiTileProps {
 }
 
 /** A KPI tile: label, big value, the change versus the previous period (an up or down arrow and the percent) and an optional sparkline. */
-export function KpiTile({ label, value, change, changeLabel = 'vs previous period', lowerIsBetter = false, accent = false, spark, sparkLabel }: KpiTileProps) {
+export function KpiTile({ label, value, change, changeLabel = 'vs previous period', lowerIsBetter = false, isNew = false, accent = false, spark, sparkLabel }: KpiTileProps) {
   const has = typeof change === 'number' && Number.isFinite(change);
   const up = has && change > 0;
   const down = has && change < 0;
@@ -36,6 +38,8 @@ export function KpiTile({ label, value, change, changeLabel = 'vs previous perio
           <span className="ch-kpi-vs">{changeLabel}</span>
           <span className="ch-sr">{up ? 'Up' : down ? 'Down' : 'No change'} {pct} {changeLabel}{lowerIsBetter ? (down ? ' (better)' : up ? ' (worse)' : '') : ''}</span>
         </div>
+      ) : isNew ? (
+        <div className="ch-kpi-change"><span className="ch-kpi-new">New</span><span className="ch-kpi-vs">no earlier period</span></div>
       ) : null}
       {spark && spark.length > 1 ? <Sparkline label={sparkLabel ?? `${label}, trend`} values={spark} /> : null}
     </div>

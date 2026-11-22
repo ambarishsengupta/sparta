@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Frame, HatchDefs, fillFor, foldSlices, formatValue, textOn, useChartId } from './shared';
+import { Frame, HatchDefs, fillFor, foldSlices, formatValue, textOn, r2, useChartId } from './shared';
 import type { Slice, TipData, ValueFormat } from './shared';
 
 export interface PieChartProps {
@@ -17,15 +17,15 @@ export interface PieChartProps {
 const C = 110;
 const R = 100;
 
-const pt = (a: number, r: number): [number, number] => [C + r * Math.cos(a), C + r * Math.sin(a)];
+const pt = (a: number, r: number): [number, number] => [r2(C + r * Math.cos(a)), r2(C + r * Math.sin(a))];
 function arc(a0: number, a1: number, r0: number, r1: number): string {
   const large = a1 - a0 > Math.PI ? 1 : 0;
   const [x0, y0] = pt(a0, r1);
   const [x1, y1] = pt(a1, r1);
-  if (r0 <= 0) return `M${C} ${C} L${x0.toFixed(2)} ${y0.toFixed(2)} A${r1} ${r1} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`;
+  if (r0 <= 0) return `M${C} ${C} L${x0} ${y0} A${r1} ${r1} 0 ${large} 1 ${x1} ${y1} Z`;
   const [x2, y2] = pt(a1, r0);
   const [x3, y3] = pt(a0, r0);
-  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r1} ${r1} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${x2.toFixed(2)} ${y2.toFixed(2)} A${r0} ${r0} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z`;
+  return `M${x0} ${y0} A${r1} ${r1} 0 ${large} 1 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 ${large} 0 ${x3} ${y3} Z`;
 }
 
 /** A pie or donut: each slice labelled with its percent, the legend repeats label and percent, and a donut shows the total in the centre. */

@@ -64,12 +64,12 @@ export function ProductsTable({ rows, initialSort = 'units', initialDir = 'desc'
       <p className="muted" role="status">{shown.length} of {rows.length} products{query.trim() ? ` match "${query.trim()}"` : ''}.</p>
       {shown.length === 0 ? <p className="vd-empty">No products match.</p> : (
         <div className="vd-scroll">
-          <table className="vd-table">
+          <table className="vd-table vd-rows">
             <caption className="ch-sr">{caption}</caption>
             <thead>
               <tr>
                 {COLUMNS.map((c, i) => (
-                  <th key={c.key} scope="col" aria-sort={sort.key === c.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'} colSpan={i === 0 ? 2 : 1}>
+                  <th key={c.key} scope="col" aria-sort={sort.key === c.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'} colSpan={i === 0 ? 2 : 1} className={c.numeric ? 'vd-num' : undefined}>
                     <button type="button" className="vp-sort" onClick={() => click(c.key)}>{c.label}<span aria-hidden="true">{sort.key === c.key ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}</span></button>
                   </th>
                 ))}
@@ -79,7 +79,7 @@ export function ProductsTable({ rows, initialSort = 'units', initialDir = 'desc'
             <tbody>
               {shown.map((s) => (
                 <tr key={s.product.id}>
-                  <td className="vp-thumb"><Link href={`/vendor/products/${s.product.id}`} aria-label={`${s.product.name}: product page`}><span className="thumb vd-mini"><ProductPhoto id={s.product.articleId} name={s.product.name} /></span></Link></td>
+                  <td className="vp-thumb"><Link href={`/vendor/products/${s.product.id}`} aria-label={`${s.product.name}: product page`}><ProductPhoto id={s.product.articleId} name={s.product.name} size="thumb" /></Link></td>
                   <th scope="row"><Link href={`/vendor/products/${s.product.id}`}>{s.product.name}</Link><span className="muted">{s.product.colour}</span></th>
                   <td>{s.product.category}</td>
                   <td className="vd-num">{formatInr(s.product.price)}</td>

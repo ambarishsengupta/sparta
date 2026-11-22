@@ -8,7 +8,7 @@ import { STOCK_STATUSES, formatInr, formatPercent, formatWeeks, storeSummaries, 
 
 function Item({ p, none }: { p: Product | null; none: string }) {
   if (!p) return <span className="muted">{none}</span>;
-  return <span className="vd-item"><span className="thumb vd-mini"><ProductPhoto id={p.articleId} name={p.name} /></span><span>{p.name}</span></span>;
+  return <span className="vd-item"><ProductPhoto id={p.articleId} name={p.name} size="thumb" /><span className="vd-name2" title={p.name}>{p.name}</span></span>;
 }
 
 /** Block 8: one row per store, the one with most "Restock now" lines first. A click on the row (or its name) opens the store page. */
@@ -25,16 +25,17 @@ export function StoreBoard({ filters }: { filters: Filters }) {
       ])}>Export CSV</button></p>
       {rows.length === 0 ? <p className="vd-empty">No stores under these filters.</p> : (
         <div className="vd-scroll">
-          <table className="vd-table">
+          <table className="vd-table vd-rows vd-fixed">
+            <colgroup><col className="c-store" /><col className="c-counts" /><col className="c-money" /><col className="c-trend" /><col className="c-pct" /><col className="c-cover" /><col className="c-item" /><col className="c-item" /></colgroup>
             <caption className="ch-sr">Store status board</caption>
             <thead>
-              <tr><th scope="col">Store</th><th scope="col">Items by status</th><th scope="col">Revenue</th><th scope="col">Trend</th><th scope="col">Sell-through</th><th scope="col">Cover</th><th scope="col">Best item</th><th scope="col">Most urgent</th></tr>
+              <tr><th scope="col">Store</th><th scope="col">Items by status</th><th scope="col" className="vd-num">Revenue</th><th scope="col">Trend</th><th scope="col" className="vd-num">Sell-through</th><th scope="col" className="vd-num">Cover</th><th scope="col">Best item</th><th scope="col">Most urgent</th></tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.store.id} className="vd-row" onClick={(e) => { if (!(e.target as HTMLElement).closest('a')) router.push(`/vendor/stores/${r.store.id}`); }}>
                   <th scope="row"><Link href={`/vendor/stores/${r.store.id}`}>{r.store.name}</Link><span className="muted">{r.store.online ? 'Online' : `${r.store.region}, size ${r.store.size}`}</span></th>
-                  <td><ul className="vd-counts">{STOCK_STATUSES.map((s) => <li key={s}><StatusBadge status={s} /><b>{r.counts[s]}</b></li>)}</ul></td>
+                  <td><ul className="vd-counts">{STOCK_STATUSES.map((s) => <li key={s}><StatusBadge status={s} count={r.counts[s]} /></li>)}</ul></td>
                   <td className="vd-num">{formatInr(r.revenue)}</td>
                   <td className="vd-spark"><Sparkline label={`${r.store.name}, revenue per week, last 12 weeks`} values={r.spark} /></td>
                   <td className="vd-num">{formatPercent(r.sellThrough)}</td>

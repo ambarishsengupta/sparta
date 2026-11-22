@@ -8,6 +8,7 @@ import { DEMO_WARDROBE_NAMES, loadDemoWardrobe } from '../../lib/demo';
 import { NO_FILTER, filterItems } from '../../lib/filters';
 import type { WardrobeFilter } from '../../lib/filters';
 import type { ArchiveReason, StoredItem } from '../../lib/repository';
+import { isNoLoginDemo } from '../../lib/demo-mode';
 import { dataBackend } from '../../lib/supabase/config';
 import { attempt, messageOf } from '../../lib/supabase/errors';
 import { ProductPhoto } from '../ui/ProductPhoto';
@@ -22,7 +23,7 @@ export function ItemCard({ item, onArchive, onRestore }: {
   const band = item.condition === null ? null : conditionBandOf(item.condition);
   return (
     <li className="card item">
-      <div className="swatch"><ProductPhoto id={item.photoId} name={item.name} /></div>
+      <div className="swatch"><ProductPhoto id={item.photoId} name={item.name} src={item.localPhoto} /></div>
       <div className="grow">
         <Link href={`/items/${item.id}`} prefetch={false} className="title">{item.name}</Link>
         <p className="muted">
@@ -76,7 +77,7 @@ export function WardrobeList() {
       <div className="row between">
         <h1>Wardrobe</h1>
         <div className="row">
-          {dataBackend() === 'supabase' && <Link href="/items/new/photo" className="button secondary">Add by photo</Link>}
+          {(dataBackend() === 'supabase' || isNoLoginDemo()) && <Link href="/items/new/photo" className="button secondary">Add by photo</Link>}
           <Link href="/catalogue" className="button secondary">Add from catalogue</Link>
           <Link href="/items/new" className="button">Add item</Link>
         </div>

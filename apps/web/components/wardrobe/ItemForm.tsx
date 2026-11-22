@@ -17,11 +17,12 @@ import { ConfirmStep } from '../ui/ConfirmStep';
 import { ProductPhoto } from '../ui/ProductPhoto';
 import { useRepository } from '../use-repository';
 
-function Choice({ label, value, options, onChange, error }: {
-  label: string; value: string; options: readonly string[]; onChange: (v: string) => void; error?: string | undefined;
+function Choice({ label, value, options, onChange, error, note }: {
+  label: string; value: string; options: readonly string[]; onChange: (v: string) => void; error?: string | undefined; note?: string | undefined;
 }) {
   return (
     <label>{label}
+      {note && <span className="suggested" data-suggestion="demo">{note}</span>}
       <select value={value} onChange={(e) => onChange(e.target.value)} aria-invalid={error ? true : undefined}>
         <option value="">Not set</option>
         {options.map((o) => <option key={o}>{o}</option>)}
@@ -50,14 +51,36 @@ function Multi<T extends string>({ legend, options, value, onChange }: {
 /** From add-by-photo (WO-0073): the values the photo filled in, which of them are suggestions, and the picture to store with the item. */
 export interface PhotoStart { values: ItemFormValues; garmentSuggested: boolean; colourSuggested: boolean; photo: PhotoAttachment }
 
+/** From add-by-photo in the no-login demo (a simulated result): the values the "photo" suggested, and the picture to keep with the item (an H&M article id, or a shrunk upload as a data URL). */
+export interface DemoPhotoStart { values: ItemFormValues; photoId?: string; localPhoto?: string }
+
+/** The two pictures offered after a demo photo: both show the same image here; the cut-out sits on a plain light ground. The chosen one has the accent border. */
+function DemoPicks({ photoId, localPhoto, name }: { photoId?: string | undefined; localPhoto?: string | undefined; name: string }) {
+  const [pick, setPick] = useState<'cutout' | 'original'>('cutout');
+  return (
+    <fieldset className="demo-picks">
+      <legend>Which picture should we keep?</legend>
+      <div className="previews">
+        {([['cutout', 'CUT-OUT'], ['original', 'ORIGINAL']] as const).map(([value, label]) => (
+          <label key={value} className={`pick-tile ${value}${pick === value ? ' chosen' : ''}`}>
+            <input type="radio" name="picture" value={value} className="sr-only" checked={pick === value} onChange={() => setPick(value)} />
+            <span className="frame"><ProductPhoto id={photoId} name={`${name}, ${label.toLowerCase()}`} src={localPhoto} /></span>
+            <span className="pick-label">{label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 /** From the catalogue picker (WO-0085): the chosen item and where Cancel goes (back to the picker). */
 export interface CatalogueStart { item: CatalogueItem; onCancel: () => void }
 
 /** `barcode`: a padded GTIN (14 digits) the person looked up; it is saved with the item (FR-26). */
-export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { itemId?: string; photoStart?: PhotoStart; catalogueStart?: CatalogueStart; barcode?: string }) {
+export function ItemForm({ itemId, photoStart, catalogueStart, barcode, demoPhoto }: { itemId?: string; photoStart?: PhotoStart; catalogueStart?: CatalogueStart; barcode?: string; demoPhoto?: DemoPhotoStart }) {
   const repo = useRepository();
   const router = useRouter();
-  const [values, setValues] = useState<ItemFormValues>(photoStart?.values ?? (catalogueStart ? formFromCatalogue(catalogueStart.item) : emptyForm()));
+  const [values, setValues] = useState<ItemFormValues>(demoPhoto?.values ?? photoStart?.values ?? (catalogueStart ? formFromCatalogue(catalogueStart.item) : emptyForm()));
   const [size, setSize] = useState('');
   const [paid, setPaid] = useState<PaidValues>(emptyPaid(catalogueStart?.item.currency ?? 'USD'));
   const [paidErrors, setPaidErrors] = useState<PurchaseErrors>({});
@@ -87,7 +110,7 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
         setMade(id);
         if (bought?.ok && bought.draft) { await repo!.purchases.create({ ...bought.draft, itemId: id }); logPurchase(log, 'catalogue'); setMade(null); }
       } else if (itemId && existing) await repo!.items.update(itemId, { ...result.input, status: existing.status, archiveReason: existing.archiveReason });
-      else if (!itemId) await (photoStart ? createItemLogged(repo!, new EventLog(), { ...result.input, photo: photoStart.photo }, 'photo') : createItemLogged(repo!, new EventLog(), { ...result.input, barcode }, 'manual'));
+      else if (!itemId) await (demoPhoto ? createItemLogged(repo!, new EventLog(), { ...result.input, ...(demoPhoto.photoId ? { photoId: demoPhoto.photoId } : {}), ...(demoPhoto.localPhoto ? { localPhoto: demoPhoto.localPhoto } : {}) }, 'photo') : photoStart ? createItemLogged(repo!, new EventLog(), { ...result.input, photo: photoStart.photo }, 'photo') : createItemLogged(repo!, new EventLog(), { ...result.input, barcode }, 'manual'));
     });
     if (problem) return setFailure(problem); // stay on the form: nothing typed is lost
     router.push('/');
@@ -111,22 +134,26 @@ export function ItemForm({ itemId, photoStart, catalogueStart, barcode }: { item
   // A suggestion is labelled only while the value is still the suggested one: once the person changes it, it is theirs.
   const start = photoStart?.values;
   const garmentLabel = !!photoStart?.garmentSuggested && values.category === start?.category && values.subType === start?.subType;
+  const demoStart = demoPhoto?.values;
+  const demoSuggested = !!demoStart && values.category === demoStart.category && values.subType === demoStart.subType; // gone as soon as either field is changed
   const colourLabel = !!photoStart?.colourSuggested && values.hex === start?.hex;
   const family = familyOfHex(values.hex);
   const band = values.condition === null ? null : conditionBandOf(values.condition);
-  const shown = existing ? { id: existing.photoId, name: existing.name } : catalogueStart ? { id: cataloguePhotoId(catalogueStart.item), name: catalogueStart.item.name } : null;
+  const shown = existing ? { id: existing.photoId, name: existing.name } : catalogueStart ? { id: cataloguePhotoId(catalogueStart.item), name: catalogueStart.item.name } : demoPhoto ? { id: demoPhoto.photoId, name: values.name || 'Your photo' } : null;
+  const shownPhoto = existing?.localPhoto ?? demoPhoto?.localPhoto;
   return (
     <div className={shown ? 'product-page wide' : undefined}>
-    {shown && <div className="product-photo"><ProductPhoto id={shown.id} name={shown.name} /></div>}
+    {shown && <div className="product-photo"><ProductPhoto id={shown.id} name={shown.name} src={shownPhoto} /></div>}
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }} noValidate>
       <h1>{itemId ? 'Edit item' : 'Add item'}</h1>
       {barcode && !itemId && <p className="muted" data-barcode={barcode}>Barcode {barcode} will be saved with this item.</p>}
       {catalogueStart && <CatalogueIntro item={catalogueStart.item} />}
       {failure && <p role="alert" className="error">{failure}</p>}
+      {demoPhoto && <DemoPicks photoId={demoPhoto.photoId} localPhoto={demoPhoto.localPhoto} name={shown?.name ?? 'Your photo'} />}
       {garmentLabel && <p className="muted" data-suggestion="garment">{SUGGESTED_LABEL}: category and sub-type. Change them if they are not right.</p>}
-      <Choice label="Category" value={values.category} options={categoryChoices()} error={errors.category}
+      <Choice label="Category" value={values.category} options={categoryChoices()} error={errors.category} note={demoSuggested ? 'SUGGESTED FROM THE PHOTO' : undefined}
         onChange={(v) => change({ category: v as ItemFormValues['category'] })} />
-      <Choice label="Sub-type" value={values.subType} options={subTypeChoices(values.category)} error={errors.subType}
+      <Choice label="Sub-type" value={values.subType} options={subTypeChoices(values.category)} error={errors.subType} note={demoSuggested ? 'SUGGESTED FROM THE PHOTO' : undefined}
         onChange={(v) => change({ subType: v as ItemFormValues['subType'] })} />
       <label>Colour
         <input type="color" value={values.hex} onChange={(e) => change({ hex: e.target.value })} />

@@ -19,6 +19,8 @@ export interface StoredItem extends Item {
   /** Set when the item was picked from a catalogue row (`catalog_item_id`); `photoId` is the H&M article id when that row is of the `hm-demo` source (WO-0121). */
   catalogueId?: string;
   photoId?: string;
+  /** A photo added in the no-login demo: a shrunk JPEG data URL kept in this browser only. */
+  localPhoto?: string;
 }
 /** What the garment model returned for a photo (LLD 7.3), kept in `item_features` for swap ordering. Only ever present when the worker's result carried it. */
 export interface PhotoFeatures { modelVersion: string; garmentClass: number | null; p: number | null; embedding: number[] }

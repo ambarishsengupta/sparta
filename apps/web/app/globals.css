@@ -190,4 +190,24 @@ th.photo-col { width: 6.5rem; } td > .thumb { width: 4.5rem; }
 .preview { align-items: center; } .preview .frame { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 160px; padding: var(--s2); background: var(--hairline); border: var(--hairline-w) solid var(--rule); }
 .preview img, .photo-thumb { max-width: 100%; height: auto; object-fit: contain; } .photo-thumb { display: block; margin: var(--s3) 0 0; border: var(--hairline-w) solid var(--rule); }
 
+/* Add by photo in the no-login demo: choose, a short simulated wait, then the pre-filled form. Same tokens as the rest: hairlines, square corners, one accent. */
+.demo-file { position: relative; margin: 0; } .demo-file:focus-within { outline: var(--ring) solid var(--focus); outline-offset: 2px; }
+.demo-or { font-size: var(--fs-label); line-height: var(--lh-label); font-weight: 500; text-transform: uppercase; margin: var(--s8) 0 var(--s3); padding-top: var(--s3); border-top: var(--hairline-w) solid var(--rule); }
+.demo-samples { grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: var(--s3); }
+.demo-sample { display: grid; grid-template-rows: auto auto; justify-items: stretch; gap: var(--s1); width: 100%; padding: 0; color: var(--text); background: var(--surface); border: var(--hairline-w) solid var(--rule); text-align: left; }
+.demo-sample:hover { color: var(--text); background: var(--surface); border-color: var(--accent); }
+.demo-sample:focus-visible, .pick-tile:focus-within { outline: var(--ring) solid var(--focus); outline-offset: 2px; }
+.demo-sample .frame, .pick-tile .frame { display: block; aspect-ratio: 3 / 4; width: 100%; overflow: hidden; background: var(--paper); }
+.pick-label { display: block; padding: 0 var(--s2) var(--s2); font-size: var(--fs-label); line-height: var(--lh-label); text-transform: uppercase; color: var(--muted); }
+.demo-working { max-width: 24rem; } .demo-photo-large { max-width: 24rem; }
+.demo-progress { height: var(--ring); margin: var(--s4) 0; background: var(--hairline); } .demo-progress span { display: block; height: 100%; background: var(--accent); transition: width 600ms linear; }
+.demo-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.demo-steps li { display: flex; align-items: center; gap: var(--s3); color: var(--muted); } .demo-steps li[data-done='true'] { color: var(--text); }
+.demo-steps .tick { flex: none; width: 16px; height: 16px; border: var(--hairline-w) solid var(--rule); } .demo-steps li[data-done='true'] .tick { background: var(--accent); border-color: var(--accent); }
+.suggested { display: block; font-size: var(--fs-label); line-height: var(--lh-label); font-weight: 500; letter-spacing: 0.04em; color: var(--accent); }
+.demo-picks .previews { grid-template-columns: repeat(2, minmax(0, 8rem)); }
+.pick-tile { display: grid; gap: var(--s1); padding: 0; border: var(--hairline-w) solid var(--hairline); background: var(--surface); cursor: pointer; }
+.pick-tile.chosen { border-color: var(--accent); outline: var(--hairline-w) solid var(--accent); outline-offset: -2px; } .pick-tile.chosen .pick-label { color: var(--accent); font-weight: 500; }
+.pick-tile.cutout .frame { background: #f2f2f2; }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }

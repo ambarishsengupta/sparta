@@ -1,5 +1,6 @@
 import { colourFamily } from '@sparta/taxonomy';
 import { HM_ARTICLES, type HmArticle } from './demo-hm';
+import { liveThresholds } from './demo-vendor-actions';
 
 /**
  * FIXED RETAIL DEMO DATA for the vendor dashboard of the no-login demo (vendor plan, section 2). One data source for every vendor retail screen: stores, products, weekly facts and the
@@ -80,7 +81,8 @@ export const GENDERS: readonly Gender[] = ['Men', 'Women', 'Other or not said'];
 export const CATEGORIES: readonly Category[] = ['Tops', 'Bottoms', 'Outerwear', 'Footwear', 'Accessories'];
 export const REGIONS: readonly Region[] = ['North', 'South', 'East', 'West'];
 export const STOCK_STATUSES: readonly StockStatus[] = ['Healthy', 'Watch', 'Restock now', 'Overstock'];
-export const DEFAULT_THRESHOLDS: Thresholds = { restockCover: 2, watchCover: 4, overstockCover: 12 };
+/** The thresholds now in force: 2, 4 and 12 weeks until the vendor changes them on the alerts page (saved in this browser; the object is updated in place, so every default argument below sees the change). */
+export const DEFAULT_THRESHOLDS: Thresholds = liveThresholds();
 export const DEFAULT_FILTERS: Filters = { weeks: 12 };
 /** Sell-through target of the store chart, in percent. */
 export const SELL_THROUGH_TARGET = 65;

@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { ACTIONS, AGE_GROUPS, BUDGETS, DEMAND_INDEX, REGIONS, STYLES, planCards, segmentText, type Action, type AgeGroup, type Budget, type PlanCard, type Region, type Style } from '../../../lib/demo-vendor-insights';
+import { BarChart, PieChart } from '../../ui/charts';
 import { ProductPhoto } from '../../ui/ProductPhoto';
 
 interface Pick { region: Region | ''; age: AgeGroup | ''; budget: Budget | ''; style: Style | ''; action: Action | '' }
@@ -13,6 +14,13 @@ function top(cards: PlanCard[], key: (c: PlanCard) => string): string | null {
   for (const c of cards) sums.set(key(c), (sums.get(key(c)) ?? 0) + c.opportunity);
   return [...sums.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 }
+/** The percent change a card recommends ("+30% for the next 8 weeks" is 30, "−25% ..." is -25, "Start at 10% of ..." is 10); null when it gives a quantity instead of a percent, or no change. */
+function changePct(c: PlanCard): number | null {
+  const m = /([+−-])\s?(\d+)%/.exec(c.change) ?? /^Start at (\d+)% of/.exec(c.change);
+  if (!m) return null;
+  return m.length === 3 ? (m[1] === '+' ? 1 : -1) * Number(m[2]) : Number(m[1]);
+}
+const avg = (xs: number[]) => (xs.length === 0 ? 0 : Math.round(xs.reduce((a, b) => a + b, 0) / xs.length));
 const shade = (n: number) => `color-mix(in srgb, var(--accent) ${Math.round(n * 0.85)}%, var(--surface))`;
 
 /** "Inventory planning by location": filters, a summary row, the recommendation cards and the demand matrix. Fixed, simulated advice; nothing is called. */
@@ -34,6 +42,22 @@ export function PlanningView() {
         <div><dt>Top city by opportunity</dt><dd>{top(cards, (c) => c.place) ?? 'None'}</dd></div>
         <div><dt>Top age group by opportunity</dt><dd>{top(cards, (c) => c.age) ?? 'None'}</dd></div>
       </dl>
+      {cards.length === 0 ? null : (
+        <div className="va-pair">
+          <section className="va-panel" aria-label="Recommended unit change by region, chart">
+            <BarChart title="Recommended unit change by region (average, %)" categories={[...REGIONS]}
+              series={[
+                { label: 'Increase', values: REGIONS.map((r) => avg(cards.filter((c) => c.region === r).map(changePct).filter((v): v is number => v !== null && v > 0))) },
+                { label: 'Reduction', values: REGIONS.map((r) => avg(cards.filter((c) => c.region === r).map(changePct).filter((v): v is number => v !== null && v < 0).map((v) => -v))) },
+              ]}
+              valueFormat={(n) => `${n}%`} showValues />
+            <p className="muted">Average of the cards shown; a reduction is drawn as a positive bar. Cards that give a quantity of pairs instead of a percent, and Hold cards, are left out.</p>
+          </section>
+          <section className="va-panel" aria-label="Actions, chart">
+            <PieChart title="Actions in the cards shown" donut totalLabel="cards" slices={ACTIONS.map((a) => ({ label: a, value: cards.filter((c) => c.action === a).length }))} />
+          </section>
+        </div>
+      )}
       {cards.length === 0 ? <p role="status">No advice matches these filters.</p> : <ul className="ins-cards" aria-label="Recommendations">
         {cards.map((c) => (
           <li key={c.id} className="ins-card">

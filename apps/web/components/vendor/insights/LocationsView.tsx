@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { AGE_GROUPS, BUDGETS, DEMO_CITIES, NO_USER_FILTER, cityUsers, leadingAge, type AgeGroup, type Budget, type DemoCity, type UserFilter } from '../../../lib/demo-vendor-insights';
+import { BarChart, PieChart } from '../../ui/charts';
 import { BarList } from '../../ui/vendor';
 import { DotMap } from './DotMap';
 
@@ -25,6 +26,14 @@ export function LocationsView() {
       <div className="ins-split">
         <DotMap cities={rows.map((r) => ({ city: r.c, users: r.users }))} selected={city.name} onSelect={setPick} />
         <CityPanel city={city} users={rows.find((r) => r.c.name === city.name)?.users ?? 0} />
+      </div>
+      <div className="va-pair">
+        <section className="va-panel" aria-label={`Age groups in ${city.name}, chart`}>
+          <PieChart title={`Age groups in ${city.name}`} slices={AGE_GROUPS.map((a, i) => ({ label: a, value: city.ages[i]! }))} donut totalLabel="of users" valueFormat={(n) => `${n}%`} />
+        </section>
+        <section className="va-panel" aria-label="Users by city, chart">
+          <BarChart title="Users by city" orientation="horizontal" categories={rows.map((r) => r.c.name)} series={[{ label: 'Users', values: rows.map((r) => r.users) }]} showValues />
+        </section>
       </div>
       <table className="ins-table">
         <caption>All cities, most users first</caption>

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Sparkline, StatusBadge } from '../../ui/charts';
 import { ProductPhoto } from '../../ui/ProductPhoto';
+import { downloadCsv } from '../../../lib/demo-csv';
 import { STOCK_STATUSES, formatInr, formatPercent, formatWeeks, storeSummaries, type Filters, type Product } from '../../../lib/demo-vendor-retail';
 
 function Item({ p, none }: { p: Product | null; none: string }) {
@@ -18,6 +19,10 @@ export function StoreBoard({ filters }: { filters: Filters }) {
     <section className="vd-block" aria-labelledby="vd-stores">
       <h2 id="vd-stores">Store status board</h2>
       <p className="muted">Sorted by the number of items to restock now. Select a store to open it.</p>
+      <p><button type="button" disabled={rows.length === 0} onClick={() => downloadCsv('northline-store-board.csv', [
+        ['Store', 'Region', 'Size', ...STOCK_STATUSES.map((s) => `Items: ${s}`), 'Revenue (INR)', 'Sell-through (%)', 'Weeks of cover', 'Best item', 'Most urgent item'],
+        ...rows.map((r) => [r.store.name, r.store.region, r.store.size, ...STOCK_STATUSES.map((s) => r.counts[s]), r.revenue, r.sellThrough, r.cover, r.best?.name ?? '', r.urgent?.name ?? '']),
+      ])}>Export CSV</button></p>
       {rows.length === 0 ? <p className="vd-empty">No stores under these filters.</p> : (
         <div className="vd-scroll">
           <table className="vd-table">

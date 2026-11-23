@@ -78,7 +78,7 @@ function Builder({ pre }: { pre: string }) {
         <div className="vd-scroll">
           <table className="vd-table vd-rows">
             <caption className="ch-sr">Suggested restock lines</caption>
-            <thead><tr><th scope="col">Tick</th><th scope="col" colSpan={2}>Product</th><th scope="col">Store</th><th scope="col">Status</th><th scope="col" className="vd-num">Cover</th><th scope="col" className="vd-num">On hand / on order</th><th scope="col" className="vd-num">Suggested</th><th scope="col">Units to order</th><th scope="col" className="vd-num">Cost</th></tr></thead>
+            <thead><tr><th scope="col">Tick</th><th scope="col" colSpan={2}>Product</th><th scope="col">Store</th><th scope="col">Status</th><th scope="col" className="vd-num">Cover</th><th scope="col" className="vd-num">On hand / on order</th><th scope="col" className="vd-num">Suggested</th><th scope="col" className="va-num">Units to order</th><th scope="col" className="vd-num">Cost</th></tr></thead>
             <tbody>
               {shown.map((l) => {
                 const on = ticked.has(l.key);
@@ -87,13 +87,13 @@ function Builder({ pre }: { pre: string }) {
                   <tr key={l.key} data-ticked={on ? 'true' : undefined}>
                     <td><label className="va-check"><input type="checkbox" checked={on} onChange={() => toggle(l.key)} /><span className="ch-sr">Include {l.product.name} at {l.store.name}</span></label></td>
                     <td className="vp-thumb"><Link href={`/vendor/products/${l.product.id}`} aria-label={`${l.product.name}: product page`}><Thumb product={l.product} /></Link></td>
-                    <th scope="row"><Link href={`/vendor/products/${l.product.id}`}>{l.product.name}</Link><span className="muted">{l.product.colour}</span></th>
+                    <th scope="row"><Link className="vp-name" href={`/vendor/products/${l.product.id}`} title={l.product.name}>{l.product.name}</Link><span className="muted">{l.product.colour}</span></th>
                     <td>{l.store.name}</td>
                     <td><StatusBadge status={l.status} /></td>
                     <td className="vd-num">{formatWeeks(l.cover)}</td>
                     <td className="vd-num">{l.onHand} / {l.onOrder}</td>
                     <td className="vd-num">{l.suggested}</td>
-                    <td>
+                    <td className="va-num">
                       <span className="va-step">
                         <button type="button" onClick={() => step(l, -PACK_SIZE)} disabled={units <= PACK_SIZE} aria-label={`Fewer units of ${l.product.name} for ${l.store.name}, ${PACK_SIZE} less`}>−</button>
                         <output aria-label={`Units of ${l.product.name} for ${l.store.name}`}>{units}</output>

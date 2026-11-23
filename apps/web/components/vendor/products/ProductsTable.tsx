@@ -80,7 +80,7 @@ export function ProductsTable({ rows, initialSort = 'units', initialDir = 'desc'
               {shown.map((s) => (
                 <tr key={s.product.id}>
                   <td className="vp-thumb"><Link href={`/vendor/products/${s.product.id}`} aria-label={`${s.product.name}: product page`}><ProductPhoto id={s.product.articleId} name={s.product.name} size="thumb" /></Link></td>
-                  <th scope="row"><Link href={`/vendor/products/${s.product.id}`}>{s.product.name}</Link><span className="muted">{s.product.colour}</span></th>
+                  <th scope="row"><Link className="vp-name" href={`/vendor/products/${s.product.id}`} title={s.product.name}>{s.product.name}</Link><span className="muted">{s.product.colour}</span></th>
                   <td>{s.product.category}</td>
                   <td className="vd-num">{formatInr(s.product.price)}</td>
                   <td className="vd-num">{formatNumber(s.units)}</td>
